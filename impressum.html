@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Impressum — MRM-44 · Drumstar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Audiowide&family=Rajdhani:wght@500;600;700&family=VT323&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="theme-color" content="#050507">
+<style>
+  :root{
+    --bg:#050507;
+    --chassis:#0e0e13; --chassis-2:#08080b;
+    --edge-a:#1a1e26; --edge-b:#0a0c10;
+    --panel:#16161c; --panel-inset:#0a0a0d;
+    --blue:#3fa9ff; --blue-2:#8fd4ff; --blue-dim:#1c4666;
+    --white:#f4f5f7; --dim:#7d818c; --metal:#c7cbd4;
+    --lcd-bg:#04070a; --lcd-fg:#5fc2ff;
+  }
+  *{box-sizing:border-box; -webkit-touch-callout:none;}
+  html,body{ margin:0; min-height:100%; background:var(--bg); font-family:'Rajdhani',sans-serif; color:var(--white); }
+  #stage{
+    width:100%; min-height:100dvh; display:flex; align-items:flex-start; justify-content:center;
+    background:radial-gradient(ellipse 70% 40% at 50% -10%, rgba(63,169,255,0.10), transparent 60%), var(--bg);
+    padding:env(safe-area-inset-top,0) env(safe-area-inset-right,0) env(safe-area-inset-bottom,0) env(safe-area-inset-left,0);
+  }
+  #unit{
+    width:min(560px,100vw); min-height:100dvh;
+    display:flex; background:linear-gradient(90deg,var(--edge-b),var(--edge-a) 3%,var(--edge-a) 97%,var(--edge-b));
+    box-shadow:0 30px 80px rgba(0,0,0,.75), inset 0 1px 0 rgba(255,255,255,.05);
+    padding:0 7px;
+  }
+  @media (min-width:600px){ #unit{ border-radius:14px; margin:24px 0; min-height:0; } }
+  .wood-grain{ width:9px; flex-shrink:0; border-radius:4px;
+    background:linear-gradient(180deg, rgba(63,169,255,.05), rgba(63,169,255,.35), rgba(63,169,255,.05));
+    box-shadow:0 0 10px rgba(63,169,255,.35); }
+  #panelMain{
+    flex:1; min-width:0; background:linear-gradient(180deg,var(--chassis),var(--chassis-2));
+    padding:6px 9px 18px; display:flex; flex-direction:column; gap:10px; position:relative;
+  }
+  @media (min-width:600px){ #panelMain{ border-radius:8px; } }
+  .screw{ position:absolute; width:7px; height:7px; border-radius:50%; z-index:2;
+    background:radial-gradient(circle at 35% 30%, #cfd3da, #4a4e57 55%, #16171b 100%); box-shadow:0 1px 1px rgba(0,0,0,.7); }
+  .screw::after{ content:""; position:absolute; top:50%; left:14%; width:72%; height:1px; background:rgba(0,0,0,.6); transform:rotate(35deg); }
+  .screw.tl{top:6px;left:6px;} .screw.tr{top:6px;right:6px;} .screw.bl{bottom:6px;left:6px;} .screw.br{bottom:6px;right:6px;}
+
+  .brandtop{ text-align:center; font-family:'Rajdhani',sans-serif; font-weight:700;
+    font-size:clamp(9px,2.4vw,11px); letter-spacing:.4em; text-indent:.4em; color:var(--dim); padding:3px 0 1px;
+    display:flex; align-items:center; justify-content:center; gap:8px; }
+  .brandtop .ln{ flex:1; max-width:56px; height:1px; background:linear-gradient(90deg, transparent, rgba(63,169,255,.4), transparent); }
+  .brandtop .star{ color:var(--blue); font-size:8px; text-shadow:0 0 8px rgba(63,169,255,.8); }
+  .brandbar{ display:flex; align-items:center; justify-content:space-between; padding:1px 8px 4px; border-bottom:1px solid rgba(255,255,255,.06); }
+  .brandbar .logo{ font-family:'Audiowide',sans-serif; font-size:clamp(15px,4.4vw,20px); letter-spacing:.02em; color:var(--white);
+    text-shadow:0 1px 0 rgba(0,0,0,.6), 0 0 16px rgba(63,169,255,.35); }
+  .brandbar .logo span{color:var(--blue); text-shadow:0 0 12px rgba(63,169,255,.8);}
+  .brandbar .tag{font-size:clamp(8px,2vw,10px); letter-spacing:.18em; color:var(--dim); text-transform:uppercase;}
+
+  .lcd-screen{ background:var(--lcd-bg); border-radius:6px; padding:6px 10px;
+    box-shadow:inset 0 2px 6px rgba(0,0,0,.85), inset 0 0 0 1px #000, 0 0 14px rgba(63,169,255,.08);
+    color:var(--lcd-fg); text-shadow:0 0 8px rgba(95,194,255,.75); font-family:'VT323',monospace; font-size:clamp(15px,4vw,19px); letter-spacing:.04em; }
+
+  .backlink{ font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--dim); text-decoration:none;
+    border:1px solid rgba(255,255,255,.12); border-radius:7px; padding:7px 11px; display:inline-flex; align-items:center; gap:6px; align-self:flex-start; }
+  .backlink:active, .backlink:hover{ border-color:rgba(63,169,255,.5); color:var(--blue-2); }
+
+  .legal-content{ background:var(--panel-inset); border-radius:8px; padding:16px 16px 18px; box-shadow:inset 0 2px 6px rgba(0,0,0,.5); }
+  .legal-content h1{ font-family:'Rajdhani',sans-serif; font-weight:700; font-size:clamp(18px,5vw,22px); color:var(--white); margin:0 0 4px; letter-spacing:.02em; }
+  .legal-content .sub{ font-size:11px; color:var(--dim); letter-spacing:.05em; margin:0 0 18px; }
+  .legal-content h2{ font-family:'Rajdhani',sans-serif; font-weight:700; font-size:14px; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--blue-2); margin:22px 0 8px; padding-bottom:5px; border-bottom:1px solid rgba(63,169,255,.15); }
+  .legal-content h2:first-of-type{ margin-top:0; }
+  .legal-content p{ font-size:14.5px; line-height:1.55; color:#d7d9de; margin:0 0 10px; }
+  .legal-content ul{ margin:0 0 10px; padding-left:20px; }
+  .legal-content li{ font-size:14.5px; line-height:1.55; color:#d7d9de; margin-bottom:4px; }
+  .legal-content a{ color:var(--blue-2); }
+  .fillbox{ background:var(--panel); border:1px dashed rgba(255,157,31,.45); border-radius:7px; padding:10px 12px; margin:6px 0 14px; }
+  .fillbox .flabel{ font-family:'JetBrains Mono',monospace; font-size:10.5px; color:#ffb774; letter-spacing:.04em; display:block; margin-bottom:2px; }
+  .note{ background:rgba(63,169,255,.08); border:1px solid rgba(63,169,255,.25); border-radius:7px; padding:10px 12px; margin:14px 0; }
+  .note p{ margin:0; font-size:13.5px; color:var(--blue-2); }
+
+  footer.legal-footer{ text-align:center; font-size:clamp(8px,2vw,10px); letter-spacing:.05em; padding:6px 0 4px; }
+  footer.legal-footer a{ color:var(--dim); text-decoration:none; border-bottom:1px solid transparent; }
+  footer.legal-footer a:hover, footer.legal-footer a:active{ color:var(--blue-2); border-bottom-color:rgba(63,169,255,.4); }
+  footer.legal-footer .sep{ margin:0 7px; opacity:.4; }
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <div id="unit">
+    <div class="wood-grain"></div>
+    <div id="panelMain">
+      <div class="screw tl"></div><div class="screw tr"></div><div class="screw bl"></div><div class="screw br"></div>
+
+      <div class="brandtop"><span class="ln"></span><span class="star">✦</span>Drumstar<span class="star">✦</span><span class="ln"></span></div>
+      <div class="brandbar">
+        <div class="logo">MRM-<span>44</span></div>
+        <div class="tag">Mobile Rhythm Machine</div>
+      </div>
+      <div class="lcd-screen">IMPRESSUM</div>
+
+      <a class="backlink" href="./index.html">← Zurück zur App</a>
+
+      <div class="legal-content">
+        <h1>Impressum</h1>
+        <p class="sub">Angaben gemäß § 5 Digitale-Dienste-Gesetz (DDG, vormals § 5 TMG)</p>
+
+        <div class="note">
+          <p>MRM-44 / Drumstar ist ein privates, nicht-kommerzielles Hobby-Projekt. Es werden keine Waren oder Dienstleistungen verkauft, keine Werbung geschaltet und keine Einnahmen erzielt. Ob für ein rein privates, unentgeltliches Angebot dieser Art überhaupt eine Impressumspflicht besteht, ist rechtlich nicht eindeutig geklärt — dieses Impressum wird aus Vorsicht bereitgestellt.</p>
+        </div>
+
+        <h2>Verantwortlich für den Inhalt</h2>
+        <div class="fillbox">
+          <span class="flabel">⚠ BITTE AUSFÜLLEN</span>
+          [Vor- und Nachname]<br>
+          [Straße und Hausnummer]<br>
+          [PLZ, Ort]<br>
+          [Land]
+        </div>
+
+        <h2>Kontakt</h2>
+        <div class="fillbox">
+          <span class="flabel">⚠ BITTE AUSFÜLLEN</span>
+          E-Mail: [deine-email@beispiel.de]
+        </div>
+
+        <h2>Hosting</h2>
+        <p>Diese Website wird als statische Seite über GitHub Pages gehostet (GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, USA; für Nutzer in der EU: GitHub B.V., Prins Bernhardplein 200, 1097 JB Amsterdam, Niederlande). Es gibt keinen eigenen Server und keine serverseitige Verarbeitung durch den Betreiber dieser Seite — GitHub liefert die Dateien technisch aus. Details dazu in der <a href="./datenschutz.html">Datenschutzerklärung</a>.</p>
+
+        <h2>Haftung für Inhalte</h2>
+        <p>Als Diensteanbieter bin ich gemäß § 7 Abs. 1 DDG für eigene Inhalte auf diesen Seiten nach den allgemeinen Gesetzen verantwortlich. Nach §§ 8–10 DDG bin ich als Diensteanbieter jedoch nicht verpflichtet, übermittelte oder gespeicherte fremde Informationen zu überwachen. Verpflichtungen zur Entfernung oder Sperrung der Nutzung von Informationen nach den allgemeinen Gesetzen bleiben hiervon unberührt.</p>
+
+        <h2>Haftung für Links</h2>
+        <p>Diese Seite enthält derzeit keine Links zu externen Websites Dritter, deren Inhalte von mir beeinflusst werden könnten.</p>
+
+        <h2>Urheberrecht</h2>
+        <p>Die durch den Seitenbetreiber erstellten Inhalte und Werke auf dieser Seite (Code, Design, Sounds) unterliegen dem deutschen Urheberrecht. Beiträge Dritter sind als solche gekennzeichnet.</p>
+      </div>
+
+      <footer class="legal-footer">
+        <a href="./index.html">Zur App</a><span class="sep">·</span><a href="./datenschutz.html">Datenschutz</a>
+      </footer>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
