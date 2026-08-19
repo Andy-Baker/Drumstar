@@ -205,6 +205,12 @@
 
   footer.hint{ text-align:center; font-size:clamp(8px,2vw,10px); color:var(--dim); letter-spacing:.05em; padding:2px 0 2px; }
 
+  /* ---------- RECHTLICHES-FOOTER (Impressum/Datenschutz) ---------- */
+  footer.legal-footer{ text-align:center; font-size:clamp(8px,2vw,10px); letter-spacing:.05em; padding:0 0 4px; }
+  footer.legal-footer a{ color:var(--dim); text-decoration:none; border-bottom:1px solid transparent; transition:color .15s, border-color .15s; }
+  footer.legal-footer a:hover, footer.legal-footer a:active{ color:var(--blue-2); border-bottom-color:rgba(63,169,255,.4); }
+  footer.legal-footer .sep{ margin:0 7px; opacity:.4; color:var(--dim); }
+
   /* ---------- MIC-SAMPLE AUFNAHME ---------- */
   #trackBar .rec-controls{ display:flex; align-items:center; gap:8px; }
   #recBtn{ font-size:11px; letter-spacing:.06em; text-transform:uppercase; cursor:pointer;
@@ -274,6 +280,12 @@
   #patternSaveBtn{ font-size:10px; letter-spacing:.04em; text-transform:uppercase; border:1px solid rgba(63,169,255,.4);
     border-radius:6px; padding:7px 12px; cursor:pointer; background:rgba(63,169,255,.12); color:var(--blue-2); white-space:nowrap; }
   #patternSaveBtn:active{ transform:scale(.94); }
+  #patternIORow{ display:flex; gap:6px; }
+  #patternIORow button{ flex:1; font-size:10px; letter-spacing:.04em; text-transform:uppercase; border:1px solid rgba(255,255,255,.12);
+    border-radius:6px; padding:7px 9px; cursor:pointer; background:var(--panel-inset); color:var(--dim); white-space:nowrap; }
+  #patternIORow button:active{ transform:scale(.96); border-color:rgba(63,169,255,.5); color:var(--blue-2); }
+  #patternIOStatus{ font-size:10px; color:var(--blue-2); font-family:'JetBrains Mono',monospace; letter-spacing:.02em; min-height:12px; text-align:center; }
+  #patternIOStatus.err{ color:#ff9d7a; }
   #patternList{ display:flex; flex-direction:column; gap:5px; max-height:180px; overflow-y:auto; }
   .pattern-row{ display:flex; align-items:center; justify-content:space-between; gap:6px;
     background:var(--panel-inset); border-radius:6px; padding:6px 8px; }
@@ -402,6 +414,12 @@ html,body{min-height:100%;height:100%;}
           <input type="text" id="patternNameInput" placeholder="Name für aktuellen Beat…" maxlength="40">
           <button id="patternSaveBtn">Speichern</button>
         </div>
+        <div id="patternIORow">
+          <button id="patternExportAllBtn">⬇ Alle exportieren</button>
+          <button id="patternImportBtn">⬆ Import</button>
+          <input type="file" id="patternImportInput" accept="application/json,.json" style="display:none;">
+        </div>
+        <div id="patternIOStatus"></div>
         <div id="patternList"></div>
       </div>
 
@@ -461,6 +479,9 @@ html,body{min-height:100%;height:100%;}
       </div>
 
       <footer class="hint">Tap = Step (aus→normal→accent→ghost→ghost soft) · Reihe = Instrument wählen · kleiner Regler = Lautstärke des Sounds · MIC SAMPLE wählen zum Aufnehmen</footer>
+      <footer class="legal-footer">
+        <a href="./impressum.html">Impressum</a><span class="sep">·</span><a href="./datenschutz.html">Datenschutz</a>
+      </footer>
     </div>
   </div>
 </div>
@@ -2573,9 +2594,11 @@ async function refreshPatternList(){
       if(data) applyPatternData(data);
       patternsPanel.classList.remove('open');
     });
+    const exportBtn=document.createElement('button'); exportBtn.textContent='⬇'; exportBtn.title='Diesen Beat als JSON exportieren';
+    exportBtn.addEventListener('click', (e)=>{ e.stopPropagation(); exportSinglePattern(item); });
     const delBtn=document.createElement('button'); delBtn.textContent='✕';
     delBtn.addEventListener('click', async ()=>{ await deletePatternFromIndexedDB(item.name); refreshPatternList(); });
-    btns.appendChild(loadBtn); btns.appendChild(delBtn);
+    btns.appendChild(loadBtn); btns.appendChild(exportBtn); btns.appendChild(delBtn);
     row.appendChild(nameEl); row.appendChild(dateEl); row.appendChild(btns);
     patternList.appendChild(row);
   });
@@ -2583,6 +2606,88 @@ async function refreshPatternList(){
 patternsToggleBtn.addEventListener('click', ()=>{
   patternsPanel.classList.toggle('open');
   if(patternsPanel.classList.contains('open')) refreshPatternList();
+});
+
+// =========================================================================
+// PATTERN-EXPORT/IMPORT — Beats als JSON-Datei sichern bzw. wieder einlesen.
+// Wichtig: exportiert wird nur die strukturelle Pattern-Beschreibung (Steps,
+// Tempo, Kit-Auswahl, Effekt-/Track-Werte) — genau das, was collectPatternData/
+// applyPatternData ohnehin verwenden. Über das Mikrofon aufgenommene Samples
+// (MIC-SAMPLE-Track, Sample-Pads) liegen als Audio-Blobs in einem separaten
+// IndexedDB-Store und sind NICHT Teil dieser Datei; sie bleiben rein lokal.
+// =========================================================================
+const patternIOStatusEl=document.getElementById('patternIOStatus');
+let patternIOStatusTimer=null;
+function showPatternIOStatus(msg, isError){
+  patternIOStatusEl.textContent=msg;
+  patternIOStatusEl.classList.toggle('err', !!isError);
+  clearTimeout(patternIOStatusTimer);
+  patternIOStatusTimer=setTimeout(()=>{ patternIOStatusEl.textContent=''; }, 4500);
+}
+function ioStamp(){ return new Date().toISOString().slice(0,16).replace(/[:T]/g,'-'); }
+function downloadJson(obj, filename){
+  const blob=new Blob([JSON.stringify(obj,null,2)], {type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 5000);
+}
+function makeExportPayload(patterns){
+  return { app:'MRM-44', kind:'mrm44-patterns', formatVersion:1, exportedAt:Date.now(), patterns };
+}
+async function exportAllPatterns(){
+  const items=await listPatternsFromIndexedDB();
+  if(items.length===0){ showPatternIOStatus('Keine gespeicherten Beats zum Exportieren', true); return; }
+  downloadJson(makeExportPayload(items), 'mrm44-beats-'+ioStamp()+'.json');
+  showPatternIOStatus(items.length+' Beat'+(items.length===1?'':'s')+' exportiert');
+}
+function exportSinglePattern(item){
+  const safeName=(item.name||'beat').replace(/[^a-z0-9\-_]+/gi,'_').slice(0,40) || 'beat';
+  downloadJson(makeExportPayload([item]), 'mrm44-'+safeName+'-'+ioStamp()+'.json');
+  showPatternIOStatus('„'+item.name+'“ exportiert');
+}
+document.getElementById('patternExportAllBtn').addEventListener('click', exportAllPatterns);
+
+const patternImportInput=document.getElementById('patternImportInput');
+document.getElementById('patternImportBtn').addEventListener('click', ()=> patternImportInput.click());
+patternImportInput.addEventListener('change', async (e)=>{
+  const file=e.target.files[0];
+  patternImportInput.value=''; // zurücksetzen, damit dieselbe Datei erneut wählbar bleibt
+  if(!file) return;
+  try{
+    const text=await file.text();
+    const parsed=JSON.parse(text);
+    // Akzeptiert sowohl das eigene Export-Format ({patterns:[...]}) als auch ein
+    // rohes Array oder ein einzelnes Pattern-Objekt (z. B. bei manuell editierten Dateien).
+    const incoming = Array.isArray(parsed) ? parsed
+      : Array.isArray(parsed.patterns) ? parsed.patterns
+      : (parsed && Array.isArray(parsed.tracks)) ? [parsed]
+      : null;
+    if(!incoming || incoming.length===0) throw new Error('Kein gültiges Beat-Format gefunden');
+
+    const existingNames=new Set((await listPatternsFromIndexedDB()).map(p=>p.name));
+    let imported=0, renamed=0;
+    for(const p of incoming){
+      if(!p || !p.name || !Array.isArray(p.tracks)) continue; // grobe Plausibilitätsprüfung pro Eintrag
+      let name=p.name;
+      if(existingNames.has(name)){
+        // Namenskollision: nie stillschweigend überschreiben, sondern automatisch umbenennen
+        let n=2, candidate=name+' ('+n+')';
+        while(existingNames.has(candidate)){ n++; candidate=name+' ('+n+')'; }
+        name=candidate; renamed++;
+      }
+      existingNames.add(name);
+      await savePatternToIndexedDB(Object.assign({}, p, { name, savedAt:Date.now() }));
+      imported++;
+    }
+    if(imported===0) throw new Error('Keine gültigen Beats in der Datei gefunden');
+    refreshPatternList();
+    showPatternIOStatus(imported+' Beat'+(imported===1?'':'s')+' importiert'+(renamed?' · '+renamed+'x umbenannt (Namenskonflikt)':''));
+  } catch(err){
+    console.warn('Beat-Import fehlgeschlagen:', err);
+    showPatternIOStatus('Import fehlgeschlagen — Datei ungültig', true);
+  }
 });
 
 // ---- Fill-In-Panel ----
