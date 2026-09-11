@@ -66,6 +66,8 @@
   .brandtop .ln{ flex:1; max-width:56px; height:1px;
     background:linear-gradient(90deg, transparent, rgba(63,169,255,.4), transparent); }
   .brandtop .star{ color:var(--blue); font-size:8px; text-shadow:0 0 8px rgba(63,169,255,.8); }
+  .brandtop-logo{ height:20px; width:auto; flex-shrink:0;
+    filter:drop-shadow(0 0 6px rgba(63,169,255,.45)); }
 
   .brandbar{ display:flex; align-items:center; justify-content:space-between; padding:1px 8px 4px; border-bottom:1px solid rgba(255,255,255,.06); }
   .brandbar .logo{ font-family:'Audiowide',sans-serif; font-size:clamp(15px,4.4vw,20px); letter-spacing:.02em; color:var(--white);
@@ -92,6 +94,65 @@
   #playBtn.playing{ background:radial-gradient(circle at 35% 30%, #1a3d5c, #0c1e2e); color:var(--blue-2);
     box-shadow:0 3px 0 #000, 0 0 20px rgba(63,169,255,.6), inset 0 0 0 1px rgba(63,169,255,.5); }
   .knob-cluster{display:flex; gap:clamp(6px,2.2vw,14px); flex:1; justify-content:space-evenly; min-width:120px;}
+
+  /* ---------- TEMPO: digitale Anzeige statt Drehregler ----------
+     ID-Selektor statt Klasse: .knob-dial (rund, border-radius:50%) steht im
+     Stylesheet weiter unten und würde bei gleicher Klassen-Spezifität sonst
+     gewinnen (Quellreihenfolge entscheidet bei Gleichstand) — daher hier
+     bewusst #tempoChipDial statt .tempo-chip-dial, damit die eckige Form
+     zuverlässig gewinnt, unabhängig von der Regel-Reihenfolge im CSS. */
+  #tempoChipDial{ width:var(--ks,36px); height:var(--ks,36px); border-radius:8px; cursor:pointer;
+    background:var(--lcd-bg); border:1px solid rgba(63,169,255,.3);
+    display:flex; align-items:center; justify-content:center; }
+  #tempoChipDial span{ font-family:'JetBrains Mono',monospace; font-weight:700; font-size:12px;
+    color:var(--lcd-fg); text-shadow:0 0 6px rgba(95,194,255,.55); }
+  #tempoControl:active #tempoChipDial{ transform:scale(.93); }
+
+  #tempoOverlay{ display:none; position:fixed; inset:0; z-index:60;
+    background:linear-gradient(180deg,var(--chassis),var(--chassis-2));
+    padding:14px; padding-top:max(14px, env(safe-area-inset-top));
+    padding-bottom:max(14px, env(safe-area-inset-bottom));
+    flex-direction:column; overflow-y:auto; }
+  #tempoOverlay.open{ display:flex; }
+  #tempoOverlayHead{ display:flex; align-items:center; justify-content:space-between;
+    padding-bottom:12px; border-bottom:1px solid rgba(255,255,255,.06); flex-shrink:0; }
+  #tempoOverlayCloseBtn{ width:36px; height:36px; border-radius:8px; background:var(--panel);
+    border:1px solid rgba(255,255,255,.1); color:var(--blue-2); font-size:16px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; }
+  #tempoOverlayCloseBtn:active{ transform:scale(.92); }
+  #tempoOverlayScreen{ background:var(--lcd-bg); border-radius:12px; padding:clamp(18px,6vh,30px) 10px;
+    text-align:center; margin-top:18px; box-shadow:inset 0 2px 8px rgba(0,0,0,.7); flex-shrink:0; }
+  #tempoOverlayNum{ font-family:'VT323',monospace; font-size:clamp(58px,18vw,84px); color:var(--lcd-fg);
+    text-shadow:0 0 16px rgba(95,194,255,.6); line-height:1; cursor:pointer; }
+  #tempoOverlayNumInput{ display:none; width:100%; background:transparent; border:none; outline:none;
+    font-family:'VT323',monospace; font-size:clamp(58px,18vw,84px); color:var(--lcd-fg);
+    text-shadow:0 0 16px rgba(95,194,255,.6); line-height:1; text-align:center; -moz-appearance:textfield; }
+  #tempoOverlayNumInput.open{ display:block; }
+  #tempoOverlayNumInput::-webkit-outer-spin-button, #tempoOverlayNumInput::-webkit-inner-spin-button{
+    -webkit-appearance:none; margin:0; }
+  #tempoOverlayHint{ text-align:center; font-size:10px; color:var(--dim); letter-spacing:.03em; margin-top:6px; flex-shrink:0; }
+  #tempoClickToggle{ margin-top:16px; text-align:center; font-size:12px; letter-spacing:.04em;
+    color:var(--dim); border:1px solid rgba(255,255,255,.12); background:var(--panel);
+    border-radius:9px; padding:12px 0; cursor:pointer; flex-shrink:0; }
+  #tempoClickToggle.on{ background:rgba(63,169,255,.15); color:var(--blue-2); border-color:rgba(63,169,255,.55);
+    box-shadow:0 0 12px rgba(63,169,255,.25); }
+  #tempoClickToggle:active{ transform:scale(.98); }
+  #tempoOverlayUnit{ font-size:13px; letter-spacing:.2em; color:var(--blue); margin-top:4px; }
+  #tempoOverlayRow{ display:flex; align-items:center; justify-content:center; gap:16px; margin-top:26px; flex-shrink:0; }
+  #tempoOverlayMinus, #tempoOverlayPlus{ width:52px; height:52px; border-radius:12px; background:var(--panel);
+    border:1px solid rgba(255,255,255,.1); color:var(--blue-2); font-size:24px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; }
+  #tempoOverlayMinus:active, #tempoOverlayPlus:active{ transform:scale(.92); }
+  #tempoOverlayTap{ width:104px; height:104px; border-radius:50%; flex-shrink:0;
+    background:radial-gradient(circle at 35% 30%, #1a3d5c, #0c1e2e); border:2px solid rgba(63,169,255,.5);
+    box-shadow:0 0 26px rgba(63,169,255,.4); color:var(--blue-2); font-weight:700; font-size:17px;
+    letter-spacing:.08em; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  #tempoOverlayTap:active{ transform:scale(.96); }
+  #tempoOverlayTapFeedback{ text-align:center; font-size:12px; color:#ffb08a; height:16px; margin-top:10px;
+    font-family:'JetBrains Mono',monospace; flex-shrink:0; }
+  #tempoOverlaySlider{ width:100%; margin-top:22px; accent-color:var(--blue); height:28px; flex-shrink:0; }
+  #tempoOverlaySliderRange{ display:flex; justify-content:space-between; font-size:11px; color:var(--dim);
+    font-family:'JetBrains Mono',monospace; margin-top:-6px; flex-shrink:0; }
   .btn-cluster{display:flex; gap:6px; flex-shrink:0;}
   .chip-btn{ padding:6px 10px; border-radius:7px; border:1px solid rgba(255,255,255,.08); background:var(--panel);
     color:var(--dim); font-weight:600; font-size:clamp(9px,2.3vw,11px); letter-spacing:.05em; cursor:pointer;
@@ -231,7 +292,11 @@
     padding:5px 8px; cursor:pointer; background:transparent; white-space:nowrap; }
   #trimBtn:active{ transform:scale(.94); border-color:rgba(63,169,255,.5); }
   #trimPanel{ display:none; flex-direction:column; gap:6px; background:var(--panel); border-radius:8px; padding:8px 10px; }
-  #trimPanel.open{ display:flex; }
+  /* fixed + hoher z-index: der Trim-Editor wird auch von einem Pad aus dem neuen
+     #padOverlay (z-index:60) heraus geöffnet — ohne das läge er dahinter/unsichtbar,
+     da #padOverlay als Vollbild-Overlay sonst alles darunter verdeckt. */
+  #trimPanel.open{ display:flex; position:fixed; left:14px; right:14px; bottom:14px; z-index:70;
+    box-shadow:0 10px 30px rgba(0,0,0,.6); max-width:492px; margin:0 auto; }
   #trimCanvasWrap{ position:relative; width:100%; height:70px; border-radius:6px; overflow:hidden; background:var(--panel-inset); touch-action:none; }
   #trimCanvas{ position:absolute; inset:0; width:100%; height:100%; display:block; }
   #trimHandle{ position:absolute; top:0; bottom:0; width:12px; margin-left:-6px; cursor:ew-resize; }
@@ -299,10 +364,20 @@
   #patternEmpty{ font-size:11px; color:var(--dim); text-align:center; padding:6px 0; }
 
   /* ---------- SAMPLE-PAD (live, 9 Pads) ---------- */
-  #padSection{ background:var(--panel-inset); border-radius:8px; padding:8px; display:flex; flex-direction:column; gap:6px; }
-  #padHeader{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  #padOverlay{ display:none; position:fixed; inset:0; z-index:60;
+    background:linear-gradient(180deg,var(--chassis),var(--chassis-2));
+    padding:14px; padding-top:max(14px, env(safe-area-inset-top));
+    padding-bottom:max(14px, env(safe-area-inset-bottom));
+    flex-direction:column; gap:10px; overflow-y:auto; }
+  #padOverlay.open{ display:flex; }
+  #padOverlayHead{ display:flex; align-items:center; justify-content:space-between;
+    padding-bottom:12px; border-bottom:1px solid rgba(255,255,255,.06); flex-shrink:0; }
+  #padOverlayCloseBtn{ width:36px; height:36px; border-radius:8px; background:var(--panel);
+    border:1px solid rgba(255,255,255,.1); color:var(--blue-2); font-size:16px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; }
+  #padOverlayCloseBtn:active{ transform:scale(.92); }
+  #padHeader{ display:flex; align-items:center; justify-content:space-between; gap:8px; flex-shrink:0; }
   #padDelayKnobWrap{ display:flex; align-items:center; }
-  #padHeader .ptitle{ font-size:11px; font-weight:700; letter-spacing:.1em; color:var(--dim); text-transform:uppercase; }
   #padQuantizeBtn{ font-size:10px; letter-spacing:.04em; text-transform:uppercase; border:1px solid rgba(63,169,255,.35);
     border-radius:6px; padding:6px 10px; cursor:pointer; background:var(--panel); color:var(--dim); }
   #padQuantizeBtn.on{ background:var(--blue); color:#04121e; border-color:var(--blue); box-shadow:0 0 12px rgba(63,169,255,.5); }
@@ -359,7 +434,7 @@ html,body{min-height:100%;height:100%;}
     <div id="panelMain">
       <div class="screw tl"></div><div class="screw tr"></div><div class="screw bl"></div><div class="screw br"></div>
 
-      <div class="brandtop"><span class="ln"></span><span class="star">✦</span>Drumstar<span class="star">✦</span><span class="ln"></span></div>
+      <div class="brandtop"><span class="ln"></span><img src="./icons/logo-drumstar.png" alt="Drumstar" class="brandtop-logo"><span class="ln"></span></div>
 
       <div class="brandbar">
         <div style="display:flex; align-items:center;">
@@ -379,14 +454,56 @@ html,body{min-height:100%;height:100%;}
 
       <div class="transport">
         <div id="playBtn">▶</div>
-        <div class="knob-cluster" id="globalKnobs"></div>
+        <div class="knob-cluster" id="globalKnobs">
+          <div id="tempoControl" class="knob" role="button" tabindex="0" aria-label="Tempo-Einstellungen öffnen">
+            <div id="tempoChipDial"><span id="tempoChipVal">128</span></div>
+            <div class="knob-label">Tempo</div>
+            <div class="knob-val" style="visibility:hidden;" aria-hidden="true">0</div>
+          </div>
+        </div>
         <div class="btn-cluster">
           <button class="chip-btn" id="randomBtn">Random</button>
           <button class="chip-btn" id="clearBtn">Clear</button>
           <button class="chip-btn" id="patternsToggleBtn">💾 Beats</button>
           <button class="chip-btn" id="exportWavBtn">⬇ WAV</button>
           <button class="chip-btn" id="fillToggleBtn">🥁 Fill</button>
+          <button class="chip-btn" id="padsToggleBtn">🎛️ Pads</button>
         </div>
+      </div>
+
+      <div id="tempoOverlay">
+        <div id="tempoOverlayHead">
+          <span class="lcd l2" style="color:var(--dim); letter-spacing:.15em; text-transform:uppercase;">Tempo</span>
+          <button id="tempoOverlayCloseBtn" aria-label="Schließen">✕</button>
+        </div>
+        <div id="tempoOverlayScreen">
+          <div id="tempoOverlayNum" class="lcd" role="button" tabindex="0" aria-label="Tempo direkt eingeben">128</div>
+          <input id="tempoOverlayNumInput" type="number" inputmode="numeric" pattern="[0-9]*" min="60" max="200" step="1">
+          <div id="tempoOverlayUnit">BPM</div>
+        </div>
+        <div id="tempoOverlayRow">
+          <button id="tempoOverlayMinus" aria-label="Tempo verringern">−</button>
+          <div id="tempoOverlayTap">TAP</div>
+          <button id="tempoOverlayPlus" aria-label="Tempo erhöhen">+</button>
+        </div>
+        <div id="tempoOverlayTapFeedback"></div>
+        <input id="tempoOverlaySlider" type="range" min="60" max="200" value="128">
+        <div id="tempoOverlaySliderRange"><span>60</span><span>200</span></div>
+        <div id="tempoOverlayHint">Zahl antippen zum direkten Eingeben</div>
+        <button id="tempoClickToggle">🔊 Klick (betont die 1)</button>
+      </div>
+
+      <div id="padOverlay">
+        <div id="padOverlayHead">
+          <span class="lcd l2" style="color:var(--dim); letter-spacing:.15em; text-transform:uppercase;">Sample Pad</span>
+          <button id="padOverlayCloseBtn" aria-label="Schließen">✕</button>
+        </div>
+        <div id="padHeader">
+          <div id="padDelayKnobWrap"></div>
+          <button id="padQuantizeBtn" class="on">🎯 Quantize</button>
+        </div>
+        <div id="padHint">Halten = aufnehmen · Tippen = abspielen · ✂ am Pad = Startpunkt trimmen</div>
+        <div id="padGrid"></div>
       </div>
 
       <div id="fillPanel">
@@ -467,16 +584,6 @@ html,body{min-height:100%;height:100%;}
       </div>
 
       <div id="bigGrid"></div>
-
-      <div id="padSection">
-        <div id="padHeader">
-          <span class="ptitle">Sample Pad</span>
-          <div id="padDelayKnobWrap"></div>
-          <button id="padQuantizeBtn" class="on">🎯 Quantize</button>
-        </div>
-        <div id="padHint">Halten = aufnehmen · Tippen = abspielen · ✂ am Pad = Startpunkt trimmen</div>
-        <div id="padGrid"></div>
-      </div>
 
       <footer class="hint">Tap = Step (aus→normal→accent→ghost→ghost soft) · Reihe = Instrument wählen · kleiner Regler = Lautstärke des Sounds · MIC SAMPLE wählen zum Aufnehmen</footer>
       <footer class="legal-footer">
@@ -1491,11 +1598,105 @@ let bpm=128, swing=0, masterVol=0.85, humanize=0;
 const lcdBpm=document.getElementById('lcdBpm');
 const globalKnobs=document.getElementById('globalKnobs');
 [
-  makeKnob({label:'TEMPO', min:60, max:200, value:bpm, fmt:v=>Math.round(v), onChange:v=>{bpm=v; lcdBpm.textContent=Math.round(v)+' BPM'; updateDelayTime();}}),
   makeKnob({label:'SWING', min:0, max:0.6, value:swing, fmt:v=>Math.round(v/0.6*100)+'%', onChange:v=>swing=v}),
   makeKnob({label:'HUMANIZE', min:0, max:1, value:humanize, fmt:v=>Math.round(v*100)+'%', onChange:v=>humanize=v}),
   makeKnob({label:'VOLUME', min:0, max:1, value:masterVol, fmt:v=>Math.round(v*100)+'%', onChange:v=>{masterVol=v; if(master) master.gain.value=v;}}),
 ].forEach(k=>globalKnobs.appendChild(k.el));
+
+// =========================================================================
+// TEMPO — digitale Anzeige statt Drehregler. Ersetzt den früheren TEMPO-Knob:
+// kleine Kachel in der Transport-Leiste (zeigt nur die Zahl, öffnet per Klick
+// ein Vollbild-Overlay), darin Tap-Tempo, ±1-Stepper, Slider (60–200) und
+// Zifferneingabe. setBpm() ist die EINZIGE Stelle, die bpm ändert — von hier
+// aus werden alle Anzeigen (LCD-Kopfzeile, Kachel, Overlay-Ziffer, Slider)
+// synchron gehalten, egal ob Tap/Stepper/Slider/Keypad/Pattern-Load ausgelöst hat.
+function setBpm(v){
+  bpm=Math.min(200, Math.max(60, Math.round(v)));
+  lcdBpm.textContent=bpm+' BPM';
+  tempoChipVal.textContent=bpm;
+  tempoOverlayNum.textContent=bpm;
+  tempoOverlaySlider.value=bpm;
+  if(audioCtx) updateDelayTime();
+}
+const tempoControl=document.getElementById('tempoControl');
+const tempoChipVal=document.getElementById('tempoChipVal');
+const tempoOverlay=document.getElementById('tempoOverlay');
+const tempoOverlayCloseBtn=document.getElementById('tempoOverlayCloseBtn');
+const tempoOverlayNum=document.getElementById('tempoOverlayNum');
+const tempoOverlayNumInput=document.getElementById('tempoOverlayNumInput');
+const tempoOverlayMinus=document.getElementById('tempoOverlayMinus');
+const tempoOverlayPlus=document.getElementById('tempoOverlayPlus');
+const tempoOverlayTap=document.getElementById('tempoOverlayTap');
+const tempoOverlayTapFeedback=document.getElementById('tempoOverlayTapFeedback');
+const tempoOverlaySlider=document.getElementById('tempoOverlaySlider');
+
+function openTempoOverlay(){ tempoOverlay.classList.add('open'); }
+function closeTempoOverlay(){
+  tempoOverlay.classList.remove('open');
+  closeTempoNumInput(false);
+}
+tempoControl.addEventListener('click', openTempoOverlay);
+tempoControl.addEventListener('keydown', e=>{ if(e.key==='Enter' || e.key===' ') openTempoOverlay(); });
+tempoOverlayCloseBtn.addEventListener('click', closeTempoOverlay); // Schließen-Button: immer oben rechts im Overlay-Header
+
+tempoOverlayMinus.addEventListener('click', ()=>setBpm(bpm-1));
+tempoOverlayPlus.addEventListener('click', ()=>setBpm(bpm+1));
+tempoOverlaySlider.addEventListener('input', ()=>setBpm(parseInt(tempoOverlaySlider.value,10)));
+
+// Tap-Tempo: Mittelwert der letzten (max. 8) Tap-Intervalle, Pause >2s setzt zurück.
+let tempoTaps=[];
+let tempoTapResetTimer=null;
+tempoOverlayTap.addEventListener('click', ()=>{
+  const now=performance.now();
+  tempoTaps.push(now);
+  if(tempoTaps.length>1 && (now-tempoTaps[tempoTaps.length-2])>2000) tempoTaps=[now];
+  if(tempoTaps.length>8) tempoTaps.shift();
+  if(tempoTaps.length>=2){
+    const intervals=[];
+    for(let i=1;i<tempoTaps.length;i++) intervals.push(tempoTaps[i]-tempoTaps[i-1]);
+    const avg=intervals.reduce((a,b)=>a+b,0)/intervals.length;
+    setBpm(60000/avg);
+    tempoOverlayTapFeedback.textContent=tempoTaps.length+' Taps erkannt';
+  } else {
+    tempoOverlayTapFeedback.textContent='nochmal tippen…';
+  }
+  clearTimeout(tempoTapResetTimer);
+  tempoTapResetTimer=setTimeout(()=>{ tempoOverlayTapFeedback.textContent=''; tempoTaps=[]; }, 2200);
+});
+
+// Zifferneingabe: Tap auf die große Zahl blendet ein <input type="number"> ein und
+// fokussiert es — auf dem Handy öffnet das die native Ziffern-Tastatur (inputmode="numeric"),
+// statt ein eigenes Nummernfeld nachzubauen. Optisch identisch zur LCD-Ziffer gestylt,
+// damit der Wechsel nicht auffällt.
+function openTempoNumInput(){
+  tempoOverlayNumInput.value=bpm;
+  tempoOverlayNum.style.display='none';
+  tempoOverlayNumInput.classList.add('open');
+  tempoOverlayNumInput.focus();
+  tempoOverlayNumInput.select();
+}
+let tempoNumIgnoreNextBlur=false;
+function closeTempoNumInput(apply){
+  if(apply && tempoOverlayNumInput.value!==''){
+    setBpm(parseInt(tempoOverlayNumInput.value,10));
+  } else if(!apply){
+    tempoNumIgnoreNextBlur=true; // Escape/Abbruch: der folgende programmatische blur() darf NICHT nochmal übernehmen
+  }
+  tempoOverlayNumInput.classList.remove('open');
+  tempoOverlayNum.style.display='';
+  tempoOverlayNumInput.blur();
+}
+tempoOverlayNum.addEventListener('click', openTempoNumInput);
+tempoOverlayNum.addEventListener('keydown', e=>{ if(e.key==='Enter' || e.key===' ') openTempoNumInput(); });
+tempoOverlayNumInput.addEventListener('blur', ()=>{
+  if(tempoNumIgnoreNextBlur){ tempoNumIgnoreNextBlur=false; return; }
+  closeTempoNumInput(true);
+});
+tempoOverlayNumInput.addEventListener('keydown', e=>{
+  if(e.key==='Enter'){ e.preventDefault(); closeTempoNumInput(true); }
+  if(e.key==='Escape'){ e.preventDefault(); closeTempoNumInput(false); }
+});
+setBpm(bpm); // initiale Anzeige synchronisieren
 
 // =========================================================================
 // UI: OVERVIEW — glanceable, Track-Auswahl + Volume-Regler pro Sound
@@ -2247,6 +2448,14 @@ padQuantizeBtn.addEventListener('click', ()=>{
   padQuantizeBtn.classList.toggle('on', padQuantize);
 });
 
+// Sample-Pad-Bereich: eigenes Vollbild-Overlay, gleiches Muster wie #tempoOverlay —
+// über den "🎛️ Pads"-Chip neben Fill aufrufbar, Schließen-Button oben rechts.
+const padsToggleBtn=document.getElementById('padsToggleBtn');
+const padOverlay=document.getElementById('padOverlay');
+const padOverlayCloseBtn=document.getElementById('padOverlayCloseBtn');
+padsToggleBtn.addEventListener('click', ()=> padOverlay.classList.add('open'));
+padOverlayCloseBtn.addEventListener('click', ()=> padOverlay.classList.remove('open'));
+
 // Gemeinsamer Delay-Send für alle 9 Live-Pads (kein Sinn, jedes Pad einzeln zu
 // regeln — anders als Spuren werden Pads meist spontan/live gespielt).
 const padDelayKnobWrap=document.getElementById('padDelayKnobWrap');
@@ -2465,11 +2674,12 @@ function migrateStepsToVelocity(savedSteps, trackId, oldAccentSteps, targetLen){
   return out;
 }
 function applyPatternData(data){
-  bpm=data.bpm; swing=data.swing; humanize=data.humanize!=null ? data.humanize : 0; // alte Patterns: 0 = kein Humanize
-  lcdBpm.textContent=Math.round(bpm)+' BPM';
-  globalKnobs.innerHTML='';
+  swing=data.swing; humanize=data.humanize!=null ? data.humanize : 0; // alte Patterns: 0 = kein Humanize
+  setBpm(data.bpm); // aktualisiert bpm + LCD-Kopfzeile + Tempo-Kachel + Overlay-Ziffer/-Slider synchron
+  // Nur die 3 dynamisch erzeugten Drehregler entfernen — #tempoControl ist festes Markup
+  // (erstes Kind von globalKnobs) und darf hier NICHT mit gelöscht werden.
+  Array.from(globalKnobs.children).forEach(el=>{ if(el.id!=='tempoControl') el.remove(); });
   [
-    makeKnob({label:'TEMPO', min:60, max:200, value:bpm, fmt:v=>Math.round(v), onChange:v=>{bpm=v; lcdBpm.textContent=Math.round(v)+' BPM'; updateDelayTime();}}),
     makeKnob({label:'SWING', min:0, max:0.6, value:swing, fmt:v=>Math.round(v/0.6*100)+'%', onChange:v=>swing=v}),
     makeKnob({label:'HUMANIZE', min:0, max:1, value:humanize, fmt:v=>Math.round(v*100)+'%', onChange:v=>humanize=v}),
     makeKnob({label:'VOLUME', min:0, max:1, value:masterVol, fmt:v=>Math.round(v*100)+'%', onChange:v=>{masterVol=v; if(master) master.gain.value=v;}}),
@@ -2774,7 +2984,34 @@ function stepDuration(){ return 60/bpm/4; }
 function updateDelayTime(){
   if(delayNode) delayNode.delayTime.setTargetAtTime(stepDuration()*4, audioCtx.currentTime, 0.01);
 }
+
+// ---- Metronom-Klick (optional, unabhängig vom Pattern) ----
+// Ein-/ausschaltbar über #tempoClickToggle im Tempo-Overlay. Klingt auf jeder
+// Viertelnote (alle 4 Steps), die "1" jedes 4/4-Takts (Step % 16 === 0) wird
+// heller/lauter betont. Bewusst NICHT über getBus()/Hall/Delay geroutet und
+// NICHT von Humanize/Swing beeinflusst — ein Metronom-Klick soll als feste
+// Referenz dienen, nicht Teil des musikalischen Signals sein. Läuft nur live
+// (scheduleStep), nicht im Offline-WAV-Export, da renderPatternToWav() einen
+// eigenen Trigger-Loop nutzt und scheduleStep() dafür nicht aufruft.
+let metronomeClickEnabled=false;
+const tempoClickToggle=document.getElementById('tempoClickToggle');
+tempoClickToggle.addEventListener('click', ()=>{
+  metronomeClickEnabled=!metronomeClickEnabled;
+  tempoClickToggle.classList.toggle('on', metronomeClickEnabled);
+});
+function playMetronomeClick(time, accented){
+  if(!audioCtx) return;
+  const osc=audioCtx.createOscillator(); osc.type='square';
+  osc.frequency.value = accented ? 1800 : 1100;
+  const g=audioCtx.createGain();
+  g.gain.setValueAtTime(accented ? 0.5 : 0.3, time);
+  g.gain.exponentialRampToValueAtTime(0.001, time+0.045);
+  osc.connect(g).connect(master); // direkt auf master, kein Hall/Delay-Send
+  osc.start(time); osc.stop(time+0.06);
+}
+
 function scheduleStep(step,time){
+  if(metronomeClickEnabled && step%4===0) playMetronomeClick(time, step%16===0);
   const anySolo=TRACKS.some(t=>t.solo);
   const fillWindowStart=PATTERN_LENGTH-activeFillLength;
   const inFillWindow = currentLoopIsFill && fillOverride && step>=fillWindowStart;
