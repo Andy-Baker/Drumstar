@@ -50,23 +50,27 @@
   #panelMain::before{ content:""; position:absolute; inset:0; pointer-events:none; z-index:0;
     background:repeating-linear-gradient(115deg, rgba(255,255,255,.012) 0, rgba(255,255,255,.012) 1px, transparent 1px, transparent 4px); }
   #panelMain > *{ position:relative; z-index:1; flex-shrink:0; }
+  /* Ausnahme: Schrauben brauchen ihre eigene absolute Positionierung an den
+     Panel-Ecken — die generische Regel oben (ID-Selektor) würde sie sonst
+     trotz .screw{position:absolute} auf position:relative zurückwerfen
+     (ID schlägt Klasse unabhängig von der Reihenfolge im Stylesheet). Betraf
+     bisher unbemerkt bl/br, da sie direkte Kinder von #panelMain sind. */
+  #panelMain > .screw{ position:absolute; }
 
   .screw{ position:absolute; width:7px; height:7px; border-radius:50%; z-index:2;
     background:radial-gradient(circle at 35% 30%, #cfd3da, #4a4e57 55%, #16171b 100%); box-shadow:0 1px 1px rgba(0,0,0,.7); }
   .screw::after{ content:""; position:absolute; top:50%; left:14%; width:72%; height:1px; background:rgba(0,0,0,.6); transform:rotate(35deg); }
-  .screw.tl{top:6px;left:6px;} .screw.tr{top:6px;right:6px;} .screw.bl{bottom:6px;left:6px;} .screw.br{bottom:6px;right:6px;}
+  .screw.bl{bottom:6px;left:6px;} .screw.br{bottom:6px;right:6px;}
 
-  /* ---------- Nameplate ---------- */
-  .brandtop{
-    text-align:center; font-family:'Rajdhani',sans-serif; font-weight:700;
-    font-size:clamp(9px,2.4vw,11px); letter-spacing:.4em; text-indent:.4em;
-    color:var(--dim); padding:3px 0 1px;
-    display:flex; align-items:center; justify-content:center; gap:8px;
-  }
+  /* ---------- Nameplate: Logo bleibt zentriert wie vorher, nur größer.
+     Die oberen zwei Schrauben sitzen jetzt links/rechts NEBEN dem Logo samt
+     Streifen (nicht mehr oben an den Panel-Ecken mit Lücke zum Logo darunter). ---------- */
+  .brandtop{ position:relative; display:flex; align-items:center; justify-content:center; gap:8px; padding:5px 0 3px; }
+  .brandtop .screw.tl{ top:50%; left:2px; transform:translateY(-50%); }
+  .brandtop .screw.tr{ top:50%; right:2px; transform:translateY(-50%); }
   .brandtop .ln{ flex:1; max-width:56px; height:1px;
     background:linear-gradient(90deg, transparent, rgba(63,169,255,.4), transparent); }
-  .brandtop .star{ color:var(--blue); font-size:8px; text-shadow:0 0 8px rgba(63,169,255,.8); }
-  .brandtop-logo{ height:20px; width:auto; flex-shrink:0;
+  .header-logo{ height:clamp(32px,9.5vw,42px); width:auto; flex-shrink:0;
     filter:drop-shadow(0 0 6px rgba(63,169,255,.45)); }
 
   .brandbar{ display:flex; align-items:center; justify-content:space-between; padding:1px 8px 4px; border-bottom:1px solid rgba(255,255,255,.06); }
@@ -158,7 +162,7 @@
     color:var(--dim); font-weight:600; font-size:clamp(9px,2.3vw,11px); letter-spacing:.05em; cursor:pointer;
     text-transform:uppercase; white-space:nowrap; }
   .chip-btn:active{transform:scale(.93); color:var(--white); border-color:rgba(63,169,255,.4);}
-  .chip-btn.on{ background:rgba(255,107,53,.25); color:#ffb08a; border-color:rgba(255,107,53,.6); box-shadow:0 0 10px rgba(255,107,53,.35); }
+  .chip-btn.on{ background:rgba(63,169,255,.2); color:var(--blue-2); border-color:rgba(63,169,255,.55); box-shadow:0 0 10px rgba(63,169,255,.3); }
 
   #kitRow{ display:flex; gap:6px; overflow-x:auto; padding:1px 1px 2px; -webkit-overflow-scrolling:touch; }
 
@@ -313,45 +317,70 @@
   #trimApplyBtn{ border-color:rgba(63,169,255,.4); color:var(--blue-2); }
   #trimPreviewBtn:active, #trimApplyBtn:active, #trimCancelBtn:active{ transform:scale(.94); }
 
-  /* ---------- PATTERN-SPEICHER-PANEL ---------- */
-  /* ---------- FILL-IN-PANEL ---------- */
-  #fillPanel{ display:none; flex-direction:column; gap:8px; background:var(--panel); border-radius:8px; padding:8px 10px; }
-  #fillPanel.open{ display:flex; }
-  .fillRow{ display:flex; align-items:center; gap:8px; }
-  .fillRow-wrap{ align-items:flex-start; }
-  .fillLabel{ font-size:10px; color:var(--dim); text-transform:uppercase; letter-spacing:.05em; min-width:44px; }
-  .fillChips{ display:flex; gap:6px; flex:1; }
-  .fillChips-wrap{ flex-wrap:wrap; }
-  #fillIntensityKnobWrap{ display:flex; align-items:center; }
-  .fill-chip{ flex:1; padding:6px 0; border-radius:7px; border:1px solid rgba(255,255,255,.08); background:var(--panel-inset);
-    color:var(--dim); font-weight:700; font-size:11px; text-align:center; cursor:pointer; }
-  .fill-chip.active{ border-color:rgba(255,107,53,.5); background:rgba(255,107,53,.15); color:#ffb08a; }
+  /* ---------- FILL-IN-OVERLAY (Vollbild, gleiche Chrome wie Tempo/Pads) ---------- */
+  #fillOverlay{ display:none; position:fixed; inset:0; z-index:60;
+    background:linear-gradient(180deg,var(--chassis),var(--chassis-2));
+    padding:14px; padding-top:max(14px, env(safe-area-inset-top));
+    padding-bottom:max(14px, env(safe-area-inset-bottom));
+    flex-direction:column; gap:18px; overflow-y:auto; }
+  #fillOverlay.open{ display:flex; }
+  #fillOverlayHead{ display:flex; align-items:center; justify-content:space-between;
+    padding-bottom:12px; border-bottom:1px solid rgba(255,255,255,.06); flex-shrink:0; }
+  #fillOverlayCloseBtn{ width:36px; height:36px; border-radius:8px; background:var(--panel);
+    border:1px solid rgba(255,255,255,.1); color:var(--blue-2); font-size:16px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; }
+  #fillOverlayCloseBtn:active{ transform:scale(.92); }
+  .fillSection{ flex-shrink:0; }
+  .fillSectionLabel{ font-size:11px; color:var(--dim); text-transform:uppercase; letter-spacing:.08em; margin-bottom:8px; }
+  .fillChips{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+  .fillChips-wrap{ grid-template-columns:repeat(2,1fr); }
+  #fillIntensitySlider{ width:100%; accent-color:var(--blue); height:28px; }
+  #fillIntensityValue{ text-align:right; font-size:11px; color:var(--blue-2); font-family:'JetBrains Mono',monospace; margin-top:-6px; }
+  .fill-chip{ padding:14px 0; border-radius:9px; border:1px solid rgba(255,255,255,.1); background:var(--panel);
+    color:var(--metal); font-weight:700; font-size:15px; text-align:center; cursor:pointer; }
+  .fill-chip.active{ border-color:rgba(63,169,255,.55); background:rgba(63,169,255,.15); color:var(--blue-2); }
   .fill-chip:active{ transform:scale(.94); }
-  .fill-style-chip{ flex:0 0 auto; padding:6px 9px; border-radius:7px; border:1px solid rgba(255,255,255,.08); background:var(--panel-inset);
-    color:var(--dim); font-weight:700; font-size:10px; text-align:center; cursor:pointer; }
-  .fill-style-chip.active{ border-color:rgba(255,107,53,.5); background:rgba(255,107,53,.15); color:#ffb08a; }
+  .fill-style-chip{ padding:13px 0; border-radius:9px; border:1px solid rgba(255,255,255,.1); background:var(--panel);
+    color:var(--metal); font-weight:700; font-size:12px; text-align:center; cursor:pointer; }
+  .fill-style-chip.active{ border-color:rgba(63,169,255,.55); background:rgba(63,169,255,.15); color:var(--blue-2); }
   .fill-style-chip:active{ transform:scale(.94); }
-  #fillEnableBtn{ font-size:10px; letter-spacing:.04em; text-transform:uppercase; border:1px solid rgba(255,107,53,.4);
-    border-radius:6px; padding:7px 10px; cursor:pointer; background:var(--panel-inset); color:var(--dim); }
-  #fillEnableBtn.on{ background:rgba(255,107,53,.18); color:#ffb08a; border-color:rgba(255,107,53,.6); }
-  #fillEnableBtn:active{ transform:scale(.96); }
+  #fillEnableBtn{ flex-shrink:0; font-size:13px; font-weight:700; letter-spacing:.04em; text-transform:uppercase;
+    border:1px solid rgba(63,169,255,.4); border-radius:10px; padding:14px 0; cursor:pointer;
+    background:var(--panel); color:var(--dim); }
+  #fillEnableBtn.on{ background:rgba(63,169,255,.18); color:var(--blue-2); border-color:rgba(63,169,255,.6);
+    box-shadow:0 0 12px rgba(63,169,255,.25); }
+  #fillEnableBtn:active{ transform:scale(.98); }
 
-  #patternsPanel{ display:none; flex-direction:column; gap:8px; background:var(--panel); border-radius:8px; padding:8px 10px; }
-  #patternsPanel.open{ display:flex; }
-  #patternSaveRow{ display:flex; gap:6px; }
+  #patternsOverlay{ display:none; position:fixed; inset:0; z-index:60;
+    background:linear-gradient(180deg,var(--chassis),var(--chassis-2));
+    padding:14px; padding-top:max(14px, env(safe-area-inset-top));
+    padding-bottom:max(14px, env(safe-area-inset-bottom));
+    flex-direction:column; gap:10px; overflow-y:auto; }
+  #patternsOverlay.open{ display:flex; }
+  #patternsOverlayHead{ display:flex; align-items:center; justify-content:space-between;
+    padding-bottom:12px; border-bottom:1px solid rgba(255,255,255,.06); flex-shrink:0; }
+  #patternsOverlayCloseBtn{ width:36px; height:36px; border-radius:8px; background:var(--panel);
+    border:1px solid rgba(255,255,255,.1); color:var(--blue-2); font-size:16px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; }
+  #patternsOverlayCloseBtn:active{ transform:scale(.92); }
+  #patternSaveRow{ display:flex; gap:6px; flex-shrink:0; }
   #patternNameInput{ flex:1; min-width:0; background:var(--panel-inset); border:1px solid rgba(255,255,255,.12); border-radius:6px;
     padding:7px 9px; color:var(--white); font-family:'Rajdhani',sans-serif; font-size:13px; }
   #patternNameInput::placeholder{ color:var(--dim); }
   #patternSaveBtn{ font-size:10px; letter-spacing:.04em; text-transform:uppercase; border:1px solid rgba(63,169,255,.4);
     border-radius:6px; padding:7px 12px; cursor:pointer; background:rgba(63,169,255,.12); color:var(--blue-2); white-space:nowrap; }
   #patternSaveBtn:active{ transform:scale(.94); }
-  #patternIORow{ display:flex; gap:6px; }
+  #exportWavBtn{ flex-shrink:0; font-size:12px; letter-spacing:.04em; text-transform:uppercase; font-weight:700;
+    border:1px solid rgba(63,169,255,.4); border-radius:9px; padding:12px 0; cursor:pointer;
+    background:rgba(63,169,255,.12); color:var(--blue-2); }
+  #exportWavBtn:active{ transform:scale(.98); }
+  #patternIORow{ display:flex; gap:6px; flex-shrink:0; }
   #patternIORow button{ flex:1; font-size:10px; letter-spacing:.04em; text-transform:uppercase; border:1px solid rgba(255,255,255,.12);
     border-radius:6px; padding:7px 9px; cursor:pointer; background:var(--panel-inset); color:var(--dim); white-space:nowrap; }
   #patternIORow button:active{ transform:scale(.96); border-color:rgba(63,169,255,.5); color:var(--blue-2); }
-  #patternIOStatus{ font-size:10px; color:var(--blue-2); font-family:'JetBrains Mono',monospace; letter-spacing:.02em; min-height:12px; text-align:center; }
+  #patternIOStatus{ font-size:10px; color:var(--blue-2); font-family:'JetBrains Mono',monospace; letter-spacing:.02em; min-height:12px; text-align:center; flex-shrink:0; }
   #patternIOStatus.err{ color:#ff9d7a; }
-  #patternList{ display:flex; flex-direction:column; gap:5px; max-height:180px; overflow-y:auto; }
+  #patternList{ display:flex; flex-direction:column; gap:5px; flex:1; overflow-y:auto; }
   .pattern-row{ display:flex; align-items:center; justify-content:space-between; gap:6px;
     background:var(--panel-inset); border-radius:6px; padding:6px 8px; }
   .pattern-row .pname{ font-size:12px; color:var(--white); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; }
@@ -432,9 +461,9 @@ html,body{min-height:100%;height:100%;}
   <div id="unit">
     <div class="wood-grain"></div>
     <div id="panelMain">
-      <div class="screw tl"></div><div class="screw tr"></div><div class="screw bl"></div><div class="screw br"></div>
+      <div class="screw bl"></div><div class="screw br"></div>
 
-      <div class="brandtop"><span class="ln"></span><img src="./icons/logo-drumstar.png" alt="Drumstar" class="brandtop-logo"><span class="ln"></span></div>
+      <div class="brandtop"><div class="screw tl"></div><span class="ln"></span><img src="./icons/logo-drumstar.png" alt="Drumstar" class="header-logo"><span class="ln"></span><div class="screw tr"></div></div>
 
       <div class="brandbar">
         <div style="display:flex; align-items:center;">
@@ -465,7 +494,6 @@ html,body{min-height:100%;height:100%;}
           <button class="chip-btn" id="randomBtn">Random</button>
           <button class="chip-btn" id="clearBtn">Clear</button>
           <button class="chip-btn" id="patternsToggleBtn">💾 Beats</button>
-          <button class="chip-btn" id="exportWavBtn">⬇ WAV</button>
           <button class="chip-btn" id="fillToggleBtn">🥁 Fill</button>
           <button class="chip-btn" id="padsToggleBtn">🎛️ Pads</button>
         </div>
@@ -506,31 +534,41 @@ html,body{min-height:100%;height:100%;}
         <div id="padGrid"></div>
       </div>
 
-      <div id="fillPanel">
-        <div class="fillRow">
-          <span class="fillLabel">Länge</span>
-          <div class="fillChips" id="fillLenChips"></div>
-        </div>
-        <div class="fillRow">
-          <span class="fillLabel">Alle</span>
-          <div class="fillChips" id="fillEveryChips"></div>
-        </div>
-        <div class="fillRow">
-          <span class="fillLabel">Intensität</span>
-          <div id="fillIntensityKnobWrap"></div>
-        </div>
-        <div class="fillRow fillRow-wrap">
-          <span class="fillLabel">Stile</span>
-          <div class="fillChips fillChips-wrap" id="fillStyleChips"></div>
+      <div id="fillOverlay">
+        <div id="fillOverlayHead">
+          <span class="lcd l2" style="color:var(--dim); letter-spacing:.15em; text-transform:uppercase;">Fill</span>
+          <button id="fillOverlayCloseBtn" aria-label="Schließen">✕</button>
         </div>
         <button id="fillEnableBtn" class="on">Fill aktiv</button>
+        <div class="fillSection">
+          <div class="fillSectionLabel">Länge</div>
+          <div class="fillChips" id="fillLenChips"></div>
+        </div>
+        <div class="fillSection">
+          <div class="fillSectionLabel">Alle</div>
+          <div class="fillChips" id="fillEveryChips"></div>
+        </div>
+        <div class="fillSection">
+          <div class="fillSectionLabel">Intensität</div>
+          <input id="fillIntensitySlider" type="range" min="0" max="100" value="50">
+          <div id="fillIntensityValue">50%</div>
+        </div>
+        <div class="fillSection">
+          <div class="fillSectionLabel">Stile</div>
+          <div class="fillChips fillChips-wrap" id="fillStyleChips"></div>
+        </div>
       </div>
 
-      <div id="patternsPanel">
+      <div id="patternsOverlay">
+        <div id="patternsOverlayHead">
+          <span class="lcd l2" style="color:var(--dim); letter-spacing:.15em; text-transform:uppercase;">Beats</span>
+          <button id="patternsOverlayCloseBtn" aria-label="Schließen">✕</button>
+        </div>
         <div id="patternSaveRow">
           <input type="text" id="patternNameInput" placeholder="Name für aktuellen Beat…" maxlength="40">
           <button id="patternSaveBtn">Speichern</button>
         </div>
+        <button id="exportWavBtn">⬇ Als WAV exportieren</button>
         <div id="patternIORow">
           <button id="patternExportAllBtn">⬇ Alle exportieren</button>
           <button id="patternImportBtn">⬆ Import</button>
@@ -2755,7 +2793,8 @@ async function listPatternsFromIndexedDB(){
   });
 }
 
-const patternsPanel=document.getElementById('patternsPanel');
+const patternsOverlay=document.getElementById('patternsOverlay');
+const patternsOverlayCloseBtn=document.getElementById('patternsOverlayCloseBtn');
 const patternsToggleBtn=document.getElementById('patternsToggleBtn');
 const exportWavBtn=document.getElementById('exportWavBtn');
 exportWavBtn.addEventListener('click', async ()=>{
@@ -2801,8 +2840,8 @@ async function refreshPatternList(){
     const loadBtn=document.createElement('button'); loadBtn.className='pload'; loadBtn.textContent='Laden';
     loadBtn.addEventListener('click', async ()=>{
       const data=await loadPatternFromIndexedDB(item.name);
-      if(data) applyPatternData(data);
-      patternsPanel.classList.remove('open');
+      if(data){ applyPatternData(data); rememberLastPattern(item.name); }
+      patternsOverlay.classList.remove('open');
     });
     const exportBtn=document.createElement('button'); exportBtn.textContent='⬇'; exportBtn.title='Diesen Beat als JSON exportieren';
     exportBtn.addEventListener('click', (e)=>{ e.stopPropagation(); exportSinglePattern(item); });
@@ -2814,9 +2853,10 @@ async function refreshPatternList(){
   });
 }
 patternsToggleBtn.addEventListener('click', ()=>{
-  patternsPanel.classList.toggle('open');
-  if(patternsPanel.classList.contains('open')) refreshPatternList();
+  patternsOverlay.classList.add('open');
+  refreshPatternList();
 });
+patternsOverlayCloseBtn.addEventListener('click', ()=> patternsOverlay.classList.remove('open'));
 
 // =========================================================================
 // PATTERN-EXPORT/IMPORT — Beats als JSON-Datei sichern bzw. wieder einlesen.
@@ -2900,9 +2940,10 @@ patternImportInput.addEventListener('change', async (e)=>{
   }
 });
 
-// ---- Fill-In-Panel ----
+// ---- Fill-In-Overlay ----
 const fillToggleBtn=document.getElementById('fillToggleBtn');
-const fillPanel=document.getElementById('fillPanel');
+const fillOverlay=document.getElementById('fillOverlay');
+const fillOverlayCloseBtn=document.getElementById('fillOverlayCloseBtn');
 const fillLenChips=document.getElementById('fillLenChips');
 const fillEveryChips=document.getElementById('fillEveryChips');
 const fillEnableBtn=document.getElementById('fillEnableBtn');
@@ -2927,10 +2968,16 @@ FILL_EVERY_OPTIONS.forEach(n=>{
   });
   fillEveryChipEls[n]=c; fillEveryChips.appendChild(c);
 });
-const fillIntensityKnobWrap=document.getElementById('fillIntensityKnobWrap');
-const fillIntensityKnobObj=makeKnob({size:'24px', min:0, max:1, value:fillIntensity, fmt:v=>Math.round(v*100)+'%',
-  onChange:v=>{ fillIntensity=v; }});
-fillIntensityKnobWrap.appendChild(fillIntensityKnobObj.el);
+// Intensität: Slider statt Knob — auf dem Handy leichter zu treffen als ein
+// Drehregler, gerade in einem Vollbild-Overlay mit viel horizontalem Platz.
+const fillIntensitySlider=document.getElementById('fillIntensitySlider');
+const fillIntensityValue=document.getElementById('fillIntensityValue');
+fillIntensitySlider.value=Math.round(fillIntensity*100);
+fillIntensityValue.textContent=fillIntensitySlider.value+'%';
+fillIntensitySlider.addEventListener('input', ()=>{
+  fillIntensity=parseInt(fillIntensitySlider.value,10)/100;
+  fillIntensityValue.textContent=fillIntensitySlider.value+'%';
+});
 
 // ---- Stil-Auswahl-Chips: mehrere gleichzeitig aktivierbar, mindestens einer
 // muss immer an bleiben (sonst hätte der Zufall keine Auswahl mehr) ----
@@ -2949,21 +2996,21 @@ FILL_STYLE_INFO.forEach(({id,label})=>{
 });
 
 fillEnableBtn.classList.toggle('on', fillEnabled);
-fillToggleBtn.classList.toggle('on', fillEnabled); // Fill-Button im Transport-Bereich spiegelt nur den Aktiv-Zustand, blinkt nicht mehr pro Step
+fillToggleBtn.classList.toggle('on', fillEnabled); // Fill-Chip im Transport-Bereich spiegelt nur den Aktiv-Zustand, blinkt nicht mehr pro Step
 fillEnableBtn.addEventListener('click', ()=>{
   fillEnabled=!fillEnabled;
   fillEnableBtn.classList.toggle('on', fillEnabled);
   fillEnableBtn.textContent = fillEnabled ? 'Fill aktiv' : 'Fill aus';
   fillToggleBtn.classList.toggle('on', fillEnabled);
 });
-fillToggleBtn.addEventListener('click', ()=>{
-  fillPanel.classList.toggle('open');
-});
+fillToggleBtn.addEventListener('click', ()=> fillOverlay.classList.add('open'));
+fillOverlayCloseBtn.addEventListener('click', ()=> fillOverlay.classList.remove('open'));
 
 patternSaveBtn.addEventListener('click', async ()=>{
   const name=patternNameInput.value.trim();
   if(!name) return;
   await savePatternToIndexedDB(collectPatternData(name));
+  rememberLastPattern(name);
   patternNameInput.value='';
   refreshPatternList();
 });
@@ -3124,8 +3171,60 @@ function visualLoop(){
   renderLengthChips();
 })();
 
+// =========================================================================
+// STANDARD-BEATS (optional, per default-beats.json) + "ZULETZT GEÖFFNET"
+// =========================================================================
+// localStorage statt IndexedDB für diese beiden kleinen Zustände — synchron
+// verfügbar, kein eigener DB-Store nötig für zwei simple Werte.
+const LAST_PATTERN_KEY='mrm44_lastPatternName';
+function rememberLastPattern(name){
+  try{ localStorage.setItem(LAST_PATTERN_KEY, name); } catch(err){ /* z.B. privater Modus ohne localStorage */ }
+}
+
+// Importiert ./default-beats.json (gleiches Format wie ein normaler Export)
+// NUR, wenn noch überhaupt keine Beats gespeichert sind — also bei einer
+// frischen Installation / einem neuen Gerät, nicht bei jedem Neustart.
+// Bewusst so eingeschränkt: bei jedem Start neu zu importieren würde bei
+// eigenen Änderungen an gleichnamigen Beats laufend Namenskonflikte /
+// umbenannte Duplikate erzeugen. Wer die Datei später aktualisiert, nutzt
+// weiterhin den bestehenden "⬆ Import"-Button im Beats-Fenster.
+async function importDefaultBeatsIfEmpty(){
+  try{
+    const existing=await listPatternsFromIndexedDB();
+    if(existing.length>0) return; // schon Beats vorhanden -> nichts tun
+    const res=await fetch('./default-beats.json', {cache:'no-store'});
+    if(!res.ok) return; // Datei existiert nicht — kein Fehler, einfach überspringen
+    const parsed=await res.json();
+    const incoming = Array.isArray(parsed) ? parsed
+      : Array.isArray(parsed.patterns) ? parsed.patterns
+      : (parsed && Array.isArray(parsed.tracks)) ? [parsed]
+      : null;
+    if(!incoming || incoming.length===0) return;
+    for(const p of incoming){
+      if(!p || !p.name || !Array.isArray(p.tracks)) continue;
+      await savePatternToIndexedDB(Object.assign({}, p, { savedAt: p.savedAt || Date.now() }));
+    }
+  } catch(err){ console.warn('Standard-Beats konnten nicht geladen werden:', err); }
+}
+
+// Lädt beim Start den zuletzt geöffneten Beat (falls vorhanden), NACHDEM die
+// Standard-Beats ggf. eingespielt wurden. Bleibt beim eingebauten Seed-Pattern,
+// wenn es keinen "zuletzt geöffneten" Beat gibt oder er nicht mehr existiert
+// (z.B. zwischenzeitlich gelöscht).
+async function restoreLastOpenedOrSeed(){
+  await importDefaultBeatsIfEmpty();
+  let lastName=null;
+  try{ lastName=localStorage.getItem(LAST_PATTERN_KEY); } catch(err){ /* ignore */ }
+  if(!lastName) return;
+  try{
+    const data=await loadPatternFromIndexedDB(lastName);
+    if(data) applyPatternData(data);
+  } catch(err){ console.warn('Zuletzt geöffneter Beat konnte nicht geladen werden:', err); }
+}
+
 loadSampleFromIndexedDB();
 loadPadsFromIndexedDB();
+restoreLastOpenedOrSeed();
 
 })();
 </script>
