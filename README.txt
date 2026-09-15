@@ -1,11 +1,13 @@
-MRM-44 · Drumstar
+Browser DAW 🎛️ MRM-44 · Drumstar
 
-This project uses the current rm909-v25.html as the source and a PWA-ready index.html.
+An experiment in AI-assisted music software development — built from a smartphone.
 
-GitHub Pages:
-1. Upload index.html, manifest.webmanifest, sw.js and the icons/ folder to the repository root.
-2. rm909-v25.html is kept as the original backup/current standalone version.
-3. Enable GitHub Pages from the main branch and repository root.
-4. Open the Pages URL on Android Chrome and use Add to Home screen / Install app.
+This project started as a personal experiment: How far can I get building a real application using only a smartphone, Claude, and free tools?
 
-The app itself remains a single HTML application; no build step is required.
+The result is a browser-based DAW (Digital Audio Workstation) that runs directly in the browser and is published via GitHub Pages. The goal is not only to build a useful music tool, but also to explore what modern web technologies and AI-assisted development can achieve without a traditional development environment.
+
+Another important goal is to push the current boundaries of audio in the browser — from timing, sequencing and sound generation to more advanced features that traditionally required dedicated desktop software.
+
+The project will evolve over time. A backend is planned for features such as saving and sharing beats, patterns and complete songs.
+
+Built with: JavaScript, Web Audio API, HTML/CSS, GitHub Pages & Claude.
