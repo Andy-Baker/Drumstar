@@ -43,19 +43,74 @@
 
   #panelMain{
     flex:1; min-width:0; background:linear-gradient(180deg,var(--chassis),var(--chassis-2));
-    border-radius:8px; padding:6px 9px 8px;
-    display:flex; flex-direction:column; gap:6px; position:relative;
+    border-radius:8px; position:relative;
+    display:flex; flex-direction:column;
     overflow-y:auto; overflow-x:hidden;
   }
+  /* #panelContent trägt jetzt das komplette Innenpadding (inkl. Bottom-Reserve für
+     die Tab-Bar) — #panelMain selbst bleibt padding-los, damit #bottomTabBar als
+     direktes Kind wirklich über die volle Breite geht UND als "position:sticky"
+     korrekt am unteren Rand kleben bleibt (sticky innerhalb eines gepolsterten
+     Containers hätte den seitlichen Rand nicht losbekommen; position:absolute
+     wiederum scrollt bei einem scrollenden Vorfahren MIT statt fix zu bleiben —
+     beides ausprobiert, beides falsch. sticky + ungepolstertes direktes Kind ist
+     die einzige Kombination, die beides gleichzeitig kann). */
+  #panelContent{ padding:6px 9px calc(66px + env(safe-area-inset-bottom,0px));
+    display:flex; flex-direction:column; gap:6px; position:relative; }
   #panelMain::before{ content:""; position:absolute; inset:0; pointer-events:none; z-index:0;
     background:repeating-linear-gradient(115deg, rgba(255,255,255,.012) 0, rgba(255,255,255,.012) 1px, transparent 1px, transparent 4px); }
   #panelMain > *{ position:relative; z-index:1; flex-shrink:0; }
+
+  /* ---------- TAB-SYSTEM (löst die 5 Vollbild-Overlays ab) ----------
+     Statt "Dialog öffnen/schließen" jetzt "Ansicht wechseln": #tabContent hält
+     alle 5 Panels (Pattern/Fill/Pads/Mixer/Song) im normalen Seitenfluss,
+     .tab-panel ist standardmäßig unsichtbar, .open zeigt genau eines davon —
+     switchTab() im Script sorgt dafür, dass immer nur eins die Klasse trägt.
+     Kein position:fixed mehr nötig, kein Schließen-Button, kein z-index-Kampf
+     mit der Bottom-Bar. */
+  #tabContent{ display:flex; flex-direction:column; }
+  .tab-panel{ display:none; gap:10px; }
+  .tab-panel.open{ display:flex; }
+  #tabPattern{ flex-direction:column; gap:6px; }
+
+  /* ---------- LCD: zweizeilig, beide Zeilen antippbar (Kit / Pattern) ---------- */
+  .lcd-row{ display:flex; align-items:center; justify-content:space-between; gap:6px; }
+  .lcd-row2{ margin-top:4px; padding-top:4px; border-top:1px solid rgba(95,194,255,.12); justify-content:flex-start; }
+  .lcd-tap{ background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; gap:5px;
+    color:var(--lcd-fg); font-family:'VT323',monospace; -webkit-tap-highlight-color:transparent; }
+  .lcd-tap:active{ opacity:.7; }
+  .lcd-chev{ width:12px; height:12px; flex-shrink:0; opacity:.75; }
+  .lcd-ico{ width:13px; height:13px; flex-shrink:0; opacity:.85; }
+  #lcdPatternName{ max-width:44vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+  /* ---------- KIT-PICKER (Modal, ersetzt die permanente Kit-Chip-Zeile) ---------- */
+  #kitPickerOverlay{ display:none; position:fixed; inset:0; z-index:60;
+    background:linear-gradient(180deg,var(--chassis),var(--chassis-2));
+    padding:14px; padding-top:max(14px, env(safe-area-inset-top));
+    padding-bottom:max(14px, env(safe-area-inset-bottom));
+    flex-direction:column; overflow-y:auto; }
+  #kitPickerOverlay.open{ display:flex; }
+  #kitPickerHead{ display:flex; align-items:center; justify-content:space-between;
+    padding-bottom:12px; border-bottom:1px solid rgba(255,255,255,.06); flex-shrink:0; margin-bottom:12px; }
+  #kitPickerCloseBtn{ width:36px; height:36px; border-radius:8px; background:var(--panel);
+    border:1px solid rgba(255,255,255,.1); color:var(--blue-2); font-size:16px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; }
+  #kitPickerCloseBtn:active{ transform:scale(.92); }
+  #kitPickerList{ display:flex; flex-direction:column; gap:6px; }
+  #kitPickerList .kit-chip{ display:flex; flex-direction:column; gap:2px; padding:12px 14px; min-width:0; }
+
+  /* ---------- Bottom-Bar: dauerhafte Markierung des aktiven Tabs (zusätzlich
+     zum :active-Press-Feedback, das nur während des Antippens gilt) ---------- */
+  .tab-item.current{ color:var(--blue-2); border-top-color:var(--blue); background:rgba(63,169,255,.08); }
+  .tab-item.current .ti-ico{ color:#fff; filter:drop-shadow(0 0 7px rgba(63,169,255,.85)); }
+
   /* Ausnahme: Schrauben brauchen ihre eigene absolute Positionierung an den
      Panel-Ecken — die generische Regel oben (ID-Selektor) würde sie sonst
      trotz .screw{position:absolute} auf position:relative zurückwerfen
      (ID schlägt Klasse unabhängig von der Reihenfolge im Stylesheet). Betraf
-     bisher unbemerkt bl/br, da sie direkte Kinder von #panelMain sind. */
-  #panelMain > .screw{ position:absolute; }
+     bisher unbemerkt bl/br — die liegen seit dem #panelContent-Wrapper dort,
+     nicht mehr direkt in #panelMain. */
+  #panelContent > .screw{ position:absolute; }
 
   .screw{ position:absolute; width:7px; height:7px; border-radius:50%; z-index:2;
     background:radial-gradient(circle at 35% 30%, #cfd3da, #4a4e57 55%, #16171b 100%); box-shadow:0 1px 1px rgba(0,0,0,.7); }
@@ -88,8 +143,8 @@
   .lcd-screen .l1{font-size:clamp(14px,4vw,18px); letter-spacing:.04em;}
   .l2{font-size:clamp(11px,3vw,13px); opacity:.85;}
 
-  .transport{ display:flex; align-items:center; gap:clamp(6px,2vw,12px); background:var(--panel-inset);
-    border-radius:10px; padding:7px 9px; box-shadow:inset 0 2px 6px rgba(0,0,0,.6); flex-wrap:wrap; }
+  .transport{ display:flex; align-items:center; gap:clamp(10px,3vw,18px); background:var(--panel-inset);
+    border-radius:12px; padding:10px 14px; box-shadow:inset 0 2px 6px rgba(0,0,0,.6); flex-wrap:wrap; }
   #playBtn{ width:clamp(42px,11vw,50px); height:clamp(42px,11vw,50px); border-radius:50%; border:1px solid rgba(255,255,255,.1);
     background:radial-gradient(circle at 35% 30%, #23262e, #0c0d10); box-shadow:0 3px 0 #000, 0 6px 14px rgba(0,0,0,.5), inset 0 0 0 1px rgba(63,169,255,.25);
     color:var(--blue); font-size:clamp(15px,3.6vw,18px); display:flex; align-items:center; justify-content:center;
@@ -97,7 +152,7 @@
   #playBtn:active{transform:translateY(2px); box-shadow:0 1px 0 #000;}
   #playBtn.playing{ background:radial-gradient(circle at 35% 30%, #1a3d5c, #0c1e2e); color:var(--blue-2);
     box-shadow:0 3px 0 #000, 0 0 20px rgba(63,169,255,.6), inset 0 0 0 1px rgba(63,169,255,.5); }
-  .knob-cluster{display:flex; gap:clamp(6px,2.2vw,14px); flex:1; justify-content:space-evenly; min-width:120px;}
+  .knob-cluster{display:flex; gap:clamp(10px,3vw,18px); flex:1; justify-content:space-evenly; min-width:120px;}
 
   /* ---------- TEMPO: digitale Anzeige statt Drehregler ----------
      ID-Selektor statt Klasse: .knob-dial (rund, border-radius:50%) steht im
@@ -157,14 +212,12 @@
   #tempoOverlaySlider{ width:100%; margin-top:22px; accent-color:var(--blue); height:28px; flex-shrink:0; }
   #tempoOverlaySliderRange{ display:flex; justify-content:space-between; font-size:11px; color:var(--dim);
     font-family:'JetBrains Mono',monospace; margin-top:-6px; flex-shrink:0; }
-  .btn-cluster{display:flex; gap:6px; flex-shrink:0;}
-  .chip-btn{ padding:6px 10px; border-radius:7px; border:1px solid rgba(255,255,255,.08); background:var(--panel);
-    color:var(--dim); font-weight:600; font-size:clamp(9px,2.3vw,11px); letter-spacing:.05em; cursor:pointer;
+  .btn-cluster{display:flex; gap:10px; flex-wrap:wrap; flex-basis:100%; justify-content:flex-end;}
+  .chip-btn{ padding:8px 14px; border-radius:8px; border:1px solid rgba(255,255,255,.08); background:var(--panel);
+    color:var(--dim); font-weight:600; font-size:clamp(9px,2.3vw,11px); letter-spacing:.06em; cursor:pointer;
     text-transform:uppercase; white-space:nowrap; }
   .chip-btn:active{transform:scale(.93); color:var(--white); border-color:rgba(63,169,255,.4);}
   .chip-btn.on{ background:rgba(63,169,255,.2); color:var(--blue-2); border-color:rgba(63,169,255,.55); box-shadow:0 0 10px rgba(63,169,255,.3); }
-
-  #kitRow{ display:flex; gap:6px; overflow-x:auto; padding:1px 1px 2px; -webkit-overflow-scrolling:touch; }
 
   /* ---------- LÄNGE (Pattern-Länge, 16/32/48/64 Steps) ---------- */
   #lengthRow{ display:flex; gap:6px; padding:1px 1px 2px; }
@@ -276,6 +329,37 @@
   footer.legal-footer a:hover, footer.legal-footer a:active{ color:var(--blue-2); border-bottom-color:rgba(63,169,255,.4); }
   footer.legal-footer .sep{ margin:0 7px; opacity:.4; color:var(--dim); }
 
+  /* ---------- BOTTOM-TAB-BAR (ersetzt die 5 einzelnen Overlay-Chips im Transport,
+     die ab 6 Chips aus dem sichtbaren Bereich liefen).
+     WICHTIGE KORREKTUR (vorherige Fassung war falsch): position:absolute innerhalb
+     eines scrollenden Vorfahren scrollt MIT dessen Inhalt — bleibt NICHT fix stehen.
+     Nur position:sticky bleibt beim Scrollen wirklich am Rand kleben. Das Problem
+     davor war nicht sticky selbst, sondern dass #panelMain sein eigenes Padding
+     hatte, wodurch eine sticky Bar seitlich eingerückt blieb (kein echtes Full-Bleed).
+     Lösung: das Padding auf einen neuen inneren Wrapper #panelContent verlagert.
+     #panelMain selbst ist jetzt padding-los und bleibt der scrollende Container;
+     #bottomTabBar ist ein direktes, ungepolstertes Kind davon (Geschwister von
+     #panelContent) — dadurch automatisch volle Breite UND sticky funktioniert
+     korrekt, weil es echte Scroll-Container-Mechanik ist statt eines Tricks.
+     "fixed" wäre KEINE Alternative gewesen: das würde sich am ganzen Browserfenster
+     ausrichten und auf Desktop neben #unit liegen (dort zentriert mit Rand).
+     Scroll-Richtungs-Ein-/Ausblenden weiterhin per JS-Klasse .hidden (translateY). ---------- */
+  #bottomTabBar{ position:sticky; bottom:0; z-index:65; display:flex;
+    background:#0c0d10; border-top:1px solid rgba(63,169,255,.3);
+    box-shadow:0 -6px 16px rgba(0,0,0,.4);
+    padding-bottom:env(safe-area-inset-bottom,0);
+    transition:transform .2s ease; }
+  #bottomTabBar.hidden{ transform:translateY(100%); }
+  .tab-item{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:4px; padding:13px 0 10px; background:transparent; border:none; border-top:2px solid transparent; color:var(--dim); cursor:pointer;
+    -webkit-tap-highlight-color:transparent; }
+  .tab-item .ti-ico{ width:21px; height:21px; flex-shrink:0; color:var(--blue-2);
+    filter:drop-shadow(0 0 4px rgba(63,169,255,.55)); }
+  .tab-item .ti-lbl{ font-size:8px; letter-spacing:.05em; text-transform:uppercase; }
+  .tab-item:active{ color:var(--blue-2); }
+  .tab-item:active .ti-ico{ color:var(--white); filter:drop-shadow(0 0 8px rgba(63,169,255,.9)); }
+
+
   /* ---------- MIC-SAMPLE AUFNAHME ---------- */
   #trackBar .rec-controls{ display:flex; align-items:center; gap:8px; }
   #recBtn{ font-size:11px; letter-spacing:.06em; text-transform:uppercase; cursor:pointer;
@@ -321,18 +405,7 @@
      Stil professioneller DAW-Mixer: farbiger Kanal-Header, Rotary-Pan,
      segmentiertes Peak-Meter mit Zonenfarben + Peak-Hold, echte Fader-Kappe,
      dB-Anzeige statt Prozent) ---------- */
-  #mixerOverlay{ display:none; position:fixed; inset:0; z-index:60;
-    background:linear-gradient(180deg,var(--chassis),var(--chassis-2));
-    padding:14px; padding-top:max(14px, env(safe-area-inset-top));
-    padding-bottom:max(14px, env(safe-area-inset-bottom));
-    flex-direction:column; overflow:hidden; }
-  #mixerOverlay.open{ display:flex; }
-  #mixerOverlayHead{ display:flex; align-items:center; justify-content:space-between;
-    padding-bottom:12px; border-bottom:1px solid rgba(255,255,255,.06); flex-shrink:0; }
-  #mixerOverlayCloseBtn{ width:36px; height:36px; border-radius:8px; background:var(--panel);
-    border:1px solid rgba(255,255,255,.1); color:var(--blue-2); font-size:16px; cursor:pointer;
-    display:flex; align-items:center; justify-content:center; }
-  #mixerOverlayCloseBtn:active{ transform:scale(.92); }
+  #mixerOverlay{ flex-direction:column; overflow:hidden; }
   #mixerChannels{ display:flex; align-items:flex-start; gap:6px; margin-top:14px; overflow-x:auto; overflow-y:hidden;
     flex:1; padding-bottom:8px; -webkit-overflow-scrolling:touch; }
 
@@ -395,19 +468,8 @@
     box-shadow:0 2px 4px rgba(0,0,0,.6), 0 0 8px rgba(95,194,255,.4); }
   .mix-strip.master-strip .mix-fader::-moz-range-thumb{ background:linear-gradient(180deg,#5fc2ff,#2a7fc7); }
 
-  /* ---------- FILL-IN-OVERLAY (Vollbild, gleiche Chrome wie Tempo/Pads) ---------- */
-  #fillOverlay{ display:none; position:fixed; inset:0; z-index:60;
-    background:linear-gradient(180deg,var(--chassis),var(--chassis-2));
-    padding:14px; padding-top:max(14px, env(safe-area-inset-top));
-    padding-bottom:max(14px, env(safe-area-inset-bottom));
-    flex-direction:column; gap:18px; overflow-y:auto; }
-  #fillOverlay.open{ display:flex; }
-  #fillOverlayHead{ display:flex; align-items:center; justify-content:space-between;
-    padding-bottom:12px; border-bottom:1px solid rgba(255,255,255,.06); flex-shrink:0; }
-  #fillOverlayCloseBtn{ width:36px; height:36px; border-radius:8px; background:var(--panel);
-    border:1px solid rgba(255,255,255,.1); color:var(--blue-2); font-size:16px; cursor:pointer;
-    display:flex; align-items:center; justify-content:center; }
-  #fillOverlayCloseBtn:active{ transform:scale(.92); }
+  /* ---------- FILL: Tab-Panel (vormals Vollbild-Overlay) ---------- */
+  #fillOverlay{ flex-direction:column; gap:18px; }
   .fillSection{ flex-shrink:0; }
   .fillSectionLabel{ font-size:11px; color:var(--dim); text-transform:uppercase; letter-spacing:.08em; margin-bottom:8px; }
   .fillChips{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
@@ -459,30 +521,57 @@
   #patternIOStatus{ font-size:10px; color:var(--blue-2); font-family:'JetBrains Mono',monospace; letter-spacing:.02em; min-height:12px; text-align:center; flex-shrink:0; }
   #patternIOStatus.err{ color:#ff9d7a; }
   #patternList{ display:flex; flex-direction:column; gap:5px; flex:1; overflow-y:auto; }
-  .pattern-row{ display:flex; align-items:center; justify-content:space-between; gap:6px;
-    background:var(--panel-inset); border-radius:6px; padding:6px 8px; }
+  .pattern-row{ display:flex; flex-direction:column; gap:5px;
+    background:var(--panel-inset); border-radius:6px; padding:6px 8px; border:1px solid transparent; }
+  .pattern-row.active{ border-color:rgba(63,169,255,.4); background:rgba(63,169,255,.08); }
+  .pattern-row.active .pdate{ color:var(--blue-2); }
+  .pattern-row.renaming{ flex-direction:row; align-items:center; gap:6px; }
+  .prow-meta{ display:flex; align-items:baseline; justify-content:space-between; gap:6px; }
   .pattern-row .pname{ font-size:12px; color:var(--white); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; }
-  .pattern-row .pdate{ font-size:8px; color:var(--dim); font-family:'JetBrains Mono',monospace; }
-  .pattern-row .pbtns{ display:flex; gap:4px; flex-shrink:0; }
-  .pattern-row button{ font-size:9px; text-transform:uppercase; border:1px solid rgba(255,255,255,.12); border-radius:5px;
-    padding:4px 7px; cursor:pointer; background:transparent; color:var(--dim); }
-  .pattern-row .pload{ border-color:rgba(63,169,255,.4); color:var(--blue-2); }
-  .pattern-row button:active{ transform:scale(.92); }
+  .pattern-row .pdate{ font-size:8px; color:var(--dim); font-family:'JetBrains Mono',monospace; flex-shrink:0; }
+  .prow-actions{ display:flex; gap:4px; flex-shrink:0; justify-content:flex-end; }
+  .prow-btn{ font-size:15px; border:1px solid rgba(255,255,255,.12); border-radius:6px;
+    width:34px; height:34px; padding:0; cursor:pointer; background:transparent; color:var(--dim);
+    display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .prow-btn.pload{ border-color:rgba(63,169,255,.4); color:var(--blue-2); }
+  .prow-btn:active{ transform:scale(.92); }
+  .prow-del{ color:#ff9d7a; }
+  .prow-rename-input{ flex:1; min-width:0; background:var(--panel); border:1px solid rgba(63,169,255,.4); border-radius:5px;
+    padding:5px 7px; color:var(--white); font-family:'Rajdhani',sans-serif; font-size:12px; }
   #patternEmpty{ font-size:11px; color:var(--dim); text-align:center; padding:6px 0; }
 
+  #songOverlay{ flex-direction:column; gap:10px; }
+  #songTopRow{ display:flex; gap:8px; flex-shrink:0; }
+  #songEnableBtn{ flex:1; font-size:13px; font-weight:700; letter-spacing:.04em; text-transform:uppercase;
+    border:1px solid rgba(63,169,255,.4); border-radius:9px; padding:11px 0; cursor:pointer;
+    background:var(--panel); color:var(--dim); }
+  #songEnableBtn.on{ background:rgba(63,169,255,.18); color:var(--blue-2); border-color:rgba(63,169,255,.6);
+    box-shadow:0 0 12px rgba(63,169,255,.25); }
+  #songLoopBtn{ flex-shrink:0; font-size:12px; letter-spacing:.04em; border:1px solid rgba(255,255,255,.12);
+    border-radius:9px; padding:11px 14px; cursor:pointer; background:var(--panel); color:var(--dim); }
+  #songLoopBtn.on{ background:rgba(63,169,255,.15); color:var(--blue-2); border-color:rgba(63,169,255,.5); }
+  #songEnableBtn:active, #songLoopBtn:active{ transform:scale(.97); }
+  #songHint{ font-size:10px; color:var(--dim); text-align:center; flex-shrink:0; }
+  #songSlotsList{ display:flex; flex-direction:column; gap:6px; flex:1; overflow-y:auto; }
+  #songEmpty{ font-size:11px; color:var(--dim); text-align:center; padding:14px 0; }
+  .song-slot-row{ display:flex; align-items:center; gap:6px; background:var(--panel-inset);
+    border-radius:7px; padding:7px 8px; border:1px solid transparent; }
+  .song-slot-row.active{ border-color:rgba(63,169,255,.5); background:rgba(63,169,255,.1); }
+  .song-slot-row.missing .ssr-name{ color:#ff9d7a; }
+  .ssr-name{ flex:1; font-size:12px; color:var(--white); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .ssr-rep{ display:flex; align-items:center; gap:6px; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--blue-2); flex-shrink:0; }
+  .ssr-rep button{ width:20px; height:20px; border-radius:4px; border:1px solid rgba(255,255,255,.14);
+    background:var(--panel); color:var(--dim); cursor:pointer; font-size:11px; padding:0; }
+  .ssr-move{ width:20px; height:20px; border-radius:4px; border:1px solid rgba(255,255,255,.14);
+    background:var(--panel); color:var(--dim); cursor:pointer; font-size:9px; padding:0; flex-shrink:0; }
+  .ssr-move:disabled{ opacity:.3; cursor:default; }
+  .ssr-del{ width:20px; height:20px; border-radius:4px; border:1px solid rgba(255,255,255,.14);
+    background:var(--panel); color:#ff9d7a; cursor:pointer; font-size:11px; padding:0; flex-shrink:0; }
+  .ssr-rep button:active, .ssr-move:active, .ssr-del:active{ transform:scale(.9); }
+
+
   /* ---------- SAMPLE-PAD (live, 9 Pads) ---------- */
-  #padOverlay{ display:none; position:fixed; inset:0; z-index:60;
-    background:linear-gradient(180deg,var(--chassis),var(--chassis-2));
-    padding:14px; padding-top:max(14px, env(safe-area-inset-top));
-    padding-bottom:max(14px, env(safe-area-inset-bottom));
-    flex-direction:column; gap:10px; overflow-y:auto; }
-  #padOverlay.open{ display:flex; }
-  #padOverlayHead{ display:flex; align-items:center; justify-content:space-between;
-    padding-bottom:12px; border-bottom:1px solid rgba(255,255,255,.06); flex-shrink:0; }
-  #padOverlayCloseBtn{ width:36px; height:36px; border-radius:8px; background:var(--panel);
-    border:1px solid rgba(255,255,255,.1); color:var(--blue-2); font-size:16px; cursor:pointer;
-    display:flex; align-items:center; justify-content:center; }
-  #padOverlayCloseBtn:active{ transform:scale(.92); }
+  #padOverlay{ flex-direction:column; gap:10px; }
   #padHeader{ display:flex; align-items:center; justify-content:space-between; gap:8px; flex-shrink:0; }
   #padDelayKnobWrap{ display:flex; align-items:center; }
   #padQuantizeBtn{ font-size:10px; letter-spacing:.04em; text-transform:uppercase; border:1px solid rgba(63,169,255,.35);
@@ -528,7 +617,8 @@ html,body{min-height:100%;height:100%;}
 @media (max-width:560px){
   #unit{width:100vw;height:100dvh;max-width:none;max-height:none;border-radius:0;padding:0;}
   .wood-grain{display:none;}
-  #panelMain{border-radius:0;padding-left:max(7px,env(safe-area-inset-left));padding-right:max(7px,env(safe-area-inset-right));padding-top:max(5px,env(safe-area-inset-top));padding-bottom:max(7px,env(safe-area-inset-bottom));}
+  #panelMain{border-radius:0;}
+  #panelContent{padding-left:max(7px,env(safe-area-inset-left));padding-right:max(7px,env(safe-area-inset-right));padding-top:max(5px,env(safe-area-inset-top));padding-bottom:calc(66px + env(safe-area-inset-bottom,0px));}
 }
 </style>
 
@@ -539,6 +629,7 @@ html,body{min-height:100%;height:100%;}
   <div id="unit">
     <div class="wood-grain"></div>
     <div id="panelMain">
+      <div id="panelContent">
       <div class="screw bl"></div><div class="screw br"></div>
 
       <div class="brandtop"><div class="screw tl"></div><span class="ln"></span><img src="./icons/logo-drumstar.png" alt="Drumstar" class="header-logo"><span class="ln"></span><div class="screw tr"></div></div>
@@ -552,12 +643,21 @@ html,body{min-height:100%;height:100%;}
       </div>
 
       <div class="lcd-screen">
-        <span class="lcd l1" id="lcdBpm">128 BPM</span>
-        <span class="lcd l1" id="lcdKit">ROCK KIT</span>
+        <div class="lcd-row">
+          <span class="lcd l1" id="lcdBpm">128 BPM</span>
+          <button class="lcd-tap" id="lcdKitBtn" aria-label="Kit wechseln">
+            <span class="lcd l1" id="lcdKit">ROCK KIT</span>
+            <svg class="lcd-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+        </div>
+        <div class="lcd-row lcd-row2">
+          <button class="lcd-tap" id="lcdPatternBtn" aria-label="Pattern wechseln">
+            <svg class="lcd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="3.2" rx="1"/><rect x="4" y="10.4" width="16" height="3.2" rx="1"/><rect x="4" y="15.8" width="10" height="3.2" rx="1"/></svg>
+            <span class="lcd l2" id="lcdPatternName">—</span>
+            <svg class="lcd-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+        </div>
       </div>
-
-      <div id="kitRow"></div>
-      <div id="lengthRow"></div>
 
       <div class="transport">
         <div id="playBtn">▶</div>
@@ -571,11 +671,15 @@ html,body{min-height:100%;height:100%;}
         <div class="btn-cluster">
           <button class="chip-btn" id="randomBtn">Random</button>
           <button class="chip-btn" id="clearBtn">Clear</button>
-          <button class="chip-btn" id="patternsToggleBtn">💾 Beats</button>
-          <button class="chip-btn" id="fillToggleBtn">🥁 Fill</button>
-          <button class="chip-btn" id="padsToggleBtn">🎛️ Pads</button>
-          <button class="chip-btn" id="mixerToggleBtn">🎚️ Mixer</button>
         </div>
+      </div>
+
+      <div id="kitPickerOverlay">
+        <div id="kitPickerHead">
+          <span class="lcd l2" style="color:var(--dim); letter-spacing:.15em; text-transform:uppercase;">Kit wählen</span>
+          <button id="kitPickerCloseBtn" aria-label="Schließen">✕</button>
+        </div>
+        <div id="kitPickerList"></div>
       </div>
 
       <div id="tempoOverlay">
@@ -600,32 +704,66 @@ html,body{min-height:100%;height:100%;}
         <button id="tempoClickToggle">🔊 Klick (betont die 1)</button>
       </div>
 
-      <div id="padOverlay">
-        <div id="padOverlayHead">
-          <span class="lcd l2" style="color:var(--dim); letter-spacing:.15em; text-transform:uppercase;">Sample Pad</span>
-          <button id="padOverlayCloseBtn" aria-label="Schließen">✕</button>
+      <div id="patternsOverlay">
+        <div id="patternsOverlayHead">
+          <span class="lcd l2" style="color:var(--dim); letter-spacing:.15em; text-transform:uppercase;">Beats</span>
+          <button id="patternsOverlayCloseBtn" aria-label="Schließen">✕</button>
         </div>
-        <div id="padHeader">
-          <div id="padDelayKnobWrap"></div>
-          <button id="padQuantizeBtn" class="on">🎯 Quantize</button>
+        <div id="patternSaveRow">
+          <input type="text" id="patternNameInput" placeholder="Name für aktuellen Beat…" maxlength="40">
+          <button id="patternSaveBtn">Speichern</button>
         </div>
-        <div id="padHint">Halten = aufnehmen · Tippen = abspielen · ✂ am Pad = Startpunkt trimmen</div>
-        <div id="padGrid"></div>
+        <button id="exportWavBtn">⬇ Als WAV exportieren</button>
+        <div id="patternIORow">
+          <button id="patternExportAllBtn">⬇ Alle exportieren</button>
+          <button id="patternImportBtn">⬆ Import</button>
+          <input type="file" id="patternImportInput" accept="application/json,.json" style="display:none;">
+        </div>
+        <div id="patternIOStatus"></div>
+        <div id="patternList"></div>
       </div>
 
-      <div id="mixerOverlay">
-        <div id="mixerOverlayHead">
-          <span class="lcd l2" style="color:var(--dim); letter-spacing:.15em; text-transform:uppercase;">Mixer</span>
-          <button id="mixerOverlayCloseBtn" aria-label="Schließen">✕</button>
+      <div id="tabContent">
+
+      <div id="tabPattern" class="tab-panel open">
+        <div id="lengthRow"></div>
+        <div id="overview"></div>
+
+        <div id="trackBar">
+          <div class="name"><span class="dot" id="tbDot"></span><span id="tbName">BASS DRUM</span></div>
+          <div class="mini-knobs" id="tbKnobs"></div>
+          <div class="rec-controls" id="recControls" style="display:none;">
+            <span id="recStatus">kein Sample</span>
+            <button id="samplePreviewBtn" class="preview" style="display:none; padding:5px 8px;">▶</button>
+            <button id="trimBtn" style="display:none;">✂</button>
+            <button id="sampleClearBtn" style="display:none;">✕</button>
+            <button id="recBtn">● Rec</button>
+          </div>
+          <div class="preview" id="tbPreview">▶ Hören</div>
         </div>
-        <div id="mixerChannels"></div>
+
+        <div id="arpControls" style="display:none;">
+          <div id="arpCutoffKnob"></div>
+          <div id="arpResKnob"></div>
+          <button id="arpRandomBtn">🎲 Bassline</button>
+        </div>
+
+        <div id="pageNav">
+          <button id="pagePrevBtn" class="chip-btn">◀</button>
+          <span id="pageLabel" class="lcd l2 mono">Seite 1/1</span>
+          <button id="pageCopyBtn" class="chip-btn" title="Diese Seite in die nächste kopieren">⧉→</button>
+          <button id="pageNextBtn" class="chip-btn">▶</button>
+        </div>
+
+        <div id="bigGrid"></div>
+
+        <footer class="hint">Tap = Step (aus→normal→accent→ghost→ghost soft) · Reihe = Instrument wählen · kleiner Regler = Lautstärke des Sounds · MIC SAMPLE wählen zum Aufnehmen</footer>
+        <footer class="legal-footer">
+          <a href="./impressum.html">Impressum</a><span class="sep">·</span><a href="./datenschutz.html">Datenschutz</a>
+        </footer>
       </div>
 
-      <div id="fillOverlay">
-        <div id="fillOverlayHead">
-          <span class="lcd l2" style="color:var(--dim); letter-spacing:.15em; text-transform:uppercase;">Fill</span>
-          <button id="fillOverlayCloseBtn" aria-label="Schließen">✕</button>
-        </div>
+      <div id="fillOverlay" class="tab-panel">
         <button id="fillEnableBtn" class="on">Fill aktiv</button>
         <div class="fillSection">
           <div class="fillSectionLabel">Länge</div>
@@ -646,44 +784,28 @@ html,body{min-height:100%;height:100%;}
         </div>
       </div>
 
-      <div id="patternsOverlay">
-        <div id="patternsOverlayHead">
-          <span class="lcd l2" style="color:var(--dim); letter-spacing:.15em; text-transform:uppercase;">Beats</span>
-          <button id="patternsOverlayCloseBtn" aria-label="Schließen">✕</button>
+      <div id="padOverlay" class="tab-panel">
+        <div id="padHeader">
+          <div id="padDelayKnobWrap"></div>
+          <button id="padQuantizeBtn" class="on">🎯 Quantize</button>
         </div>
-        <div id="patternSaveRow">
-          <input type="text" id="patternNameInput" placeholder="Name für aktuellen Beat…" maxlength="40">
-          <button id="patternSaveBtn">Speichern</button>
-        </div>
-        <button id="exportWavBtn">⬇ Als WAV exportieren</button>
-        <div id="patternIORow">
-          <button id="patternExportAllBtn">⬇ Alle exportieren</button>
-          <button id="patternImportBtn">⬆ Import</button>
-          <input type="file" id="patternImportInput" accept="application/json,.json" style="display:none;">
-        </div>
-        <div id="patternIOStatus"></div>
-        <div id="patternList"></div>
+        <div id="padHint">Halten = aufnehmen · Tippen = abspielen · ✂ am Pad = Startpunkt trimmen</div>
+        <div id="padGrid"></div>
       </div>
 
-      <div id="overview"></div>
-
-      <div id="trackBar">
-        <div class="name"><span class="dot" id="tbDot"></span><span id="tbName">BASS DRUM</span></div>
-        <div class="mini-knobs" id="tbKnobs"></div>
-        <div class="rec-controls" id="recControls" style="display:none;">
-          <span id="recStatus">kein Sample</span>
-          <button id="samplePreviewBtn" class="preview" style="display:none; padding:5px 8px;">▶</button>
-          <button id="trimBtn" style="display:none;">✂</button>
-          <button id="sampleClearBtn" style="display:none;">✕</button>
-          <button id="recBtn">● Rec</button>
-        </div>
-        <div class="preview" id="tbPreview">▶ Hören</div>
+      <div id="mixerOverlay" class="tab-panel">
+        <div id="mixerChannels"></div>
       </div>
 
-      <div id="arpControls" style="display:none;">
-        <div id="arpCutoffKnob"></div>
-        <div id="arpResKnob"></div>
-        <button id="arpRandomBtn">🎲 Bassline</button>
+      <div id="songOverlay" class="tab-panel">
+        <div id="songTopRow">
+          <button id="songEnableBtn">Song aus</button>
+          <button id="songLoopBtn" class="on">🔁 Loop</button>
+        </div>
+        <div id="songHint">Patterns kommen aus dem Beats-Fenster (🎼+ an jedem Eintrag)</div>
+        <div id="songSlotsList"></div>
+      </div>
+
       </div>
 
       <div id="trimPanel">
@@ -702,18 +824,52 @@ html,body{min-height:100%;height:100%;}
         </div>
       </div>
 
-      <div id="pageNav">
-        <button id="pagePrevBtn" class="chip-btn">◀</button>
-        <span id="pageLabel" class="lcd l2 mono">Seite 1/1</span>
-        <button id="pageNextBtn" class="chip-btn">▶</button>
       </div>
 
-      <div id="bigGrid"></div>
-
-      <footer class="hint">Tap = Step (aus→normal→accent→ghost→ghost soft) · Reihe = Instrument wählen · kleiner Regler = Lautstärke des Sounds · MIC SAMPLE wählen zum Aufnehmen</footer>
-      <footer class="legal-footer">
-        <a href="./impressum.html">Impressum</a><span class="sep">·</span><a href="./datenschutz.html">Datenschutz</a>
-      </footer>
+      <div id="bottomTabBar">
+        <button class="tab-item current" id="patternTabBtn" data-tab="pattern">
+          <svg class="ti-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="4" y="5" width="16" height="3.2" rx="1"/><rect x="4" y="10.4" width="16" height="3.2" rx="1"/><rect x="4" y="15.8" width="10" height="3.2" rx="1"/>
+          </svg>
+          <span class="ti-lbl">Pattern</span>
+        </button>
+        <button class="tab-item" id="fillToggleBtn" data-tab="fill">
+          <svg class="ti-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="4" y="4" width="16" height="16" rx="3"/>
+            <circle cx="8.5" cy="8.5" r="1" fill="currentColor" stroke="none"/>
+            <circle cx="15.5" cy="8.5" r="1" fill="currentColor" stroke="none"/>
+            <circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/>
+            <circle cx="8.5" cy="15.5" r="1" fill="currentColor" stroke="none"/>
+            <circle cx="15.5" cy="15.5" r="1" fill="currentColor" stroke="none"/>
+          </svg>
+          <span class="ti-lbl">Fill</span>
+        </button>
+        <button class="tab-item" id="padsToggleBtn" data-tab="pads">
+          <svg class="ti-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="4" y="4" width="4.5" height="4.5" rx="1"/><rect x="9.75" y="4" width="4.5" height="4.5" rx="1"/><rect x="15.5" y="4" width="4.5" height="4.5" rx="1"/>
+            <rect x="4" y="9.75" width="4.5" height="4.5" rx="1"/><rect x="9.75" y="9.75" width="4.5" height="4.5" rx="1"/><rect x="15.5" y="9.75" width="4.5" height="4.5" rx="1"/>
+            <rect x="4" y="15.5" width="4.5" height="4.5" rx="1"/><rect x="9.75" y="15.5" width="4.5" height="4.5" rx="1"/><rect x="15.5" y="15.5" width="4.5" height="4.5" rx="1"/>
+          </svg>
+          <span class="ti-lbl">Pads</span>
+        </button>
+        <button class="tab-item" id="mixerToggleBtn" data-tab="mixer">
+          <svg class="ti-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="6" y1="4" x2="6" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/><line x1="18" y1="4" x2="18" y2="20"/>
+            <circle cx="6" cy="15" r="2" fill="currentColor" stroke="none"/>
+            <circle cx="12" cy="9" r="2" fill="currentColor" stroke="none"/>
+            <circle cx="18" cy="13" r="2" fill="currentColor" stroke="none"/>
+          </svg>
+          <span class="ti-lbl">Mixer</span>
+        </button>
+        <button class="tab-item" id="songToggleBtn" data-tab="song">
+          <svg class="ti-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="5" width="10" height="4" rx="1"/>
+            <rect x="3" y="10.5" width="16" height="4" rx="1"/>
+            <rect x="3" y="16" width="7" height="4" rx="1"/>
+          </svg>
+          <span class="ti-lbl">Song</span>
+        </button>
+      </div>
     </div>
   </div>
 </div>
@@ -1188,6 +1344,20 @@ function playMetallicSix(time, vol, tune, velocity, kp, mode){
   }
 }
 
+// Maracas: reiner gefilterter Rauschausbruch, kein tonaler Anteil (anders als
+// Cowbell/Claves, die beide über einen Trägerton laufen) — Bandpass + Highpass
+// auf hoher Frequenz für den charakteristischen "Shaker"-Klang.
+function playMaracas(time,vol,tune,velocity,kp){
+  const g=velocity;
+  const noise=audioCtx.createBufferSource(); noise.buffer=noiseBuf;
+  const hp=audioCtx.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=kp.hpFreq||6000;
+  const bp=audioCtx.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=kp.bpFreq||9500; bp.Q.value=kp.bpQ!=null?kp.bpQ:1.0;
+  const ng=audioCtx.createGain();
+  ng.gain.setValueAtTime(kp.noiseLevel*vol*g,time); ng.gain.exponentialRampToValueAtTime(0.001,time+kp.noiseDecay);
+  noise.connect(hp).connect(bp).connect(ng).connect(getBus());
+  noise.start(time); noise.stop(time+kp.noiseDecay+0.02);
+}
+
 // =========================================================================
 // MIC-SAMPLE — aufgenommener Sound als eigene Spur (kein FM-Preset)
 // =========================================================================
@@ -1318,7 +1488,18 @@ const KITS={
     // Metallscheiben), aber tiefer/dunkler gefiltert mit langem Ausklang und
     // zusätzlicher Rausch-Wäsche für mehr Fülle im Decay.
     cy:{engine:'sixosc', baseFreq:115, ratios:[1.8,2.6,3.87,5.15,6.62,8.05,9.7], bpFreq:7500, bpQ:0.55, hpFreq:5000,
-        ampDecay:2.4, fmLevel:0.36, noiseLevel:0.16, noiseDecay:2.0}
+        ampDecay:2.4, fmLevel:0.36, noiseLevel:0.16, noiseDecay:2.0},
+    // Cowbell: zwei-Ton-Verhältnis (~1:1.48) auf derselben 6-Osc-Engine wie Hi-Hat/
+    // Crash, aber mit nur 2 Ratios und tiefem Bandpass statt Hochpass-lastigem
+    // Metall-Spektrum — wärmer/runder als das klassische 808-Cowbell, passend zum
+    // "live/akustisch"-Charakter des Rock Kits.
+    cb:{engine:'sixosc', baseFreq:540, ratios:[1,1.48], bpFreq:620, bpQ:1.0, hpFreq:300, ampDecay:0.35, fmLevel:0.6},
+    // Claves: wiederverwendet die Rimshot-FM-Struktur (playRim), aber ohne den
+    // Noise-Klick-Layer (clickLevel:0) — reiner, kurzer Holz-Klick statt Snare-artigem Crack.
+    cl:{baseFreq:2600, ampDecay:0.045, fmLevel:0.5, clickLevel:0, clickFreq:3000,
+        ops:[{ratio:1,level:0.4,decay:0.04,feedback:0.4},{ratio:2.4,level:2,decay:0.015}]},
+    // Maracas: reiner gefilterter Rauschausbruch (playMaracas), kein Trägerton.
+    mr:{hpFreq:6000, bpFreq:9500, bpQ:1.0, noiseLevel:0.5, noiseDecay:0.07}
   }},
   fm909:{ name:'FM-909', desc:'Klassisch · punchy', voices:{
     bd:{baseFreq:58, startMult:1.8, pitchEndMult:0.36, pitchDecay:0.08, clickLevel:0.25, ampDecay:0.32,
@@ -1337,7 +1518,14 @@ const KITS={
     oh:{baseFreq:1100, decayClosed:0.055, decayClosedAccent:0.09, decayOpen:0.4, decayOpenAccent:0.55, fmLevel:0.55, filterFreq:6000,
         ops:[{ratio:1,level:1,decay:1,feedback:1.8},{ratio:1.41,level:4,decay:0.6,feedback:0.6},{ratio:2.0,level:3,decay:0.35},{ratio:3.3,level:2,decay:0.25}]},
     cy:{baseFreq:650, ampDecay:1.6, fmLevel:0.32, filterFreq:2600, noiseLevel:0.18, noiseDecay:1.2,
-        ops:[{ratio:1,level:1,decay:1.4,feedback:1.4},{ratio:1.41,level:3,decay:0.9,feedback:0.5},{ratio:2.3,level:2.5,decay:0.6},{ratio:3.7,level:2,decay:0.4}]}
+        ops:[{ratio:1,level:1,decay:1.4,feedback:1.4},{ratio:1.41,level:3,decay:0.9,feedback:0.5},{ratio:2.3,level:2.5,decay:0.6},{ratio:3.7,level:2,decay:0.4}]},
+    // TODO: eigener FM-909-Charakter für Cowbell/Claves/Maracas — vorerst 1:1 vom
+    // Rock-Kit übernommen, nur damit ein Kit-Wechsel während des Testens nicht
+    // auf fehlende Presets läuft (kp wäre sonst undefined → Crash beim Trigger).
+    cb:{engine:'sixosc', baseFreq:540, ratios:[1,1.48], bpFreq:620, bpQ:1.0, hpFreq:300, ampDecay:0.35, fmLevel:0.6},
+    cl:{baseFreq:2600, ampDecay:0.045, fmLevel:0.5, clickLevel:0, clickFreq:3000,
+        ops:[{ratio:1,level:0.4,decay:0.04,feedback:0.4},{ratio:2.4,level:2,decay:0.015}]},
+    mr:{hpFreq:6000, bpFreq:9500, bpQ:1.0, noiseLevel:0.5, noiseDecay:0.07}
   }},
   fm808:{ name:'FM-808', desc:'Tief · warm · lang', voices:{
     bd:{baseFreq:50, startMult:2.2, pitchEndMult:0.28, pitchDecay:0.35, clickLevel:0.08, ampDecay:0.9,
@@ -1356,7 +1544,12 @@ const KITS={
     oh:{baseFreq:900, decayClosed:0.07, decayClosedAccent:0.11, decayOpen:0.6, decayOpenAccent:0.8, fmLevel:0.5, filterFreq:5000,
         ops:[{ratio:1,level:1,decay:1,feedback:0.9},{ratio:1.41,level:2.5,decay:0.6,feedback:0.3},{ratio:2.0,level:1.8,decay:0.35},{ratio:3.3,level:1.2,decay:0.25}]},
     cy:{baseFreq:500, ampDecay:2.0, fmLevel:0.28, filterFreq:2000, noiseLevel:0.2, noiseDecay:1.8,
-        ops:[{ratio:1,level:0.8,decay:1.8,feedback:0.8},{ratio:1.41,level:2,decay:1.2,feedback:0.3},{ratio:2.3,level:1.6,decay:0.8},{ratio:3.7,level:1.2,decay:0.5}]}
+        ops:[{ratio:1,level:0.8,decay:1.8,feedback:0.8},{ratio:1.41,level:2,decay:1.2,feedback:0.3},{ratio:2.3,level:1.6,decay:0.8},{ratio:3.7,level:1.2,decay:0.5}]},
+    // TODO: eigener FM-808-Charakter — vorerst Platzhalter vom Rock-Kit, s.o.
+    cb:{engine:'sixosc', baseFreq:540, ratios:[1,1.48], bpFreq:620, bpQ:1.0, hpFreq:300, ampDecay:0.35, fmLevel:0.6},
+    cl:{baseFreq:2600, ampDecay:0.045, fmLevel:0.5, clickLevel:0, clickFreq:3000,
+        ops:[{ratio:1,level:0.4,decay:0.04,feedback:0.4},{ratio:2.4,level:2,decay:0.015}]},
+    mr:{hpFreq:6000, bpFreq:9500, bpQ:1.0, noiseLevel:0.5, noiseDecay:0.07}
   }},
   real808:{ name:'808 AUTHENTIC', desc:'Original-Technik · 6-Osc Hats', voices:{
     // Kick: wie fm808, plus Impact-Noise-Burst (Beater-Transient neben dem Ton)
@@ -1381,7 +1574,12 @@ const KITS={
     oh:{engine:'sixosc', baseFreq:105, ratios:[2,3,4.16,5.43,6.79,8.21], bpFreq:10000, bpQ:0.7, hpFreq:7000,
         decayClosed:0.06, decayClosedAccent:0.1, decayOpen:0.5, decayOpenAccent:0.7, fmLevel:0.55, choke:true},
     cy:{engine:'sixosc', baseFreq:95, ratios:[2,3,4.16,5.43,6.79,8.21,10.4], bpFreq:8000, bpQ:0.6, hpFreq:5500,
-        ampDecay:2.2, fmLevel:0.4, noiseLevel:0.15, noiseDecay:1.8}
+        ampDecay:2.2, fmLevel:0.4, noiseLevel:0.15, noiseDecay:1.8},
+    // TODO: eigener 808-Authentic-Charakter — vorerst Platzhalter vom Rock-Kit, s.o.
+    cb:{engine:'sixosc', baseFreq:540, ratios:[1,1.48], bpFreq:620, bpQ:1.0, hpFreq:300, ampDecay:0.35, fmLevel:0.6},
+    cl:{baseFreq:2600, ampDecay:0.045, fmLevel:0.5, clickLevel:0, clickFreq:3000,
+        ops:[{ratio:1,level:0.4,decay:0.04,feedback:0.4},{ratio:2.4,level:2,decay:0.015}]},
+    mr:{hpFreq:6000, bpFreq:9500, bpQ:1.0, noiseLevel:0.5, noiseDecay:0.07}
   }},
   acid:{ name:'ACID DRIVE', desc:'Aggressiv · verzerrt', voices:{
     bd:{baseFreq:62, startMult:1.6, pitchEndMult:0.4, pitchDecay:0.05, clickLevel:0.4, ampDecay:0.16,
@@ -1400,7 +1598,12 @@ const KITS={
     oh:{baseFreq:1300, decayClosed:0.045, decayClosedAccent:0.075, decayOpen:0.25, decayOpenAccent:0.32, fmLevel:0.6, filterFreq:7500,
         ops:[{ratio:1,level:1,decay:1,feedback:2.6},{ratio:1.41,level:5,decay:0.5,feedback:1.0},{ratio:2.0,level:3.5,decay:0.3},{ratio:3.3,level:2.5,decay:0.2}]},
     cy:{baseFreq:800, ampDecay:0.9, fmLevel:0.36, filterFreq:3500, noiseLevel:0.22, noiseDecay:0.7,
-        ops:[{ratio:1,level:1.2,decay:0.8,feedback:2.0},{ratio:1.41,level:4,decay:0.5,feedback:0.7},{ratio:2.3,level:3,decay:0.3},{ratio:3.7,level:2.5,decay:0.2}]}
+        ops:[{ratio:1,level:1.2,decay:0.8,feedback:2.0},{ratio:1.41,level:4,decay:0.5,feedback:0.7},{ratio:2.3,level:3,decay:0.3},{ratio:3.7,level:2.5,decay:0.2}]},
+    // TODO: eigener Acid-Drive-Charakter — vorerst Platzhalter vom Rock-Kit, s.o.
+    cb:{engine:'sixosc', baseFreq:540, ratios:[1,1.48], bpFreq:620, bpQ:1.0, hpFreq:300, ampDecay:0.35, fmLevel:0.6},
+    cl:{baseFreq:2600, ampDecay:0.045, fmLevel:0.5, clickLevel:0, clickFreq:3000,
+        ops:[{ratio:1,level:0.4,decay:0.04,feedback:0.4},{ratio:2.4,level:2,decay:0.015}]},
+    mr:{hpFreq:6000, bpFreq:9500, bpQ:1.0, noiseLevel:0.5, noiseDecay:0.07}
   }},
   lofi:{ name:'LO-FI DUST', desc:'Gedämpft · vintage', voices:{
     bd:{baseFreq:55, startMult:1.5, pitchEndMult:0.5, pitchDecay:0.15, clickLevel:0.1, ampDecay:0.38,
@@ -1419,7 +1622,12 @@ const KITS={
     oh:{baseFreq:800, decayClosed:0.06, decayClosedAccent:0.1, decayOpen:0.35, decayOpenAccent:0.45, fmLevel:0.4, filterType:'lowpass', filterFreq:3000,
         ops:[{ratio:1,level:1,decay:1,feedback:1.2},{ratio:1.41,level:3,decay:0.6,feedback:0.4},{ratio:2.0,level:2,decay:0.35},{ratio:3.3,level:1.4,decay:0.25}]},
     cy:{baseFreq:520, ampDecay:1.4, fmLevel:0.22, filterType:'lowpass', filterFreq:2200, noiseLevel:0.12, noiseDecay:1.1,
-        ops:[{ratio:1,level:0.8,decay:1.2,feedback:0.8},{ratio:1.41,level:2,decay:0.8,feedback:0.3},{ratio:2.3,level:1.4,decay:0.5},{ratio:3.7,level:1,decay:0.35}]}
+        ops:[{ratio:1,level:0.8,decay:1.2,feedback:0.8},{ratio:1.41,level:2,decay:0.8,feedback:0.3},{ratio:2.3,level:1.4,decay:0.5},{ratio:3.7,level:1,decay:0.35}]},
+    // TODO: eigener Lo-Fi-Charakter — vorerst Platzhalter vom Rock-Kit, s.o.
+    cb:{engine:'sixosc', baseFreq:540, ratios:[1,1.48], bpFreq:620, bpQ:1.0, hpFreq:300, ampDecay:0.35, fmLevel:0.6},
+    cl:{baseFreq:2600, ampDecay:0.045, fmLevel:0.5, clickLevel:0, clickFreq:3000,
+        ops:[{ratio:1,level:0.4,decay:0.04,feedback:0.4},{ratio:2.4,level:2,decay:0.015}]},
+    mr:{hpFreq:6000, bpFreq:9500, bpQ:1.0, noiseLevel:0.5, noiseDecay:0.07}
   }},
 
 };
@@ -1432,7 +1640,15 @@ const VOICE_FNS={
   // so bleiben alte und neue Kits direkt vergleichbar.
   ch:(t,v,tu,a,kp)=> kp.engine==='sixosc' ? playMetallicSix(t,v,tu,a,kp,'closed') : playHat(t,v,tu,a,kp,false),
   oh:(t,v,tu,a,kp)=> kp.engine==='sixosc' ? playMetallicSix(t,v,tu,a,kp,'open') : playHat(t,v,tu,a,kp,true),
-  cy:(t,v,tu,a,kp)=> kp.engine==='sixosc' ? playMetallicSix(t,v,tu,a,kp,'cymbal') : playCrash(t,v,tu,a,kp)
+  cy:(t,v,tu,a,kp)=> kp.engine==='sixosc' ? playMetallicSix(t,v,tu,a,kp,'cymbal') : playCrash(t,v,tu,a,kp),
+  // Cowbell: dieselbe Oszillatorbank/Filterkette wie Hi-Hat/Crash (playMetallicSix,
+  // Modus 'cymbal'), aber mit nur 2 statt 6 Ratios (klassisches zwei-Ton-808-Cowbell-
+  // Verhältnis) — kein neuer Code nötig, nur ein anderes Preset auf derselben Engine.
+  cb:(t,v,tu,a,kp)=> playMetallicSix(t,v,tu,a,kp,'cymbal'),
+  // Claves: wiederverwendet playRim (kurzer FM-Klick) ohne den zusätzlichen
+  // Noise-Klick-Layer (clickLevel:0 im Preset) — klingt trocken/hölzern statt metallisch.
+  cl: playRim,
+  mr: playMaracas
 };
 function triggerTrack(tr, time, velocity){
   currentTrackBus = tr.bus || master;
@@ -1488,6 +1704,9 @@ const TRACKS=[
   {id:'hc', name:'HAND CLAP', color:'#5fc2ff', tune:0.5, vol:0.85},
   {id:'oh', name:'OP HIHAT',  color:'#c7e6ff', tune:0.5, vol:0.7},
   {id:'cy', name:'CRASH',     color:'#a3d8ff', tune:0.5, vol:0.7},
+  {id:'cb', name:'COWBELL',  color:'#7fb8e8', tune:0.5, vol:0.75},
+  {id:'cl', name:'CLAVES',   color:'#4d8fc4', tune:0.5, vol:0.7},
+  {id:'mr', name:'MARACAS',  color:'#b8ddf5', tune:0.5, vol:0.65},
   {id:'mc', name:'MIC SAMPLE', color:'#ffffff', tune:0.5, vol:0.9, isSample:true},
   {id:'arp', name:'ACID BASS', color:'#ff6b35', tune:0.5, vol:0.8, type:'arp',
    rootNote:0, cutoff:0.5, resonance:0.35},
@@ -1550,9 +1769,32 @@ const FILL_STYLE_INFO=[
 ];
 const fillStyleEnabled={ linear:true, rollDense:true, buildUp:true, snareBurst:true, alternateToms:true, sparse:true, oneDrop:true, chokeCrash:true };
 
+// =========================================================================
+// SONG-MODE — verkettet gespeicherte Patterns (per stabiler id, s.o.) zu einer
+// Sequenz mit Wiederholungszähler pro Slot. Der eigentliche Pattern-Wechsel
+// passiert in onLoopRestart() (s.u.), synchron zum ohnehin vorhandenen
+// Loop-Restart-Zeitpunkt — dort wird auch Fill gezählt, gleiche Stelle,
+// gleiches Timing-Prinzip. songPatternCache hält die vollen Pattern-Daten
+// bereits im Speicher (aus listPatternsFromIndexedDB() beim Hinzufügen bzw.
+// via refreshSongPatternCache()), damit der Slot-Wechsel synchron/ohne await
+// mitten im Scheduler-Tick passieren kann — ein async IndexedDB-Read genau an
+// der Loop-Grenze würde sonst ein bis zwei Steps altes Pattern durchrutschen
+// lassen, bevor der Wechsel wirksam wird (hörbarer Glitch).
+let songSlots=[]; // [{slotId, patternId, repeats}]
+let songEnabled=false;
+let songLoopEnabled=true;
+let currentSongSlotIndex=0;
+let songSlotLoopsPlayed=0;
+let songPatternCache={}; // patternId -> volle Pattern-Daten
+
 // Wird aufgerufen, sobald der Scheduler wieder bei Step 0 beginnt (neuer Durchlauf).
 function onLoopRestart(){
   loopCount++;
+  if(songEnabled && songSlots.length>0){
+    songSlotLoopsPlayed++;
+    const slot=songSlots[currentSongSlotIndex];
+    if(slot && songSlotLoopsPlayed>=(slot.repeats||1)) advanceSongSlot();
+  }
   currentLoopIsFill = fillEnabled && (loopCount % fillEveryN === 0) && fillLengthSteps <= PATTERN_LENGTH;
   if(currentLoopIsFill){
     activeFillLength = fillLengthSteps; // für diesen Durchlauf fest — Live-Änderungen wirken erst ab dem nächsten
@@ -1561,6 +1803,23 @@ function onLoopRestart(){
     activeFillLength = 0;
     fillOverride = null;
   }
+}
+// Springt zum nächsten Song-Slot. Bei erreichtem Songende: Loop zurück zu Slot 0
+// (wenn songLoopEnabled) oder Song-Modus beenden (Pattern bleibt auf dem letzten
+// Slot stehen, Sequencer läuft normal als Einzelpattern weiter — kein hartes stop()).
+function advanceSongSlot(){
+  if(songSlots.length===0) return;
+  currentSongSlotIndex++;
+  if(currentSongSlotIndex>=songSlots.length){
+    if(songLoopEnabled){ currentSongSlotIndex=0; }
+    else { currentSongSlotIndex=songSlots.length-1; songEnabled=false; if(songEnableBtn) songEnableBtn.classList.remove('on'); if(songToggleBtn) songToggleBtn.classList.remove('on'); return; }
+  }
+  songSlotLoopsPlayed=0;
+  const slot=songSlots[currentSongSlotIndex];
+  const data=songPatternCache[slot.patternId];
+  if(!data){ console.warn('Song: Pattern für Slot nicht im Cache (gelöscht?) — überspringe', slot); advanceSongSlot(); return; }
+  applySongSlotPattern(data);
+  if(songOverlay && songOverlay.classList.contains('open')) renderSongSlots();
 }
 
 // Musikalisch orientierter Fill-Generator: wählt bei jedem Auslösen zufällig
@@ -1950,7 +2209,8 @@ function refreshTrackStepVisuals(tr){
 const tbName=document.getElementById('tbName'), tbDot=document.getElementById('tbDot');
 const tbKnobs=document.getElementById('tbKnobs'), tbPreview=document.getElementById('tbPreview');
 const lcdKit=document.getElementById('lcdKit');
-const kitRow=document.getElementById('kitRow');
+const kitPickerList=document.getElementById('kitPickerList');
+const kitPickerOverlay=document.getElementById('kitPickerOverlay');
 Object.keys(KITS).forEach(kitId=>{
   const kit=KITS[kitId];
   const chip=document.createElement('div');
@@ -1961,10 +2221,28 @@ Object.keys(KITS).forEach(kitId=>{
     document.querySelectorAll('.kit-chip').forEach(c=>c.classList.remove('active'));
     chip.classList.add('active');
     lcdKit.textContent=kit.name;
+    kitPickerOverlay.classList.remove('open');
   });
   kit._chip=chip;
-  kitRow.appendChild(chip);
+  kitPickerList.appendChild(chip);
 });
+const lcdKitBtn=document.getElementById('lcdKitBtn');
+const kitPickerCloseBtn=document.getElementById('kitPickerCloseBtn');
+lcdKitBtn.addEventListener('click', ()=>{ closeAllOverlays(); kitPickerOverlay.classList.add('open'); });
+kitPickerCloseBtn.addEventListener('click', ()=> kitPickerOverlay.classList.remove('open'));
+const lcdPatternBtn=document.getElementById('lcdPatternBtn');
+const lcdPatternName=document.getElementById('lcdPatternName');
+lcdPatternBtn.addEventListener('click', ()=>{
+  closeAllOverlays();
+  patternsOverlay.classList.add('open');
+  refreshPatternList();
+});
+// Zentrale Stelle, die currentLoadedPatternId setzt UND die LCD-Anzeige synchron hält —
+// ersetzt direkte Zuweisungen von currentLoadedPatternId an allen Aufrufstellen.
+function setCurrentLoadedPattern(id, name){
+  currentLoadedPatternId=id;
+  lcdPatternName.textContent=name||'—';
+}
 
 // ---- Pattern-Länge (16/32/48/64 Steps) ----
 const lengthRow=document.getElementById('lengthRow');
@@ -1987,12 +2265,14 @@ const pageNav=document.getElementById('pageNav');
 const pageLabel=document.getElementById('pageLabel');
 const pagePrevBtn=document.getElementById('pagePrevBtn');
 const pageNextBtn=document.getElementById('pageNextBtn');
+const pageCopyBtn=document.getElementById('pageCopyBtn');
 function renderPageNav(){
   const total=totalPages();
   pageNav.classList.toggle('show', total>1);
   pageLabel.textContent='Seite '+(currentPage+1)+'/'+total;
   pagePrevBtn.disabled = currentPage===0;
   pageNextBtn.disabled = currentPage===total-1;
+  pageCopyBtn.disabled = currentPage===total-1; // keine nächste Seite zum Reinkopieren vorhanden
 }
 pagePrevBtn.addEventListener('click', ()=>{
   if(currentPage>0){ currentPage--; renderPageNav(); renderAllForPage(); }
@@ -2000,6 +2280,26 @@ pagePrevBtn.addEventListener('click', ()=>{
 pageNextBtn.addEventListener('click', ()=>{
   if(currentPage<totalPages()-1){ currentPage++; renderPageNav(); renderAllForPage(); }
 });
+// Dupliziert die 16 Steps (inkl. Noten/Slides für Acid Bass) der aktuellen Seite auf
+// die direkt folgende Seite und springt dorthin — schnellster Weg, um z.B. aus einem
+// 16-Step-Grundbeat per 32/64-Step-Verlängerung einen Vers/Chorus-Unterschied nur an
+// den paar Steps zu bauen, die sich wirklich unterscheiden sollen.
+function copyCurrentPageToNext(){
+  const total=totalPages();
+  if(currentPage>=total-1) return;
+  const from=currentPage*16, to=(currentPage+1)*16;
+  TRACKS.forEach(tr=>{
+    for(let i=0;i<16;i++){
+      tr.steps[to+i]=tr.steps[from+i];
+      if(tr.notes) tr.notes[to+i]=tr.notes[from+i];
+      if(tr.slides) tr.slides[to+i]=tr.slides[from+i];
+    }
+  });
+  currentPage++;
+  renderPageNav();
+  renderAllForPage();
+}
+pageCopyBtn.addEventListener('click', copyCurrentPageToNext);
 let tbVolKnob=null, tbTuneKnob=null, tbRevKnob=null, tbDelayKnob=null, tbFeelKnob=null;
 
 const recControls=document.getElementById('recControls');
@@ -2630,13 +2930,10 @@ padQuantizeBtn.addEventListener('click', ()=>{
   padQuantizeBtn.classList.toggle('on', padQuantize);
 });
 
-// Sample-Pad-Bereich: eigenes Vollbild-Overlay, gleiches Muster wie #tempoOverlay —
-// über den "🎛️ Pads"-Chip neben Fill aufrufbar, Schließen-Button oben rechts.
+// Sample-Pad-Bereich: jetzt eigenes Tab-Panel (früher Vollbild-Overlay) — Klick-
+// Handler wird weiter unten zentral über switchTab() gesetzt (s. dort).
 const padsToggleBtn=document.getElementById('padsToggleBtn');
 const padOverlay=document.getElementById('padOverlay');
-const padOverlayCloseBtn=document.getElementById('padOverlayCloseBtn');
-padsToggleBtn.addEventListener('click', ()=> padOverlay.classList.add('open'));
-padOverlayCloseBtn.addEventListener('click', ()=> padOverlay.classList.remove('open'));
 
 // =========================================================================
 // MIXER — Vollbild-Overlay mit einem Kanalzug pro Spur (Fader/Vol, Pan,
@@ -2647,7 +2944,6 @@ padOverlayCloseBtn.addEventListener('click', ()=> padOverlay.classList.remove('o
 // =========================================================================
 const mixerToggleBtn=document.getElementById('mixerToggleBtn');
 const mixerOverlay=document.getElementById('mixerOverlay');
-const mixerOverlayCloseBtn=document.getElementById('mixerOverlayCloseBtn');
 const mixerChannels=document.getElementById('mixerChannels');
 
 function dbLabel(v){
@@ -2814,13 +3110,7 @@ function mixerMeterLoop(){
   if(window._masterMeter) updateMeter(window._masterMeter, masterAnalyser);
   mixerMeterRAF=requestAnimationFrame(mixerMeterLoop);
 }
-mixerToggleBtn.addEventListener('click', ()=>{
-  mixerOverlay.classList.add('open');
-  Promise.resolve(initAudio()).then(()=>{
-    if(!mixerMeterRAF) mixerMeterRAF=requestAnimationFrame(mixerMeterLoop);
-  });
-});
-mixerOverlayCloseBtn.addEventListener('click', ()=> mixerOverlay.classList.remove('open'));
+// Mixer-Tab-Klick-Handler wird weiter unten zentral über switchTab() gesetzt.
 
 // Gemeinsamer Delay-Send für alle 9 Live-Pads (kein Sinn, jedes Pad einzeln zu
 // regeln — anders als Spuren werden Pads meist spontan/live gespielt).
@@ -3002,8 +3292,22 @@ async function loadPadsFromIndexedDB(){
 // PATTERN-SPEICHER — kompletter Beat-Zustand (Steps, Kit, Tempo, Hall, …)
 // als benannte Sätze in IndexedDB, session-übergreifend abrufbar.
 // =========================================================================
-function collectPatternData(name){
+// Stabile, kollisionssichere ID für gespeicherte Patterns — Song-Slots referenzieren
+// Patterns über diese ID statt über den Namen, damit Umbenennen (siehe unten) bestehende
+// Song-Referenzen nicht bricht. Kein Krypto-Anspruch nötig, nur lokale Eindeutigkeit.
+function genId(){ return 'p_'+Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
+// Hängt bei Namenskollision "(2)", "(3)", … an — zentrale Stelle für die im ganzen
+// Beats-System geltende Regel "nie stillschweigend überschreiben, sondern umbenennen"
+// (Speichern, Duplizieren, Umbenennen, Import nutzen alle diese eine Funktion).
+function uniqueName(base, existingNames){
+  if(!existingNames.has(base)) return base;
+  let n=2, candidate=base+' ('+n+')';
+  while(existingNames.has(candidate)){ n++; candidate=base+' ('+n+')'; }
+  return candidate;
+}
+function collectPatternData(name, id){
   return {
+    id: id || genId(),
     name,
     savedAt: Date.now(),
     schemaVersion: 6, // v6 = Humanize (global) + Feel (pro Spur); pan/EQ/muted/solo/fill (v6.1, rückwärtskompatibel) neu dazu
@@ -3052,26 +3356,19 @@ function migrateStepsToVelocity(savedSteps, trackId, oldAccentSteps, targetLen){
   }
   return out;
 }
-function applyPatternData(data){
-  swing=data.swing; humanize=data.humanize!=null ? data.humanize : 0; // alte Patterns: 0 = kein Humanize
-  setBpm(data.bpm); // aktualisiert bpm + LCD-Kopfzeile + Tempo-Kachel + Overlay-Ziffer/-Slider synchron
-  // Nur die 3 dynamisch erzeugten Drehregler entfernen — #tempoControl ist festes Markup
-  // (erstes Kind von globalKnobs) und darf hier NICHT mit gelöscht werden.
-  Array.from(globalKnobs.children).forEach(el=>{ if(el.id!=='tempoControl') el.remove(); });
-  [
-    makeKnob({label:'SWING', min:0, max:0.6, value:swing, fmt:v=>Math.round(v/0.6*100)+'%', onChange:v=>swing=v}),
-    makeKnob({label:'HUMANIZE', min:0, max:1, value:humanize, fmt:v=>Math.round(v*100)+'%', onChange:v=>humanize=v}),
-    (masterVolKnobRef=makeKnob({label:'VOLUME', min:0, max:1, value:masterVol, fmt:v=>Math.round(v*100)+'%', onChange:v=>setMasterVol(v)})),
-  ].forEach(k=>globalKnobs.appendChild(k.el));
-
+// Gemeinsamer Kern von applyPatternData() und applySongSlotPattern(): setzt Kit,
+// Pattern-Länge, alle Track-Daten (Steps/Vol/Pan/EQ/Mute/Solo/Feel/Sends/Arp) und
+// Fill-Einstellungen. Bewusst OHNE Tempo/Swing/Humanize und OHNE stop() — beim
+// Song-Slot-Wechsel während des Abspielens soll die Wiedergabe nahtlos weiterlaufen,
+// nicht neu starten. applyPatternData() (Beats laden per Hand) ergänzt Tempo+Stop.
+function applyTrackAndFillData(data){
   if(KITS[data.kitId]){
     currentKitId=data.kitId;
     document.querySelectorAll('.kit-chip').forEach(c=>c.classList.remove('active'));
-    KITS[data.kitId]._chip.classList.add('active');
+    if(KITS[data.kitId]._chip) KITS[data.kitId]._chip.classList.add('active');
     lcdKit.textContent=KITS[data.kitId].name;
   }
 
-  if(isPlaying) stop();
   PATTERN_LENGTH = data.patternLength || 16; // ältere Patterns hatten keine gespeicherte Länge → 16
   currentPage=0;
   data.tracks.forEach(saved=>{
@@ -3141,42 +3438,88 @@ function applyPatternData(data){
   selectTrack(activeTrackIdx);
   renderAllForPage();
 }
+function applyPatternData(data){
+  swing=data.swing; humanize=data.humanize!=null ? data.humanize : 0; // alte Patterns: 0 = kein Humanize
+  setBpm(data.bpm); // aktualisiert bpm + LCD-Kopfzeile + Tempo-Kachel + Overlay-Ziffer/-Slider synchron
+  // Nur die 3 dynamisch erzeugten Drehregler entfernen — #tempoControl ist festes Markup
+  // (erstes Kind von globalKnobs) und darf hier NICHT mit gelöscht werden.
+  Array.from(globalKnobs.children).forEach(el=>{ if(el.id!=='tempoControl') el.remove(); });
+  [
+    makeKnob({label:'SWING', min:0, max:0.6, value:swing, fmt:v=>Math.round(v/0.6*100)+'%', onChange:v=>swing=v}),
+    makeKnob({label:'HUMANIZE', min:0, max:1, value:humanize, fmt:v=>Math.round(v*100)+'%', onChange:v=>humanize=v}),
+    (masterVolKnobRef=makeKnob({label:'VOLUME', min:0, max:1, value:masterVol, fmt:v=>Math.round(v*100)+'%', onChange:v=>setMasterVol(v)})),
+  ].forEach(k=>globalKnobs.appendChild(k.el));
+
+  if(isPlaying) stop();
+  applyTrackAndFillData(data);
+}
+// Song-Modus: lädt beim Slot-Wechsel das nächste Pattern OHNE stop() und OHNE
+// Tempo/Swing/Humanize zu verändern — ein Song hat ein durchgehendes Tempo,
+// nur Steps/Kit/Track-Einstellungen wechseln pro Slot. loopCount wird zurückgesetzt,
+// damit der Fill-Zyklus des neuen Patterns nicht durch den alten Zählerstand aus dem
+// Tritt gerät (z.B. sofortiger Fill direkt beim Slot-Einstieg).
+function applySongSlotPattern(data){
+  loopCount=0;
+  applyTrackAndFillData(data);
+}
 async function savePatternToIndexedDB(data){
   const db=await idbOpen();
   const tx=db.transaction(IDB_PATTERNS,'readwrite');
-  tx.objectStore(IDB_PATTERNS).put(data, data.name);
+  tx.objectStore(IDB_PATTERNS).put(data, data.id);
 }
-async function loadPatternFromIndexedDB(name){
+async function loadPatternFromIndexedDB(id){
   const db=await idbOpen();
   const tx=db.transaction(IDB_PATTERNS,'readonly');
   return new Promise((res,rej)=>{
-    const r=tx.objectStore(IDB_PATTERNS).get(name);
+    const r=tx.objectStore(IDB_PATTERNS).get(id);
     r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);
   });
 }
-async function deletePatternFromIndexedDB(name){
+async function deletePatternFromIndexedDB(id){
   const db=await idbOpen();
   const tx=db.transaction(IDB_PATTERNS,'readwrite');
-  tx.objectStore(IDB_PATTERNS).delete(name);
+  tx.objectStore(IDB_PATTERNS).delete(id);
 }
+// Liest alle gespeicherten Patterns. Ältere Einträge (vor der ID-Umstellung) waren
+// per Name statt per ID keyed und haben kein data.id-Feld — die werden hier einmalig
+// "lazy" migriert (neue ID vergeben, unter dem neuen Key neu abgelegt, alten
+// Namens-Key gelöscht), damit Rename/Song-Referenzen für ALLE Patterns funktionieren,
+// auch für schon vor diesem Update gespeicherte.
 async function listPatternsFromIndexedDB(){
   const db=await idbOpen();
-  const tx=db.transaction(IDB_PATTERNS,'readonly');
-  return new Promise((res,rej)=>{
-    const out=[];
+  const out=[];
+  await new Promise((res,rej)=>{
+    const tx=db.transaction(IDB_PATTERNS,'readonly');
     const req=tx.objectStore(IDB_PATTERNS).openCursor();
     req.onsuccess=(e)=>{
       const cursor=e.target.result;
-      if(cursor){ out.push(cursor.value); cursor.continue(); }
-      else res(out.sort((a,b)=>b.savedAt-a.savedAt));
+      if(cursor){
+        const val=cursor.value;
+        if(!val.id){ val.id=genId(); val.__oldKey=cursor.key; }
+        out.push(val);
+        cursor.continue();
+      } else res();
     };
     req.onerror=()=>rej(req.error);
   });
+  const toMigrate=out.filter(p=>p.__oldKey!=null);
+  if(toMigrate.length){
+    await new Promise((res,rej)=>{
+      const tx=db.transaction(IDB_PATTERNS,'readwrite');
+      const store=tx.objectStore(IDB_PATTERNS);
+      toMigrate.forEach(p=>{
+        const oldKey=p.__oldKey; delete p.__oldKey;
+        store.delete(oldKey);
+        store.put(p, p.id);
+      });
+      tx.oncomplete=res; tx.onerror=()=>rej(tx.error);
+    });
+  }
+  return out.sort((a,b)=>b.savedAt-a.savedAt);
 }
 
 const patternsOverlay=document.getElementById('patternsOverlay');
 const patternsOverlayCloseBtn=document.getElementById('patternsOverlayCloseBtn');
-const patternsToggleBtn=document.getElementById('patternsToggleBtn');
 const exportWavBtn=document.getElementById('exportWavBtn');
 exportWavBtn.addEventListener('click', async ()=>{
   const orig=exportWavBtn.textContent;
@@ -3203,6 +3546,7 @@ exportWavBtn.addEventListener('click', async ()=>{
 });
 const patternNameInput=document.getElementById('patternNameInput');
 const patternSaveBtn=document.getElementById('patternSaveBtn');
+let currentLoadedPatternId=null; // id des zuletzt geladenen/gespeicherten/duplizierten Patterns (für Song-Referenzen/Anzeige)
 const patternList=document.getElementById('patternList');
 
 async function refreshPatternList(){
@@ -3213,31 +3557,101 @@ async function refreshPatternList(){
     patternList.appendChild(empty); return;
   }
   items.forEach(item=>{
-    const row=document.createElement('div'); row.className='pattern-row';
+    const row=document.createElement('div'); row.className='pattern-row'+(item.id===currentLoadedPatternId?' active':'');
+
+    const meta=document.createElement('div'); meta.className='prow-meta';
     const nameEl=document.createElement('div'); nameEl.className='pname'; nameEl.textContent=item.name;
     const dateEl=document.createElement('div'); dateEl.className='pdate';
-    dateEl.textContent=new Date(item.savedAt).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'});
-    const btns=document.createElement('div'); btns.className='pbtns';
-    const loadBtn=document.createElement('button'); loadBtn.className='pload'; loadBtn.textContent='Laden';
+    dateEl.textContent = item.id===currentLoadedPatternId ? '● aktiv' : new Date(item.savedAt).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'});
+    meta.appendChild(nameEl); meta.appendChild(dateEl);
+    row.appendChild(meta);
+
+    const actions=document.createElement('div'); actions.className='prow-actions';
+
+    const loadBtn=document.createElement('button'); loadBtn.className='prow-btn pload'; loadBtn.innerHTML='▶'; loadBtn.title='Laden';
     loadBtn.addEventListener('click', async ()=>{
-      const data=await loadPatternFromIndexedDB(item.name);
-      if(data){ applyPatternData(data); rememberLastPattern(item.name); }
+      const data=await loadPatternFromIndexedDB(item.id);
+      if(data){ applyPatternData(data); setCurrentLoadedPattern(item.id, item.name); rememberLastPattern(item.id); }
       patternsOverlay.classList.remove('open');
     });
-    const exportBtn=document.createElement('button'); exportBtn.textContent='⬇'; exportBtn.title='Diesen Beat als JSON exportieren';
+
+    const copyBtn=document.createElement('button'); copyBtn.className='prow-btn'; copyBtn.innerHTML='⧉'; copyBtn.title='Duplizieren';
+    copyBtn.addEventListener('click', async (e)=>{
+      e.stopPropagation();
+      const existingNames=new Set((await listPatternsFromIndexedDB()).map(p=>p.name));
+      const newName=uniqueName(item.name+' (Kopie)', existingNames);
+      const newData=Object.assign({}, item, { id:genId(), name:newName, savedAt:Date.now() });
+      await savePatternToIndexedDB(newData);
+      applyPatternData(newData);
+      setCurrentLoadedPattern(newData.id, newData.name);
+      rememberLastPattern(newData.id);
+      refreshPatternList();
+      showPatternIOStatus('„'+item.name+'“ dupliziert als „'+newName+'“ und geladen');
+    });
+
+    const renameBtn=document.createElement('button'); renameBtn.className='prow-btn'; renameBtn.innerHTML='✎'; renameBtn.title='Umbenennen';
+    renameBtn.addEventListener('click', (e)=>{ e.stopPropagation(); startRenamePattern(row, item); });
+
+    const songBtn=document.createElement('button'); songBtn.className='prow-btn'; songBtn.innerHTML='🎼+'; songBtn.title='Zum Song hinzufügen';
+    songBtn.addEventListener('click', (e)=>{ e.stopPropagation(); addPatternToSong(item); });
+
+    const exportBtn=document.createElement('button'); exportBtn.className='prow-btn'; exportBtn.innerHTML='⬇'; exportBtn.title='Als JSON exportieren';
     exportBtn.addEventListener('click', (e)=>{ e.stopPropagation(); exportSinglePattern(item); });
-    const delBtn=document.createElement('button'); delBtn.textContent='✕';
-    delBtn.addEventListener('click', async ()=>{ await deletePatternFromIndexedDB(item.name); refreshPatternList(); });
-    btns.appendChild(loadBtn); btns.appendChild(exportBtn); btns.appendChild(delBtn);
-    row.appendChild(nameEl); row.appendChild(dateEl); row.appendChild(btns);
+
+    const delBtn=document.createElement('button'); delBtn.className='prow-btn prow-del'; delBtn.innerHTML='✕'; delBtn.title='Löschen';
+    delBtn.addEventListener('click', async (e)=>{
+      e.stopPropagation();
+      await deletePatternFromIndexedDB(item.id);
+      refreshPatternList();
+    });
+
+    [loadBtn, copyBtn, renameBtn, songBtn, exportBtn, delBtn].forEach(b=>actions.appendChild(b));
+    row.appendChild(actions);
     patternList.appendChild(row);
   });
 }
-patternsToggleBtn.addEventListener('click', ()=>{
-  patternsOverlay.classList.add('open');
+// Verwandelt eine Pattern-Row temporär in ein Umbenennen-Formular (Input + Speichern/
+// Abbrechen) statt eines Browser-prompt() — bleibt optisch im Chassis-Look statt eines
+// systemfremden Dialogs. Committen prüft auf Namenskollision (uniqueName) wie überall
+// sonst im Beats-System.
+function startRenamePattern(row, item){
+  row.innerHTML='';
+  row.classList.add('renaming');
+  const input=document.createElement('input'); input.type='text'; input.className='prow-rename-input';
+  input.value=item.name; input.maxLength=40;
+  row.appendChild(input);
+  const actions=document.createElement('div'); actions.className='prow-actions';
+  const confirmBtn=document.createElement('button'); confirmBtn.className='prow-btn'; confirmBtn.innerHTML='✓'; confirmBtn.title='Speichern';
+  const cancelBtn=document.createElement('button'); cancelBtn.className='prow-btn'; cancelBtn.innerHTML='✕'; cancelBtn.title='Abbrechen';
+  actions.appendChild(confirmBtn); actions.appendChild(cancelBtn);
+  row.appendChild(actions);
+  input.focus(); input.select();
+  const commit=()=>commitRenamePattern(item, input.value);
+  confirmBtn.addEventListener('click', commit);
+  cancelBtn.addEventListener('click', ()=> refreshPatternList());
+  input.addEventListener('keydown', e=>{
+    if(e.key==='Enter'){ e.preventDefault(); commit(); }
+    if(e.key==='Escape'){ e.preventDefault(); refreshPatternList(); }
+  });
+}
+async function commitRenamePattern(item, newNameRaw){
+  const newName=newNameRaw.trim();
+  if(!newName){ refreshPatternList(); return; }
+  if(newName===item.name){ refreshPatternList(); return; }
+  const others=(await listPatternsFromIndexedDB()).filter(p=>p.id!==item.id).map(p=>p.name);
+  const finalName=uniqueName(newName, new Set(others));
+  const data=await loadPatternFromIndexedDB(item.id);
+  if(!data){ refreshPatternList(); return; }
+  data.name=finalName;
+  await savePatternToIndexedDB(data); // gleiche id -> gleicher Key, nur Inhalt aktualisiert
+  showPatternIOStatus('Umbenannt zu „'+finalName+'“'+(finalName!==newName?' (Name bereits vergeben)':''));
   refreshPatternList();
-});
+  refreshSongPatternCache(); // Song-Slots zeigen Namen live über die id nach — hier neu ziehen
+}
+// Öffnen der Beats-Bibliothek läuft jetzt über lcdPatternBtn (s.o.), nicht mehr
+// über einen eigenen Bottom-Bar-Chip.
 patternsOverlayCloseBtn.addEventListener('click', ()=> patternsOverlay.classList.remove('open'));
+
 
 // =========================================================================
 // PATTERN-EXPORT/IMPORT — Beats als JSON-Datei sichern bzw. wieder einlesen.
@@ -3301,15 +3715,12 @@ patternImportInput.addEventListener('change', async (e)=>{
     let imported=0, renamed=0;
     for(const p of incoming){
       if(!p || !p.name || !Array.isArray(p.tracks)) continue; // grobe Plausibilitätsprüfung pro Eintrag
-      let name=p.name;
-      if(existingNames.has(name)){
-        // Namenskollision: nie stillschweigend überschreiben, sondern automatisch umbenennen
-        let n=2, candidate=name+' ('+n+')';
-        while(existingNames.has(candidate)){ n++; candidate=name+' ('+n+')'; }
-        name=candidate; renamed++;
-      }
+      const name=uniqueName(p.name, existingNames);
+      if(name!==p.name) renamed++;
       existingNames.add(name);
-      await savePatternToIndexedDB(Object.assign({}, p, { name, savedAt:Date.now() }));
+      // Immer eine frische lokale id vergeben (nie eine importierte id übernehmen) —
+      // vermeidet Kollisionen mit lokal bereits vorhandenen IDs aus anderer Quelle.
+      await savePatternToIndexedDB(Object.assign({}, p, { id:genId(), name, savedAt:Date.now() }));
       imported++;
     }
     if(imported===0) throw new Error('Keine gültigen Beats in der Datei gefunden');
@@ -3324,7 +3735,6 @@ patternImportInput.addEventListener('change', async (e)=>{
 // ---- Fill-In-Overlay ----
 const fillToggleBtn=document.getElementById('fillToggleBtn');
 const fillOverlay=document.getElementById('fillOverlay');
-const fillOverlayCloseBtn=document.getElementById('fillOverlayCloseBtn');
 const fillLenChips=document.getElementById('fillLenChips');
 const fillEveryChips=document.getElementById('fillEveryChips');
 const fillEnableBtn=document.getElementById('fillEnableBtn');
@@ -3384,16 +3794,135 @@ fillEnableBtn.addEventListener('click', ()=>{
   fillEnableBtn.textContent = fillEnabled ? 'Fill aktiv' : 'Fill aus';
   fillToggleBtn.classList.toggle('on', fillEnabled);
 });
-fillToggleBtn.addEventListener('click', ()=> fillOverlay.classList.add('open'));
-fillOverlayCloseBtn.addEventListener('click', ()=> fillOverlay.classList.remove('open'));
+// Fill-Tab-Klick-Handler wird weiter unten zentral über switchTab() gesetzt.
+
+// ---- Song-Tab ----
+const songToggleBtn=document.getElementById('songToggleBtn');
+const songOverlay=document.getElementById('songOverlay');
+const songEnableBtn=document.getElementById('songEnableBtn');
+const songLoopBtn=document.getElementById('songLoopBtn');
+const songSlotsEl=document.getElementById('songSlotsList');
+// Song-Tab-Klick-Handler wird weiter unten zentral über switchTab() gesetzt.
+
+// Schließt die verbleibenden echten Modals (Tempo/Beats/Kit-Picker/Trim) — die 5
+// Bereiche Pattern/Fill/Pads/Mixer/Song sind jetzt Tabs, keine Overlays mehr, und
+// laufen über switchTab() (s.u.), nicht mehr über diese Funktion.
+const tabPattern=document.getElementById('tabPattern');
+const patternTabBtn=document.getElementById('patternTabBtn');
+function closeAllOverlays(){
+  [tempoOverlay, patternsOverlay, kitPickerOverlay].forEach(el=>{ if(el) el.classList.remove('open'); });
+  closeTrimEditor();
+}
+// Blendet genau eines der 5 Tab-Panels ein (Pattern/Fill/Pads/Mixer/Song), alle
+// anderen aus, und markiert den passenden Bottom-Bar-Button als aktuell aktiv.
+// Ersetzt das frühere "Overlay öffnen/schließen"-Modell — kein Schließen-Button
+// mehr nötig, da immer genau ein Panel sichtbar ist.
+const TAB_PANELS={ pattern:tabPattern, fill:fillOverlay, pads:padOverlay, mixer:mixerOverlay, song:songOverlay };
+function switchTab(name){
+  closeAllOverlays();
+  Object.keys(TAB_PANELS).forEach(k=> TAB_PANELS[k].classList.toggle('open', k===name));
+  document.querySelectorAll('.tab-item[data-tab]').forEach(b=> b.classList.toggle('current', b.dataset.tab===name));
+  if(name==='mixer'){
+    Promise.resolve(initAudio()).then(()=>{ if(!mixerMeterRAF) mixerMeterRAF=requestAnimationFrame(mixerMeterLoop); });
+  }
+  if(name==='song'){
+    refreshSongPatternCache();
+  }
+}
+patternTabBtn.addEventListener('click', ()=> switchTab('pattern'));
+fillToggleBtn.addEventListener('click', ()=> switchTab('fill'));
+padsToggleBtn.addEventListener('click', ()=> switchTab('pads'));
+mixerToggleBtn.addEventListener('click', ()=> switchTab('mixer'));
+songToggleBtn.addEventListener('click', ()=> switchTab('song'));
+
+songEnableBtn.addEventListener('click', ()=>{
+  songEnabled=!songEnabled;
+  songEnableBtn.classList.toggle('on', songEnabled);
+  songEnableBtn.textContent = songEnabled ? 'Song aktiv' : 'Song aus';
+  songToggleBtn.classList.toggle('on', songEnabled);
+  if(songEnabled){ currentSongSlotIndex=0; songSlotLoopsPlayed=0; refreshSongPatternCache(); }
+});
+songLoopBtn.addEventListener('click', ()=>{
+  songLoopEnabled=!songLoopEnabled;
+  songLoopBtn.classList.toggle('on', songLoopEnabled);
+});
+
+// Von den Beats-Zeilen aus aufgerufen (🎼+-Button) — item ist bereits das volle
+// Pattern-Objekt aus listPatternsFromIndexedDB(), daher direkt cachebar ohne
+// weiteren IndexedDB-Zugriff.
+function addPatternToSong(item){
+  songSlots.push({ slotId:genId(), patternId:item.id, repeats:1 });
+  songPatternCache[item.id]=item;
+  renderSongSlots();
+  showPatternIOStatus('„'+item.name+'“ zum Song hinzugefügt');
+}
+// Holt alle referenzierten Patterns frisch aus IndexedDB (z.B. nach einem
+// Rename oder wenn der Song-Editor länger nicht offen war) und aktualisiert
+// die Anzeige. Wird auch unmittelbar vor dem Aktivieren von Song aufgerufen,
+// damit während des Abspielens kein async-Ladevorgang mehr nötig ist (s.o.).
+async function refreshSongPatternCache(){
+  const all=await listPatternsFromIndexedDB();
+  const byId={}; all.forEach(p=>byId[p.id]=p);
+  songSlots.forEach(s=>{ if(byId[s.patternId]) songPatternCache[s.patternId]=byId[s.patternId]; });
+  renderSongSlots();
+}
+function renderSongSlots(){
+  songSlotsEl.innerHTML='';
+  if(songSlots.length===0){
+    const empty=document.createElement('div'); empty.id='songEmpty';
+    empty.textContent='Noch keine Slots — in den Beats über 🎼+ ein Pattern hinzufügen';
+    songSlotsEl.appendChild(empty);
+    return;
+  }
+  songSlots.forEach((slot,idx)=>{
+    const patData=songPatternCache[slot.patternId];
+    const row=document.createElement('div');
+    row.className='song-slot-row'+(songEnabled && idx===currentSongSlotIndex ? ' active' : '')+(!patData ? ' missing' : '');
+
+    const nameEl=document.createElement('div'); nameEl.className='ssr-name';
+    nameEl.textContent = patData ? patData.name : '⚠ Pattern gelöscht';
+    row.appendChild(nameEl);
+
+    const repWrap=document.createElement('div'); repWrap.className='ssr-rep';
+    const minus=document.createElement('button'); minus.textContent='−';
+    minus.addEventListener('click', ()=>{ slot.repeats=Math.max(1,slot.repeats-1); renderSongSlots(); });
+    const repVal=document.createElement('span'); repVal.textContent='x'+slot.repeats;
+    const plus=document.createElement('button'); plus.textContent='+';
+    plus.addEventListener('click', ()=>{ slot.repeats=Math.min(99,slot.repeats+1); renderSongSlots(); });
+    repWrap.appendChild(minus); repWrap.appendChild(repVal); repWrap.appendChild(plus);
+    row.appendChild(repWrap);
+
+    const upBtn=document.createElement('button'); upBtn.className='ssr-move'; upBtn.textContent='▲'; upBtn.disabled=idx===0;
+    upBtn.addEventListener('click', ()=>{ if(idx>0){ [songSlots[idx-1],songSlots[idx]]=[songSlots[idx],songSlots[idx-1]]; renderSongSlots(); } });
+    const downBtn=document.createElement('button'); downBtn.className='ssr-move'; downBtn.textContent='▼'; downBtn.disabled=idx===songSlots.length-1;
+    downBtn.addEventListener('click', ()=>{ if(idx<songSlots.length-1){ [songSlots[idx+1],songSlots[idx]]=[songSlots[idx],songSlots[idx+1]]; renderSongSlots(); } });
+    row.appendChild(upBtn); row.appendChild(downBtn);
+
+    const delBtn=document.createElement('button'); delBtn.className='ssr-del'; delBtn.textContent='✕';
+    delBtn.addEventListener('click', ()=>{
+      songSlots.splice(idx,1);
+      if(currentSongSlotIndex>=songSlots.length) currentSongSlotIndex=Math.max(0,songSlots.length-1);
+      renderSongSlots();
+    });
+    row.appendChild(delBtn);
+
+    songSlotsEl.appendChild(row);
+  });
+}
 
 patternSaveBtn.addEventListener('click', async ()=>{
-  const name=patternNameInput.value.trim();
-  if(!name) return;
-  await savePatternToIndexedDB(collectPatternData(name));
-  rememberLastPattern(name);
+  const typedName=patternNameInput.value.trim();
+  if(!typedName) return;
+  const existingNames=new Set((await listPatternsFromIndexedDB()).map(p=>p.name));
+  const finalName=uniqueName(typedName, existingNames);
+  const data=collectPatternData(finalName, genId());
+  await savePatternToIndexedDB(data);
+  currentLoadedPatternId=data.id;
+  setCurrentLoadedPattern(data.id, data.name);
+  rememberLastPattern(data.id);
   patternNameInput.value='';
   refreshPatternList();
+  if(finalName!==typedName) showPatternIOStatus('Name bereits vergeben — gespeichert als „'+finalName+'“');
 });
 
 // =========================================================================
@@ -3558,9 +4087,9 @@ function visualLoop(){
 // =========================================================================
 // localStorage statt IndexedDB für diese beiden kleinen Zustände — synchron
 // verfügbar, kein eigener DB-Store nötig für zwei simple Werte.
-const LAST_PATTERN_KEY='mrm44_lastPatternName';
-function rememberLastPattern(name){
-  try{ localStorage.setItem(LAST_PATTERN_KEY, name); } catch(err){ /* z.B. privater Modus ohne localStorage */ }
+const LAST_PATTERN_KEY='mrm44_lastPatternId';
+function rememberLastPattern(id){
+  try{ localStorage.setItem(LAST_PATTERN_KEY, id); } catch(err){ /* z.B. privater Modus ohne localStorage */ }
 }
 
 // Importiert ./default-beats.json (gleiches Format wie ein normaler Export)
@@ -3584,7 +4113,7 @@ async function importDefaultBeatsIfEmpty(){
     if(!incoming || incoming.length===0) return;
     for(const p of incoming){
       if(!p || !p.name || !Array.isArray(p.tracks)) continue;
-      await savePatternToIndexedDB(Object.assign({}, p, { savedAt: p.savedAt || Date.now() }));
+      await savePatternToIndexedDB(Object.assign({}, p, { id:genId(), savedAt: p.savedAt || Date.now() }));
     }
   } catch(err){ console.warn('Standard-Beats konnten nicht geladen werden:', err); }
 }
@@ -3595,14 +4124,41 @@ async function importDefaultBeatsIfEmpty(){
 // (z.B. zwischenzeitlich gelöscht).
 async function restoreLastOpenedOrSeed(){
   await importDefaultBeatsIfEmpty();
-  let lastName=null;
-  try{ lastName=localStorage.getItem(LAST_PATTERN_KEY); } catch(err){ /* ignore */ }
-  if(!lastName) return;
+  let lastId=null;
+  try{ lastId=localStorage.getItem(LAST_PATTERN_KEY); } catch(err){ /* ignore */ }
+  if(!lastId) return;
   try{
-    const data=await loadPatternFromIndexedDB(lastName);
-    if(data) applyPatternData(data);
+    const data=await loadPatternFromIndexedDB(lastId);
+    if(data){ applyPatternData(data); setCurrentLoadedPattern(lastId, data.name); }
   } catch(err){ console.warn('Zuletzt geöffneter Beat konnte nicht geladen werden:', err); }
 }
+
+// =========================================================================
+// BOTTOM-TAB-BAR — scroll-richtungsabhängiges Ein-/Ausblenden. #panelMain ist
+// selbst der scrollende Container (overflow-y:auto), daher hier gehorcht.
+// Ausblenden nur ab einem kleinen Schwellwert (gegen Zittern bei Mini-Scrolls),
+// an den beiden Scroll-Enden (ganz oben/unten) immer einblenden, damit die Bar
+// nicht "verschwunden" wirkt, wenn gar nicht aktiv gescrollt wird.
+// Verhalten ist bewusst IMMER gleich, auch während Song-Wiedergabe — keine
+// Sonderfälle, um das Verhalten vorhersehbar zu halten.
+(function initBottomTabBarScroll(){
+  const panelMainEl=document.getElementById('panelMain');
+  const bar=document.getElementById('bottomTabBar');
+  if(!panelMainEl || !bar) return;
+  let lastTop=panelMainEl.scrollTop, hidden=false;
+  panelMainEl.addEventListener('scroll', ()=>{
+    const top=panelMainEl.scrollTop;
+    const delta=top-lastTop;
+    const maxScroll=panelMainEl.scrollHeight-panelMainEl.clientHeight;
+    if(top<=4 || top>=maxScroll-4){
+      if(hidden){ hidden=false; bar.classList.remove('hidden'); }
+    } else if(Math.abs(delta)>6){
+      if(delta>0 && !hidden){ hidden=true; bar.classList.add('hidden'); }
+      else if(delta<0 && hidden){ hidden=false; bar.classList.remove('hidden'); }
+    }
+    lastTop=top;
+  }, {passive:true});
+})();
 
 loadSampleFromIndexedDB();
 loadPadsFromIndexedDB();
