@@ -360,25 +360,33 @@
   .tab-item:active .ti-ico{ color:var(--white); filter:drop-shadow(0 0 8px rgba(63,169,255,.9)); }
 
 
-  /* ---------- MIC-SAMPLE AUFNAHME ---------- */
-  #trackBar .rec-controls{ display:flex; align-items:center; gap:8px; }
-  #recBtn{ font-size:11px; letter-spacing:.06em; text-transform:uppercase; cursor:pointer;
-    border:1px solid rgba(63,169,255,.35); border-radius:6px; padding:5px 10px;
-    color:var(--dim); background:var(--panel); white-space:nowrap; }
-  #recBtn:active{ transform:scale(.94); }
-  #recBtn.recording{ background:var(--blue); color:#04121e; border-color:var(--blue);
+  /* ---------- MIC-SAMPLE AUFNAHME (eigene Zeile unter #trackBar, analog #arpControls) ----------
+     Vorher lag die komplette Rec-Bedienung (Status + ▶/✂/✕/Rec) in der einzeiligen #trackBar,
+     zusammen mit Name + 5 Mini-Knobs. Auf dem Phone reichte die Breite nicht — #panelMain hat
+     overflow-x:hidden, der Überschuss wurde also abgeschnitten statt umzubrechen. ✕ (Löschen) und
+     oft auch ● Rec landeten dadurch in einem kaum noch klickbaren Streifen am rechten Rand.
+     Fix: eigene, umbruchfähige Zeile mit ausreichend großen Touch-Targets (≥38px). */
+  #sampleControls{ display:none; flex-direction:column; gap:10px; margin-top:8px;
+    background:var(--panel); border-radius:8px; padding:10px 12px; }
+  .sc-status-row{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .sc-status{ font-size:12px; color:var(--dim); font-family:'JetBrains Mono',monospace; letter-spacing:.02em; }
+  .sc-status.has{ color:var(--blue-2); }
+  .sc-status.err{ color:var(--white); text-shadow:0 0 6px rgba(255,255,255,.5); }
+  .sc-dur{ font-size:12px; color:var(--blue-2); font-family:'JetBrains Mono',monospace; }
+  .sc-hint{ font-size:10px; color:var(--dim); text-align:center; letter-spacing:.02em; }
+  .sc-btns{ display:none; gap:8px; flex-wrap:wrap; }
+  .sc-btn{ flex:1; min-width:64px; min-height:38px; border-radius:8px; border:1px solid rgba(255,255,255,.12);
+    background:var(--panel-inset); color:var(--dim); font-weight:700; font-size:11px; letter-spacing:.03em;
+    text-transform:uppercase; display:flex; align-items:center; justify-content:center; gap:5px; cursor:pointer; }
+  .sc-btn:active{ transform:scale(.96); border-color:rgba(63,169,255,.5); }
+  .sc-btn.rec{ border-color:rgba(63,169,255,.4); color:var(--blue-2); background:rgba(63,169,255,.1); }
+  .sc-btn.rec.big{ min-height:46px; font-size:12px; }
+  .sc-btn.rec.recording{ background:var(--blue); color:#04121e; border-color:var(--blue);
     box-shadow:0 0 14px rgba(63,169,255,.7); animation:recpulse 1s infinite; }
   @keyframes recpulse{ 0%,100%{opacity:1;} 50%{opacity:.55;} }
-  #recStatus{ font-size:9px; color:var(--dim); font-family:'JetBrains Mono',monospace; letter-spacing:.03em; min-width:56px; }
-  #recStatus.err{ color:var(--white); text-shadow:0 0 6px rgba(255,255,255,.5); }
-  #sampleClearBtn{ font-size:10px; color:var(--dim); border:1px solid rgba(255,255,255,.12); border-radius:6px;
-    padding:5px 8px; cursor:pointer; background:transparent; }
-  #sampleClearBtn:active{ transform:scale(.94); border-color:rgba(63,169,255,.5); }
+  .sc-btn.danger{ color:#ff9d7a; border-color:rgba(255,157,122,.3); }
 
   /* ---------- SAMPLE-TRIM-EDITOR ---------- */
-  #trimBtn{ font-size:10px; color:var(--dim); border:1px solid rgba(255,255,255,.12); border-radius:6px;
-    padding:5px 8px; cursor:pointer; background:transparent; white-space:nowrap; }
-  #trimBtn:active{ transform:scale(.94); border-color:rgba(63,169,255,.5); }
   #trimPanel{ display:none; flex-direction:column; gap:6px; background:var(--panel); border-radius:8px; padding:8px 10px; }
   /* fixed + hoher z-index: der Trim-Editor wird auch von einem Pad aus dem neuen
      #padOverlay (z-index:60) heraus geöffnet — ohne das läge er dahinter/unsichtbar,
@@ -732,14 +740,21 @@ html,body{min-height:100%;height:100%;}
         <div id="trackBar">
           <div class="name"><span class="dot" id="tbDot"></span><span id="tbName">BASS DRUM</span></div>
           <div class="mini-knobs" id="tbKnobs"></div>
-          <div class="rec-controls" id="recControls" style="display:none;">
-            <span id="recStatus">kein Sample</span>
-            <button id="samplePreviewBtn" class="preview" style="display:none; padding:5px 8px;">▶</button>
-            <button id="trimBtn" style="display:none;">✂</button>
-            <button id="sampleClearBtn" style="display:none;">✕</button>
-            <button id="recBtn">● Rec</button>
-          </div>
           <div class="preview" id="tbPreview">▶ Hören</div>
+        </div>
+
+        <div id="sampleControls">
+          <div class="sc-status-row" id="scStatusRow" style="display:none;">
+            <span class="sc-status" id="recStatus">kein Sample</span>
+            <span class="sc-dur" id="recDur" style="display:none;"></span>
+          </div>
+          <div class="sc-btns" id="scBtnsRow">
+            <button id="samplePreviewBtn" class="sc-btn">▶ Hören</button>
+            <button id="trimBtn" class="sc-btn">✂ Trimmen</button>
+            <button id="sampleClearBtn" class="sc-btn danger">✕ Löschen</button>
+          </div>
+          <button id="recBtn" class="sc-btn rec big">● Aufnehmen (max. 4s)</button>
+          <div class="sc-hint" id="scHint">Kein Sample gespeichert — Button antippen zum Aufnehmen</div>
         </div>
 
         <div id="arpControls" style="display:none;">
@@ -1790,12 +1805,19 @@ let songPatternCache={}; // patternId -> volle Pattern-Daten
 // Wird aufgerufen, sobald der Scheduler wieder bei Step 0 beginnt (neuer Durchlauf).
 function onLoopRestart(){
   loopCount++;
+  let songJustSwitchedSlot=false;
   if(songEnabled && songSlots.length>0){
     songSlotLoopsPlayed++;
     const slot=songSlots[currentSongSlotIndex];
-    if(slot && songSlotLoopsPlayed>=(slot.repeats||1)) advanceSongSlot();
+    if(slot && songSlotLoopsPlayed>=(slot.repeats||1)){ advanceSongSlot(); songJustSwitchedSlot=true; }
   }
-  currentLoopIsFill = fillEnabled && (loopCount % fillEveryN === 0) && fillLengthSteps <= PATTERN_LENGTH;
+  // Bugfix: applySongSlotPattern() setzt loopCount synchron auf 0 zurück — ohne die
+  // songJustSwitchedSlot-Sperre würde "loopCount % fillEveryN === 0" direkt darunter auf dem
+  // allerersten Durchlauf JEDES neuen Song-Slots immer zutreffen (0 modulo irgendwas ist immer 0),
+  // unabhängig von der fillEveryN-Einstellung — jeder Slot-Wechsel hätte ungewollt einen Fill erzwungen.
+  // Der erste Durchlauf eines neuen Slots bleibt jetzt bewusst fill-frei, der normale Zyklus beginnt
+  // danach ganz regulär wieder bei loopCount 0.
+  currentLoopIsFill = !songJustSwitchedSlot && fillEnabled && (loopCount % fillEveryN === 0) && fillLengthSteps <= PATTERN_LENGTH;
   if(currentLoopIsFill){
     activeFillLength = fillLengthSteps; // für diesen Durchlauf fest — Live-Änderungen wirken erst ab dem nächsten
     fillOverride = generateFillOverride(activeFillLength);
@@ -2302,7 +2324,11 @@ function copyCurrentPageToNext(){
 pageCopyBtn.addEventListener('click', copyCurrentPageToNext);
 let tbVolKnob=null, tbTuneKnob=null, tbRevKnob=null, tbDelayKnob=null, tbFeelKnob=null;
 
-const recControls=document.getElementById('recControls');
+const sampleControls=document.getElementById('sampleControls');
+const scStatusRow=document.getElementById('scStatusRow');
+const scBtnsRow=document.getElementById('scBtnsRow');
+const scHint=document.getElementById('scHint');
+const recDur=document.getElementById('recDur');
 const arpControls=document.getElementById('arpControls');
 const NOTE_NAMES=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 function renderTrackBar(){
@@ -2340,12 +2366,12 @@ function renderTrackBar(){
     onChange:v=>{ tr.feel=v; }});
   tbKnobs.appendChild(tbFeelKnob.el);
 
-  recControls.style.display='none';
+  sampleControls.style.display='none';
   arpControls.style.display='none';
   tbPreview.style.display='';
   closeTrimEditor();
   if(tr.isSample){
-    recControls.style.display='flex';
+    sampleControls.style.display='flex';
     tbPreview.style.display='none';
     updateRecStatus();
   } else if(tr.type==='arp'){
@@ -2471,18 +2497,23 @@ const trimBtn=document.getElementById('trimBtn');
 function updateRecStatus(){
   if(isRecording) return; // während Aufnahme übernimmt der Timer die Anzeige
   if(sampleBuffer){
-    recStatus.textContent=sampleBuffer.duration.toFixed(1)+'s';
-    recStatus.classList.remove('err');
-    sampleClearBtn.style.display='';
-    samplePreviewBtn.style.display='';
-    trimBtn.style.display='';
+    scStatusRow.style.display='flex';
+    recStatus.textContent='● Sample gespeichert';
+    recStatus.classList.add('has'); recStatus.classList.remove('err');
+    recDur.style.display=''; recDur.textContent=sampleBuffer.duration.toFixed(1)+'s';
+    scBtnsRow.style.display='flex';
+    scHint.style.display='none';
+    recBtn.textContent='● Neu aufnehmen';
+    recBtn.classList.remove('big');
   } else {
     const inIframe=(()=>{ try{ return window.self!==window.top; }catch(e){ return true; } })();
-    recStatus.textContent = inIframe ? 'Vorschau: kein Mic' : 'kein Sample';
+    scStatusRow.style.display='none';
+    scBtnsRow.style.display='none';
+    scHint.style.display='';
+    scHint.textContent = inIframe ? 'Vorschau blockiert das Mikrofon' : 'Kein Sample gespeichert — Button antippen zum Aufnehmen';
     if(inIframe) recBtn.title='In dieser Vorschau blockiert — Datei herunterladen & lokal öffnen';
-    sampleClearBtn.style.display='none';
-    samplePreviewBtn.style.display='none';
-    trimBtn.style.display='none';
+    recBtn.textContent='● Aufnehmen (max. 4s)';
+    recBtn.classList.add('big');
   }
 }
 
@@ -2520,16 +2551,23 @@ async function startRecording(){
     await ensureMicStream();
   } catch(err){
     console.warn('Mikrofonzugriff fehlgeschlagen:', err);
+    scStatusRow.style.display='flex';
+    recDur.style.display='none';
+    scHint.style.display='none';
     recStatus.textContent=micErrorMessage(err);
-    recStatus.classList.add('err');
+    recStatus.classList.add('err'); recStatus.classList.remove('has');
     return;
   }
 
   isRecording=true;
   recStartTime=audioCtx.currentTime;
   recBtn.textContent='■ Stop';
-  recBtn.classList.add('recording');
+  recBtn.classList.add('recording','big');
   recStatus.classList.remove('err');
+  scStatusRow.style.display='flex';
+  scBtnsRow.style.display='none';
+  scHint.style.display='none';
+  recDur.style.display='none';
   recTimerId=setInterval(()=>{
     const el=(audioCtx.currentTime-recStartTime);
     recStatus.textContent=el.toFixed(1)+'s';
@@ -2558,8 +2596,7 @@ async function stopRecording(){
   if(!isRecording) return;
   isRecording=false;
   clearInterval(recTimerId);
-  recBtn.textContent='● Rec';
-  recBtn.classList.remove('recording');
+  recBtn.classList.remove('recording'); // Text/Breite (big/normal) übernimmt gleich updateRecStatus()
 
   if(useMicWorklet){
     micSourceNode.disconnect(); micRecorderNode.disconnect(); micSilentGain.disconnect();
@@ -2658,6 +2695,10 @@ async function renderPatternToWav(){
   const liveReverbIn=reverbInputNode, liveReverbConv=reverbConvolver, liveUseWorklet=useWorklet;
   const liveDelayIn=delayInputNode, liveDelayNode=delayNode, liveDelayFb=delayFeedbackGain, liveDelayOut=delayOutputGain;
   const livePadDelaySend=padDelaySendGain;
+  // Bugfix: ohne Sichern/Zurücksetzen zeigte diese globale Choke-Group-Referenz nach dem Export
+  // ggf. noch auf einen Gain-Node des bereits verworfenen OfflineAudioContext — der nächste
+  // Live-Choke-Versuch scheiterte dann still (von try/catch abgefangen, aber ein verschluckter Choke).
+  const liveOpenHatGain=lastOpenHatGain; lastOpenHatGain=null;
   const busBackup=TRACKS.map(tr=>({
     bus:tr.bus, eqLow:tr.eqLow, eqMid:tr.eqMid, eqHigh:tr.eqHigh, panner:tr.panner, analyser:tr.analyser,
     sendGain:tr.sendGain, delaySendGain:tr.delaySendGain,
@@ -2728,6 +2769,7 @@ async function renderPatternToWav(){
   reverbInputNode=liveReverbIn; reverbConvolver=liveReverbConv; useWorklet=liveUseWorklet;
   delayInputNode=liveDelayIn; delayNode=liveDelayNode; delayFeedbackGain=liveDelayFb; delayOutputGain=liveDelayOut;
   padDelaySendGain=livePadDelaySend;
+  lastOpenHatGain=liveOpenHatGain;
   TRACKS.forEach((tr,i)=>{
     tr.bus=busBackup[i].bus; tr.eqLow=busBackup[i].eqLow; tr.eqMid=busBackup[i].eqMid; tr.eqHigh=busBackup[i].eqHigh;
     tr.panner=busBackup[i].panner; tr.analyser=busBackup[i].analyser;
@@ -3522,18 +3564,18 @@ const patternsOverlay=document.getElementById('patternsOverlay');
 const patternsOverlayCloseBtn=document.getElementById('patternsOverlayCloseBtn');
 const exportWavBtn=document.getElementById('exportWavBtn');
 exportWavBtn.addEventListener('click', async ()=>{
+  // Bugfix: renderPatternToWav() biegt audioCtx/master/... für die Dauer des Renderns auf einen
+  // OfflineAudioContext um. Lief der Sequencer währenddessen weiter, griff der Live-Scheduler auf
+  // die vertauschten Objekte zu — Live-Ton brach ab, vereinzelte Events konnten ins WAV durchrutschen.
+  if(isPlaying) stop();
   const orig=exportWavBtn.textContent;
   exportWavBtn.textContent='Rendere…';
   exportWavBtn.disabled=true;
   try{
     const buffer=await renderPatternToWav();
     const blob=audioBufferToWavBlob(buffer);
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
     const stamp=new Date().toISOString().slice(0,16).replace(/[:T]/g,'-');
-    a.href=url; a.download='mrm44-pattern-'+stamp+'.wav';
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(()=>URL.revokeObjectURL(url), 5000);
+    await offerFileToViewer('mrm44-pattern-'+stamp+'.wav', blob);
   } catch(err){
     console.warn('WAV-Export fehlgeschlagen:', err);
     exportWavBtn.textContent='Fehler';
@@ -3644,6 +3686,9 @@ async function commitRenamePattern(item, newNameRaw){
   if(!data){ refreshPatternList(); return; }
   data.name=finalName;
   await savePatternToIndexedDB(data); // gleiche id -> gleicher Key, nur Inhalt aktualisiert
+  // Bugfix: falls das umbenannte Pattern gerade geladen ist, LCD-Anzeige mit aktualisieren —
+  // vorher blieb dort der alte Name stehen, bis manuell neu geladen wurde.
+  if(item.id===currentLoadedPatternId) setCurrentLoadedPattern(item.id, finalName);
   showPatternIOStatus('Umbenannt zu „'+finalName+'“'+(finalName!==newName?' (Name bereits vergeben)':''));
   refreshPatternList();
   refreshSongPatternCache(); // Song-Slots zeigen Namen live über die id nach — hier neu ziehen
@@ -3670,13 +3715,29 @@ function showPatternIOStatus(msg, isError){
   patternIOStatusTimer=setTimeout(()=>{ patternIOStatusEl.textContent=''; }, 4500);
 }
 function ioStamp(){ return new Date().toISOString().slice(0,16).replace(/[:T]/g,'-'); }
-function downloadJson(obj, filename){
-  const blob=new Blob([JSON.stringify(obj,null,2)], {type:'application/json'});
+// Reicht eine erzeugte Datei an die Person weiter. Im veröffentlichten Claude-Artefakt ist ein
+// simpler <a download>-Klick wirkungslos (Sandbox) — dort läuft es über die downloads-Capability
+// (Bestätigungsdialog beim Betrachter). Im echten Deployment (GitHub Pages o.ä.) existiert
+// window.claude nicht, dort greift ganz normal der klassische Browser-Download.
+async function offerFileToViewer(filename, blob){
+  if(window.claude && window.claude.use){
+    try{
+      const downloads=await window.claude.use('downloads');
+      if(downloads){ await downloads.save({filename, data:blob}); return; }
+    } catch(err){
+      if(err && err.code==='declined') return; // Betrachter hat abgelehnt — kein Fallback erzwingen
+      console.warn('downloads-Capability fehlgeschlagen, Fallback auf Browser-Download:', err);
+    }
+  }
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
   a.href=url; a.download=filename;
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(()=>URL.revokeObjectURL(url), 5000);
+}
+async function downloadJson(obj, filename){
+  const blob=new Blob([JSON.stringify(obj,null,2)], {type:'application/json'});
+  await offerFileToViewer(filename, blob);
 }
 function makeExportPayload(patterns){
   return { app:'MRM-44', kind:'mrm44-patterns', formatVersion:1, exportedAt:Date.now(), patterns };
@@ -3684,7 +3745,7 @@ function makeExportPayload(patterns){
 async function exportAllPatterns(){
   const items=await listPatternsFromIndexedDB();
   if(items.length===0){ showPatternIOStatus('Keine gespeicherten Beats zum Exportieren', true); return; }
-  downloadJson(makeExportPayload(items), 'mrm44-beats-'+ioStamp()+'.json');
+  await downloadJson(makeExportPayload(items), 'mrm44-beats-'+ioStamp()+'.json');
   showPatternIOStatus(items.length+' Beat'+(items.length===1?'':'s')+' exportiert');
 }
 function exportSinglePattern(item){
