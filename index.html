@@ -350,6 +350,13 @@
     padding-bottom:env(safe-area-inset-bottom,0);
     transition:transform .2s ease; }
   #bottomTabBar.hidden{ transform:translateY(100%); }
+  /* Bugfix: die drei echten Vollbild-Modals (Tempo/Beats/Kit-Picker, jetzt auch der neue
+     Sample-Editor) hatten z-index:60, die Bar z-index:65 — die Bar lag dadurch fälschlich
+     ÜBER dem Overlay-Inhalt und schnitt z.B. den letzten Beats-Listeneintrag ab. Statt nur
+     den z-index zu korrigieren, wird die Bar bei offenem Modal komplett ausgeblendet: ein
+     Modal sollte ohnehin keine parallele Tab-Navigation im Hintergrund anbieten (dafür hat
+     jedes seinen eigenen Schließen-Button) — eliminiert die ganze Fehlerklasse dauerhaft. */
+  #bottomTabBar.overlay-hidden{ display:none; }
   .tab-item{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
     gap:4px; padding:13px 0 10px; background:transparent; border:none; border-top:2px solid transparent; color:var(--dim); cursor:pointer;
     -webkit-tap-highlight-color:transparent; }
@@ -386,28 +393,59 @@
   @keyframes recpulse{ 0%,100%{opacity:1;} 50%{opacity:.55;} }
   .sc-btn.danger{ color:#ff9d7a; border-color:rgba(255,157,122,.3); }
 
-  /* ---------- SAMPLE-TRIM-EDITOR ---------- */
-  #trimPanel{ display:none; flex-direction:column; gap:6px; background:var(--panel); border-radius:8px; padding:8px 10px; }
-  /* fixed + hoher z-index: der Trim-Editor wird auch von einem Pad aus dem neuen
-     #padOverlay (z-index:60) heraus geöffnet — ohne das läge er dahinter/unsichtbar,
-     da #padOverlay als Vollbild-Overlay sonst alles darunter verdeckt. */
-  #trimPanel.open{ display:flex; position:fixed; left:14px; right:14px; bottom:14px; z-index:70;
-    box-shadow:0 10px 30px rgba(0,0,0,.6); max-width:492px; margin:0 auto; }
-  #trimCanvasWrap{ position:relative; width:100%; height:70px; border-radius:6px; overflow:hidden; background:var(--panel-inset); touch-action:none; }
-  #trimCanvas{ position:absolute; inset:0; width:100%; height:100%; display:block; }
-  #trimHandle{ position:absolute; top:0; bottom:0; width:12px; margin-left:-6px; cursor:ew-resize; }
-  #trimHandle::before{ content:""; position:absolute; top:0; bottom:0; left:5px; width:2px; background:var(--blue);
+  /* ---------- SAMPLE-EDITOR (diese Session, ersetzt den alten schwebenden #trimPanel) —
+     eigenes Vollbild-Overlay wie Beats/Kit-Picker/Tempo statt fixierter Box am unteren Rand.
+     Zentrale Stelle zum Laden/Aufnehmen/Bearbeiten von Samples; das Ergebnis wird danach der
+     Sample-Spur und/oder beliebigen Pads zugewiesen (Mehrfachauswahl über die Chips unten). ---------- */
+  #sampleEditorOverlay{ display:none; position:fixed; inset:0; z-index:60;
+    background:linear-gradient(180deg,var(--chassis),var(--chassis-2));
+    padding:14px; padding-top:max(14px, env(safe-area-inset-top));
+    padding-bottom:max(14px, env(safe-area-inset-bottom));
+    flex-direction:column; gap:10px; overflow-y:auto; }
+  #sampleEditorOverlay.open{ display:flex; }
+  #sampleEditorHead{ display:flex; align-items:center; justify-content:space-between;
+    padding-bottom:12px; border-bottom:1px solid rgba(255,255,255,.06); flex-shrink:0; }
+  #sampleEditorCloseBtn{ width:36px; height:36px; border-radius:8px; background:var(--panel);
+    border:1px solid rgba(255,255,255,.1); color:var(--blue-2); font-size:16px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; }
+  #sampleEditorCloseBtn:active{ transform:scale(.92); }
+  #seSrcRow{ display:flex; gap:8px; flex-shrink:0; }
+  #seSrcRow button{ flex:1; min-height:44px; border-radius:8px; border:1px solid rgba(63,169,255,.35);
+    background:rgba(63,169,255,.1); color:var(--blue-2); font-weight:700; font-size:12px; cursor:pointer; }
+  #seSrcRow button:active{ transform:scale(.97); }
+  #seSrcRow button.recording{ background:var(--blue); color:#04121e; border-color:var(--blue);
+    box-shadow:0 0 14px rgba(63,169,255,.7); animation:recpulse 1s infinite; }
+  #seStatus{ font-size:11px; color:var(--dim); font-family:'JetBrains Mono',monospace; text-align:center; flex-shrink:0; }
+  #seStatus.err{ color:var(--white); text-shadow:0 0 6px rgba(255,255,255,.5); }
+  #seWaveWrap{ height:110px; border-radius:8px; background:var(--panel-inset); position:relative;
+    overflow:hidden; touch-action:none; flex-shrink:0; }
+  #seWaveCanvas{ position:absolute; inset:0; width:100%; height:100%; display:block; }
+  .se-dim{ position:absolute; top:0; bottom:0; background:rgba(0,0,0,.55); pointer-events:none; }
+  .se-handle{ position:absolute; top:0; bottom:0; width:14px; margin-left:-7px; cursor:ew-resize; }
+  .se-handle::before{ content:""; position:absolute; top:0; bottom:0; left:6px; width:2px; background:var(--blue);
     box-shadow:0 0 6px var(--blue), 0 0 12px rgba(63,169,255,.6); }
-  #trimHandle::after{ content:""; position:absolute; top:-2px; left:1px; width:10px; height:10px; border-radius:50%;
+  .se-handle::after{ content:""; position:absolute; top:-2px; left:2px; width:10px; height:10px; border-radius:50%;
     background:var(--blue); box-shadow:0 0 6px var(--blue); }
-  #trimDim{ position:absolute; top:0; bottom:0; left:0; background:rgba(0,0,0,.55); pointer-events:none; }
-  #trimRow{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
-  #trimLabel{ font-size:9px; color:var(--dim); font-family:'JetBrains Mono',monospace; }
-  #trimBtns{ display:flex; gap:6px; }
-  #trimPreviewBtn, #trimApplyBtn, #trimCancelBtn{ font-size:10px; letter-spacing:.04em; text-transform:uppercase;
-    border:1px solid rgba(255,255,255,.12); border-radius:6px; padding:5px 9px; cursor:pointer; background:transparent; color:var(--dim); }
-  #trimApplyBtn{ border-color:rgba(63,169,255,.4); color:var(--blue-2); }
-  #trimPreviewBtn:active, #trimApplyBtn:active, #trimCancelBtn:active{ transform:scale(.94); }
+  #seTrimLabel{ font-size:10px; color:var(--dim); font-family:'JetBrains Mono',monospace; text-align:center; flex-shrink:0; }
+  #seToolsRow{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; flex-shrink:0; }
+  .se-tool-btn{ min-height:40px; border-radius:8px; border:1px solid rgba(255,255,255,.12);
+    background:var(--panel); color:var(--dim); font-size:11px; font-weight:700; cursor:pointer; }
+  .se-tool-btn:active{ transform:scale(.96); border-color:rgba(63,169,255,.4); }
+  #seAssignLabel{ font-size:10px; color:var(--dim); text-transform:uppercase; letter-spacing:.08em; flex-shrink:0; }
+  #seAssignRow{ display:flex; gap:8px; flex-shrink:0; }
+  .se-assign-chip{ padding:9px 14px; border-radius:8px; border:1px solid rgba(255,255,255,.1);
+    background:var(--panel); color:var(--dim); font-size:12px; font-weight:700; cursor:pointer; }
+  .se-assign-chip.on{ border-color:var(--blue); background:rgba(63,169,255,.15); color:var(--blue-2);
+    box-shadow:0 0 10px rgba(63,169,255,.25); }
+  #sePadGrid{ display:grid; grid-template-columns:repeat(9,1fr); gap:5px; flex-shrink:0; }
+  .se-pad-chip{ aspect-ratio:1; border-radius:6px; border:1px solid rgba(255,255,255,.1); background:var(--panel);
+    color:var(--dim); font-size:10px; font-weight:700; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+  .se-pad-chip.on{ border-color:var(--blue); background:rgba(63,169,255,.2); color:var(--blue-2); }
+  #seActionsRow{ display:flex; gap:8px; flex-shrink:0; }
+  #seActionsRow button{ flex:1; min-height:46px; border-radius:9px; font-weight:700; font-size:13px; cursor:pointer; }
+  #sePreviewBtn{ border:1px solid rgba(255,255,255,.12); background:transparent; color:var(--dim); }
+  #seSaveBtn{ border:1px solid rgba(63,169,255,.5); background:rgba(63,169,255,.18); color:var(--blue-2); }
+  #seSaveBtn:active, #sePreviewBtn:active{ transform:scale(.97); }
 
   /* ---------- MIXER-OVERLAY (Vollbild, horizontal scrollbare Kanalzüge im
      Stil professioneller DAW-Mixer: farbiger Kanal-Header, Rotary-Pan,
@@ -530,8 +568,8 @@
   #patternIOStatus.err{ color:#ff9d7a; }
   #patternList{ display:flex; flex-direction:column; gap:5px; flex:1; overflow-y:auto; }
   .pattern-row{ display:flex; flex-direction:column; gap:5px;
-    background:var(--panel-inset); border-radius:6px; padding:6px 8px; border:1px solid transparent; }
-  .pattern-row.active{ border-color:rgba(63,169,255,.4); background:rgba(63,169,255,.08); }
+    background:var(--panel); border-radius:9px; padding:8px 10px; border:1px solid rgba(255,255,255,.08); }
+  .pattern-row.active{ border-color:var(--blue); background:rgba(63,169,255,.12); box-shadow:0 0 12px rgba(63,169,255,.25); }
   .pattern-row.active .pdate{ color:var(--blue-2); }
   .pattern-row.renaming{ flex-direction:row; align-items:center; gap:6px; }
   .prow-meta{ display:flex; align-items:baseline; justify-content:space-between; gap:6px; }
@@ -652,7 +690,6 @@ html,body{min-height:100%;height:100%;}
 
       <div class="lcd-screen">
         <div class="lcd-row">
-          <span class="lcd l1" id="lcdBpm">128 BPM</span>
           <button class="lcd-tap" id="lcdKitBtn" aria-label="Kit wechseln">
             <span class="lcd l1" id="lcdKit">ROCK KIT</span>
             <svg class="lcd-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
@@ -731,6 +768,48 @@ html,body{min-height:100%;height:100%;}
         <div id="patternList"></div>
       </div>
 
+      <div id="sampleEditorOverlay">
+        <div id="sampleEditorHead">
+          <span class="lcd l2" style="color:var(--dim); letter-spacing:.15em; text-transform:uppercase;">Sample-Editor</span>
+          <button id="sampleEditorCloseBtn" aria-label="Schließen">✕</button>
+        </div>
+
+        <div id="seSrcRow">
+          <button id="seRecordBtn">● Aufnehmen</button>
+          <button id="seImportBtn">📁 Datei laden</button>
+        </div>
+        <input type="file" id="seImportInput" accept="audio/*" style="display:none;">
+        <div id="seStatus">Kein Sample geladen</div>
+
+        <div id="seWaveWrap">
+          <canvas id="seWaveCanvas"></canvas>
+          <div class="se-dim" id="seDimLeft"></div>
+          <div class="se-dim" id="seDimRight"></div>
+          <div class="se-handle" id="seHandleStart"></div>
+          <div class="se-handle" id="seHandleEnd"></div>
+        </div>
+        <div id="seTrimLabel">Start: 0.00s · Ende: 0.00s</div>
+
+        <div id="seToolsRow">
+          <button class="se-tool-btn" id="seNormalizeBtn">Normalisieren</button>
+          <button class="se-tool-btn" id="seReverseBtn">Rückwärts</button>
+          <button class="se-tool-btn" id="seFadeInBtn">Fade In</button>
+          <button class="se-tool-btn" id="seFadeOutBtn">Fade Out</button>
+          <button class="se-tool-btn" id="seResetBtn">Zurücksetzen</button>
+        </div>
+
+        <div id="seAssignLabel">Verwenden als</div>
+        <div id="seAssignRow">
+          <div class="se-assign-chip" id="seAssignTrackChip">🎚 Sample-Spur</div>
+        </div>
+        <div id="sePadGrid"></div>
+
+        <div id="seActionsRow">
+          <button id="sePreviewBtn">▶ Vorhören</button>
+          <button id="seSaveBtn">Übernehmen</button>
+        </div>
+      </div>
+
       <div id="tabContent">
 
       <div id="tabPattern" class="tab-panel open">
@@ -804,7 +883,7 @@ html,body{min-height:100%;height:100%;}
           <div id="padDelayKnobWrap"></div>
           <button id="padQuantizeBtn" class="on">🎯 Quantize</button>
         </div>
-        <div id="padHint">Halten = aufnehmen · Tippen = abspielen · ✂ am Pad = Startpunkt trimmen</div>
+        <div id="padHint">Tippen = abspielen (leer = Sample-Editor öffnen) · ✂ am Pad = Sample bearbeiten</div>
         <div id="padGrid"></div>
       </div>
 
@@ -821,22 +900,6 @@ html,body{min-height:100%;height:100%;}
         <div id="songSlotsList"></div>
       </div>
 
-      </div>
-
-      <div id="trimPanel">
-        <div id="trimCanvasWrap">
-          <canvas id="trimCanvas"></canvas>
-          <div id="trimDim"></div>
-          <div id="trimHandle"></div>
-        </div>
-        <div id="trimRow">
-          <span id="trimLabel">Start: 0.00s</span>
-          <div id="trimBtns">
-            <button id="trimPreviewBtn">▶ ab hier</button>
-            <button id="trimCancelBtn">Abbrechen</button>
-            <button id="trimApplyBtn">Übernehmen</button>
-          </div>
-        </div>
       </div>
 
       </div>
@@ -2039,7 +2102,6 @@ function setMasterMuted(m){
   if(master) master.gain.value = masterMuted ? 0 : masterVol;
   if(masterMuteBtnEl) masterMuteBtnEl.classList.toggle('on', masterMuted);
 }
-const lcdBpm=document.getElementById('lcdBpm');
 const globalKnobs=document.getElementById('globalKnobs');
 [
   makeKnob({label:'SWING', min:0, max:0.6, value:swing, fmt:v=>Math.round(v/0.6*100)+'%', onChange:v=>swing=v}),
@@ -2056,7 +2118,6 @@ const globalKnobs=document.getElementById('globalKnobs');
 // synchron gehalten, egal ob Tap/Stepper/Slider/Keypad/Pattern-Load ausgelöst hat.
 function setBpm(v){
   bpm=Math.min(200, Math.max(60, Math.round(v)));
-  lcdBpm.textContent=bpm+' BPM';
   tempoChipVal.textContent=bpm;
   tempoOverlayNum.textContent=bpm;
   tempoOverlaySlider.value=bpm;
@@ -2074,9 +2135,10 @@ const tempoOverlayTap=document.getElementById('tempoOverlayTap');
 const tempoOverlayTapFeedback=document.getElementById('tempoOverlayTapFeedback');
 const tempoOverlaySlider=document.getElementById('tempoOverlaySlider');
 
-function openTempoOverlay(){ tempoOverlay.classList.add('open'); }
+function openTempoOverlay(){ tempoOverlay.classList.add('open'); syncBottomBarVisibility(); }
 function closeTempoOverlay(){
   tempoOverlay.classList.remove('open');
+  syncBottomBarVisibility();
   closeTempoNumInput(false);
 }
 tempoControl.addEventListener('click', openTempoOverlay);
@@ -2244,19 +2306,21 @@ Object.keys(KITS).forEach(kitId=>{
     chip.classList.add('active');
     lcdKit.textContent=kit.name;
     kitPickerOverlay.classList.remove('open');
+    syncBottomBarVisibility();
   });
   kit._chip=chip;
   kitPickerList.appendChild(chip);
 });
 const lcdKitBtn=document.getElementById('lcdKitBtn');
 const kitPickerCloseBtn=document.getElementById('kitPickerCloseBtn');
-lcdKitBtn.addEventListener('click', ()=>{ closeAllOverlays(); kitPickerOverlay.classList.add('open'); });
-kitPickerCloseBtn.addEventListener('click', ()=> kitPickerOverlay.classList.remove('open'));
+lcdKitBtn.addEventListener('click', ()=>{ closeAllOverlays(); kitPickerOverlay.classList.add('open'); syncBottomBarVisibility(); });
+kitPickerCloseBtn.addEventListener('click', ()=>{ kitPickerOverlay.classList.remove('open'); syncBottomBarVisibility(); });
 const lcdPatternBtn=document.getElementById('lcdPatternBtn');
 const lcdPatternName=document.getElementById('lcdPatternName');
 lcdPatternBtn.addEventListener('click', ()=>{
   closeAllOverlays();
   patternsOverlay.classList.add('open');
+  syncBottomBarVisibility();
   refreshPatternList();
 });
 // Zentrale Stelle, die currentLoadedPatternId setzt UND die LCD-Anzeige synchron hält —
@@ -2369,7 +2433,6 @@ function renderTrackBar(){
   sampleControls.style.display='none';
   arpControls.style.display='none';
   tbPreview.style.display='';
-  closeTrimEditor();
   if(tr.isSample){
     sampleControls.style.display='flex';
     tbPreview.style.display='none';
@@ -2479,14 +2542,13 @@ document.getElementById('randomBtn').addEventListener('click', ()=>{
 });
 
 // =========================================================================
-// MIC-SAMPLE — Aufnahme (getUserMedia → AudioWorklet-Capture → AudioBuffer)
-// mit MediaRecorder-Fallback, falls AudioWorklet nicht verfügbar ist.
-// Persistenz optional über IndexedDB (überlebt Reload, pro Browser/Origin).
+// MIC-SAMPLE-SPUR — Wiedergabe. Aufnahme/Import/Bearbeitung laufen jetzt zentral
+// über den Sample-Editor (s. u.); sampleBuffer bleibt hier der In-Memory-Cache
+// des aktuell zugewiesenen Bibliothekseintrags, exakt wie vorher für triggerTrack().
 // =========================================================================
 const MAX_REC_SECONDS=4;
-let micStream=null, micSourceNode=null, micRecorderNode=null, micSilentGain=null;
-let mediaRecorder=null, mediaChunks=[];
-let isRecording=false, recChunksFloat=[], recStartTime=0, recTimerId=null;
+let micStream=null;
+let sampleTrackSampleId=null; // welcher Bibliothekseintrag ist der Sample-Spur zugeordnet
 
 const recBtn=document.getElementById('recBtn');
 const recStatus=document.getElementById('recStatus');
@@ -2495,7 +2557,6 @@ const samplePreviewBtn=document.getElementById('samplePreviewBtn');
 const trimBtn=document.getElementById('trimBtn');
 
 function updateRecStatus(){
-  if(isRecording) return; // während Aufnahme übernimmt der Timer die Anzeige
   if(sampleBuffer){
     scStatusRow.style.display='flex';
     recStatus.textContent='● Sample gespeichert';
@@ -2503,7 +2564,7 @@ function updateRecStatus(){
     recDur.style.display=''; recDur.textContent=sampleBuffer.duration.toFixed(1)+'s';
     scBtnsRow.style.display='flex';
     scHint.style.display='none';
-    recBtn.textContent='● Neu aufnehmen';
+    recBtn.textContent='● Neu aufnehmen / bearbeiten';
     recBtn.classList.remove('big');
   } else {
     const inIframe=(()=>{ try{ return window.self!==window.top; }catch(e){ return true; } })();
@@ -2544,95 +2605,10 @@ function micErrorMessage(err){
   }
 }
 
-async function startRecording(){
-  try{
-    await Promise.resolve(initAudio());
-    if(audioCtx.state==='suspended') await audioCtx.resume();
-    await ensureMicStream();
-  } catch(err){
-    console.warn('Mikrofonzugriff fehlgeschlagen:', err);
-    scStatusRow.style.display='flex';
-    recDur.style.display='none';
-    scHint.style.display='none';
-    recStatus.textContent=micErrorMessage(err);
-    recStatus.classList.add('err'); recStatus.classList.remove('has');
-    return;
-  }
-
-  isRecording=true;
-  recStartTime=audioCtx.currentTime;
-  recBtn.textContent='■ Stop';
-  recBtn.classList.add('recording','big');
-  recStatus.classList.remove('err');
-  scStatusRow.style.display='flex';
-  scBtnsRow.style.display='none';
-  scHint.style.display='none';
-  recDur.style.display='none';
-  recTimerId=setInterval(()=>{
-    const el=(audioCtx.currentTime-recStartTime);
-    recStatus.textContent=el.toFixed(1)+'s';
-    if(el>=MAX_REC_SECONDS) stopRecording();
-  }, 100);
-
-  micSourceNode=audioCtx.createMediaStreamSource(micStream);
-
-  if(useMicWorklet){
-    recChunksFloat=[];
-    micRecorderNode=new AudioWorkletNode(audioCtx,'mic-recorder',{numberOfInputs:1,numberOfOutputs:1,outputChannelCount:[1]});
-    micRecorderNode.port.onmessage=(e)=>{ recChunksFloat.push(e.data); };
-    micSilentGain=audioCtx.createGain(); micSilentGain.gain.value=0; // hörbares Monitoring vermeiden (kein Feedback)
-    micSourceNode.connect(micRecorderNode).connect(micSilentGain).connect(audioCtx.destination);
-  } else {
-    // Fallback ohne AudioWorklet: MediaRecorder liefert komprimierte Chunks,
-    // die nach Aufnahmeende per decodeAudioData zu einem AudioBuffer werden.
-    mediaChunks=[];
-    mediaRecorder=new MediaRecorder(micStream);
-    mediaRecorder.ondataavailable=(e)=>{ if(e.data.size>0) mediaChunks.push(e.data); };
-    mediaRecorder.start();
-  }
-}
-
-async function stopRecording(){
-  if(!isRecording) return;
-  isRecording=false;
-  clearInterval(recTimerId);
-  recBtn.classList.remove('recording'); // Text/Breite (big/normal) übernimmt gleich updateRecStatus()
-
-  if(useMicWorklet){
-    micSourceNode.disconnect(); micRecorderNode.disconnect(); micSilentGain.disconnect();
-    const totalLen=recChunksFloat.reduce((s,c)=>s+c.length,0);
-    if(totalLen===0){ updateRecStatus(); return; }
-    const data=new Float32Array(totalLen);
-    let off=0;
-    for(const c of recChunksFloat){ data.set(c,off); off+=c.length; }
-    const buf=audioCtx.createBuffer(1,totalLen,audioCtx.sampleRate);
-    buf.copyToChannel(data,0);
-    sampleBuffer=buf;
-    sampleStartOffset=0;
-    updateRecStatus();
-    saveSampleToIndexedDB(buf);
-  } else {
-    await new Promise(resolve=>{
-      mediaRecorder.onstop=resolve;
-      mediaRecorder.stop();
-    });
-    micSourceNode.disconnect();
-    const blob=new Blob(mediaChunks,{type:mediaChunks[0]?.type||'audio/webm'});
-    const arr=await blob.arrayBuffer();
-    try{
-      sampleBuffer=await audioCtx.decodeAudioData(arr);
-      sampleStartOffset=0;
-      updateRecStatus();
-      saveSampleToIndexedDB(sampleBuffer);
-    } catch(err){
-      console.warn('Sample konnte nicht dekodiert werden:', err);
-      recStatus.textContent='Fehler beim Dekodieren';
-      recStatus.classList.add('err');
-    }
-  }
-}
-
-recBtn.addEventListener('click', ()=>{ isRecording ? stopRecording() : startRecording(); });
+// Öffnet den zentralen Sample-Editor statt wie vorher direkt inline aufzunehmen —
+// Aufnehmen/Laden/Bearbeiten/Zuweisen passiert jetzt an einer einzigen Stelle.
+recBtn.addEventListener('click', ()=> openSampleEditor({sampleId:sampleTrackSampleId, forTrack:true}));
+trimBtn.addEventListener('click', ()=> openSampleEditor({sampleId:sampleTrackSampleId, forTrack:true}));
 samplePreviewBtn.addEventListener('click', ()=>{
   if(!sampleBuffer) return;
   Promise.resolve(initAudio()).then(()=>{
@@ -2640,11 +2616,13 @@ samplePreviewBtn.addEventListener('click', ()=>{
     triggerTrack(TRACKS.find(t=>t.isSample), audioCtx.currentTime, VEL_NORMAL);
   });
 });
+// Hebt nur die Zuordnung der Sample-Spur auf — der Bibliothekseintrag selbst bleibt
+// erhalten (könnte noch an Pads zugewiesen sein) und lässt sich im Sample-Editor
+// jederzeit wieder zuweisen, statt unwiderruflich gelöscht zu werden.
 sampleClearBtn.addEventListener('click', ()=>{
-  sampleBuffer=null;
-  sampleStartOffset=0;
+  sampleBuffer=null; sampleStartOffset=0; sampleTrackSampleId=null;
+  try{ localStorage.removeItem('mrm44_sampleTrackId'); }catch(e){}
   updateRecStatus();
-  deleteSampleFromIndexedDB();
 });
 
 // ---- WAV-Encoding (für IndexedDB-Speicherung als Blob) ----
@@ -2782,175 +2760,131 @@ async function renderPatternToWav(){
 }
 
 // ---- IndexedDB-Persistenz (optional, überlebt Reload) ----
-const IDB_NAME='RM909SampleDB', IDB_STORE='samples', IDB_KEY='micSample', IDB_PATTERNS='patterns';
+// Version 3 (diese Session): neuer Store "sampleLibrary" für die zentrale Sample-Bibliothek,
+// löst die bisherigen Einzelablagen (ein Mic-Sample-Slot + 9 Pad-Slots im alten "samples"-
+// Store) ab. Der alte "samples"-Store bleibt bestehen (nur für die einmalige Migration
+// bestehender Aufnahmen gelesen, s. migrateLegacySamplesIfNeeded()), damit niemand seine
+// bereits aufgenommenen Samples durch dieses Update verliert.
+const IDB_NAME='RM909SampleDB', IDB_STORE='samples', IDB_KEY='micSample', IDB_PATTERNS='patterns', IDB_SAMPLES='sampleLibrary';
 function idbOpen(){
   return new Promise((resolve,reject)=>{
-    const req=indexedDB.open(IDB_NAME,2);
+    const req=indexedDB.open(IDB_NAME,3);
     req.onupgradeneeded=(e)=>{
       const db=req.result;
       if(!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE);
       if(!db.objectStoreNames.contains(IDB_PATTERNS)) db.createObjectStore(IDB_PATTERNS);
+      if(!db.objectStoreNames.contains(IDB_SAMPLES)) db.createObjectStore(IDB_SAMPLES);
     };
     req.onsuccess=()=>resolve(req.result);
     req.onerror=()=>reject(req.error);
   });
 }
-async function saveSampleToIndexedDB(buffer){
-  try{
-    const blob=audioBufferToWavBlob(buffer);
-    const db=await idbOpen();
-    const tx=db.transaction(IDB_STORE,'readwrite');
-    tx.objectStore(IDB_STORE).put({blob, offset:sampleStartOffset}, IDB_KEY);
-  } catch(err){ console.warn('IndexedDB-Speicherung fehlgeschlagen:', err); }
+// ---- Sample-Bibliothek: CRUD, analog zum Pattern-Speicher (gleiche Konventionen,
+// gleiche genId()) — ein Eintrag: {id, name, blob (WAV), offsetStart, offsetEnd, savedAt}
+async function saveSampleLibraryEntry(entry){
+  const db=await idbOpen();
+  const tx=db.transaction(IDB_SAMPLES,'readwrite');
+  tx.objectStore(IDB_SAMPLES).put(entry, entry.id);
 }
-async function saveTrimOffsetToIndexedDB(){
-  try{
-    if(!sampleBuffer) return;
-    const blob=audioBufferToWavBlob(sampleBuffer);
-    const db=await idbOpen();
-    const tx=db.transaction(IDB_STORE,'readwrite');
-    tx.objectStore(IDB_STORE).put({blob, offset:sampleStartOffset}, IDB_KEY);
-  } catch(err){ console.warn('IndexedDB-Speicherung (Offset) fehlgeschlagen:', err); }
+async function loadSampleLibraryEntry(id){
+  const db=await idbOpen();
+  const tx=db.transaction(IDB_SAMPLES,'readonly');
+  return new Promise((res,rej)=>{
+    const r=tx.objectStore(IDB_SAMPLES).get(id);
+    r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);
+  });
 }
-async function deleteSampleFromIndexedDB(){
-  try{
-    const db=await idbOpen();
-    const tx=db.transaction(IDB_STORE,'readwrite');
-    tx.objectStore(IDB_STORE).delete(IDB_KEY);
-  } catch(err){ console.warn('IndexedDB-Löschung fehlgeschlagen:', err); }
+async function deleteSampleLibraryEntry(id){
+  const db=await idbOpen();
+  const tx=db.transaction(IDB_SAMPLES,'readwrite');
+  tx.objectStore(IDB_SAMPLES).delete(id);
 }
-async function loadSampleFromIndexedDB(){
-  try{
-    const db=await idbOpen();
-    const tx=db.transaction(IDB_STORE,'readonly');
-    const rec=await new Promise((res,rej)=>{
-      const r=tx.objectStore(IDB_STORE).get(IDB_KEY);
-      r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);
-    });
-    if(!rec) return;
-    await Promise.resolve(initAudio());
-    const blobData = (rec instanceof Blob) ? rec : rec.blob;
-    const arr=await blobData.arrayBuffer();
-    sampleBuffer=await audioCtx.decodeAudioData(arr);
-    sampleStartOffset = (rec instanceof Blob) ? 0 : (rec.offset || 0);
-    if(TRACKS[activeTrackIdx].isSample) updateRecStatus();
-  } catch(err){ console.warn('Kein gespeichertes Sample gefunden oder Fehler beim Laden:', err); }
+async function listSampleLibrary(){
+  const db=await idbOpen();
+  const out=[];
+  await new Promise((res,rej)=>{
+    const tx=db.transaction(IDB_SAMPLES,'readonly');
+    const req=tx.objectStore(IDB_SAMPLES).openCursor();
+    req.onsuccess=(e)=>{ const c=e.target.result; if(c){ out.push(c.value); c.continue(); } else res(); };
+    req.onerror=()=>rej(req.error);
+  });
+  return out.sort((a,b)=>b.savedAt-a.savedAt);
 }
+// Einmalige, transparente Migration: bestehende Aufnahmen aus dem alten Einzel-Slot-Modell
+// (ein Mic-Sample, 9 Pad-Samples im "samples"-Store) werden — nur falls die neue Bibliothek
+// noch komplett leer ist — als benannte Bibliothekseinträge übernommen und automatisch wieder
+// der Sample-Spur bzw. dem jeweiligen Pad zugewiesen. Kein manueller Schritt, kein Datenverlust.
+async function migrateLegacySamplesIfNeeded(){
+  const existing=await listSampleLibrary();
+  if(existing.length>0) return; // schon migriert oder Nutzer hat bereits eigene Bibliothekseinträge
+  const db=await idbOpen();
+  const tx=db.transaction(IDB_STORE,'readonly');
+  const store=tx.objectStore(IDB_STORE);
+  const getRec=(key)=>new Promise((res)=>{ const r=store.get(key); r.onsuccess=()=>res(r.result); r.onerror=()=>res(null); });
 
-// =========================================================================
-// SAMPLE-TRIM-EDITOR — Wellenform + ziehbarer Startpunkt
-// =========================================================================
-const trimPanel=document.getElementById('trimPanel');
-const trimCanvas=document.getElementById('trimCanvas');
-const trimCtx=trimCanvas.getContext('2d');
-const trimCanvasWrap=document.getElementById('trimCanvasWrap');
-const trimHandle=document.getElementById('trimHandle');
-const trimDim=document.getElementById('trimDim');
-const trimLabel=document.getElementById('trimLabel');
-const trimPreviewBtn=document.getElementById('trimPreviewBtn');
-const trimApplyBtn=document.getElementById('trimApplyBtn');
-const trimCancelBtn=document.getElementById('trimCancelBtn');
-let trimDraftOffset=0; // Arbeitskopie, erst bei "Übernehmen" scharf geschaltet
-let trimPreviewSrc=null;
-// Der Trim-Editor ist nur EIN Panel im DOM, wird aber für mehrere Ziele genutzt
-// (Mic-Sample-Track oder ein beliebiges Pad) — trimTarget zeigt aktuell auf eins davon.
-let trimTarget=null; // {getBuffer, getOffset, setOffset}
-const micTrimTarget={
-  getBuffer: ()=>sampleBuffer,
-  getOffset: ()=>sampleStartOffset,
-  setOffset: (v)=>{ sampleStartOffset=v; saveTrimOffsetToIndexedDB(); }
-};
-function padTrimTarget(i){
-  return {
-    getBuffer: ()=>padSamples[i].buffer,
-    getOffset: ()=>padSamples[i].offset,
-    setOffset: (v)=>{ padSamples[i].offset=v; savePadToIndexedDB(i, padSamples[i].buffer, v); }
-  };
-}
-
-function drawWaveform(){
-  const w=trimCanvasWrap.clientWidth, h=trimCanvasWrap.clientHeight;
-  trimCanvas.width=w*devicePixelRatio; trimCanvas.height=h*devicePixelRatio;
-  trimCanvas.style.width=w+'px'; trimCanvas.style.height=h+'px';
-  trimCtx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
-  trimCtx.clearRect(0,0,w,h);
-  const buf=trimTarget && trimTarget.getBuffer();
-  if(!buf) return;
-  const data=buf.getChannelData(0);
-  const step=Math.max(1, Math.floor(data.length/w));
-  trimCtx.strokeStyle='#3fa9ff';
-  trimCtx.lineWidth=1;
-  trimCtx.beginPath();
-  const mid=h/2;
-  for(let x=0;x<w;x++){
-    let min=1,max=-1;
-    const start=x*step;
-    for(let i=0;i<step;i++){
-      const s=data[start+i]; if(s===undefined) break;
-      if(s<min) min=s; if(s>max) max=s;
-    }
-    trimCtx.moveTo(x, mid+min*mid*0.9);
-    trimCtx.lineTo(x, mid+max*mid*0.9);
+  const micRec=await getRec(IDB_KEY);
+  if(micRec){
+    const blob=(micRec instanceof Blob) ? micRec : micRec.blob;
+    const offset=(micRec instanceof Blob) ? 0 : (micRec.offset||0);
+    const entry={id:genId(), name:'Mic-Sample (migriert)', blob, offsetStart:offset, offsetEnd:null, savedAt:Date.now()};
+    await saveSampleLibraryEntry(entry);
+    localStorage.setItem('mrm44_sampleTrackId', entry.id);
   }
-  trimCtx.stroke();
+  for(let i=0;i<PAD_COUNT;i++){
+    const rec=await getRec('pad'+i);
+    if(!rec) continue;
+    const blob=(rec instanceof Blob) ? rec : rec.blob;
+    const offset=(rec instanceof Blob) ? 0 : (rec.offset||0);
+    const entry={id:genId(), name:'Pad '+(i+1)+' (migriert)', blob, offsetStart:offset, offsetEnd:null, savedAt:Date.now()};
+    await saveSampleLibraryEntry(entry);
+    const ids=JSON.parse(localStorage.getItem('mrm44_padSampleIds')||'[]');
+    ids[i]=entry.id;
+    localStorage.setItem('mrm44_padSampleIds', JSON.stringify(ids));
+  }
 }
-function updateTrimUI(){
-  const w=trimCanvasWrap.clientWidth;
-  const buf=trimTarget && trimTarget.getBuffer();
-  const dur=buf ? buf.duration : 1;
-  const t=Math.min(1, Math.max(0, trimDraftOffset/dur));
-  const x=t*w;
-  trimHandle.style.left=x+'px';
-  trimDim.style.width=x+'px';
-  trimLabel.textContent='Start: '+trimDraftOffset.toFixed(2)+'s';
+// Dekodiert einen Bibliothekseintrag und weist ihn der Sample-Spur bzw. einem Pad zu —
+// aktualisiert dabei genau die Variablen, die triggerTrack()/playPad() ohnehin schon lesen.
+async function applySampleToTrack(entry){
+  await Promise.resolve(initAudio());
+  const arr=await entry.blob.arrayBuffer();
+  sampleBuffer=await audioCtx.decodeAudioData(arr);
+  sampleStartOffset=entry.offsetStart||0;
+  sampleTrackSampleId=entry.id;
+  try{ localStorage.setItem('mrm44_sampleTrackId', entry.id); }catch(e){}
+  if(TRACKS[activeTrackIdx] && TRACKS[activeTrackIdx].isSample) updateRecStatus();
 }
-function openTrimEditor(target){
-  trimTarget=target;
-  const buf=trimTarget.getBuffer();
-  if(!buf) return;
-  trimDraftOffset=trimTarget.getOffset();
-  trimPanel.classList.add('open');
-  requestAnimationFrame(()=>{ drawWaveform(); updateTrimUI(); });
+async function applySampleToPad(i, entry){
+  await Promise.resolve(initAudio());
+  const arr=await entry.blob.arrayBuffer();
+  padSamples[i].buffer=await audioCtx.decodeAudioData(arr);
+  padSamples[i].offset=entry.offsetStart||0;
+  padSampleId[i]=entry.id;
+  try{
+    const ids=JSON.parse(localStorage.getItem('mrm44_padSampleIds')||'[]');
+    ids[i]=entry.id;
+    localStorage.setItem('mrm44_padSampleIds', JSON.stringify(ids));
+  }catch(e){}
+  updatePadUI(i);
 }
-function closeTrimEditor(){
-  trimPanel.classList.remove('open');
-  if(trimPreviewSrc){ try{ trimPreviewSrc.stop(); }catch(e){} trimPreviewSrc=null; }
+// Lädt beim Start: erst die einmalige Migration, dann die zuletzt gespeicherten Zuordnungen
+// für Sample-Spur und Pads (ersetzt die alten loadSampleFromIndexedDB()/loadPadsFromIndexedDB()).
+async function restoreSampleAssignments(){
+  await migrateLegacySamplesIfNeeded();
+  try{
+    const trackId=localStorage.getItem('mrm44_sampleTrackId');
+    if(trackId){ const entry=await loadSampleLibraryEntry(trackId); if(entry) await applySampleToTrack(entry); }
+  }catch(err){ console.warn('Sample-Spur-Zuordnung konnte nicht geladen werden:', err); }
+  try{
+    const ids=JSON.parse(localStorage.getItem('mrm44_padSampleIds')||'[]');
+    for(let i=0;i<PAD_COUNT;i++){
+      if(ids[i]){ const entry=await loadSampleLibraryEntry(ids[i]); if(entry) await applySampleToPad(i, entry); }
+    }
+  }catch(err){ console.warn('Pad-Sample-Zuordnungen konnten nicht geladen werden:', err); }
 }
-trimBtn.addEventListener('click', ()=>openTrimEditor(micTrimTarget));
-trimCancelBtn.addEventListener('click', closeTrimEditor);
-trimApplyBtn.addEventListener('click', ()=>{
-  if(trimTarget) trimTarget.setOffset(trimDraftOffset);
-  closeTrimEditor();
-});
-trimPreviewBtn.addEventListener('click', ()=>{
-  const buf=trimTarget && trimTarget.getBuffer();
-  if(!buf || !audioCtx) return;
-  if(trimPreviewSrc){ try{ trimPreviewSrc.stop(); }catch(e){} }
-  trimPreviewSrc=audioCtx.createBufferSource();
-  trimPreviewSrc.buffer=buf;
-  trimPreviewSrc.connect(master);
-  const offset=Math.min(trimDraftOffset, Math.max(0, buf.duration-0.01));
-  trimPreviewSrc.start(audioCtx.currentTime, offset);
-});
 
-let trimDragging=false;
-function trimSetFromX(clientX){
-  const rect=trimCanvasWrap.getBoundingClientRect();
-  const x=Math.min(rect.width, Math.max(0, clientX-rect.left));
-  const buf=trimTarget && trimTarget.getBuffer();
-  const dur=buf ? buf.duration : 1;
-  trimDraftOffset=(x/rect.width)*dur;
-  updateTrimUI();
-}
-function trimOnDown(e){ trimDragging=true; trimSetFromX(e.touches?e.touches[0].clientX:e.clientX); e.preventDefault(); }
-function trimOnMove(e){ if(!trimDragging) return; trimSetFromX(e.touches?e.touches[0].clientX:e.clientX); e.preventDefault&&e.preventDefault(); }
-function trimOnUp(){ trimDragging=false; }
-trimCanvasWrap.addEventListener('pointerdown', trimOnDown);
-window.addEventListener('pointermove', trimOnMove);
-window.addEventListener('pointerup', trimOnUp);
-trimCanvasWrap.addEventListener('touchstart', trimOnDown, {passive:false});
-window.addEventListener('touchmove', trimOnMove, {passive:false});
-window.addEventListener('touchend', trimOnUp);
+// Der Sample-Editor (Aufnahme/Import/Bearbeitung/Zuweisung an Spur+Pads) steht weiter unten,
+// direkt nach dem Pad-Grid — dort sind PAD_COUNT/padSamples/padSampleId bereits deklariert,
+// die der Editor beim Aufbau seiner Pad-Zuweisungs-Chips sofort synchron braucht.
 
 // =========================================================================
 // SAMPLE PAD — 9 unabhängige Live-Pads, eigenes Mikro-Sample pro Pad,
@@ -2958,11 +2892,7 @@ window.addEventListener('touchend', trimOnUp);
 // =========================================================================
 const PAD_COUNT=9;
 const padSamples=Array.from({length:PAD_COUNT}, ()=>({buffer:null, offset:0}));
-let padRecordingIndex=-1;
-let padMicSourceNode=null, padMicRecorderNode=null, padMicSilentGain=null;
-let padMediaRecorder=null, padMediaChunks=[];
-let padRecChunksFloat=[], padRecStartTime=0, padRecTimerId=null;
-const LONG_PRESS_MS=450; // Halte-Dauer, bevor aus einem Tap eine Aufnahme wird
+const padSampleId=new Array(PAD_COUNT).fill(null); // welcher Bibliothekseintrag ist diesem Pad zugeordnet
 
 const padGrid=document.getElementById('padGrid');
 const padQuantizeBtn=document.getElementById('padQuantizeBtn');
@@ -3167,39 +3097,16 @@ for(let i=0;i<PAD_COUNT;i++){
   const label=document.createElement('div'); label.className='plabel'; label.textContent='PAD '+(i+1);
   const stat=document.createElement('div'); stat.className='pstat'; stat.textContent='leer';
   const trimBtnEl=document.createElement('button'); trimBtnEl.className='pad-trim-btn'; trimBtnEl.textContent='✂';
-  trimBtnEl.title='Startpunkt trimmen';
+  trimBtnEl.title='Sample bearbeiten';
   el.appendChild(label); el.appendChild(stat); el.appendChild(trimBtnEl);
-  trimBtnEl.addEventListener('click', (e)=>{ e.stopPropagation(); openTrimEditor(padTrimTarget(i)); });
+  trimBtnEl.addEventListener('click', (e)=>{ e.stopPropagation(); openSampleEditor({sampleId:padSampleId[i], forPad:i}); });
 
-  // Halten = aufnehmen, kurzes Antippen = abspielen. Ersetzt den alten globalen
-  // Umschalt-Button — direkter und selbsterklärender auf dem Touchscreen.
-  let pressTimer=null, isLongPress=false, armingTimeout=null;
-  const startPress=(e)=>{
-    e.preventDefault();
-    isLongPress=false;
-    el.classList.add('arming');
-    armingTimeout=setTimeout(()=>el.classList.remove('arming'), 450);
-    pressTimer=setTimeout(async ()=>{
-      isLongPress=true;
-      el.classList.remove('arming');
-      if(padRecordingIndex>=0 && padRecordingIndex!==i) await stopPadRecording();
-      startPadRecording(i);
-    }, LONG_PRESS_MS);
-  };
-  const endPress=()=>{
-    clearTimeout(pressTimer); clearTimeout(armingTimeout);
-    el.classList.remove('arming');
-    if(isLongPress){
-      if(padRecordingIndex===i) stopPadRecording();
-    } else if(padRecordingIndex<0){
-      playPad(i);
-    }
-  };
-  el.addEventListener('pointerdown', startPress);
-  el.addEventListener('pointerup', endPress);
-  el.addEventListener('pointerleave', ()=>{
-    clearTimeout(pressTimer); clearTimeout(armingTimeout); el.classList.remove('arming');
-    if(isLongPress && padRecordingIndex===i) stopPadRecording();
+  // Aufnahme läuft jetzt ausschließlich über den zentralen Sample-Editor (kein Long-Press
+  // direkt auf dem Pad mehr, s. Roadmap-Entscheidung). Tap auf ein leeres Pad öffnet den
+  // Editor direkt (schnellster Weg zur ersten Zuweisung), ein gefülltes Pad spielt sofort ab.
+  el.addEventListener('click', ()=>{
+    if(padSamples[i].buffer) playPad(i);
+    else openSampleEditor({sampleId:null, forPad:i});
   });
 
   padGrid.appendChild(el);
@@ -3234,101 +3141,364 @@ function playPad(i){
   padEls[i].el.classList.add('flash');
   setTimeout(()=>padEls[i].el.classList.remove('flash'), 90);
 }
-async function startPadRecording(i){
+// Aufnahme/Import/Bearbeitung für Pads laufen jetzt zentral im Sample-Editor
+// (s. u.) — applySampleToPad() übernimmt dort die Zuweisung eines fertigen
+// Bibliothekseintrags auf ein Pad, inkl. Persistenz des Verweises.
+
+// =========================================================================
+// SAMPLE-EDITOR — zentrale Stelle zum Aufnehmen/Laden/Bearbeiten von Samples.
+// Ersetzt den alten schwebenden Trim-Editor (nur Startpunkt, nur ein Ziel) durch
+// ein Vollbild-Overlay mit Start+Ende-Trim, Normalisieren/Rückwärts/Fade, und
+// Mehrfachzuweisung an Sample-Spur und/oder beliebige Pads über die Sample-
+// Bibliothek (s. IndexedDB-Abschnitt oben: saveSampleLibraryEntry() etc.).
+// =========================================================================
+const sampleEditorOverlay=document.getElementById('sampleEditorOverlay');
+const sampleEditorCloseBtn=document.getElementById('sampleEditorCloseBtn');
+const seRecordBtn=document.getElementById('seRecordBtn');
+const seImportBtn=document.getElementById('seImportBtn');
+const seImportInput=document.getElementById('seImportInput');
+const seStatus=document.getElementById('seStatus');
+const seWaveWrap=document.getElementById('seWaveWrap');
+const seWaveCanvas=document.getElementById('seWaveCanvas');
+const seWaveCtx=seWaveCanvas.getContext('2d');
+const seDimLeft=document.getElementById('seDimLeft');
+const seDimRight=document.getElementById('seDimRight');
+const seHandleStartEl=document.getElementById('seHandleStart');
+const seHandleEndEl=document.getElementById('seHandleEnd');
+const seTrimLabel=document.getElementById('seTrimLabel');
+const seNormalizeBtn=document.getElementById('seNormalizeBtn');
+const seReverseBtn=document.getElementById('seReverseBtn');
+const seFadeInBtn=document.getElementById('seFadeInBtn');
+const seFadeOutBtn=document.getElementById('seFadeOutBtn');
+const seResetBtn=document.getElementById('seResetBtn');
+const seAssignTrackChip=document.getElementById('seAssignTrackChip');
+const sePadGrid=document.getElementById('sePadGrid');
+const sePreviewBtn=document.getElementById('sePreviewBtn');
+const seSaveBtn=document.getElementById('seSaveBtn');
+
+let seEditingId=null;        // id des bearbeiteten Bibliothekseintrags, oder null = neues Sample
+let seOriginalBuffer=null;   // unveränderte Fassung, für "Zurücksetzen"
+let seWorkingBuffer=null;    // aktuelle Arbeitskopie, auf die Tools angewendet werden
+let seTrimStart=0, seTrimEnd=0;
+let seAssignTrack=false, seAssignPads=new Set();
+let seIsRecording=false, seRecStartTime=0, seRecTimerId=null;
+let seMicSourceNode=null, seMicRecorderNode=null, seMicSilentGain=null;
+let seMediaRecorder=null, seMediaChunks=[], seRecChunksFloat=[];
+let sePreviewSrc=null;
+
+// ---- Bearbeitungs-Werkzeuge: jedes erzeugt einen NEUEN AudioBuffer statt den
+// bestehenden zu mutieren (Web-Audio-Konvention, hält seOriginalBuffer unangetastet). ----
+function bufferReverse(buf){
+  const out=audioCtx.createBuffer(buf.numberOfChannels, buf.length, buf.sampleRate);
+  for(let c=0;c<buf.numberOfChannels;c++){
+    const src=buf.getChannelData(c), dst=out.getChannelData(c);
+    for(let i=0;i<buf.length;i++) dst[i]=src[buf.length-1-i];
+  }
+  return out;
+}
+function bufferNormalize(buf){
+  let peak=0;
+  for(let c=0;c<buf.numberOfChannels;c++){ const d=buf.getChannelData(c); for(let i=0;i<d.length;i++){ const a=Math.abs(d[i]); if(a>peak) peak=a; } }
+  if(peak<0.0001) return buf; // Stille — nichts zu normalisieren
+  const gain=0.98/peak;
+  const out=audioCtx.createBuffer(buf.numberOfChannels, buf.length, buf.sampleRate);
+  for(let c=0;c<buf.numberOfChannels;c++){
+    const src=buf.getChannelData(c), dst=out.getChannelData(c);
+    for(let i=0;i<src.length;i++) dst[i]=src[i]*gain;
+  }
+  return out;
+}
+// Vereinfachung, bewusst so belassen: Fade wirkt auf eine feste Dauer (150ms) am Anfang/Ende
+// des GESAMTEN aktuellen Puffers, nicht nur auf den per Start/Ende markierten Ausschnitt —
+// deckt den praktisch relevanten Fall ab (aufnehmen/laden, faden, danach zurechttrimmen).
+// Ein Fade exakt auf den Trim-Ausschnitt wäre ein sinnvoller nächster Ausbauschritt.
+function bufferFade(buf, direction){
+  const out=audioCtx.createBuffer(buf.numberOfChannels, buf.length, buf.sampleRate);
+  const fadeLen=Math.min(buf.length, Math.round(buf.sampleRate*0.15));
+  for(let c=0;c<buf.numberOfChannels;c++){
+    const src=buf.getChannelData(c), dst=out.getChannelData(c);
+    dst.set(src);
+    for(let i=0;i<fadeLen;i++){
+      const t=i/fadeLen;
+      const idx = direction==='in' ? i : (buf.length-1-i);
+      dst[idx]*=t;
+    }
+  }
+  return out;
+}
+function bufferSlice(buf, startSec, endSec){
+  const sr=buf.sampleRate;
+  const startFrame=Math.max(0, Math.floor(startSec*sr));
+  const endFrame=Math.min(buf.length, Math.ceil(endSec*sr));
+  const len=Math.max(1, endFrame-startFrame);
+  const out=audioCtx.createBuffer(buf.numberOfChannels, len, sr);
+  for(let c=0;c<buf.numberOfChannels;c++){
+    out.getChannelData(c).set(buf.getChannelData(c).subarray(startFrame, startFrame+len));
+  }
+  return out;
+}
+function seApplyTransform(fn){
+  if(!seWorkingBuffer) return;
+  seWorkingBuffer=fn(seWorkingBuffer);
+  seTrimStart=0; seTrimEnd=seWorkingBuffer.duration; // Auswahl nach jeder Bearbeitung zurückgesetzt (volle Länge)
+  drawSEWave(); updateSETrimUI();
+}
+seNormalizeBtn.addEventListener('click', ()=> seApplyTransform(bufferNormalize));
+seReverseBtn.addEventListener('click', ()=> seApplyTransform(bufferReverse));
+seFadeInBtn.addEventListener('click', ()=> seApplyTransform(b=>bufferFade(b,'in')));
+seFadeOutBtn.addEventListener('click', ()=> seApplyTransform(b=>bufferFade(b,'out')));
+seResetBtn.addEventListener('click', ()=>{
+  if(!seOriginalBuffer) return;
+  seWorkingBuffer=seOriginalBuffer;
+  seTrimStart=0; seTrimEnd=seOriginalBuffer.duration;
+  drawSEWave(); updateSETrimUI();
+});
+
+// ---- Wellenform + zwei Trim-Handles (Start UND Ende — Ausbau ggü. dem alten, nur
+// startbasierten Trim-Editor) ----
+function drawSEWave(){
+  const w=seWaveWrap.clientWidth, h=seWaveWrap.clientHeight;
+  seWaveCanvas.width=w*devicePixelRatio; seWaveCanvas.height=h*devicePixelRatio;
+  seWaveCanvas.style.width=w+'px'; seWaveCanvas.style.height=h+'px';
+  seWaveCtx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+  seWaveCtx.clearRect(0,0,w,h);
+  if(!seWorkingBuffer) return;
+  const data=seWorkingBuffer.getChannelData(0);
+  const step=Math.max(1, Math.floor(data.length/w));
+  seWaveCtx.strokeStyle='#3fa9ff'; seWaveCtx.lineWidth=1; seWaveCtx.beginPath();
+  const mid=h/2;
+  for(let x=0;x<w;x++){
+    let min=1,max=-1; const start=x*step;
+    for(let i=0;i<step;i++){ const s=data[start+i]; if(s===undefined) break; if(s<min)min=s; if(s>max)max=s; }
+    seWaveCtx.moveTo(x, mid+min*mid*0.9); seWaveCtx.lineTo(x, mid+max*mid*0.9);
+  }
+  seWaveCtx.stroke();
+}
+function updateSETrimUI(){
+  const w=seWaveWrap.clientWidth;
+  const dur=seWorkingBuffer ? seWorkingBuffer.duration : 1;
+  const xs=Math.min(w,(seTrimStart/dur)*w), xe=Math.min(w,(seTrimEnd/dur)*w);
+  seHandleStartEl.style.left=xs+'px'; seHandleEndEl.style.left=xe+'px';
+  seDimLeft.style.left='0px'; seDimLeft.style.width=xs+'px';
+  seDimRight.style.left=xe+'px'; seDimRight.style.width=(w-xe)+'px';
+  seTrimLabel.textContent='Start: '+seTrimStart.toFixed(2)+'s · Ende: '+seTrimEnd.toFixed(2)+'s';
+}
+let seDragHandle=null; // 'start' | 'end' | null
+function seSetHandleFromX(clientX){
+  const rect=seWaveWrap.getBoundingClientRect();
+  const x=Math.min(rect.width, Math.max(0, clientX-rect.left));
+  const dur=seWorkingBuffer ? seWorkingBuffer.duration : 1;
+  const t=(x/rect.width)*dur;
+  if(seDragHandle==='start') seTrimStart=Math.min(t, seTrimEnd-0.02);
+  else if(seDragHandle==='end') seTrimEnd=Math.max(t, seTrimStart+0.02);
+  updateSETrimUI();
+}
+function seHandleDown(which){ return (e)=>{ seDragHandle=which; seSetHandleFromX(e.touches?e.touches[0].clientX:e.clientX); e.preventDefault(); }; }
+function seHandleMove(e){ if(!seDragHandle) return; seSetHandleFromX(e.touches?e.touches[0].clientX:e.clientX); e.preventDefault&&e.preventDefault(); }
+function seHandleUp(){ seDragHandle=null; }
+seHandleStartEl.addEventListener('pointerdown', seHandleDown('start'));
+seHandleEndEl.addEventListener('pointerdown', seHandleDown('end'));
+window.addEventListener('pointermove', seHandleMove);
+window.addEventListener('pointerup', seHandleUp);
+seHandleStartEl.addEventListener('touchstart', seHandleDown('start'), {passive:false});
+seHandleEndEl.addEventListener('touchstart', seHandleDown('end'), {passive:false});
+window.addEventListener('touchmove', seHandleMove, {passive:false});
+window.addEventListener('touchend', seHandleUp);
+
+// ---- Aufnahme (identisches Worklet/MediaRecorder-Muster wie zuvor bei der Spur, jetzt
+// zentral hier) ----
+async function seStartRecording(){
   try{
     await Promise.resolve(initAudio());
     if(audioCtx.state==='suspended') await audioCtx.resume();
     await ensureMicStream();
-  } catch(err){
-    console.warn('Mikrofonzugriff (Pad) fehlgeschlagen:', err);
-    padEls[i].stat.textContent=micErrorMessage(err);
+  }catch(err){
+    console.warn('Mikrofonzugriff (Sample-Editor) fehlgeschlagen:', err);
+    seStatus.textContent=micErrorMessage(err); seStatus.classList.add('err');
     return;
   }
-  padRecordingIndex=i;
-  padRecStartTime=audioCtx.currentTime;
-  padEls[i].el.classList.add('recording');
-  padRecTimerId=setInterval(()=>{
-    const el=(audioCtx.currentTime-padRecStartTime);
-    padEls[i].stat.textContent=el.toFixed(1)+'s';
-    if(el>=MAX_REC_SECONDS) stopPadRecording();
+  seIsRecording=true;
+  seRecStartTime=audioCtx.currentTime;
+  seRecordBtn.textContent='■ Stop'; seRecordBtn.classList.add('recording');
+  seStatus.classList.remove('err');
+  seRecTimerId=setInterval(()=>{
+    const el=audioCtx.currentTime-seRecStartTime;
+    seStatus.textContent='Aufnahme läuft… '+el.toFixed(1)+'s';
+    if(el>=MAX_REC_SECONDS) seStopRecording();
   }, 100);
-
-  padMicSourceNode=audioCtx.createMediaStreamSource(micStream);
+  seMicSourceNode=audioCtx.createMediaStreamSource(micStream);
   if(useMicWorklet){
-    padRecChunksFloat=[];
-    padMicRecorderNode=new AudioWorkletNode(audioCtx,'mic-recorder',{numberOfInputs:1,numberOfOutputs:1,outputChannelCount:[1]});
-    padMicRecorderNode.port.onmessage=(e)=>{ padRecChunksFloat.push(e.data); };
-    padMicSilentGain=audioCtx.createGain(); padMicSilentGain.gain.value=0;
-    padMicSourceNode.connect(padMicRecorderNode).connect(padMicSilentGain).connect(audioCtx.destination);
+    seRecChunksFloat=[];
+    seMicRecorderNode=new AudioWorkletNode(audioCtx,'mic-recorder',{numberOfInputs:1,numberOfOutputs:1,outputChannelCount:[1]});
+    seMicRecorderNode.port.onmessage=(e)=>{ seRecChunksFloat.push(e.data); };
+    seMicSilentGain=audioCtx.createGain(); seMicSilentGain.gain.value=0;
+    seMicSourceNode.connect(seMicRecorderNode).connect(seMicSilentGain).connect(audioCtx.destination);
   } else {
-    padMediaChunks=[];
-    padMediaRecorder=new MediaRecorder(micStream);
-    padMediaRecorder.ondataavailable=(e)=>{ if(e.data.size>0) padMediaChunks.push(e.data); };
-    padMediaRecorder.start();
+    seMediaChunks=[];
+    seMediaRecorder=new MediaRecorder(micStream);
+    seMediaRecorder.ondataavailable=(e)=>{ if(e.data.size>0) seMediaChunks.push(e.data); };
+    seMediaRecorder.start();
   }
 }
-async function stopPadRecording(){
-  if(padRecordingIndex<0) return;
-  const i=padRecordingIndex; padRecordingIndex=-1;
-  clearInterval(padRecTimerId);
-  padEls[i].el.classList.remove('recording');
-
+async function seStopRecording(){
+  if(!seIsRecording) return;
+  seIsRecording=false;
+  clearInterval(seRecTimerId);
+  seRecordBtn.textContent='● Aufnehmen'; seRecordBtn.classList.remove('recording');
   if(useMicWorklet){
-    padMicSourceNode.disconnect(); padMicRecorderNode.disconnect(); padMicSilentGain.disconnect();
-    const totalLen=padRecChunksFloat.reduce((s,c)=>s+c.length,0);
-    if(totalLen===0){ updatePadUI(i); return; }
+    seMicSourceNode.disconnect(); seMicRecorderNode.disconnect(); seMicSilentGain.disconnect();
+    const totalLen=seRecChunksFloat.reduce((s,c)=>s+c.length,0);
+    if(totalLen===0) return;
     const data=new Float32Array(totalLen);
-    let off=0;
-    for(const c of padRecChunksFloat){ data.set(c,off); off+=c.length; }
+    let off=0; for(const c of seRecChunksFloat){ data.set(c,off); off+=c.length; }
     const buf=audioCtx.createBuffer(1,totalLen,audioCtx.sampleRate);
     buf.copyToChannel(data,0);
-    padSamples[i].buffer=buf; padSamples[i].offset=0;
-    updatePadUI(i);
-    savePadToIndexedDB(i, buf);
+    seOriginalBuffer=buf; seWorkingBuffer=buf; seTrimStart=0; seTrimEnd=buf.duration;
+    seStatus.textContent='Aufgenommen — '+buf.duration.toFixed(1)+'s';
+    drawSEWave(); updateSETrimUI();
   } else {
-    await new Promise(resolve=>{ padMediaRecorder.onstop=resolve; padMediaRecorder.stop(); });
-    padMicSourceNode.disconnect();
-    const blob=new Blob(padMediaChunks,{type:padMediaChunks[0]?.type||'audio/webm'});
+    await new Promise(resolve=>{ seMediaRecorder.onstop=resolve; seMediaRecorder.stop(); });
+    seMicSourceNode.disconnect();
+    const blob=new Blob(seMediaChunks,{type:seMediaChunks[0]?.type||'audio/webm'});
     const arr=await blob.arrayBuffer();
     try{
       const buf=await audioCtx.decodeAudioData(arr);
-      padSamples[i].buffer=buf; padSamples[i].offset=0;
-      updatePadUI(i);
-      savePadToIndexedDB(i, buf);
-    } catch(err){
-      console.warn('Pad-Sample konnte nicht dekodiert werden:', err);
-      padEls[i].stat.textContent='Fehler';
+      seOriginalBuffer=buf; seWorkingBuffer=buf; seTrimStart=0; seTrimEnd=buf.duration;
+      seStatus.textContent='Aufgenommen — '+buf.duration.toFixed(1)+'s';
+      drawSEWave(); updateSETrimUI();
+    }catch(err){
+      console.warn('Sample konnte nicht dekodiert werden:', err);
+      seStatus.textContent='Fehler beim Dekodieren'; seStatus.classList.add('err');
     }
   }
 }
-async function savePadToIndexedDB(i, buffer, offset){
+seRecordBtn.addEventListener('click', ()=> seIsRecording ? seStopRecording() : seStartRecording());
+
+// ---- Datei-Import (neu — gab es im alten Trim-Editor nicht) ----
+seImportBtn.addEventListener('click', ()=> seImportInput.click());
+seImportInput.addEventListener('change', async (e)=>{
+  const file=e.target.files[0]; seImportInput.value='';
+  if(!file) return;
   try{
-    const blob=audioBufferToWavBlob(buffer);
-    const db=await idbOpen();
-    const tx=db.transaction(IDB_STORE,'readwrite');
-    tx.objectStore(IDB_STORE).put({blob, offset:offset||0}, 'pad'+i);
-  } catch(err){ console.warn('IndexedDB-Speicherung (Pad) fehlgeschlagen:', err); }
-}
-async function loadPadsFromIndexedDB(){
-  for(let i=0;i<PAD_COUNT;i++){
-    try{
-      const db=await idbOpen();
-      const tx=db.transaction(IDB_STORE,'readonly');
-      const rec=await new Promise((res,rej)=>{
-        const r=tx.objectStore(IDB_STORE).get('pad'+i);
-        r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);
-      });
-      if(!rec) continue;
-      await Promise.resolve(initAudio());
-      const blobData=(rec instanceof Blob) ? rec : rec.blob;
-      const arr=await blobData.arrayBuffer();
-      const buf=await audioCtx.decodeAudioData(arr);
-      padSamples[i].buffer=buf;
-      padSamples[i].offset=(rec instanceof Blob) ? 0 : (rec.offset||0);
-      updatePadUI(i);
-    } catch(err){ /* kein gespeichertes Pad-Sample vorhanden */ }
+    await Promise.resolve(initAudio());
+    const arr=await file.arrayBuffer();
+    const buf=await audioCtx.decodeAudioData(arr);
+    seOriginalBuffer=buf; seWorkingBuffer=buf; seTrimStart=0; seTrimEnd=buf.duration;
+    seStatus.textContent=file.name+' geladen — '+buf.duration.toFixed(1)+'s';
+    seStatus.classList.remove('err');
+    drawSEWave(); updateSETrimUI();
+  }catch(err){
+    console.warn('Datei konnte nicht geladen werden:', err);
+    seStatus.textContent='Datei konnte nicht gelesen werden — Format unterstützt?';
+    seStatus.classList.add('err');
   }
+});
+
+// ---- Zuweisung: Sample-Spur (ein Chip) + beliebige Pads (Mehrfachauswahl-Grid) ----
+const sePadChips=[];
+for(let i=0;i<PAD_COUNT;i++){
+  const chip=document.createElement('div'); chip.className='se-pad-chip'; chip.textContent=i+1;
+  chip.addEventListener('click', ()=>{
+    if(seAssignPads.has(i)) seAssignPads.delete(i); else seAssignPads.add(i);
+    chip.classList.toggle('on', seAssignPads.has(i));
+  });
+  sePadGrid.appendChild(chip); sePadChips.push(chip);
 }
+seAssignTrackChip.addEventListener('click', ()=>{
+  seAssignTrack=!seAssignTrack;
+  seAssignTrackChip.classList.toggle('on', seAssignTrack);
+});
+function renderSEAssignUI(){
+  seAssignTrackChip.classList.toggle('on', seAssignTrack);
+  sePadChips.forEach((chip,i)=> chip.classList.toggle('on', seAssignPads.has(i)));
+}
+
+// ---- Vorhören: spielt exakt den aktuell markierten Start/Ende-Ausschnitt ----
+sePreviewBtn.addEventListener('click', ()=>{
+  if(!seWorkingBuffer || !audioCtx) return;
+  if(sePreviewSrc){ try{ sePreviewSrc.stop(); }catch(e){} }
+  sePreviewSrc=audioCtx.createBufferSource();
+  sePreviewSrc.buffer=seWorkingBuffer;
+  sePreviewSrc.connect(master);
+  sePreviewSrc.start(audioCtx.currentTime, seTrimStart, Math.max(0.02, seTrimEnd-seTrimStart));
+});
+
+function deriveSampleName(){
+  if(seAssignTrack) return 'Sample-Spur';
+  const firstPad=[...seAssignPads][0];
+  if(firstPad!=null) return 'Pad '+(firstPad+1);
+  return 'Sample '+new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
+}
+// ---- Übernehmen: schneidet final auf Start/Ende zu, speichert in der Bibliothek und
+// gleicht die Zuweisungen ab (neu hinzugekommene UND entfernte, s. u.) ----
+seSaveBtn.addEventListener('click', async ()=>{
+  if(!seWorkingBuffer){ seStatus.textContent='Kein Sample zum Übernehmen'; seStatus.classList.add('err'); return; }
+  const finalBuffer=bufferSlice(seWorkingBuffer, seTrimStart, seTrimEnd);
+  const blob=audioBufferToWavBlob(finalBuffer);
+  const entryId=seEditingId || genId();
+  const entry={id:entryId, name:deriveSampleName(), blob, offsetStart:0, offsetEnd:null, savedAt:Date.now()};
+  await saveSampleLibraryEntry(entry);
+
+  if(seAssignTrack) await applySampleToTrack(entry);
+  else if(sampleTrackSampleId===entryId){
+    sampleBuffer=null; sampleStartOffset=0; sampleTrackSampleId=null;
+    try{ localStorage.removeItem('mrm44_sampleTrackId'); }catch(e){}
+    updateRecStatus();
+  }
+  for(let i=0;i<PAD_COUNT;i++){
+    if(seAssignPads.has(i)) await applySampleToPad(i, entry);
+    else if(padSampleId[i]===entryId){
+      padSamples[i].buffer=null; padSamples[i].offset=0; padSampleId[i]=null;
+      try{
+        const ids=JSON.parse(localStorage.getItem('mrm44_padSampleIds')||'[]');
+        ids[i]=null; localStorage.setItem('mrm44_padSampleIds', JSON.stringify(ids));
+      }catch(e){}
+      updatePadUI(i);
+    }
+  }
+  closeSampleEditor();
+});
+
+// ---- Öffnen/Schließen — öffnet mit dem übergebenen Bibliothekseintrag (oder leer für ein
+// neues Sample) und erkennt bestehende Zuweisungen automatisch (Spur/Pads, die diesen
+// Eintrag bereits nutzen, sind beim Öffnen schon als Chip markiert). ----
+async function openSampleEditor({sampleId=null, forTrack=false, forPad=null}={}){
+  closeAllOverlays();
+  seEditingId=sampleId;
+  if(sampleId){
+    const entry=await loadSampleLibraryEntry(sampleId);
+    if(entry){
+      await Promise.resolve(initAudio());
+      const arr=await entry.blob.arrayBuffer();
+      seOriginalBuffer=await audioCtx.decodeAudioData(arr);
+      seWorkingBuffer=seOriginalBuffer;
+      seTrimStart=0; seTrimEnd=seOriginalBuffer.duration;
+      // Migrations-Altlast: alte Einträge tragen ihren Start-Offset noch separat statt
+      // bereits "eingebrannt" — beim ersten erneuten Übernehmen wird das bereinigt.
+      if(entry.offsetStart) seTrimStart=Math.min(entry.offsetStart, seTrimEnd-0.02);
+      seStatus.textContent=(entry.name||'Sample')+' geladen — '+seOriginalBuffer.duration.toFixed(1)+'s';
+      seStatus.classList.remove('err');
+    }
+  } else {
+    seOriginalBuffer=null; seWorkingBuffer=null; seTrimStart=0; seTrimEnd=0;
+    seStatus.textContent='Kein Sample geladen — aufnehmen oder Datei laden';
+    seStatus.classList.remove('err');
+  }
+  seAssignTrack = forTrack || (sampleId!=null && sampleId===sampleTrackSampleId);
+  seAssignPads = new Set(padSampleId.map((id,idx)=> id===sampleId ? idx : null).filter(x=>x!=null));
+  if(forPad!=null) seAssignPads.add(forPad);
+  renderSEAssignUI();
+  sampleEditorOverlay.classList.add('open');
+  syncBottomBarVisibility();
+  requestAnimationFrame(()=>{ drawSEWave(); updateSETrimUI(); });
+}
+function closeSampleEditor(){
+  if(seIsRecording) seStopRecording();
+  if(sePreviewSrc){ try{ sePreviewSrc.stop(); }catch(e){} sePreviewSrc=null; }
+  sampleEditorOverlay.classList.remove('open');
+  syncBottomBarVisibility();
+}
+sampleEditorCloseBtn.addEventListener('click', closeSampleEditor);
 
 // =========================================================================
 // PATTERN-SPEICHER — kompletter Beat-Zustand (Steps, Kit, Tempo, Hall, …)
@@ -3615,6 +3785,7 @@ async function refreshPatternList(){
       const data=await loadPatternFromIndexedDB(item.id);
       if(data){ applyPatternData(data); setCurrentLoadedPattern(item.id, item.name); rememberLastPattern(item.id); }
       patternsOverlay.classList.remove('open');
+      syncBottomBarVisibility();
     });
 
     const copyBtn=document.createElement('button'); copyBtn.className='prow-btn'; copyBtn.innerHTML='⧉'; copyBtn.title='Duplizieren';
@@ -3695,7 +3866,7 @@ async function commitRenamePattern(item, newNameRaw){
 }
 // Öffnen der Beats-Bibliothek läuft jetzt über lcdPatternBtn (s.o.), nicht mehr
 // über einen eigenen Bottom-Bar-Chip.
-patternsOverlayCloseBtn.addEventListener('click', ()=> patternsOverlay.classList.remove('open'));
+patternsOverlayCloseBtn.addEventListener('click', ()=>{ patternsOverlay.classList.remove('open'); syncBottomBarVisibility(); });
 
 
 // =========================================================================
@@ -3870,9 +4041,17 @@ const songSlotsEl=document.getElementById('songSlotsList');
 // laufen über switchTab() (s.u.), nicht mehr über diese Funktion.
 const tabPattern=document.getElementById('tabPattern');
 const patternTabBtn=document.getElementById('patternTabBtn');
+const bottomTabBar=document.getElementById('bottomTabBar');
+// Einzige Quelle der Wahrheit: bei jeder Änderung an einem der vier echten Modals aufgerufen,
+// statt einen separaten "suppressed"-Flag mitzuführen, der aus dem Ruder laufen könnte.
+function syncBottomBarVisibility(){
+  const anyModalOpen=[tempoOverlay, patternsOverlay, kitPickerOverlay, sampleEditorOverlay]
+    .some(el=> el && el.classList.contains('open'));
+  bottomTabBar.classList.toggle('overlay-hidden', anyModalOpen);
+}
 function closeAllOverlays(){
-  [tempoOverlay, patternsOverlay, kitPickerOverlay].forEach(el=>{ if(el) el.classList.remove('open'); });
-  closeTrimEditor();
+  [tempoOverlay, patternsOverlay, kitPickerOverlay, sampleEditorOverlay].forEach(el=>{ if(el) el.classList.remove('open'); });
+  syncBottomBarVisibility();
 }
 // Blendet genau eines der 5 Tab-Panels ein (Pattern/Fill/Pads/Mixer/Song), alle
 // anderen aus, und markiert den passenden Bottom-Bar-Button als aktuell aktiv.
@@ -4221,8 +4400,7 @@ async function restoreLastOpenedOrSeed(){
   }, {passive:true});
 })();
 
-loadSampleFromIndexedDB();
-loadPadsFromIndexedDB();
+restoreSampleAssignments();
 restoreLastOpenedOrSeed();
 
 })();
