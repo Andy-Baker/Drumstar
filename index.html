@@ -227,10 +227,19 @@
   .len-chip:active{ transform:scale(.94); }
 
   /* ---------- SEITEN-NAVIGATION (bei Patterns >16 Steps) ---------- */
-  #pageNav{ display:none; align-items:center; justify-content:center; gap:12px; padding:2px 0; }
+  #pageNav{ display:none; align-items:center; gap:6px; background:var(--panel-inset); border-radius:8px; padding:6px; }
   #pageNav.show{ display:flex; }
-  #pageNav .chip-btn{ padding:5px 12px; }
-  #pageLabel{ color:var(--lcd-fg); text-shadow:0 0 6px rgba(95,194,255,.6); font-size:13px; min-width:80px; text-align:center; }
+  #pagePrevBtn, #pageNextBtn{ flex:1; min-height:44px; border-radius:8px; border:1px solid rgba(255,255,255,.1);
+    background:var(--panel); color:var(--blue-2); font-size:16px; cursor:pointer; }
+  #pagePrevBtn:active, #pageNextBtn:active{ transform:scale(.95); }
+  #pagePrevBtn:disabled, #pageNextBtn:disabled{ opacity:.3; cursor:default; }
+  #pagePrevBtn:disabled:active, #pageNextBtn:disabled:active{ transform:none; }
+  #pageLabel{ flex:0 0 auto; min-width:92px; text-align:center; color:var(--lcd-fg); text-shadow:0 0 6px rgba(95,194,255,.6); font-size:14px; }
+  #pageCopyBtn{ flex:0 0 44px; min-height:44px; border-radius:8px; border:1px solid rgba(255,255,255,.1);
+    background:var(--panel); color:var(--dim); font-size:15px; cursor:pointer; }
+  #pageCopyBtn:active{ transform:scale(.95); }
+  #pageCopyBtn:disabled{ opacity:.3; cursor:default; }
+  #pageCopyBtn:disabled:active{ transform:none; }
   .kit-chip{
     flex-shrink:0; padding:7px 12px; border-radius:9px; border:1px solid rgba(255,255,255,.08);
     background:var(--panel); cursor:pointer; text-align:left; min-width:104px;
@@ -277,9 +286,10 @@
     background:var(--panel); border-radius:8px; padding:6px 10px; }
   #trackBar .name{ font-weight:700; font-size:clamp(14px,4vw,17px); letter-spacing:.03em; display:flex; align-items:center; gap:8px; color:var(--white); }
   #trackBar .dot{ width:10px; height:10px; border-radius:50%; background:var(--tc); box-shadow:0 0 8px var(--tc); }
-  #trackBar .preview{ font-size:11px; color:var(--dim); letter-spacing:.08em; text-transform:uppercase; cursor:pointer;
-    border:1px solid rgba(255,255,255,.12); border-radius:6px; padding:5px 9px; }
-  #trackBar .preview:active{ transform:scale(.94); border-color:rgba(63,169,255,.5); }
+  #trackBar .preview{ width:44px; height:44px; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+    font-size:16px; color:var(--blue-2); cursor:pointer; border-radius:50%;
+    border:1px solid rgba(63,169,255,.4); background:rgba(63,169,255,.12); }
+  #trackBar .preview:active{ transform:scale(.92); background:rgba(63,169,255,.25); }
   #trackBar .mini-knobs{ display:flex; gap:8px; }
   #trackBar .knob-dial{ --ks:26px; }
 
@@ -289,6 +299,24 @@
     border:1px solid rgba(255,107,53,.45); border-radius:7px; padding:8px 12px; cursor:pointer;
     background:rgba(255,107,53,.12); color:#ffb08a; white-space:nowrap; }
   #arpRandomBtn:active{ transform:scale(.94); }
+
+  /* ---------- SPUR-AKTIONEN (Random / Leeren / Bereich) über dem Step-Grid ---------- */
+  #trackActions{ display:flex; gap:6px; align-items:center; background:var(--panel-inset); border-radius:8px; padding:6px; margin:4px 0 2px; }
+  .ta-btn{ flex:1; min-height:40px; border-radius:8px; border:1px solid rgba(255,255,255,.12); background:var(--panel);
+    color:var(--white); font-family:inherit; font-weight:700; font-size:12px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:6px; }
+  .ta-btn:active{ transform:scale(.95); }
+  .ta-btn.rand{ border-color:rgba(63,169,255,.45); background:rgba(63,169,255,.12); color:var(--blue-2); }
+  .ta-btn.clean{ color:#ff9d7a; border-color:rgba(255,157,122,.35); }
+  .ta-btn.sm{ flex:0 0 44px; font-size:16px; }
+  .ta-btn:disabled{ opacity:.3; cursor:default; }
+  .ta-btn:disabled:active{ transform:none; }
+  #taScope{ display:flex; flex:0 0 auto; border-radius:8px; overflow:hidden; border:1px solid rgba(255,255,255,.12); }
+  #taScope button{ padding:0 12px; min-height:40px; background:var(--panel); border:0; color:var(--dim);
+    font-family:inherit; font-weight:700; font-size:11px; cursor:pointer; }
+  #taScope button.on{ background:rgba(63,169,255,.2); color:var(--blue-2); }
+  #taToast{ font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--blue-2); text-align:center; }
+  #taToast:empty{ display:none; }
 
   /* ---------- BIG EDIT GRID ---------- */
   #bigGrid{ display:grid; grid-template-columns:repeat(4,1fr); gap:clamp(6px,2vw,10px); }
@@ -417,16 +445,40 @@
     box-shadow:0 0 14px rgba(63,169,255,.7); animation:recpulse 1s infinite; }
   #seStatus{ font-size:11px; color:var(--dim); font-family:'JetBrains Mono',monospace; text-align:center; flex-shrink:0; }
   #seStatus.err{ color:var(--white); text-shadow:0 0 6px rgba(255,255,255,.5); }
-  #seWaveWrap{ height:110px; border-radius:8px; background:var(--panel-inset); position:relative;
-    overflow:hidden; touch-action:none; flex-shrink:0; }
+  #seWaveWrap{ height:130px; border-radius:8px; background:var(--panel-inset); position:relative;
+    overflow:hidden; flex-shrink:0; }
+  #seWaveScroll{ position:absolute; inset:0; overflow-x:auto; overflow-y:hidden; touch-action:pan-x; }
+  #seWaveInner{ position:relative; height:100%; }
   #seWaveCanvas{ position:absolute; inset:0; width:100%; height:100%; display:block; }
   .se-dim{ position:absolute; top:0; bottom:0; background:rgba(0,0,0,.55); pointer-events:none; }
-  .se-handle{ position:absolute; top:0; bottom:0; width:14px; margin-left:-7px; cursor:ew-resize; }
-  .se-handle::before{ content:""; position:absolute; top:0; bottom:0; left:6px; width:2px; background:var(--blue);
-    box-shadow:0 0 6px var(--blue), 0 0 12px rgba(63,169,255,.6); }
-  .se-handle::after{ content:""; position:absolute; top:-2px; left:2px; width:10px; height:10px; border-radius:50%;
-    background:var(--blue); box-shadow:0 0 6px var(--blue); }
-  #seTrimLabel{ font-size:10px; color:var(--dim); font-family:'JetBrains Mono',monospace; text-align:center; flex-shrink:0; }
+  /* Grabzone 32px statt vorher 14px — unsichtbar breiter, die schlanke Linie bleibt optisch
+     gleich. Flaggen oben UND unten (vorher nur oben), farbcodiert (Start blau, Ende pink),
+     damit beide Enden der Wellenform aus greifbar und auf einen Blick unterscheidbar sind. */
+  .se-handle{ position:absolute; top:0; bottom:0; width:32px; margin-left:-16px; cursor:ew-resize; touch-action:none; }
+  .se-handle .seh-line{ position:absolute; top:18px; bottom:18px; left:50%; width:2px; margin-left:-1px;
+    background:var(--hc); box-shadow:0 0 6px var(--hc); }
+  .se-handle .seh-flag{ position:absolute; left:50%; margin-left:-15px; width:30px; height:18px; border-radius:5px;
+    background:var(--hc); color:#04121e; font:700 10px 'JetBrains Mono',monospace;
+    display:flex; align-items:center; justify-content:center; box-shadow:0 0 8px var(--hc); }
+  .se-handle .seh-flag.top{ top:0; } .se-handle .seh-flag.bot{ bottom:0; }
+  .se-handle.start{ --hc:#3fa9ff; } .se-handle.end{ --hc:#ff6fa8; }
+  .se-handle.dragging .seh-line{ width:3px; box-shadow:0 0 12px var(--hc), 0 0 20px var(--hc); }
+  .se-handle.dragging .seh-flag{ transform:scale(1.15); }
+  #seZoomRow{ display:flex; align-items:center; gap:8px; flex-shrink:0; }
+  #seZoomRow span{ font-size:9px; letter-spacing:.06em; color:var(--dim); flex-shrink:0; }
+  #seZoomRow input[type=range]{ flex:1; accent-color:var(--blue); }
+  #seZoomVal{ font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--dim); min-width:32px; text-align:right; }
+  #seTrimFields{ display:flex; gap:8px; flex-shrink:0; }
+  .se-tf{ flex:1; background:var(--panel); border-radius:8px; padding:5px 7px; border:1px solid rgba(255,255,255,.08); }
+  .se-tf.start{ border-color:rgba(63,169,255,.4); } .se-tf.end{ border-color:rgba(255,111,168,.4); }
+  .se-tf .se-tf-lbl{ font-size:9px; letter-spacing:.08em; text-transform:uppercase; color:var(--dim); }
+  .se-tf.start .se-tf-lbl{ color:var(--blue-2); } .se-tf.end .se-tf-lbl{ color:#ff6fa8; }
+  .se-tf-row{ display:flex; align-items:center; gap:4px; margin-top:2px; }
+  .se-tf input{ width:100%; background:transparent; border:0; outline:0; color:var(--white);
+    font:700 14px 'JetBrains Mono',monospace; text-align:center; }
+  .se-nudge{ width:24px; height:24px; border-radius:6px; border:1px solid rgba(255,255,255,.12);
+    background:var(--panel-inset); color:var(--dim); font-size:12px; cursor:pointer; flex-shrink:0; }
+  .se-nudge:active{ transform:scale(.9); }
   #seToolsRow{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; flex-shrink:0; }
   .se-tool-btn{ min-height:40px; border-radius:8px; border:1px solid rgba(255,255,255,.12);
     background:var(--panel); color:var(--dim); font-size:11px; font-weight:700; cursor:pointer; }
@@ -556,6 +608,9 @@
   #patternSaveBtn{ font-size:10px; letter-spacing:.04em; text-transform:uppercase; border:1px solid rgba(63,169,255,.4);
     border-radius:6px; padding:7px 12px; cursor:pointer; background:rgba(63,169,255,.12); color:var(--blue-2); white-space:nowrap; }
   #patternSaveBtn:active{ transform:scale(.94); }
+  #patternUpdateBtn{ display:none; flex-shrink:0; font-size:14px; border:1px solid rgba(63,169,255,.4);
+    border-radius:6px; padding:7px 10px; cursor:pointer; background:rgba(63,169,255,.12); color:var(--blue-2); }
+  #patternUpdateBtn:active{ transform:scale(.94); }
   #exportWavBtn{ flex-shrink:0; font-size:12px; letter-spacing:.04em; text-transform:uppercase; font-weight:700;
     border:1px solid rgba(63,169,255,.4); border-radius:9px; padding:12px 0; cursor:pointer;
     background:rgba(63,169,255,.12); color:var(--blue-2); }
@@ -756,6 +811,7 @@ html,body{min-height:100%;height:100%;}
         </div>
         <div id="patternSaveRow">
           <input type="text" id="patternNameInput" placeholder="Name für aktuellen Beat…" maxlength="40">
+          <button id="patternUpdateBtn" title="Aktuell geladenen Beat mit diesem Zustand überschreiben">↻</button>
           <button id="patternSaveBtn">Speichern</button>
         </div>
         <button id="exportWavBtn">⬇ Als WAV exportieren</button>
@@ -782,13 +838,43 @@ html,body{min-height:100%;height:100%;}
         <div id="seStatus">Kein Sample geladen</div>
 
         <div id="seWaveWrap">
-          <canvas id="seWaveCanvas"></canvas>
-          <div class="se-dim" id="seDimLeft"></div>
-          <div class="se-dim" id="seDimRight"></div>
-          <div class="se-handle" id="seHandleStart"></div>
-          <div class="se-handle" id="seHandleEnd"></div>
+          <div id="seWaveScroll">
+            <div id="seWaveInner">
+              <canvas id="seWaveCanvas"></canvas>
+              <div class="se-dim" id="seDimLeft"></div>
+              <div class="se-dim" id="seDimRight"></div>
+              <div class="se-handle start" id="seHandleStart">
+                <div class="seh-flag top">S</div><div class="seh-line"></div><div class="seh-flag bot">S</div>
+              </div>
+              <div class="se-handle end" id="seHandleEnd">
+                <div class="seh-flag top">E</div><div class="seh-line"></div><div class="seh-flag bot">E</div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div id="seTrimLabel">Start: 0.00s · Ende: 0.00s</div>
+        <div id="seZoomRow">
+          <span>ZOOM</span>
+          <input type="range" id="seZoom" min="1" max="8" step="0.1" value="1">
+          <span id="seZoomVal">1.0×</span>
+        </div>
+        <div id="seTrimFields">
+          <div class="se-tf start">
+            <div class="se-tf-lbl">Start</div>
+            <div class="se-tf-row">
+              <button class="se-nudge" data-t="start" data-d="-1">−</button>
+              <input id="seFieldStart" inputmode="decimal" value="0.00">
+              <button class="se-nudge" data-t="start" data-d="1">+</button>
+            </div>
+          </div>
+          <div class="se-tf end">
+            <div class="se-tf-lbl">Ende</div>
+            <div class="se-tf-row">
+              <button class="se-nudge" data-t="end" data-d="-1">−</button>
+              <input id="seFieldEnd" inputmode="decimal" value="0.00">
+              <button class="se-nudge" data-t="end" data-d="1">+</button>
+            </div>
+          </div>
+        </div>
 
         <div id="seToolsRow">
           <button class="se-tool-btn" id="seNormalizeBtn">Normalisieren</button>
@@ -819,7 +905,12 @@ html,body{min-height:100%;height:100%;}
         <div id="trackBar">
           <div class="name"><span class="dot" id="tbDot"></span><span id="tbName">BASS DRUM</span></div>
           <div class="mini-knobs" id="tbKnobs"></div>
-          <div class="preview" id="tbPreview">▶ Hören</div>
+          <div class="preview" id="tbPreview" role="button" aria-label="Vorhören">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20" aria-hidden="true">
+              <path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor" stroke="none"/>
+              <path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8 8 0 0 1 0 12"/>
+            </svg>
+          </div>
         </div>
 
         <div id="sampleControls">
@@ -843,11 +934,21 @@ html,body{min-height:100%;height:100%;}
         </div>
 
         <div id="pageNav">
-          <button id="pagePrevBtn" class="chip-btn">◀</button>
+          <button id="pagePrevBtn">◀</button>
           <span id="pageLabel" class="lcd l2 mono">Seite 1/1</span>
-          <button id="pageCopyBtn" class="chip-btn" title="Diese Seite in die nächste kopieren">⧉→</button>
-          <button id="pageNextBtn" class="chip-btn">▶</button>
+          <button id="pageCopyBtn" title="Diese Seite in die nächste kopieren">⧉→</button>
+          <button id="pageNextBtn">▶</button>
         </div>
+
+        <div id="trackActions">
+          <button id="taRandBtn" class="ta-btn rand">🎲 Random</button>
+          <button id="taClearBtn" class="ta-btn clean">✕ Leeren</button>
+          <button id="taUndoBtn" class="ta-btn sm" title="Rückgängig" aria-label="Rückgängig" disabled>↶</button>
+          <div id="taScope" role="group" aria-label="Bereich">
+            <button data-s="page" class="on">Seite</button><button data-s="all">Alles</button>
+          </div>
+        </div>
+        <div id="taToast"></div>
 
         <div id="bigGrid"></div>
 
@@ -1393,7 +1494,11 @@ function playMetallicSix(time, vol, tune, velocity, kp, mode){
     o.connect(bp); o.start(time); o.stop(time+decay+0.08);
   });
 
-  const peak=(kp.fmLevel!=null?kp.fmLevel:0.5)*vol*g;
+  // Math.max(0.0001,…): exponentialRampToValueAtTime verbietet 0 als Ziel (wirft eine
+  // Exception) — bei Vol=0 (Mixer-Fader ganz runter) wäre peak sonst exakt 0 und der Fehler
+  // würde den Scheduler-Loop mitten im while() abbrechen, wodurch die GESAMTE Wiedergabe
+  // stoppt, nicht nur diese eine Spur. 0.0001 ist praktisch lautlos (~-80dB).
+  const peak=Math.max(0.0001, (kp.fmLevel!=null?kp.fmLevel:0.5)*vol*g);
   amp.gain.setValueAtTime(0.0001, time);
   amp.gain.exponentialRampToValueAtTime(peak, time+0.004);
   amp.gain.exponentialRampToValueAtTime(0.0006, time+decay);
@@ -1479,7 +1584,9 @@ function triggerArpStep(time, tr, degreeSemis, velocity, slide){
   const cutoffBase=300 + (tr.cutoff!=null?tr.cutoff:0.5)*4000;
   const resonance=1 + (tr.resonance!=null?tr.resonance:0.35)*20;
   const accentBoost = velocity>=1.1 ? 1.7 : 1; // Accent-Step: heller/lauter, klassisches 303-"Quack"
-  const peakGain = Math.min(1, velocity*tr.vol*1.1);
+  // Gleicher Grund wie bei playMetallicSix: exponentialRampToValueAtTime darf nie 0 als
+  // Ziel bekommen, sonst stoppt bei Vol=0 (Fader ganz runter) die komplette Wiedergabe.
+  const peakGain = Math.max(0.0001, Math.min(1, velocity*tr.vol*1.1));
   const dur=stepDuration();
 
   tr._arpFilter.Q.value=resonance;
@@ -1509,10 +1616,10 @@ function triggerArpStep(time, tr, degreeSemis, velocity, slide){
 // Generiert eine zufällige Acid-Bassline: Random-Walk innerhalb einer
 // natürlichen Moll-Tonleiter um die letzte Tonstufe, mit gelegentlichen
 // Oktavsprüngen, Accents und Slides — klassisches 303-Feeling.
-function generateAcidBassline(tr){
+function generateAcidBassline(tr, from=0, to=PATTERN_LENGTH){
   const scale=[0,2,3,5,7,8,10]; // natürliches Moll, Halbtonabstände zur Grundtonstufe
   let lastDegree=0;
-  for(let s=0;s<PATTERN_LENGTH;s++){
+  for(let s=from;s<to;s++){
     const beatPos=s%16;
     const p = (beatPos%4===0) ? 0.85 : (beatPos%2===0 ? 0.55 : 0.32);
     if(Math.random()<p){
@@ -2017,6 +2124,7 @@ function generateFillOverride(len){
 // füllt neue mit "aus", kürzt überschüssige beim Verkleinern).
 function setPatternLength(newLen){
   if(newLen===PATTERN_LENGTH) return;
+  if(typeof taResetUndo==='function') taResetUndo();
   if(isPlaying) stop();
   PATTERN_LENGTH=newLen;
   currentLoopIsFill=false; fillOverride=null; loopCount=0; // Sicherheit: alte Fill-Daten passen sonst nicht mehr zur neuen Länge
@@ -2325,9 +2433,13 @@ lcdPatternBtn.addEventListener('click', ()=>{
 });
 // Zentrale Stelle, die currentLoadedPatternId setzt UND die LCD-Anzeige synchron hält —
 // ersetzt direkte Zuweisungen von currentLoadedPatternId an allen Aufrufstellen.
+// Blendet außerdem den ↻-Button ein/aus: nur sichtbar, solange ein gespeicherter Beat
+// geladen ist (bei einem frischen/neuen Pattern gibt es noch nichts zu überschreiben).
 function setCurrentLoadedPattern(id, name){
   currentLoadedPatternId=id;
+  currentLoadedPatternName=name;
   lcdPatternName.textContent=name||'—';
+  patternUpdateBtn.style.display = id ? 'inline-block' : 'none';
 }
 
 // ---- Pattern-Länge (16/32/48/64 Steps) ----
@@ -2386,6 +2498,61 @@ function copyCurrentPageToNext(){
   renderAllForPage();
 }
 pageCopyBtn.addEventListener('click', copyCurrentPageToNext);
+
+// ---- Spur-Aktionen: Random / Leeren für die aktive Spur, wahlweise nur die sichtbare
+// Seite (16 Steps) oder das gesamte Pattern. Bei 16 Steps gibt es nur eine Seite, der
+// Umschalter bleibt dann ausgeblendet (Seite == Alles). ----
+const taRandBtn=document.getElementById('taRandBtn');
+const taClearBtn=document.getElementById('taClearBtn');
+const taUndoBtn=document.getElementById('taUndoBtn');
+const taToastEl=document.getElementById('taToast');
+const taScopeEl=document.getElementById('taScope');
+let taScope='page';
+let taUndo=null; // ein Schritt: Snapshot der aktiven Spur (steps + notes + slides) vor der letzten Aktion
+let taToastTimer=null;
+function taSay(msg){
+  taToastEl.textContent=msg;
+  clearTimeout(taToastTimer);
+  taToastTimer=setTimeout(()=>{ taToastEl.textContent=''; }, 2200);
+}
+function taResetUndo(){ taUndo=null; taUndoBtn.disabled=true; }
+function taSnapshot(tr){
+  taUndo={ trackIdx:activeTrackIdx, len:PATTERN_LENGTH, steps:tr.steps.slice(), notes:tr.notes.slice(), slides:tr.slides.slice() };
+  taUndoBtn.disabled=false;
+}
+function taRange(){
+  return taScope==='all' || totalPages()===1 ? [0, PATTERN_LENGTH] : [currentPage*16, currentPage*16+16];
+}
+taRandBtn.addEventListener('click', ()=>{
+  const tr=TRACKS[activeTrackIdx], [from,to]=taRange();
+  taSnapshot(tr);
+  randomizeTrackPattern(tr, from, to);
+  refreshTrackStepVisuals(tr);
+  taSay('Random · '+tr.name);
+});
+taClearBtn.addEventListener('click', ()=>{
+  const tr=TRACKS[activeTrackIdx], [from,to]=taRange();
+  taSnapshot(tr);
+  for(let s=from;s<to;s++){
+    tr.steps[s]=VEL_OFF;
+    if(tr.type==='arp'){ tr.notes[s]=0; tr.slides[s]=false; } // Acid Bass: Töne + Slides mit zurücksetzen
+  }
+  refreshTrackStepVisuals(tr);
+  taSay('Geleert · '+tr.name+' — ↶ zum Zurückholen');
+});
+taUndoBtn.addEventListener('click', ()=>{
+  const tr=TRACKS[activeTrackIdx];
+  if(!taUndo || taUndo.trackIdx!==activeTrackIdx || taUndo.len!==PATTERN_LENGTH){ taResetUndo(); return; }
+  tr.steps=taUndo.steps; tr.notes=taUndo.notes; tr.slides=taUndo.slides;
+  taResetUndo();
+  // Overview zeigt alle Spuren — hier reicht die aktive, aber renderAllForPage ist robust gegen Seitenwechsel
+  renderAllForPage();
+  taSay('Wiederhergestellt');
+});
+taScopeEl.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{
+  taScope=b.dataset.s;
+  taScopeEl.querySelectorAll('button').forEach(x=>x.classList.toggle('on', x===b));
+}));
 let tbVolKnob=null, tbTuneKnob=null, tbRevKnob=null, tbDelayKnob=null, tbFeelKnob=null;
 
 const sampleControls=document.getElementById('sampleControls');
@@ -2400,16 +2567,16 @@ function renderTrackBar(){
   tbName.textContent=tr.name;
   tbDot.style.background=tr.color; tbDot.style.boxShadow='0 0 6px '+tr.color;
   tbKnobs.innerHTML='';
-  tbVolKnob=makeKnob({size:'26px', min:0,max:1, value:tr.vol, fmt:v=>Math.round(v*100),
+  tbVolKnob=makeKnob({label:'VOL', size:'26px', min:0,max:1, value:tr.vol, fmt:v=>Math.round(v*100),
     onChange:v=>{ setTrackVol(tr, v); }});
 
   if(tr.type==='arp'){
     // Beim Acid-Bass-Track ersetzt der Tune-Knob-Slot die Grundton-Auswahl (Root Note)
-    tbTuneKnob=makeKnob({size:'26px', min:0,max:11, value:tr.rootNote, fmt:v=>NOTE_NAMES[Math.round(v)%12],
+    tbTuneKnob=makeKnob({label:'ROOT', size:'26px', min:0,max:11, value:tr.rootNote, fmt:v=>NOTE_NAMES[Math.round(v)%12],
       onChange:v=>tr.rootNote=Math.round(v)});
   } else {
     const tuneLabel = tr.isSample ? v=>Math.round((Math.pow(2,(v-0.5)*2))*100)+'%' : v=>Math.round(v*100);
-    tbTuneKnob=makeKnob({size:'26px', min:0,max:1, value:tr.tune, fmt:tuneLabel, onChange:v=>tr.tune=v});
+    tbTuneKnob=makeKnob({label:'TUNE', size:'26px', min:0,max:1, value:tr.tune, fmt:tuneLabel, onChange:v=>tr.tune=v});
   }
   tbKnobs.appendChild(tbVolKnob.el); tbKnobs.appendChild(tbTuneKnob.el);
 
@@ -2506,6 +2673,7 @@ function renderBigGrid(){
   }
 }
 function selectTrack(idx){
+  if(typeof taResetUndo==='function') taResetUndo();
   activeTrackIdx=idx;
   TRACKS.forEach((tr,i)=> tr._ovRow.classList.toggle('active', i===idx));
   renderTrackBar();
@@ -2517,9 +2685,9 @@ function selectTrack(idx){
 // =========================================================================
 // Generiert ein neues Zufalls-Pattern für EINE Spur — genutzt vom globalen
 // Random-Button (über alle Nicht-Arp-Spuren) und vom Pro-Spur-🎲-Button.
-function randomizeTrackPattern(tr){
-  if(tr.type==='arp'){ generateAcidBassline(tr); return; }
-  for(let s=0;s<PATTERN_LENGTH;s++){
+function randomizeTrackPattern(tr, from=0, to=PATTERN_LENGTH){
+  if(tr.type==='arp'){ generateAcidBassline(tr, from, to); return; }
+  for(let s=from;s<to;s++){
     const beatPos = s%16; // Rhythmus-Gewichtung bleibt pro Takt (16 Steps) gleich
     const p = tr.id==='bd'? (beatPos%4===0?0.85:0.12) :
               tr.id==='sd'? (beatPos%8===4?0.9:0.05) :
@@ -3159,13 +3327,18 @@ const seImportBtn=document.getElementById('seImportBtn');
 const seImportInput=document.getElementById('seImportInput');
 const seStatus=document.getElementById('seStatus');
 const seWaveWrap=document.getElementById('seWaveWrap');
+const seWaveScroll=document.getElementById('seWaveScroll');
+const seWaveInner=document.getElementById('seWaveInner');
 const seWaveCanvas=document.getElementById('seWaveCanvas');
 const seWaveCtx=seWaveCanvas.getContext('2d');
 const seDimLeft=document.getElementById('seDimLeft');
 const seDimRight=document.getElementById('seDimRight');
 const seHandleStartEl=document.getElementById('seHandleStart');
 const seHandleEndEl=document.getElementById('seHandleEnd');
-const seTrimLabel=document.getElementById('seTrimLabel');
+const seZoomEl=document.getElementById('seZoom');
+const seZoomValEl=document.getElementById('seZoomVal');
+const seFieldStart=document.getElementById('seFieldStart');
+const seFieldEnd=document.getElementById('seFieldEnd');
 const seNormalizeBtn=document.getElementById('seNormalizeBtn');
 const seReverseBtn=document.getElementById('seReverseBtn');
 const seFadeInBtn=document.getElementById('seFadeInBtn');
@@ -3180,6 +3353,7 @@ let seEditingId=null;        // id des bearbeiteten Bibliothekseintrags, oder nu
 let seOriginalBuffer=null;   // unveränderte Fassung, für "Zurücksetzen"
 let seWorkingBuffer=null;    // aktuelle Arbeitskopie, auf die Tools angewendet werden
 let seTrimStart=0, seTrimEnd=0;
+let seZoomFactor=1; // 1..8 — horizontaler Zoom der Wellenform, echte Breite (nicht nur optisch)
 let seAssignTrack=false, seAssignPads=new Set();
 let seIsRecording=false, seRecStartTime=0, seRecTimerId=null;
 let seMicSourceNode=null, seMicRecorderNode=null, seMicSilentGain=null;
@@ -3241,6 +3415,7 @@ function seApplyTransform(fn){
   if(!seWorkingBuffer) return;
   seWorkingBuffer=fn(seWorkingBuffer);
   seTrimStart=0; seTrimEnd=seWorkingBuffer.duration; // Auswahl nach jeder Bearbeitung zurückgesetzt (volle Länge)
+  seSetZoom(1); // Bearbeitung ändert oft die Länge/Struktur — Ansicht wieder auf volle Breite
   drawSEWave(); updateSETrimUI();
 }
 seNormalizeBtn.addEventListener('click', ()=> seApplyTransform(bufferNormalize));
@@ -3251,13 +3426,43 @@ seResetBtn.addEventListener('click', ()=>{
   if(!seOriginalBuffer) return;
   seWorkingBuffer=seOriginalBuffer;
   seTrimStart=0; seTrimEnd=seOriginalBuffer.duration;
+  seSetZoom(1);
   drawSEWave(); updateSETrimUI();
 });
 
-// ---- Wellenform + zwei Trim-Handles (Start UND Ende — Ausbau ggü. dem alten, nur
-// startbasierten Trim-Editor) ----
+// ---- Wellenform + zwei Trim-Handles (Start UND Ende) mit echtem horizontalem Zoom ----
+// seWaveInner ist bei Zoom > 1 breiter als der sichtbare Ausschnitt (seWaveWrap) und liegt
+// in einem nativ scrollbaren Container (seWaveScroll) — Handles/Dim-Overlays/Canvas leben
+// alle IN seWaveInner, ihre Pixelposition ist also unabhängig vom aktuellen Scroll-Offset
+// (getBoundingClientRect() von seWaveInner liefert die tatsächliche, bereits verschobene
+// Position). Das ersetzt die vorherige "Zoom", der nur das Wellenform-Muster optisch
+// verzerrt hat, ohne echten Ausschnitt/Scroll-Anker — dadurch wirkte er beim Ziehen des
+// Reglers, als würde die Ansicht "springen".
+function seInnerWidth(){ return Math.max(seWaveWrap.clientWidth, seWaveWrap.clientWidth*seZoomFactor); }
+function seSetZoom(z, anchorTime){
+  const dur=seWorkingBuffer ? seWorkingBuffer.duration : 1;
+  // Ankerpunkt: die Zeitposition in der Mitte des aktuell sichtbaren Ausschnitts bleibt
+  // beim Zoomen optisch an derselben Stelle stehen, statt dass die Ansicht auf den Anfang
+  // zurückspringt oder sich unvorhersehbar verschiebt.
+  if(anchorTime==null){
+    const oldW=seWaveInner.clientWidth || seWaveWrap.clientWidth;
+    const centerX=seWaveScroll.scrollLeft + seWaveScroll.clientWidth/2;
+    anchorTime=(centerX/oldW)*dur;
+  }
+  seZoomFactor=Math.min(8, Math.max(1, z));
+  seZoomEl.value=seZoomFactor;
+  seZoomValEl.textContent=seZoomFactor.toFixed(1)+'×';
+  drawSEWave();
+  updateSETrimUI();
+  const newW=seInnerWidth();
+  const newCenterX=(anchorTime/dur)*newW;
+  seWaveScroll.scrollLeft=Math.max(0, newCenterX - seWaveScroll.clientWidth/2);
+}
+seZoomEl.addEventListener('input', ()=> seSetZoom(parseFloat(seZoomEl.value)));
+
 function drawSEWave(){
-  const w=seWaveWrap.clientWidth, h=seWaveWrap.clientHeight;
+  const w=seInnerWidth(), h=seWaveWrap.clientHeight;
+  seWaveInner.style.width=w+'px';
   seWaveCanvas.width=w*devicePixelRatio; seWaveCanvas.height=h*devicePixelRatio;
   seWaveCanvas.style.width=w+'px'; seWaveCanvas.style.height=h+'px';
   seWaveCtx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
@@ -3275,17 +3480,20 @@ function drawSEWave(){
   seWaveCtx.stroke();
 }
 function updateSETrimUI(){
-  const w=seWaveWrap.clientWidth;
+  const w=seInnerWidth();
   const dur=seWorkingBuffer ? seWorkingBuffer.duration : 1;
   const xs=Math.min(w,(seTrimStart/dur)*w), xe=Math.min(w,(seTrimEnd/dur)*w);
   seHandleStartEl.style.left=xs+'px'; seHandleEndEl.style.left=xe+'px';
   seDimLeft.style.left='0px'; seDimLeft.style.width=xs+'px';
   seDimRight.style.left=xe+'px'; seDimRight.style.width=(w-xe)+'px';
-  seTrimLabel.textContent='Start: '+seTrimStart.toFixed(2)+'s · Ende: '+seTrimEnd.toFixed(2)+'s';
+  // Zahlenfelder nur aktualisieren, wenn sie nicht gerade fokussiert/editiert werden —
+  // sonst würde ein Tipp-Vorgang durch das Drag-Update wieder überschrieben.
+  if(document.activeElement!==seFieldStart) seFieldStart.value=seTrimStart.toFixed(2);
+  if(document.activeElement!==seFieldEnd) seFieldEnd.value=seTrimEnd.toFixed(2);
 }
 let seDragHandle=null; // 'start' | 'end' | null
 function seSetHandleFromX(clientX){
-  const rect=seWaveWrap.getBoundingClientRect();
+  const rect=seWaveInner.getBoundingClientRect();
   const x=Math.min(rect.width, Math.max(0, clientX-rect.left));
   const dur=seWorkingBuffer ? seWorkingBuffer.duration : 1;
   const t=(x/rect.width)*dur;
@@ -3293,17 +3501,48 @@ function seSetHandleFromX(clientX){
   else if(seDragHandle==='end') seTrimEnd=Math.max(t, seTrimStart+0.02);
   updateSETrimUI();
 }
-function seHandleDown(which){ return (e)=>{ seDragHandle=which; seSetHandleFromX(e.touches?e.touches[0].clientX:e.clientX); e.preventDefault(); }; }
+// Grabzone ist per CSS auf 32px verbreitert (vorher 14px); zusätzlich hält
+// setPointerCapture den Handle auch dann fest, wenn der Finger beim schnellen Ziehen kurz
+// die Element-Fläche verlässt — beides zusammen war die Hauptursache für "schlecht greifbar".
+function seHandleDown(which, el){ return (e)=>{
+  seDragHandle=which;
+  el.classList.add('dragging');
+  if(e.pointerId!=null && el.setPointerCapture){ try{ el.setPointerCapture(e.pointerId); }catch(err){} }
+  seSetHandleFromX(e.touches?e.touches[0].clientX:e.clientX);
+  e.preventDefault();
+}; }
 function seHandleMove(e){ if(!seDragHandle) return; seSetHandleFromX(e.touches?e.touches[0].clientX:e.clientX); e.preventDefault&&e.preventDefault(); }
-function seHandleUp(){ seDragHandle=null; }
-seHandleStartEl.addEventListener('pointerdown', seHandleDown('start'));
-seHandleEndEl.addEventListener('pointerdown', seHandleDown('end'));
+function seHandleUp(){ seHandleStartEl.classList.remove('dragging'); seHandleEndEl.classList.remove('dragging'); seDragHandle=null; }
+seHandleStartEl.addEventListener('pointerdown', seHandleDown('start', seHandleStartEl));
+seHandleEndEl.addEventListener('pointerdown', seHandleDown('end', seHandleEndEl));
 window.addEventListener('pointermove', seHandleMove);
 window.addEventListener('pointerup', seHandleUp);
-seHandleStartEl.addEventListener('touchstart', seHandleDown('start'), {passive:false});
-seHandleEndEl.addEventListener('touchstart', seHandleDown('end'), {passive:false});
+seHandleStartEl.addEventListener('touchstart', seHandleDown('start', seHandleStartEl), {passive:false});
+seHandleEndEl.addEventListener('touchstart', seHandleDown('end', seHandleEndEl), {passive:false});
 window.addEventListener('touchmove', seHandleMove, {passive:false});
 window.addEventListener('touchend', seHandleUp);
+
+// ---- Zahlenfelder (exakte Eingabe) + Nudge ±10ms — Alternative zum Ziehen, wenn das zu
+// ungenau ist. Feld-Änderung übernimmt sofort, geklammert an Puffergrenzen/Mindestabstand.
+function seCommitFieldStart(){
+  const dur=seWorkingBuffer ? seWorkingBuffer.duration : 0;
+  seTrimStart=Math.min(Math.max(0, parseFloat(seFieldStart.value)||0), seTrimEnd-0.02);
+  updateSETrimUI();
+}
+function seCommitFieldEnd(){
+  const dur=seWorkingBuffer ? seWorkingBuffer.duration : 0;
+  seTrimEnd=Math.max(Math.min(dur, parseFloat(seFieldEnd.value)||dur), seTrimStart+0.02);
+  updateSETrimUI();
+}
+seFieldStart.addEventListener('change', seCommitFieldStart);
+seFieldEnd.addEventListener('change', seCommitFieldEnd);
+document.querySelectorAll('.se-nudge').forEach(b=>b.addEventListener('click', ()=>{
+  if(!seWorkingBuffer) return;
+  const dur=seWorkingBuffer.duration, d=parseInt(b.dataset.d,10)*0.01; // 10ms-Schritt
+  if(b.dataset.t==='start') seTrimStart=Math.min(Math.max(0, seTrimStart+d), seTrimEnd-0.02);
+  else seTrimEnd=Math.max(Math.min(dur, seTrimEnd+d), seTrimStart+0.02);
+  updateSETrimUI();
+}));
 
 // ---- Aufnahme (identisches Worklet/MediaRecorder-Muster wie zuvor bei der Spur, jetzt
 // zentral hier) ----
@@ -3355,7 +3594,7 @@ async function seStopRecording(){
     buf.copyToChannel(data,0);
     seOriginalBuffer=buf; seWorkingBuffer=buf; seTrimStart=0; seTrimEnd=buf.duration;
     seStatus.textContent='Aufgenommen — '+buf.duration.toFixed(1)+'s';
-    drawSEWave(); updateSETrimUI();
+    seSetZoom(1, 0);
   } else {
     await new Promise(resolve=>{ seMediaRecorder.onstop=resolve; seMediaRecorder.stop(); });
     seMicSourceNode.disconnect();
@@ -3365,7 +3604,7 @@ async function seStopRecording(){
       const buf=await audioCtx.decodeAudioData(arr);
       seOriginalBuffer=buf; seWorkingBuffer=buf; seTrimStart=0; seTrimEnd=buf.duration;
       seStatus.textContent='Aufgenommen — '+buf.duration.toFixed(1)+'s';
-      drawSEWave(); updateSETrimUI();
+      seSetZoom(1, 0);
     }catch(err){
       console.warn('Sample konnte nicht dekodiert werden:', err);
       seStatus.textContent='Fehler beim Dekodieren'; seStatus.classList.add('err');
@@ -3386,7 +3625,7 @@ seImportInput.addEventListener('change', async (e)=>{
     seOriginalBuffer=buf; seWorkingBuffer=buf; seTrimStart=0; seTrimEnd=buf.duration;
     seStatus.textContent=file.name+' geladen — '+buf.duration.toFixed(1)+'s';
     seStatus.classList.remove('err');
-    drawSEWave(); updateSETrimUI();
+    seSetZoom(1, 0);
   }catch(err){
     console.warn('Datei konnte nicht geladen werden:', err);
     seStatus.textContent='Datei konnte nicht gelesen werden — Format unterstützt?';
@@ -3490,7 +3729,8 @@ async function openSampleEditor({sampleId=null, forTrack=false, forPad=null}={})
   renderSEAssignUI();
   sampleEditorOverlay.classList.add('open');
   syncBottomBarVisibility();
-  requestAnimationFrame(()=>{ drawSEWave(); updateSETrimUI(); });
+  seZoomFactor=1; seZoomEl.value=1; seZoomValEl.textContent='1.0×';
+  requestAnimationFrame(()=>{ seWaveScroll.scrollLeft=0; drawSEWave(); updateSETrimUI(); });
 }
 function closeSampleEditor(){
   if(seIsRecording) seStopRecording();
@@ -3758,7 +3998,9 @@ exportWavBtn.addEventListener('click', async ()=>{
 });
 const patternNameInput=document.getElementById('patternNameInput');
 const patternSaveBtn=document.getElementById('patternSaveBtn');
+const patternUpdateBtn=document.getElementById('patternUpdateBtn');
 let currentLoadedPatternId=null; // id des zuletzt geladenen/gespeicherten/duplizierten Patterns (für Song-Referenzen/Anzeige)
+let currentLoadedPatternName=null; // Name dazu — für die Bestätigungsmeldung von patternUpdateBtn
 const patternList=document.getElementById('patternList');
 
 async function refreshPatternList(){
@@ -4163,6 +4405,18 @@ patternSaveBtn.addEventListener('click', async ()=>{
   patternNameInput.value='';
   refreshPatternList();
   if(finalName!==typedName) showPatternIOStatus('Name bereits vergeben — gespeichert als „'+finalName+'“');
+});
+// Überschreibt den gerade geladenen Beat unter gleicher ID + gleichem Namen mit dem
+// aktuellen Zustand — anders als "Speichern" (das immer einen neuen Beat anlegt). Die ID
+// bleibt gleich, damit Song-Slots, die diesen Beat referenzieren, automatisch den neuen
+// Stand zeigen (keine erneute Zuordnung nötig).
+patternUpdateBtn.addEventListener('click', async ()=>{
+  if(!currentLoadedPatternId) return;
+  const data=collectPatternData(currentLoadedPatternName, currentLoadedPatternId);
+  await savePatternToIndexedDB(data); // gleiche id -> gleicher Key, nur Inhalt aktualisiert
+  showPatternIOStatus('„'+currentLoadedPatternName+'“ aktualisiert');
+  refreshPatternList();
+  refreshSongPatternCache(); // falls in einem Song-Slot referenziert, Cache mit neuem Stand füllen
 });
 
 // =========================================================================
