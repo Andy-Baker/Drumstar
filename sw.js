@@ -1,4 +1,4 @@
-const CACHE='mrm44-v20';
+const CACHE='mrm44-v22';
 const APP_SHELL=['./','./index.html','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png','./icons/logo-drumstar.png'];
 
 self.addEventListener('install',event=>{
