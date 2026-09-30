@@ -493,6 +493,28 @@
   .se-pad-chip{ aspect-ratio:1; border-radius:6px; border:1px solid rgba(255,255,255,.1); background:var(--panel);
     color:var(--dim); font-size:10px; font-weight:700; display:flex; align-items:center; justify-content:center; cursor:pointer; }
   .se-pad-chip.on{ border-color:var(--blue); background:rgba(63,169,255,.2); color:var(--blue-2); }
+  #seModeRow{ display:flex; border-radius:8px; overflow:hidden; border:1px solid rgba(255,255,255,.12); flex-shrink:0; }
+  #seModeRow button{ flex:1; min-height:40px; border:0; background:var(--panel); color:var(--dim); font:700 12px inherit; font-family:inherit; cursor:pointer; }
+  #seModeRow button.on{ background:rgba(63,169,255,.2); color:var(--blue-2); }
+  #sampleEditorOverlay.mode-loop #seModeRow button.on{ background:rgba(255,194,71,.2); color:#ffc247; }
+  .se-cursor{ position:absolute; top:0; bottom:0; width:2px; margin-left:-1px; background:#fff; box-shadow:0 0 6px #fff; pointer-events:none; display:none; }
+  .se-loopband{ position:absolute; top:0; bottom:0; background:rgba(255,194,71,.12); pointer-events:none; display:none; }
+  .se-handle.lp{ --hc:#ffc247; display:none; }
+  #sampleEditorOverlay.mode-loop .se-handle.lp, #sampleEditorOverlay.mode-loop .se-loopband{ display:block; }
+  #sampleEditorOverlay.mode-loop .se-handle.start, #sampleEditorOverlay.mode-loop .se-handle.end{ pointer-events:none; opacity:.3; }
+  #sampleEditorOverlay.mode-loop #seTrimFields{ display:none; }
+  #seLoopPanel{ display:none; flex-direction:column; gap:8px; flex-shrink:0; }
+  #sampleEditorOverlay.mode-loop #seLoopPanel{ display:flex; }
+  #seLoopFields, #seLoopOpts{ display:flex; gap:8px; }
+  .se-tf.lp{ border-color:rgba(255,194,71,.4); } .se-tf.lp .se-tf-lbl{ color:#ffc247; }
+  #seLoopOpts .se-tool-btn{ flex:1; }
+  #seLoopOpts .se-tool-btn.on{ border-color:rgba(255,194,71,.6); background:rgba(255,194,71,.18); color:#ffc247; }
+  .se-ico{ width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0; }
+  #seHeadBtns{ display:flex; gap:8px; }
+  .se-hbtn{ width:40px; height:40px; border-radius:8px; background:var(--panel); border:1px solid rgba(255,255,255,.1); color:var(--blue-2); cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  .se-hbtn:active{ transform:scale(.92); } .se-hbtn:disabled{ opacity:.3; cursor:default; } .se-hbtn:disabled:active{ transform:none; }
+  #seToolsRow{ display:flex; } .se-tool-btn{ flex:1; display:flex; align-items:center; justify-content:center; } .se-tool-btn.txt{ flex:2; }
+  #seModeRow button, #sePreviewBtn, #seSaveBtn{ display:flex; align-items:center; justify-content:center; }
   #seActionsRow{ display:flex; gap:8px; flex-shrink:0; }
   #seActionsRow button{ flex:1; min-height:46px; border-radius:9px; font-weight:700; font-size:13px; cursor:pointer; }
   #sePreviewBtn{ border:1px solid rgba(255,255,255,.12); background:transparent; color:var(--dim); }
@@ -827,7 +849,7 @@ html,body{min-height:100%;height:100%;}
       <div id="sampleEditorOverlay">
         <div id="sampleEditorHead">
           <span class="lcd l2" style="color:var(--dim); letter-spacing:.15em; text-transform:uppercase;">Sample-Editor</span>
-          <button id="sampleEditorCloseBtn" aria-label="Schließen">✕</button>
+          <div id="seHeadBtns"><button class="se-hbtn" id="seUndoBtn" aria-label="Rückgängig" title="Rückgängig" disabled><svg class="se-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg></button><button class="se-hbtn" id="seRedoBtn" aria-label="Wiederholen" title="Wiederholen" disabled><svg class="se-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 14l5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></svg></button><button id="sampleEditorCloseBtn" aria-label="Schließen">✕</button></div>
         </div>
 
         <div id="seSrcRow">
@@ -837,15 +859,20 @@ html,body{min-height:100%;height:100%;}
         <input type="file" id="seImportInput" accept="audio/*" style="display:none;">
         <div id="seStatus">Kein Sample geladen</div>
 
+        <div id="seModeRow"><button id="seModeTrim" class="on" aria-label="Trim" title="Trim"><svg class="se-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4L8.1 15.9M14.5 14.5L20 20M8.1 8.1L12 12"/></svg></button><button id="seModeLoop" aria-label="Loop" title="Loop"><svg class="se-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/></svg></button></div>
         <div id="seWaveWrap">
           <div id="seWaveScroll">
             <div id="seWaveInner">
               <canvas id="seWaveCanvas"></canvas>
               <div class="se-dim" id="seDimLeft"></div>
               <div class="se-dim" id="seDimRight"></div>
+              <div class="se-loopband" id="seLoopBand"></div>
+              <div class="se-handle lp" id="seHandleL1"><div class="seh-flag top">L1</div><div class="seh-line"></div><div class="seh-flag bot">L1</div></div>
+              <div class="se-handle lp" id="seHandleL2"><div class="seh-flag top">L2</div><div class="seh-line"></div><div class="seh-flag bot">L2</div></div>
               <div class="se-handle start" id="seHandleStart">
                 <div class="seh-flag top">S</div><div class="seh-line"></div><div class="seh-flag bot">S</div>
               </div>
+              <div class="se-cursor" id="seCursor"></div>
               <div class="se-handle end" id="seHandleEnd">
                 <div class="seh-flag top">E</div><div class="seh-line"></div><div class="seh-flag bot">E</div>
               </div>
@@ -876,12 +903,23 @@ html,body{min-height:100%;height:100%;}
           </div>
         </div>
 
+        <div id="seLoopPanel">
+          <div id="seLoopFields">
+            <div class="se-tf lp" style="flex:1"><div class="se-tf-lbl">L1 Start</div><div class="se-tf-row"><input id="seFieldL1" inputmode="decimal" value="0.00"></div></div>
+            <div class="se-tf lp" style="flex:1"><div class="se-tf-lbl">L2 Ende</div><div class="se-tf-row"><input id="seFieldL2" inputmode="decimal" value="0.00"></div></div>
+          </div>
+          <div id="seLoopOpts">
+            <button class="se-tool-btn" id="sePlayModeBtn" aria-label="Abspielmodus" title="One-shot / Loop"><svg class="se-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+            <button class="se-tool-btn on" id="seSnapBtn" aria-label="Snap auf Nulldurchgang" title="Snap auf Nulldurchgang"><svg class="se-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15a6 6 0 0 0 12 0V3h-4v12a2 2 0 0 1-4 0V3H6z"/><path d="M6 8h4M14 8h4"/></svg></button>
+          </div>
+        </div>
+
         <div id="seToolsRow">
-          <button class="se-tool-btn" id="seNormalizeBtn">Normalisieren</button>
-          <button class="se-tool-btn" id="seReverseBtn">Rückwärts</button>
-          <button class="se-tool-btn" id="seFadeInBtn">Fade In</button>
-          <button class="se-tool-btn" id="seFadeOutBtn">Fade Out</button>
-          <button class="se-tool-btn" id="seResetBtn">Zurücksetzen</button>
+          <button class="se-tool-btn txt" id="seNormalizeBtn">Normalisieren</button>
+          <button class="se-tool-btn" id="seReverseBtn" aria-label="Rückwärts" title="Rückwärts"><svg class="se-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h18M7 8l-4 4 4 4M17 8l4 4-4 4"/></svg></button>
+          <button class="se-tool-btn" id="seFadeInBtn" aria-label="Fade In" title="Fade In"><svg class="se-ico" viewBox="0 0 24 24" aria-hidden="true"><polygon points="3,19 21,19 21,5"/></svg></button>
+          <button class="se-tool-btn" id="seFadeOutBtn" aria-label="Fade Out" title="Fade Out"><svg class="se-ico" viewBox="0 0 24 24" aria-hidden="true"><polygon points="3,5 3,19 21,19"/></svg></button>
+          <button class="se-tool-btn" id="seResetBtn" aria-label="Zurücksetzen" title="Zurücksetzen"><svg class="se-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M1 4v6h6"/><path d="M3.5 15a9 9 0 1 0 2.1-9.4L1 10"/></svg></button>
         </div>
 
         <div id="seAssignLabel">Verwenden als</div>
@@ -891,8 +929,8 @@ html,body{min-height:100%;height:100%;}
         <div id="sePadGrid"></div>
 
         <div id="seActionsRow">
-          <button id="sePreviewBtn">▶ Vorhören</button>
-          <button id="seSaveBtn">Übernehmen</button>
+          <button id="sePreviewBtn" aria-label="Vorhören" title="Vorhören"><svg class="se-ico" viewBox="0 0 24 24" aria-hidden="true"><polygon points="6,4 20,12 6,20" fill="currentColor"/></svg></button>
+          <button id="seSaveBtn" aria-label="Übernehmen" title="Übernehmen"><svg class="se-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12l5 5L20 6"/></svg></button>
         </div>
       </div>
 
@@ -3348,6 +3386,103 @@ const seAssignTrackChip=document.getElementById('seAssignTrackChip');
 const sePadGrid=document.getElementById('sePadGrid');
 const sePreviewBtn=document.getElementById('sePreviewBtn');
 const seSaveBtn=document.getElementById('seSaveBtn');
+const seModeTrimBtn=document.getElementById('seModeTrim'), seModeLoopBtn=document.getElementById('seModeLoop');
+const seCursorEl=document.getElementById('seCursor'), seLoopBand=document.getElementById('seLoopBand');
+const seHandleL1El=document.getElementById('seHandleL1'), seHandleL2El=document.getElementById('seHandleL2');
+const seFieldL1=document.getElementById('seFieldL1'), seFieldL2=document.getElementById('seFieldL2');
+const sePlayModeBtn=document.getElementById('sePlayModeBtn'), seSnapBtn=document.getElementById('seSnapBtn');
+
+// ---- Loop + Cursor (Loop-Punkte absolut in Sekunden im Arbeitspuffer; null = nicht gesetzt,
+// dann gilt der Trim-Bereich. seLoopBuf bindet die Punkte an einen Puffer — neuer Puffer
+// (Aufnahme, Import, Werkzeug, Zurücksetzen) verwirft sie automatisch.) ----
+let seLoopStart=null, seLoopEnd=null, seLoopBuf=null, sePlayMode='oneshot', seEditMode='trim', seSnap=true;
+let seCursorRAF=null, seCursorT0=0;
+const SE_ICON_PLAY='<svg class="se-ico" viewBox="0 0 24 24" aria-hidden="true"><polygon points="6,4 20,12 6,20" fill="currentColor"/></svg>', SE_ICON_STOP='<svg class="se-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="1" fill="currentColor"/></svg>', SE_ICON_LOOP='<svg class="se-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/></svg>', SE_ICON_ONE='<svg class="se-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+// ---- Undo/Redo (5 Schritte): Zustände sind nur Referenzen auf unveränderliche Puffer + Trim/Loop-Werte ----
+const SE_HIST_MAX=5;
+let seUndoStack=[], seRedoStack=[], seDragStartState=null, seHistLastKey=null, seHistLastTime=0;
+const seUndoBtn=document.getElementById('seUndoBtn'), seRedoBtn=document.getElementById('seRedoBtn');
+function seHistState(){ return {buf:seWorkingBuffer, ts:seTrimStart, te:seTrimEnd, ls:seLoopStart, le:seLoopEnd, lb:seLoopBuf}; }
+function seHistSame(a,b){ return a.buf===b.buf && a.ts===b.ts && a.te===b.te && a.ls===b.ls && a.le===b.le; }
+function seHistUI(){ seUndoBtn.disabled=!seUndoStack.length; seRedoBtn.disabled=!seRedoStack.length; }
+function seHistPush(st, key){
+  const now=performance.now();
+  if(key && key===seHistLastKey && now-seHistLastTime<1500){ seHistLastTime=now; seRedoStack=[]; seHistUI(); return; } // Nudge-Serie = ein Schritt
+  seHistLastKey=key||null; seHistLastTime=now;
+  seUndoStack.push(st); if(seUndoStack.length>SE_HIST_MAX) seUndoStack.shift();
+  seRedoStack=[]; seHistUI();
+}
+function seHistReset(){ seUndoStack=[]; seRedoStack=[]; seHistLastKey=null; seHistUI(); }
+function seHistApply(st){
+  seStopPreview();
+  seWorkingBuffer=st.buf; seTrimStart=st.ts; seTrimEnd=st.te; seLoopStart=st.ls; seLoopEnd=st.le; seLoopBuf=st.lb;
+  drawSEWave(); updateSETrimUI();
+}
+function seWithHist(fn, key){ const h=seHistState(); fn(); if(!seHistSame(h, seHistState())) seHistPush(h, key); }
+seUndoBtn.addEventListener('click', ()=>{ if(!seUndoStack.length) return; seRedoStack.push(seHistState()); seHistLastKey=null; seHistApply(seUndoStack.pop()); seHistUI(); });
+seRedoBtn.addEventListener('click', ()=>{ if(!seRedoStack.length) return; seUndoStack.push(seHistState()); seHistLastKey=null; seHistApply(seRedoStack.pop()); seHistUI(); });
+function seLoopBounds(){
+  if(!seWorkingBuffer) return [0,0];
+  let a=seTrimStart, b=seTrimEnd;
+  if(seLoopBuf===seWorkingBuffer && seLoopStart!=null && seLoopEnd!=null){ a=Math.max(seLoopStart,seTrimStart); b=Math.min(seLoopEnd,seTrimEnd); }
+  if(b-a<0.02){ a=seTrimStart; b=seTrimEnd; }
+  return [a,b];
+}
+function seSnapZero(t){
+  if(!seSnap || !seWorkingBuffer) return t;
+  const d=seWorkingBuffer.getChannelData(0), sr=seWorkingBuffer.sampleRate;
+  const c=Math.round(t*sr), w=Math.round(sr*0.01);
+  let best=c, bd=1e9;
+  for(let i=Math.max(1,c-w); i<Math.min(d.length-1,c+w); i++){
+    if((d[i-1]<=0&&d[i]>0)||(d[i-1]>=0&&d[i]<0)){ const dist=Math.abs(i-c); if(dist<bd){ bd=dist; best=i; } }
+  }
+  return best/sr;
+}
+function updateSELoopUI(){
+  const w=seInnerWidth(), dur=seWorkingBuffer ? seWorkingBuffer.duration : 1;
+  const [a,b]=seLoopBounds(), xa=a/dur*w, xb=b/dur*w;
+  seHandleL1El.style.left=xa+'px'; seHandleL2El.style.left=xb+'px';
+  seLoopBand.style.left=xa+'px'; seLoopBand.style.width=Math.max(0,xb-xa)+'px';
+  if(document.activeElement!==seFieldL1) seFieldL1.value=a.toFixed(2);
+  if(document.activeElement!==seFieldL2) seFieldL2.value=b.toFixed(2);
+}
+function seSetMode(m){
+  seEditMode=m;
+  sampleEditorOverlay.classList.toggle('mode-loop', m==='loop');
+  seModeTrimBtn.classList.toggle('on', m==='trim'); seModeLoopBtn.classList.toggle('on', m==='loop');
+}
+function seUpdatePlayModeUI(){ sePlayModeBtn.innerHTML=sePlayMode==='loop'?SE_ICON_LOOP:SE_ICON_ONE; sePlayModeBtn.classList.toggle('on', sePlayMode==='loop'); }
+seModeTrimBtn.addEventListener('click', ()=>seSetMode('trim'));
+seModeLoopBtn.addEventListener('click', ()=>seSetMode('loop'));
+sePlayModeBtn.addEventListener('click', ()=>{ sePlayMode = sePlayMode==='loop' ? 'oneshot' : 'loop'; seUpdatePlayModeUI(); });
+seSnapBtn.addEventListener('click', ()=>{ seSnap=!seSnap; seSnapBtn.classList.toggle('on', seSnap); });
+function seCommitLoopField(which){
+  if(!seWorkingBuffer) return;
+  const v=parseFloat((which===1?seFieldL1:seFieldL2).value);
+  if(isNaN(v)) { updateSETrimUI(); return; }
+  const [a,b]=seLoopBounds(); seLoopBuf=seWorkingBuffer;
+  if(which===1){ seLoopStart=Math.min(Math.max(seSnapZero(v),seTrimStart),b-0.02); seLoopEnd=b; }
+  else { seLoopEnd=Math.max(Math.min(seSnapZero(v),seTrimEnd),a+0.02); seLoopStart=a; }
+  updateSETrimUI();
+}
+seFieldL1.addEventListener('change', ()=>seWithHist(()=>seCommitLoopField(1)));
+seFieldL2.addEventListener('change', ()=>seWithHist(()=>seCommitLoopField(2)));
+function seCursorFrame(){
+  if(!sePreviewSrc || !seWorkingBuffer) return;
+  const dur=seWorkingBuffer.duration, [la,lb]=seLoopBounds();
+  let pos=seTrimStart+(audioCtx.currentTime-seCursorT0);
+  if(sePlayMode==='loop' && pos>lb && lb>la) pos=la+((pos-la)%(lb-la));
+  const w=seInnerWidth(), px=Math.min(w,pos/dur*w);
+  seCursorEl.style.left=px+'px'; seCursorEl.style.display='block';
+  if(seZoomFactor>1 && (px<seWaveScroll.scrollLeft+20 || px>seWaveScroll.scrollLeft+seWaveScroll.clientWidth-20))
+    seWaveScroll.scrollLeft=Math.max(0, px-seWaveScroll.clientWidth/2);
+  seCursorRAF=requestAnimationFrame(seCursorFrame);
+}
+function seStopPreview(){
+  if(sePreviewSrc){ const s0=sePreviewSrc; sePreviewSrc=null; try{ s0.stop(); }catch(e){} }
+  cancelAnimationFrame(seCursorRAF); seCursorRAF=null;
+  seCursorEl.style.display='none'; sePreviewBtn.innerHTML=SE_ICON_PLAY;
+}
 
 let seEditingId=null;        // id des bearbeiteten Bibliothekseintrags, oder null = neues Sample
 let seOriginalBuffer=null;   // unveränderte Fassung, für "Zurücksetzen"
@@ -3413,6 +3548,7 @@ function bufferSlice(buf, startSec, endSec){
 }
 function seApplyTransform(fn){
   if(!seWorkingBuffer) return;
+  seHistPush(seHistState());
   seWorkingBuffer=fn(seWorkingBuffer);
   seTrimStart=0; seTrimEnd=seWorkingBuffer.duration; // Auswahl nach jeder Bearbeitung zurückgesetzt (volle Länge)
   seSetZoom(1); // Bearbeitung ändert oft die Länge/Struktur — Ansicht wieder auf volle Breite
@@ -3424,6 +3560,7 @@ seFadeInBtn.addEventListener('click', ()=> seApplyTransform(b=>bufferFade(b,'in'
 seFadeOutBtn.addEventListener('click', ()=> seApplyTransform(b=>bufferFade(b,'out')));
 seResetBtn.addEventListener('click', ()=>{
   if(!seOriginalBuffer) return;
+  seHistPush(seHistState());
   seWorkingBuffer=seOriginalBuffer;
   seTrimStart=0; seTrimEnd=seOriginalBuffer.duration;
   seSetZoom(1);
@@ -3490,6 +3627,7 @@ function updateSETrimUI(){
   // sonst würde ein Tipp-Vorgang durch das Drag-Update wieder überschrieben.
   if(document.activeElement!==seFieldStart) seFieldStart.value=seTrimStart.toFixed(2);
   if(document.activeElement!==seFieldEnd) seFieldEnd.value=seTrimEnd.toFixed(2);
+  updateSELoopUI();
 }
 let seDragHandle=null; // 'start' | 'end' | null
 function seSetHandleFromX(clientX){
@@ -3499,20 +3637,27 @@ function seSetHandleFromX(clientX){
   const t=(x/rect.width)*dur;
   if(seDragHandle==='start') seTrimStart=Math.min(t, seTrimEnd-0.02);
   else if(seDragHandle==='end') seTrimEnd=Math.max(t, seTrimStart+0.02);
+  else if(seDragHandle==='l1' || seDragHandle==='l2'){
+    const [a,b]=seLoopBounds(), sn=seSnapZero(t); seLoopBuf=seWorkingBuffer;
+    if(seDragHandle==='l1'){ seLoopStart=Math.min(Math.max(sn,seTrimStart),b-0.02); seLoopEnd=b; }
+    else { seLoopEnd=Math.max(Math.min(sn,seTrimEnd),a+0.02); seLoopStart=a; }
+  }
   updateSETrimUI();
 }
 // Grabzone ist per CSS auf 32px verbreitert (vorher 14px); zusätzlich hält
 // setPointerCapture den Handle auch dann fest, wenn der Finger beim schnellen Ziehen kurz
 // die Element-Fläche verlässt — beides zusammen war die Hauptursache für "schlecht greifbar".
 function seHandleDown(which, el){ return (e)=>{
-  seDragHandle=which;
+  seDragHandle=which; seDragStartState=seHistState();
   el.classList.add('dragging');
   if(e.pointerId!=null && el.setPointerCapture){ try{ el.setPointerCapture(e.pointerId); }catch(err){} }
   seSetHandleFromX(e.touches?e.touches[0].clientX:e.clientX);
   e.preventDefault();
 }; }
 function seHandleMove(e){ if(!seDragHandle) return; seSetHandleFromX(e.touches?e.touches[0].clientX:e.clientX); e.preventDefault&&e.preventDefault(); }
-function seHandleUp(){ seHandleStartEl.classList.remove('dragging'); seHandleEndEl.classList.remove('dragging'); seDragHandle=null; }
+function seHandleUp(){ [seHandleStartEl,seHandleEndEl,seHandleL1El,seHandleL2El].forEach(el=>el.classList.remove('dragging'));
+  if(seDragHandle && seDragStartState && !seHistSame(seDragStartState, seHistState())) seHistPush(seDragStartState);
+  seDragStartState=null; seDragHandle=null; }
 seHandleStartEl.addEventListener('pointerdown', seHandleDown('start', seHandleStartEl));
 seHandleEndEl.addEventListener('pointerdown', seHandleDown('end', seHandleEndEl));
 window.addEventListener('pointermove', seHandleMove);
@@ -3522,6 +3667,10 @@ seHandleEndEl.addEventListener('touchstart', seHandleDown('end', seHandleEndEl),
 window.addEventListener('touchmove', seHandleMove, {passive:false});
 window.addEventListener('touchend', seHandleUp);
 
+seHandleL1El.addEventListener('pointerdown', seHandleDown('l1', seHandleL1El));
+seHandleL2El.addEventListener('pointerdown', seHandleDown('l2', seHandleL2El));
+seHandleL1El.addEventListener('touchstart', seHandleDown('l1', seHandleL1El), {passive:false});
+seHandleL2El.addEventListener('touchstart', seHandleDown('l2', seHandleL2El), {passive:false});
 // ---- Zahlenfelder (exakte Eingabe) + Nudge ±10ms — Alternative zum Ziehen, wenn das zu
 // ungenau ist. Feld-Änderung übernimmt sofort, geklammert an Puffergrenzen/Mindestabstand.
 function seCommitFieldStart(){
@@ -3534,14 +3683,16 @@ function seCommitFieldEnd(){
   seTrimEnd=Math.max(Math.min(dur, parseFloat(seFieldEnd.value)||dur), seTrimStart+0.02);
   updateSETrimUI();
 }
-seFieldStart.addEventListener('change', seCommitFieldStart);
-seFieldEnd.addEventListener('change', seCommitFieldEnd);
+seFieldStart.addEventListener('change', ()=>seWithHist(seCommitFieldStart));
+seFieldEnd.addEventListener('change', ()=>seWithHist(seCommitFieldEnd));
 document.querySelectorAll('.se-nudge').forEach(b=>b.addEventListener('click', ()=>{
   if(!seWorkingBuffer) return;
+  const h0=seHistState();
   const dur=seWorkingBuffer.duration, d=parseInt(b.dataset.d,10)*0.01; // 10ms-Schritt
   if(b.dataset.t==='start') seTrimStart=Math.min(Math.max(0, seTrimStart+d), seTrimEnd-0.02);
   else seTrimEnd=Math.max(Math.min(dur, seTrimEnd+d), seTrimStart+0.02);
   updateSETrimUI();
+  if(!seHistSame(h0, seHistState())) seHistPush(h0, 'nudge-'+b.dataset.t);
 }));
 
 // ---- Aufnahme (identisches Worklet/MediaRecorder-Muster wie zuvor bei der Spur, jetzt
@@ -3594,7 +3745,7 @@ async function seStopRecording(){
     buf.copyToChannel(data,0);
     seOriginalBuffer=buf; seWorkingBuffer=buf; seTrimStart=0; seTrimEnd=buf.duration;
     seStatus.textContent='Aufgenommen — '+buf.duration.toFixed(1)+'s';
-    seSetZoom(1, 0);
+    seHistReset(); seSetZoom(1, 0);
   } else {
     await new Promise(resolve=>{ seMediaRecorder.onstop=resolve; seMediaRecorder.stop(); });
     seMicSourceNode.disconnect();
@@ -3604,7 +3755,7 @@ async function seStopRecording(){
       const buf=await audioCtx.decodeAudioData(arr);
       seOriginalBuffer=buf; seWorkingBuffer=buf; seTrimStart=0; seTrimEnd=buf.duration;
       seStatus.textContent='Aufgenommen — '+buf.duration.toFixed(1)+'s';
-      seSetZoom(1, 0);
+      seHistReset(); seSetZoom(1, 0);
     }catch(err){
       console.warn('Sample konnte nicht dekodiert werden:', err);
       seStatus.textContent='Fehler beim Dekodieren'; seStatus.classList.add('err');
@@ -3625,7 +3776,7 @@ seImportInput.addEventListener('change', async (e)=>{
     seOriginalBuffer=buf; seWorkingBuffer=buf; seTrimStart=0; seTrimEnd=buf.duration;
     seStatus.textContent=file.name+' geladen — '+buf.duration.toFixed(1)+'s';
     seStatus.classList.remove('err');
-    seSetZoom(1, 0);
+    seHistReset(); seSetZoom(1, 0);
   }catch(err){
     console.warn('Datei konnte nicht geladen werden:', err);
     seStatus.textContent='Datei konnte nicht gelesen werden — Format unterstützt?';
@@ -3654,12 +3805,16 @@ function renderSEAssignUI(){
 
 // ---- Vorhören: spielt exakt den aktuell markierten Start/Ende-Ausschnitt ----
 sePreviewBtn.addEventListener('click', ()=>{
+  if(sePreviewSrc){ seStopPreview(); return; }
   if(!seWorkingBuffer || !audioCtx) return;
-  if(sePreviewSrc){ try{ sePreviewSrc.stop(); }catch(e){} }
-  sePreviewSrc=audioCtx.createBufferSource();
-  sePreviewSrc.buffer=seWorkingBuffer;
-  sePreviewSrc.connect(master);
-  sePreviewSrc.start(audioCtx.currentTime, seTrimStart, Math.max(0.02, seTrimEnd-seTrimStart));
+  const src=audioCtx.createBufferSource(); src.buffer=seWorkingBuffer; src.connect(master);
+  const [la,lb]=seLoopBounds(), t0=audioCtx.currentTime;
+  if(sePlayMode==='loop'){ src.loop=true; src.loopStart=la; src.loopEnd=lb; src.start(t0, seTrimStart); }
+  else src.start(t0, seTrimStart, Math.max(0.02, seTrimEnd-seTrimStart));
+  seCursorT0=t0;
+  src.onended=()=>{ if(sePreviewSrc===src) seStopPreview(); };
+  sePreviewSrc=src; sePreviewBtn.innerHTML=SE_ICON_STOP;
+  seCursorRAF=requestAnimationFrame(seCursorFrame);
 });
 
 function deriveSampleName(){
@@ -3675,7 +3830,10 @@ seSaveBtn.addEventListener('click', async ()=>{
   const finalBuffer=bufferSlice(seWorkingBuffer, seTrimStart, seTrimEnd);
   const blob=audioBufferToWavBlob(finalBuffer);
   const entryId=seEditingId || genId();
-  const entry={id:entryId, name:deriveSampleName(), blob, offsetStart:0, offsetEnd:null, savedAt:Date.now()};
+  const hasLoop=seLoopBuf===seWorkingBuffer && seLoopStart!=null && seLoopEnd!=null;
+  const [la,lb]=seLoopBounds();
+  const entry={id:entryId, name:deriveSampleName(), blob, offsetStart:0, offsetEnd:null, savedAt:Date.now(),
+    playMode:sePlayMode, loopStart:hasLoop ? la-seTrimStart : null, loopEnd:hasLoop ? lb-seTrimStart : null};
   await saveSampleLibraryEntry(entry);
 
   if(seAssignTrack) await applySampleToTrack(entry);
@@ -3712,6 +3870,8 @@ async function openSampleEditor({sampleId=null, forTrack=false, forPad=null}={})
       seOriginalBuffer=await audioCtx.decodeAudioData(arr);
       seWorkingBuffer=seOriginalBuffer;
       seTrimStart=0; seTrimEnd=seOriginalBuffer.duration;
+      sePlayMode=entry.playMode||'oneshot';
+      if(entry.loopStart!=null && entry.loopEnd!=null){ seLoopStart=entry.loopStart; seLoopEnd=entry.loopEnd; seLoopBuf=seWorkingBuffer; } else { seLoopStart=seLoopEnd=null; seLoopBuf=null; }
       // Migrations-Altlast: alte Einträge tragen ihren Start-Offset noch separat statt
       // bereits "eingebrannt" — beim ersten erneuten Übernehmen wird das bereinigt.
       if(entry.offsetStart) seTrimStart=Math.min(entry.offsetStart, seTrimEnd-0.02);
@@ -3720,6 +3880,7 @@ async function openSampleEditor({sampleId=null, forTrack=false, forPad=null}={})
     }
   } else {
     seOriginalBuffer=null; seWorkingBuffer=null; seTrimStart=0; seTrimEnd=0;
+    seLoopStart=seLoopEnd=null; seLoopBuf=null; sePlayMode='oneshot';
     seStatus.textContent='Kein Sample geladen — aufnehmen oder Datei laden';
     seStatus.classList.remove('err');
   }
@@ -3728,13 +3889,14 @@ async function openSampleEditor({sampleId=null, forTrack=false, forPad=null}={})
   if(forPad!=null) seAssignPads.add(forPad);
   renderSEAssignUI();
   sampleEditorOverlay.classList.add('open');
+  seSetMode('trim'); seUpdatePlayModeUI(); seHistReset();
   syncBottomBarVisibility();
   seZoomFactor=1; seZoomEl.value=1; seZoomValEl.textContent='1.0×';
   requestAnimationFrame(()=>{ seWaveScroll.scrollLeft=0; drawSEWave(); updateSETrimUI(); });
 }
 function closeSampleEditor(){
   if(seIsRecording) seStopRecording();
-  if(sePreviewSrc){ try{ sePreviewSrc.stop(); }catch(e){} sePreviewSrc=null; }
+  seStopPreview();
   sampleEditorOverlay.classList.remove('open');
   syncBottomBarVisibility();
 }
