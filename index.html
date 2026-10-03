@@ -294,11 +294,10 @@
   #trackBar .knob-dial{ --ks:26px; }
 
   /* ---------- ACID BASS (303-artiger Track): Cutoff/Reso + Random-Button ---------- */
-  #arpControls{ display:flex; align-items:center; gap:14px; background:var(--panel); border-radius:8px; padding:6px 12px; }
-  #arpRandomBtn{ margin-left:auto; font-size:11px; letter-spacing:.04em; text-transform:uppercase;
-    border:1px solid rgba(255,107,53,.45); border-radius:7px; padding:8px 12px; cursor:pointer;
-    background:rgba(255,107,53,.12); color:#ffb08a; white-space:nowrap; }
-  #arpRandomBtn:active{ transform:scale(.94); }
+  #arpControls{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; background:var(--panel); border-radius:8px; padding:6px 12px; }
+  #arpFilterRandBtn{ font-size:11px; letter-spacing:.04em; text-transform:uppercase; border:1px solid rgba(63,169,255,.45); border-radius:7px;
+    padding:8px 12px; cursor:pointer; background:rgba(63,169,255,.12); color:var(--blue-2); white-space:nowrap; }
+  #arpFilterRandBtn:active{ transform:scale(.94); }
 
   /* ---------- SPUR-AKTIONEN (Random / Leeren / Bereich) über dem Step-Grid ---------- */
   #trackActions{ display:flex; gap:6px; align-items:center; background:var(--panel-inset); border-radius:8px; padding:6px; margin:4px 0 2px; }
@@ -710,6 +709,71 @@
   .ssr-rep button:active, .ssr-move:active, .ssr-del:active{ transform:scale(.9); }
 
 
+  /* ---------- TONHÖHEN-EDITOR (Acid Bass): ersetzt für die 303-Spur das 4x4-bigGrid.
+     13 Notenzeilen (1 Oktave + Oktavton) x 16 Steps der aktuellen Seite, darunter Accent-/Slide-Zeile.
+     Blaue Akzente (Design-Regel: kein Orange). ---------- */
+  #pitchEditor{ background:var(--panel-inset); border-radius:8px; padding:10px 8px 12px; box-shadow:inset 0 2px 6px rgba(0,0,0,.5); }
+  #pitchCtl{ display:flex; align-items:center; gap:8px; margin:0 2px 10px; flex-wrap:wrap; }
+  .pe-btn{ min-height:36px; padding:0 12px; border-radius:8px; border:1px solid rgba(255,255,255,.12); background:var(--panel);
+    color:var(--dim); font-family:inherit; font-weight:700; font-size:12px; cursor:pointer; }
+  .pe-btn:active{ transform:scale(.95); }
+  .pe-btn.on{ border-color:rgba(63,169,255,.55); background:rgba(63,169,255,.16); color:var(--blue-2); }
+  #peOctLabel{ font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--blue-2); min-width:72px; text-align:center; }
+  #pitchGrid{ display:grid; grid-template-columns:26px repeat(16,1fr); gap:3px 2px; }
+  .pe-rl{ font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--dim); display:flex; align-items:center; justify-content:flex-end; padding-right:3px; }
+  .pe-rl.in{ color:var(--metal); } .pe-rl.rt{ color:var(--blue-2); }
+  .pe-hn{ font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--dim); text-align:center; height:14px; }
+  .pe-c{ height:22px; border-radius:3px; background:#0b0c0f; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    font-size:11px; line-height:1; color:#04121e; }
+  .pe-c.in{ background:#12141a; } .pe-c.rt{ background:#101a26; }
+  .pe-c.off{ opacity:.3; cursor:default; }
+  .pe-c.act{ background:var(--blue); box-shadow:0 0 8px rgba(63,169,255,.7); }
+  .pe-c.act.gh{ opacity:.45; box-shadow:none; }
+  .pe-c:not(.act){ color:var(--blue-2); }
+  .pe-c.beat, .pe-hn.beat{ margin-left:1px; }
+  .pe-c.playcol, .pe-hn.playcol{ outline:1px solid rgba(255,255,255,.6); outline-offset:-1px; }
+  .pe-ab{ height:28px; padding:0; border-radius:5px; border:1px solid rgba(255,255,255,.12); background:var(--panel);
+    color:var(--dim); font-family:inherit; font-weight:700; font-size:11px; cursor:pointer; }
+  .pe-ab:active{ transform:scale(.92); }
+  .pe-ab.a.on{ background:var(--white); color:#0b0c0f; border-color:var(--white); }
+  .pe-ab.s.on{ background:var(--blue-2); color:#042c53; border-color:var(--blue-2); }
+  .pe-ab.dis{ opacity:.3; }
+  #peReadout{ font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--blue-2); margin:10px 2px 0; min-height:14px; }
+  #peLegend{ font-size:10px; color:var(--dim); margin:6px 2px 0; letter-spacing:.02em; }
+
+  /* ---------- ACID MOD: AUTO (einklappbar) + HEUL (Halte-Knopf) ---------- */
+  #arpModPanel{ display:none; flex-direction:column; gap:8px; margin-top:8px; }
+  .am-card{ background:var(--panel); border-radius:8px; padding:6px 12px 10px; }
+  #autoToggle{ width:100%; min-height:40px; display:flex; align-items:center; gap:8px; background:none; border:0; padding:0;
+    color:var(--blue-2); font-family:inherit; font-weight:700; font-size:11px; letter-spacing:.1em; text-transform:uppercase; cursor:pointer; }
+  #autoToggle .am-sum{ margin-left:auto; font-size:11px; letter-spacing:.02em; text-transform:none; color:var(--dim); font-family:'JetBrains Mono',monospace; font-weight:400; }
+  #autoToggle .am-chev{ width:14px; height:14px; flex-shrink:0; transition:transform .15s; }
+  #autoToggle[aria-expanded="true"] .am-chev{ transform:rotate(180deg); }
+  #autoBody{ display:none; padding-top:4px; }
+  #autoBody.open{ display:block; }
+  .am-seg{ display:flex; border-radius:8px; overflow:hidden; border:1px solid rgba(255,255,255,.12); margin-bottom:8px; }
+  .am-seg button{ flex:1; min-height:38px; border:0; background:var(--panel-inset); color:var(--dim); font-family:inherit; font-weight:700; font-size:12px; cursor:pointer; }
+  .am-seg button.on{ background:rgba(63,169,255,.2); color:var(--blue-2); }
+  .am-dp{ display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+  .am-dp span{ font-size:10px; letter-spacing:.08em; color:var(--dim); text-transform:uppercase; min-width:38px; }
+  .am-dp input{ flex:1; accent-color:var(--blue); height:28px; }
+  .am-dp b{ font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--blue-2); min-width:34px; text-align:right; font-weight:600; }
+  #autoCurve{ width:100%; height:56px; display:block; background:var(--panel-inset); border-radius:6px; }
+  .am-ct{ font-size:11px; letter-spacing:.1em; color:var(--blue-2); text-transform:uppercase; font-weight:700; margin:4px 0 8px; display:flex; justify-content:space-between; align-items:center; }
+  .am-ct span{ font-size:10px; letter-spacing:.02em; text-transform:none; color:var(--dim); font-weight:400; }
+  #heulBtn{ width:100%; min-height:60px; border-radius:10px; border:1px solid rgba(63,169,255,.5); position:relative; overflow:hidden;
+    background:radial-gradient(circle at 35% 30%, #1a3d5c, #0c1e2e); color:var(--blue-2); font-family:inherit; font-weight:700; font-size:15px; letter-spacing:.08em;
+    cursor:pointer; touch-action:none; user-select:none; -webkit-user-select:none; }
+  #heulBtn .hl-fill{ position:absolute; left:0; top:0; bottom:0; width:0; background:rgba(63,169,255,.45); pointer-events:none; }
+  #heulBtn span{ position:relative; }
+  #heulBtn.hold{ box-shadow:0 0 22px rgba(63,169,255,.55); color:#fff; }
+  .am-mt{ margin-top:10px; }
+  .am-mt .lb{ display:flex; justify-content:space-between; font-size:10px; color:var(--dim); margin-bottom:4px; }
+  .am-trk{ height:10px; border-radius:5px; background:var(--panel-inset); position:relative; }
+  #modMeterMk{ position:absolute; top:-3px; width:6px; height:16px; border-radius:3px; background:var(--blue-2); box-shadow:0 0 8px var(--blue); left:50%; margin-left:-3px; }
+  #modResoTag{ display:inline-block; font-size:10px; padding:2px 7px; border-radius:5px; border:1px solid rgba(255,255,255,.12); color:var(--dim); margin-left:6px; }
+  #modResoTag.on{ border-color:var(--blue); color:var(--blue-2); background:rgba(63,169,255,.15); }
+
   /* ---------- SAMPLE-PAD (live, 9 Pads) ---------- */
   #padOverlay{ flex-direction:column; gap:10px; }
   #padHeader{ display:flex; align-items:center; justify-content:space-between; gap:8px; flex-shrink:0; }
@@ -986,7 +1050,33 @@ html,body{min-height:100%;height:100%;}
         <div id="arpControls" style="display:none;">
           <div id="arpCutoffKnob"></div>
           <div id="arpResKnob"></div>
-          <button id="arpRandomBtn">🎲 Bassline</button>
+          <div id="arpEnvKnob"></div>
+          <div id="arpDecayKnob"></div>
+          <button id="arpFilterRandBtn" title="Cutoff, Resonanz, Env Mod und Decay zufällig setzen">🎲 Filter</button>
+        </div>
+
+        <div id="arpModPanel">
+          <div class="am-card">
+            <button id="autoToggle" aria-expanded="false" aria-controls="autoBody">
+              <span>Auto</span><span class="am-sum" id="autoSummary">Aus</span>
+              <svg class="am-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+            <div id="autoBody">
+              <div class="am-seg" id="autoShapeSeg"><button data-v="off">Aus</button><button data-v="sine">Sinus</button><button data-v="tri">Dreieck</button><button data-v="drift">Drift</button></div>
+              <div class="am-seg" id="autoRateSeg"><button data-v="1">1 Takt</button><button data-v="2">2 Takte</button><button data-v="4">4 Takte</button><button data-v="8">8 Takte</button></div>
+              <div class="am-dp"><span>Tiefe</span><input type="range" id="autoDepth" min="0" max="100" value="60"><b id="autoDepthVal">60%</b></div>
+              <svg id="autoCurve" viewBox="0 0 340 56" preserveAspectRatio="none"><g id="autoCurveGrid"></g><path id="autoCurvePath" fill="none" stroke="#3fa9ff" stroke-width="1.6" vector-effect="non-scaling-stroke"/><line id="autoCurvePh" y1="0" y2="56" stroke="#fff" stroke-width="1.5" vector-effect="non-scaling-stroke"/></svg>
+            </div>
+          </div>
+          <div class="am-card">
+            <div class="am-ct">Heul <span>nur live, wird nicht gespeichert</span></div>
+            <div class="am-seg" id="heulLenSeg"><button data-v="1" class="on">Anstieg 1 Takt</button><button data-v="2">2 Takte</button></div>
+            <button id="heulBtn"><div class="hl-fill" id="heulFill"></div><span id="heulText">HALTEN ZUM AUFHEULEN</span></button>
+            <div class="am-mt">
+              <div class="lb"><span>zu</span><span>Filter-Versatz<span id="modResoTag">Reso +</span></span><span>auf</span></div>
+              <div class="am-trk"><div id="modMeterMk"></div></div>
+            </div>
+          </div>
         </div>
 
         <div id="pageNav">
@@ -1007,6 +1097,18 @@ html,body{min-height:100%;height:100%;}
         <div id="taToast"></div>
 
         <div id="bigGrid"></div>
+
+        <div id="pitchEditor" style="display:none;">
+          <div id="pitchCtl">
+            <button class="pe-btn" id="peOctDown" aria-label="Oktave tiefer">Okt −</button>
+            <span id="peOctLabel"></span>
+            <button class="pe-btn" id="peOctUp" aria-label="Oktave höher">Okt +</button>
+            <button class="pe-btn on" id="peScaleBtn">Nur Skala</button>
+          </div>
+          <div id="pitchGrid"></div>
+          <div id="peReadout">Zelle antippen: Ton setzen · nochmal antippen: Step aus</div>
+          <div id="peLegend">A = Accent · S = Slide zum nächsten Ton · ▲▼ = Ton außerhalb des Fensters</div>
+        </div>
 
         <footer class="hint">Tap = Step (aus→normal→accent→ghost→ghost soft) · Reihe = Instrument wählen · kleiner Regler = Lautstärke des Sounds · MIC SAMPLE wählen zum Aufnehmen</footer>
         <footer class="legal-footer">
@@ -1663,39 +1765,117 @@ function ensureArpVoice(tr){
   tr._arpOsc.start();
   tr._arpLastFreq=null;
 }
-function triggerArpStep(time, tr, degreeSemis, velocity, slide){
+// Gate-/Slide-Modell wie bei der TB-303:
+// - Slide-Flag liegt am QUELLTON: slides[s] = Note s wird in Step s+1 hineingehalten, Step s+1 gleitet.
+//   (triggerArpStep bekommt slide = "dieser Ton wird angeglitten", holdNext = "Gate bleibt bis zum Folgeton offen")
+// - Amp: Gate-Hüllkurve statt Zupf-Abfall. Attack ~4 ms, danach nur ein langsamer Abfall (AMP_TAU),
+//   nach der Gate-Länge (ARP_GATE * Step) kurzes Release. Gehaltene Noten folgen derselben Kurve weiter,
+//   dadurch klingen normale und Slide-Noten gleich laut (kein Lautstärkesprung).
+// - Slide: weder Amp- noch Filterhüllkurve werden neu angeschlagen, die Filterhüllkurve läuft weiter.
+//   Glide = RC-Verlauf in der Tonhöhe (Cents über osc.detune), feste Zeit ARP_SLIDE_TC*3 ≈ 60 ms.
+// - Slide ohne offenes Gate (Vorgänger leer, Start, Anspielen) = normaler Anschlag ohne Glide.
+// - Sicherheits-Release nach 1,5 Steps: falls der Folgeton nie kommt (z. B. Slide live ausgeschaltet),
+//   bleibt kein Dauerton stehen. Der nächste Trigger räumt diese Events per cancelScheduledValues ab.
+//
+// Filter: Boden = Cutoff-Basis*0.35, Spitze = Boden * 2^(EnvMod*3.03) (EnvMod 0.5 = alte feste Hüllkurve),
+// Abfall exponentiell (RC) mit DECAY: 50 ms .. 2 s (Standard 0.26 ≈ 130 ms).
+const ARP_SLIDE_TC=0.02;   // Glide-Zeitkonstante (s); ~60 ms bis 95 %
+const ARP_GATE=0.6;        // Gate-Länge normaler Noten als Anteil eines Steps
+const ARP_REL=0.015;       // Release nach Gate-Ende (s)
+const AMP_TAU=0.5;         // sehr langsamer Abfall während des Gates (s)
+const ARP_LEVEL=0.31;      // Pegelausgleich: Gate-Noten haben deutlich mehr Energie als die frühere Zupf-Hüllkurve
+function arpDecaySeconds(v){ return 0.05*Math.pow(40, v); }
+// Filter-Versatz (Cents auf filter.detune, additiv zur Hüllkurve auf .frequency):
+//  - AUTO: LFO (Sinus/Dreieck/Drift) über autoBars Takte, synchron zur absoluten Step-Position (modPos),
+//    pro Note von modPos bis modPos+1 interpoliert -> glatt, tempo- und song-slot-fest, auch im WAV-Export.
+//  - HEUL: Live-Geste (Halte-Knopf), wird am Notenzeitpunkt ausgewertet (Lookahead-fest), im Export nicht aktiv.
+//    Hebt zusätzlich die Resonanz an (Obergrenze HEUL_QMAX) und senkt den Pegel leicht gegen Lautheitssprung.
+const AUTO_CENTS=2400, HEUL_CENTS=3600, HEUL_QMAX=16;
+let autoShape='off', autoBars=4, autoDepth=0.6;
+let curAbsStep=0, absStepCounter=0, modVisAbs=0; // absolute Step-Position seit Play-Start (für Auto-Modulation)
+const heul={bars:1, start:null, relAt:null, relFrom:0};
+function barSec(){ return 240/bpm; }
+function autoTri(x){ const f=((x%1)+1)%1; return f<.5 ? f*4-1 : 3-f*4; }
+function autoLfo(absStep){
+  if(autoShape==='off' || !autoDepth) return 0;
+  const per=autoBars*16, t=(((absStep%per)+per)%per)/per;
+  if(autoShape==='sine') return Math.sin(2*Math.PI*t);
+  if(autoShape==='tri') return autoTri(t+.25);
+  const w=(a,b)=>Math.sin(2*Math.PI*(t*a+b));
+  return Math.max(-1, Math.min(1, .55*w(1,.2)+.3*w(2,1.1)+.2*w(5,2.7)));
+}
+function heulRise(t){ return heul.start==null ? 0 : Math.min(1, Math.pow(Math.max(0, t-heul.start)/(heul.bars*barSec()), 1.4)); }
+function heulAmount(t){
+  if(heul.start==null) return 0;
+  if(heul.relAt==null || t<heul.relAt) return heulRise(t);
+  return Math.max(0, heul.relFrom*(1-(t-heul.relAt)/0.3));
+}
+function triggerArpStep(time, tr, degreeSemis, velocity, slide, holdNext, modPos){
   ensureArpVoice(tr);
   const freq=noteFreq(tr.rootNote + degreeSemis);
   const cutoffBase=300 + (tr.cutoff!=null?tr.cutoff:0.5)*4000;
-  const resonance=1 + (tr.resonance!=null?tr.resonance:0.35)*20;
+  const envMod=tr.envMod!=null?tr.envMod:0.5;
+  const decaySec=arpDecaySeconds(tr.decay!=null?tr.decay:0.26);
+  const dur=stepDuration();
+  const offline=(typeof OfflineAudioContext!=='undefined' && audioCtx instanceof OfflineAudioContext);
+  let modC0=0, modC1=0, hq=0;
+  if(modPos!=null){
+    const h0=offline?0:heulAmount(time), h1=offline?0:heulAmount(time+dur);
+    modC0=autoLfo(modPos)*autoDepth*AUTO_CENTS + h0*HEUL_CENTS;
+    modC1=autoLfo(modPos+1)*autoDepth*AUTO_CENTS + h1*HEUL_CENTS;
+    hq=h0;
+  }
+  const q0=1 + (tr.resonance!=null?tr.resonance:0.35)*20;
+  const resonance=q0 + Math.max(0, HEUL_QMAX-q0)*hq*0.8;
   const accentBoost = velocity>=1.1 ? 1.7 : 1; // Accent-Step: heller/lauter, klassisches 303-"Quack"
   // Gleicher Grund wie bei playMetallicSix: exponentialRampToValueAtTime darf nie 0 als
   // Ziel bekommen, sonst stoppt bei Vol=0 (Fader ganz runter) die komplette Wiedergabe.
-  const peakGain = Math.max(0.0001, Math.min(1, velocity*tr.vol*1.1));
-  const dur=stepDuration();
+  const peakGain = Math.max(0.0001, Math.min(1, velocity*tr.vol*1.1*ARP_LEVEL*(1-0.25*hq)));
+  const sliding = !!(slide && tr._arpHeld && tr._arpLastFreq);
 
   tr._arpFilter.Q.value=resonance;
   tr._arpOsc.frequency.cancelScheduledValues(time);
-  tr._arpFilter.frequency.cancelScheduledValues(time);
+  tr._arpOsc.detune.cancelScheduledValues(time);
+  tr._arpOsc.frequency.setValueAtTime(freq, time); // Zielton; der Glide läuft komplett über detune
 
-  if(slide && tr._arpLastFreq){
-    // Glide: Tonhöhe gleitet vom letzten Ton hierher, Hüllkurve wird NICHT neu
-    // angeschlagen — der Ton "rutscht" statt neu zu triggern.
-    tr._arpOsc.frequency.setValueAtTime(tr._arpLastFreq, time);
-    tr._arpOsc.frequency.exponentialRampToValueAtTime(freq, time+Math.min(0.09, dur*0.8));
+  if(sliding){
+    // Restversatz eines noch laufenden Glides mitnehmen, damit Slide-Ketten ohne Sprung weiterlaufen
+    const resid=(tr._arpOff||0)*Math.exp(-Math.max(0, time-(tr._arpOffT||0))/ARP_SLIDE_TC);
+    const cents=1200*Math.log2(tr._arpLastFreq/freq) + resid;
+    tr._arpOsc.detune.setValueAtTime(cents, time);
+    tr._arpOsc.detune.setTargetAtTime(0, time, ARP_SLIDE_TC);
+    tr._arpOff=cents; tr._arpOffT=time;
+    // Amp läuft auf der Kurve der ursprünglichen Note weiter (Peak/Start bleiben erhalten)
+    const lvl=Math.max(0.0001, tr._arpPeak*Math.exp(-(time-tr._arpEnvT0)/AMP_TAU));
+    tr._arpAmp.gain.cancelScheduledValues(time);
+    tr._arpAmp.gain.setValueAtTime(lvl, time);
+    // Filter bewusst NICHT neu angeschlagen
   } else {
-    tr._arpOsc.frequency.setValueAtTime(freq, time);
+    tr._arpOsc.detune.setValueAtTime(0, time);
+    tr._arpOff=0; tr._arpOffT=time;
+    tr._arpPeak=peakGain; tr._arpEnvT0=time+0.004;
     tr._arpAmp.gain.cancelScheduledValues(time);
     tr._arpAmp.gain.setValueAtTime(0.0001, time);
     tr._arpAmp.gain.exponentialRampToValueAtTime(peakGain, time+0.004);
-  }
-  tr._arpAmp.gain.exponentialRampToValueAtTime(0.0008, time+dur*0.92);
 
-  // Filter-Hüllkurve: kurzer Sweep nach oben (Accent = höher/greller), dann Abfall
-  tr._arpFilter.frequency.setValueAtTime(cutoffBase*accentBoost, time);
-  tr._arpFilter.frequency.exponentialRampToValueAtTime(Math.max(200,cutoffBase*0.35), time+0.13);
+    // Filter-Hüllkurve: Sweep von der Spitze (Accent = höher/greller) zurück auf den Boden
+    const floorF=Math.max(60, cutoffBase*0.35);
+    const peakF=Math.min(12000, floorF*Math.pow(2, envMod*3.03)*accentBoost);
+    tr._arpFilter.frequency.cancelScheduledValues(time);
+    tr._arpFilter.frequency.setValueAtTime(peakF, time);
+    tr._arpFilter.frequency.setTargetAtTime(floorF, time, decaySec/3);
+  }
+  tr._arpFilter.detune.cancelScheduledValues(time);
+  tr._arpFilter.detune.setValueAtTime(modC0, time);
+  tr._arpFilter.detune.linearRampToValueAtTime(modC1, time+dur);
+  // Gate-Ende: bei gehaltener Note erst nach dem Sicherheitsfenster, sonst nach ARP_GATE
+  const ge = holdNext ? time+dur*1.5 : time+dur*ARP_GATE;
+  const lvlEnd=Math.max(0.0008, tr._arpPeak*Math.exp(-(ge-tr._arpEnvT0)/AMP_TAU));
+  tr._arpAmp.gain.exponentialRampToValueAtTime(lvlEnd, ge);
+  tr._arpAmp.gain.exponentialRampToValueAtTime(0.0008, ge+(holdNext?0.02:ARP_REL));
 
   tr._arpLastFreq=freq;
+  tr._arpHeld=!!holdNext;
 }
 
 // Generiert eine zufällige Acid-Bassline: Random-Walk innerhalb einer
@@ -1716,11 +1896,16 @@ function generateAcidBassline(tr, from=0, to=PATTERN_LENGTH){
       const octave=Math.floor(degree/7);
       tr.notes[s]=scale[scaleIdx]+octave*12;
       tr.steps[s]= Math.random()<0.25 ? VEL_ACCENT : VEL_NORMAL;
-      tr.slides[s]= Math.random()<0.2;
+      tr.slides[s]=false;
     } else {
       tr.steps[s]=VEL_OFF;
       tr.slides[s]=false;
     }
+  }
+  // Slide-Flag liegt am Quellton: nur sinnvoll, wenn Quelle UND Folgestep aktiv sind
+  for(let s=from;s<to;s++){
+    const nx=(s+1)%PATTERN_LENGTH;
+    tr.slides[s]= tr.steps[s]>0 && tr.steps[nx]>0 && Math.random()<0.25;
   }
 }
 
@@ -1979,7 +2164,7 @@ const TRACKS=[
   {id:'mr', name:'MARACAS',  color:'#b8ddf5', tune:0.5, vol:0.65},
   {id:'mc', name:'MIC SAMPLE', color:'#ffffff', tune:0.5, vol:0.9, isSample:true},
   {id:'arp', name:'ACID BASS', color:'#ff6b35', tune:0.5, vol:0.8, type:'arp',
-   rootNote:0, cutoff:0.5, resonance:0.35},
+   rootNote:0, cutoff:0.5, resonance:0.35, envMod:0.5, decay:0.26},
 ];
 // steps[s] speichert die Velocity eines Steps direkt als Zahl:
 // 0 = aus, 0.15 = Ghost soft (sehr leise), 0.35 = Ghost, 0.85 = Normal, 1.3 = Accent.
@@ -2602,7 +2787,7 @@ function taSay(msg){
 }
 function taResetUndo(){ taUndo=null; taUndoBtn.disabled=true; }
 function taSnapshot(tr){
-  taUndo={ trackIdx:activeTrackIdx, len:PATTERN_LENGTH, steps:tr.steps.slice(), notes:tr.notes.slice(), slides:tr.slides.slice() };
+  taUndo={ trackIdx:activeTrackIdx, len:PATTERN_LENGTH, steps:tr.steps.slice(), notes:tr.notes.slice(), slides:tr.slides.slice(), cutoff:tr.cutoff, resonance:tr.resonance, envMod:tr.envMod, decay:tr.decay };
   taUndoBtn.disabled=false;
 }
 function taRange(){
@@ -2612,6 +2797,7 @@ taRandBtn.addEventListener('click', ()=>{
   const tr=TRACKS[activeTrackIdx], [from,to]=taRange();
   taSnapshot(tr);
   randomizeTrackPattern(tr, from, to);
+  if(tr.type==='arp') pitchFit=true;
   refreshTrackStepVisuals(tr);
   taSay('Random · '+tr.name);
 });
@@ -2629,6 +2815,7 @@ taUndoBtn.addEventListener('click', ()=>{
   const tr=TRACKS[activeTrackIdx];
   if(!taUndo || taUndo.trackIdx!==activeTrackIdx || taUndo.len!==PATTERN_LENGTH){ taResetUndo(); return; }
   tr.steps=taUndo.steps; tr.notes=taUndo.notes; tr.slides=taUndo.slides;
+  if(tr.type==='arp' && taUndo.cutoff!=null){ tr.cutoff=taUndo.cutoff; tr.resonance=taUndo.resonance; tr.envMod=taUndo.envMod; tr.decay=taUndo.decay; renderArpControls(tr); }
   taResetUndo();
   // Overview zeigt alle Spuren — hier reicht die aktive, aber renderAllForPage ist robust gegen Seitenwechsel
   renderAllForPage();
@@ -2657,8 +2844,8 @@ function renderTrackBar(){
 
   if(tr.type==='arp'){
     // Beim Acid-Bass-Track ersetzt der Tune-Knob-Slot die Grundton-Auswahl (Root Note)
-    tbTuneKnob=makeKnob({label:'ROOT', size:'26px', min:0,max:11, value:tr.rootNote, fmt:v=>NOTE_NAMES[Math.round(v)%12],
-      onChange:v=>tr.rootNote=Math.round(v)});
+    tbTuneKnob=makeKnob({label:'ROOT', size:'26px', min:0,max:11, value:tr.rootNote, fmt:v=>NOTE_NAMES[(Math.round(v)+9)%12],
+      onChange:v=>{ const r=Math.round(v); if(r!==tr.rootNote){ tr.rootNote=r; renderPitchEditor(tr); } }});
   } else {
     const tuneLabel = tr.isSample ? v=>Math.round((Math.pow(2,(v-0.5)*2))*100)+'%' : v=>Math.round(v*100);
     tbTuneKnob=makeKnob({label:'TUNE', size:'26px', min:0,max:1, value:tr.tune, fmt:tuneLabel, onChange:v=>tr.tune=v});
@@ -2684,6 +2871,7 @@ function renderTrackBar(){
 
   sampleControls.style.display='none';
   arpControls.style.display='none';
+  arpModPanel.style.display='none';
   tbPreview.style.display='';
   if(tr.isSample){
     sampleControls.style.display='flex';
@@ -2691,13 +2879,15 @@ function renderTrackBar(){
     updateRecStatus();
   } else if(tr.type==='arp'){
     arpControls.style.display='flex';
+    arpModPanel.style.display='flex';
     renderArpControls(tr);
   }
 }
 // Cutoff/Resonance-Knobs + "Bassline randomisieren"-Button für den Acid-Bass-Track
 const arpCutoffEl=document.getElementById('arpCutoffKnob');
 const arpResEl=document.getElementById('arpResKnob');
-const arpRandomBtn=document.getElementById('arpRandomBtn');
+const arpEnvEl=document.getElementById('arpEnvKnob');
+const arpDecayEl=document.getElementById('arpDecayKnob');
 function renderArpControls(tr){
   arpCutoffEl.innerHTML=''; arpResEl.innerHTML='';
   const cutoffKnob=makeKnob({label:'CUTOFF', size:'26px', min:0, max:1, value:tr.cutoff, fmt:v=>Math.round(v*100)+'%',
@@ -2706,11 +2896,26 @@ function renderArpControls(tr){
     onChange:v=>tr.resonance=v});
   arpCutoffEl.appendChild(cutoffKnob.el);
   arpResEl.appendChild(resKnob.el);
+  arpEnvEl.innerHTML=''; arpDecayEl.innerHTML='';
+  const envKnob=makeKnob({label:'ENV MOD', size:'26px', min:0, max:1, value:tr.envMod!=null?tr.envMod:0.5, fmt:v=>Math.round(v*100)+'%',
+    onChange:v=>tr.envMod=v});
+  const decayKnob=makeKnob({label:'DECAY', size:'26px', min:0, max:1, value:tr.decay!=null?tr.decay:0.26,
+    fmt:v=>{ const sec=arpDecaySeconds(v); return sec<1 ? Math.round(sec*1000)+'ms' : sec.toFixed(1)+'s'; },
+    onChange:v=>tr.decay=v});
+  arpEnvEl.appendChild(envKnob.el);
+  arpDecayEl.appendChild(decayKnob.el);
 }
-arpRandomBtn.addEventListener('click', ()=>{
+// Würfelt die vier Filterwerte (Cutoff/Reso/Env Mod/Decay) — in musikalischen Grenzen, voller Bereich würde pfeifen/übersteuern
+const arpFilterRandBtn=document.getElementById('arpFilterRandBtn');
+arpFilterRandBtn.addEventListener('click', ()=>{
   const tr=TRACKS.find(t=>t.type==='arp');
-  generateAcidBassline(tr);
-  renderAllForPage();
+  taSnapshot(tr);
+  tr.cutoff=0.15+Math.random()*0.7;
+  tr.resonance=0.1+Math.random()*0.6;
+  tr.envMod=0.2+Math.random()*0.7;
+  tr.decay=0.1+Math.random()*0.6;
+  renderArpControls(tr);
+  taSay('Filter gewürfelt — ↶ zum Zurückholen');
 });
 tbPreview.addEventListener('click', ()=>{
   Promise.resolve(initAudio()).then(()=>{
@@ -2756,10 +2961,200 @@ function renderBigGrid(){
     bigCellNums[s].textContent = currentPage*16+s+1; // absolute Step-Nummer im Pattern
     updateStepVisual(bigCells[s], tr.steps[currentPage*16+s]);
   }
+  renderPitchEditor(tr);
 }
+
+// =========================================================================
+// TONHÖHEN-EDITOR (Acid Bass) — Raster statt Piano Roll: die 303 ist monophon (ein Ton pro Step),
+// daher reicht pro Spalte genau eine aktive Zeile. Datenmodell unverändert: tr.steps (Velocity),
+// tr.notes (Halbtöne relativ zu tr.rootNote), tr.slides. Fenster = 13 Halbtöne ab pitchLo.
+// Notenname: noteFreq() basiert auf A1 (55 Hz) -> Halbton 0 bei rootNote 0 ist ein A.
+// =========================================================================
+const pitchEditor=document.getElementById('pitchEditor');
+const pitchGrid=document.getElementById('pitchGrid');
+const peOctLabel=document.getElementById('peOctLabel');
+const peReadout=document.getElementById('peReadout');
+const peScaleBtn=document.getElementById('peScaleBtn');
+let pitchLo=0, pitchScaleOnly=true, pitchFit=false, pitchCols=[];
+const PITCH_MINOR=[0,2,3,5,7,8,10];
+function pitchNoteName(tr,v){
+  const t=9+tr.rootNote+v;
+  return NOTE_NAMES[((t%12)+12)%12]+(Math.floor(t/12)+1);
+}
+function pitchInScale(v){ return PITCH_MINOR.indexOf(((v%12)+12)%12)>=0; }
+// Fenster wählen, in dem die meisten vorhandenen Töne sichtbar sind (Fenster liegen auf Oktavgrenzen, -24..+12)
+function pitchDoFit(tr){
+  let best=0, bestCount=-1;
+  [0,-12,12,-24].forEach(lo=>{ // bei Gleichstand gewinnt das frühere (näher an Grundton)
+    let cnt=0;
+    for(let s=0;s<PATTERN_LENGTH;s++){ const n=tr.notes[s]||0; if(tr.steps[s]>0 && n>=lo && n<=lo+12) cnt++; }
+    if(cnt>bestCount){ bestCount=cnt; best=lo; }
+  });
+  pitchLo=best;
+}
+function renderPitchEditor(tr){
+  const isArp=tr.type==='arp';
+  pitchEditor.style.display=isArp?'':'none';
+  bigGrid.style.display=isArp?'none':'';
+  if(!isArp){ pitchCols=[]; return; }
+  if(pitchFit){ pitchDoFit(tr); pitchFit=false; }
+  peOctLabel.textContent=pitchNoteName(tr,pitchLo)+' – '+pitchNoteName(tr,pitchLo+12);
+  const base=currentPage*16;
+  let h='<div></div>';
+  for(let c=0;c<16;c++) h+='<div class="pe-hn'+(c%4===0?' beat':'')+'" data-col="'+c+'">'+(base+c+1)+'</div>';
+  for(let r=12;r>=0;r--){
+    const v=pitchLo+r, inS=pitchInScale(v), rt=((v%12)+12)%12===0;
+    h+='<div class="pe-rl'+(inS?' in':'')+(rt?' rt':'')+'">'+pitchNoteName(tr,v)+'</div>';
+    for(let c=0;c<16;c++){
+      const i=base+c, vel=tr.steps[i], on=vel>0, n=tr.notes[i]||0, hit=on && n===v;
+      let cls='pe-c'+(inS?' in':'')+(rt?' rt':'')+(c%4===0?' beat':''), txt='';
+      if(pitchScaleOnly && !inS && !hit) cls+=' off';
+      if(hit){ cls+=' act'+(vel<=VEL_GHOST?' gh':''); if(tr.slides[i]) txt='~'; }
+      else if(on && r===12 && n>pitchLo+12) txt='▲';
+      else if(on && r===0 && n<pitchLo) txt='▼';
+      h+='<div class="'+cls+'" data-col="'+c+'" data-v="'+v+'">'+txt+'</div>';
+    }
+  }
+  h+='<div class="pe-rl">A</div>';
+  for(let c=0;c<16;c++){ const i=base+c;
+    h+='<button class="pe-ab a'+(tr.steps[i]===VEL_ACCENT?' on':'')+(tr.steps[i]>0?'':' dis')+'" data-a="'+c+'" aria-label="Accent Step '+(i+1)+'">A</button>'; }
+  h+='<div class="pe-rl">S</div>';
+  for(let c=0;c<16;c++){ const i=base+c;
+    h+='<button class="pe-ab s'+(tr.slides[i]?' on':'')+(tr.steps[i]>0?'':' dis')+'" data-s="'+c+'" aria-label="Slide Step '+(i+1)+'">S</button>'; }
+  pitchGrid.innerHTML=h;
+  pitchCols=Array.from({length:16},()=>[]);
+  pitchGrid.querySelectorAll('[data-col]').forEach(el=>pitchCols[+el.dataset.col].push(el));
+}
+// Anspielen nur im Stillstand: triggerArpStep() nutzt die eine dauerhafte Stimme der Spur und
+// würde sonst bereits eingeplante Sequencer-Events (cancelScheduledValues) abräumen.
+function pitchPreview(tr, semis, vel){
+  if(isPlaying) return;
+  Promise.resolve(initAudio()).then(()=>{
+    if(audioCtx.state==='suspended') audioCtx.resume();
+    triggerArpStep(audioCtx.currentTime+0.01, tr, semis, vel, false);
+  });
+}
+pitchGrid.addEventListener('click', (e)=>{
+  const t=e.target.closest('[data-a],[data-s],[data-v]');
+  const tr=TRACKS[activeTrackIdx];
+  if(!t || tr.type!=='arp') return;
+  const base=currentPage*16;
+  if(t.dataset.a!==undefined){
+    const c=+t.dataset.a, i=base+c;
+    if(tr.steps[i]>0){ tr.steps[i]= tr.steps[i]===VEL_ACCENT ? VEL_NORMAL : VEL_ACCENT; updateStepVisual(tr._ovCells[c], tr.steps[i]); renderPitchEditor(tr); }
+    return;
+  }
+  if(t.dataset.s!==undefined){
+    const c=+t.dataset.s, i=base+c;
+    if(tr.steps[i]>0){ tr.slides[i]=!tr.slides[i]; renderPitchEditor(tr); }
+    return;
+  }
+  if(t.classList.contains('off')) return;
+  const c=+t.dataset.col, v=+t.dataset.v, i=base+c;
+  if(tr.steps[i]>0 && tr.notes[i]===v){
+    tr.steps[i]=VEL_OFF;
+    peReadout.textContent='Step '+(i+1)+' aus';
+  } else {
+    if(tr.steps[i]<=0) tr.steps[i]=VEL_NORMAL;
+    tr.notes[i]=v;
+    peReadout.textContent='Step '+(i+1)+' → '+pitchNoteName(tr,v)+(tr.steps[i]===VEL_ACCENT?' · Accent':'')+(tr.slides[i]?' · Slide':'');
+    pitchPreview(tr, v, tr.steps[i]);
+  }
+  updateStepVisual(tr._ovCells[c], tr.steps[i]);
+  renderPitchEditor(tr);
+});
+document.getElementById('peOctDown').addEventListener('click', ()=>{ pitchLo=Math.max(-24,pitchLo-12); renderPitchEditor(TRACKS[activeTrackIdx]); });
+document.getElementById('peOctUp').addEventListener('click', ()=>{ pitchLo=Math.min(12,pitchLo+12); renderPitchEditor(TRACKS[activeTrackIdx]); });
+peScaleBtn.addEventListener('click', ()=>{
+  pitchScaleOnly=!pitchScaleOnly;
+  peScaleBtn.classList.toggle('on', pitchScaleOnly);
+  renderPitchEditor(TRACKS[activeTrackIdx]);
+});
+
+// =========================================================================
+// ACID MOD UI — AUTO (einklappbar) + HEUL (Halte-Knopf). Logik/Engine: siehe triggerArpStep().
+// =========================================================================
+const arpModPanel=document.getElementById('arpModPanel');
+const autoToggle=document.getElementById('autoToggle'), autoBody=document.getElementById('autoBody'), autoSummary=document.getElementById('autoSummary');
+const autoShapeSeg=document.getElementById('autoShapeSeg'), autoRateSeg=document.getElementById('autoRateSeg');
+const autoDepthEl=document.getElementById('autoDepth'), autoDepthVal=document.getElementById('autoDepthVal');
+const autoCurvePath=document.getElementById('autoCurvePath'), autoCurveGrid=document.getElementById('autoCurveGrid'), autoCurvePh=document.getElementById('autoCurvePh');
+const heulBtn=document.getElementById('heulBtn'), heulFill=document.getElementById('heulFill'), heulText=document.getElementById('heulText');
+const heulLenSeg=document.getElementById('heulLenSeg'), modMeterMk=document.getElementById('modMeterMk'), modResoTag=document.getElementById('modResoTag');
+const AUTO_SHAPE_LABEL={off:'Aus', sine:'Sinus', tri:'Dreieck', drift:'Drift'};
+function drawAutoCurve(){
+  let d='';
+  const N=140;
+  for(let i=0;i<=N;i++){
+    const v = autoShape==='off' ? 0 : (function(){ const per=autoBars*16; return autoLfo(i/N*per); })();
+    d+=(i?'L':'M')+(i/N*340).toFixed(1)+' '+(28-v*autoDepth*24).toFixed(1);
+  }
+  autoCurvePath.setAttribute('d', d);
+  let g='<line x1="0" x2="340" y1="28" y2="28" stroke="rgba(255,255,255,.12)" stroke-width="1" vector-effect="non-scaling-stroke"/>';
+  for(let i=1;i<autoBars;i++) g+='<line x1="'+(i*340/autoBars)+'" x2="'+(i*340/autoBars)+'" y1="0" y2="56" stroke="rgba(255,255,255,.12)" stroke-width="1" vector-effect="non-scaling-stroke"/>';
+  autoCurveGrid.innerHTML=g;
+}
+function syncAutoUI(){
+  autoShapeSeg.querySelectorAll('button').forEach(b=>b.classList.toggle('on', b.dataset.v===autoShape));
+  autoRateSeg.querySelectorAll('button').forEach(b=>b.classList.toggle('on', +b.dataset.v===autoBars));
+  autoDepthEl.value=Math.round(autoDepth*100); autoDepthVal.textContent=autoDepthEl.value+'%';
+  autoSummary.textContent = autoShape==='off' ? 'Aus' : AUTO_SHAPE_LABEL[autoShape]+' · '+autoBars+(autoBars===1?' Takt':' Takte')+' · '+autoDepthEl.value+'%';
+  drawAutoCurve(); updateAutoVisual();
+}
+function updateAutoVisual(){
+  const per=autoBars*16, x=(((modVisAbs%per)+per)%per)/per*340;
+  autoCurvePh.setAttribute('x1',x); autoCurvePh.setAttribute('x2',x);
+  const h = audioCtx ? heulAmount(audioCtx.currentTime) : 0;
+  const tot=Math.max(-1, Math.min(1, (autoLfo(modVisAbs)*autoDepth*AUTO_CENTS + h*HEUL_CENTS)/HEUL_CENTS));
+  modMeterMk.style.left=(50+tot*50)+'%';
+  heulFill.style.width=(h*100)+'%';
+  modResoTag.classList.toggle('on', h>0.02);
+}
+autoToggle.addEventListener('click', ()=>{
+  const open=!autoBody.classList.contains('open');
+  autoBody.classList.toggle('open', open);
+  autoToggle.setAttribute('aria-expanded', open?'true':'false');
+  if(open) drawAutoCurve();
+});
+autoShapeSeg.addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return; autoShape=b.dataset.v; syncAutoUI(); });
+autoRateSeg.addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return; autoBars=+b.dataset.v; syncAutoUI(); });
+autoDepthEl.addEventListener('input', ()=>{ autoDepth=autoDepthEl.value/100; syncAutoUI(); });
+heulLenSeg.addEventListener('click', e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  heul.bars=+b.dataset.v;
+  heulLenSeg.querySelectorAll('button').forEach(x=>x.classList.toggle('on', x===b));
+});
+// HEUL: Halten = Anstieg (Cutoff + Reso), Loslassen = schneller Abfall (0,3 s). Nur live, nur hörbar solange Noten spielen.
+let heulRAF=null;
+function heulLoop(){
+  updateAutoVisual();
+  const active = heul.relAt==null || (audioCtx && audioCtx.currentTime < heul.relAt+0.35);
+  heulRAF = active ? requestAnimationFrame(heulLoop) : null;
+  if(!active) updateAutoVisual();
+}
+heulBtn.addEventListener('pointerdown', e=>{
+  if(!audioCtx) initAudio();
+  try{ heulBtn.setPointerCapture(e.pointerId); }catch(err){}
+  heul.start=audioCtx.currentTime; heul.relAt=null; heul.relFrom=0;
+  heulBtn.classList.add('hold'); heulText.textContent='HEULT …';
+  if(!heulRAF) heulRAF=requestAnimationFrame(heulLoop);
+  e.preventDefault();
+});
+function heulRelease(){
+  if(heul.start==null || heul.relAt!=null || !audioCtx) return;
+  const t=audioCtx.currentTime;
+  heul.relFrom=heulRise(t); heul.relAt=t;
+  heulBtn.classList.remove('hold'); heulText.textContent='HALTEN ZUM AUFHEULEN';
+  if(!heulRAF) heulRAF=requestAnimationFrame(heulLoop);
+}
+heulBtn.addEventListener('pointerup', heulRelease);
+heulBtn.addEventListener('pointercancel', heulRelease);
+syncAutoUI();
+
 function selectTrack(idx){
   if(typeof taResetUndo==='function') taResetUndo();
   activeTrackIdx=idx;
+  pitchFit=true; // beim Spurwechsel/Laden: Tonfenster auf vorhandene Töne zentrieren
   TRACKS.forEach((tr,i)=> tr._ovRow.classList.toggle('active', i===idx));
   renderTrackBar();
   renderBigGrid();
@@ -2969,7 +3364,7 @@ async function renderPatternToWav(){
   padDelaySendGain=offlineCtx.createGain(); padDelaySendGain.gain.value=padDelayAmount;
   padDelaySendGain.connect(delayInputNode);
 
-  TRACKS.forEach(tr=>{ tr.bus=null; tr.eqLow=null; tr.eqMid=null; tr.eqHigh=null; tr.panner=null; tr.analyser=null; tr.sendGain=null; tr.delaySendGain=null; tr._arpOsc=null; tr._arpFilter=null; tr._arpAmp=null; tr._arpLastFreq=null; });
+  TRACKS.forEach(tr=>{ tr.bus=null; tr.eqLow=null; tr.eqMid=null; tr.eqHigh=null; tr.panner=null; tr.analyser=null; tr.sendGain=null; tr.delaySendGain=null; tr._arpOsc=null; tr._arpFilter=null; tr._arpAmp=null; tr._arpLastFreq=null; tr._arpHeld=false; tr._arpPeak=0; tr._arpEnvT0=0; tr._arpOff=0; tr._arpOffT=0; });
   ensureTrackBuses();
 
   // ---- Alle Steps des Patterns direkt durchplanen (kein Echtzeit-Scheduler nötig) ----
@@ -2985,7 +3380,8 @@ async function renderPatternToWav(){
       if(!anySolo && tr.muted) return;
       const hitTime=Math.max(0, t + (tr.feel||0)/1000);
       if(tr.type==='arp'){
-        triggerArpStep(hitTime, tr, tr.notes[step]||0, v, !!tr.slides[step]);
+        const nx=(step+1)%PATTERN_LENGTH, pv=(step-1+PATTERN_LENGTH)%PATTERN_LENGTH;
+        triggerArpStep(hitTime, tr, tr.notes[step]||0, v, tr.steps[pv]>0 && !!tr.slides[pv], !!tr.slides[step] && tr.steps[nx]>0, step);
       } else {
         triggerTrack(tr, hitTime, v);
       }
@@ -3006,7 +3402,7 @@ async function renderPatternToWav(){
     tr.panner=busBackup[i].panner; tr.analyser=busBackup[i].analyser;
     tr.sendGain=busBackup[i].sendGain; tr.delaySendGain=busBackup[i].delaySendGain;
     tr._arpOsc=busBackup[i].arpOsc; tr._arpFilter=busBackup[i].arpFilter;
-    tr._arpAmp=busBackup[i].arpAmp; tr._arpLastFreq=busBackup[i].arpLastFreq;
+    tr._arpAmp=busBackup[i].arpAmp; tr._arpLastFreq=busBackup[i].arpLastFreq; tr._arpHeld=false; tr._arpPeak=0; tr._arpEnvT0=0; tr._arpOff=0; tr._arpOffT=0;
   });
 
   return renderedBuffer;
@@ -4010,8 +4406,9 @@ function collectPatternData(name, id){
       reverbAmount: tr.reverbAmount || 0,
       feel: tr.feel || 0,
       delaySend: tr.delaySend || 0,
-      rootNote: tr.rootNote, cutoff: tr.cutoff, resonance: tr.resonance
+      rootNote: tr.rootNote, cutoff: tr.cutoff, resonance: tr.resonance, envMod: tr.envMod, decay: tr.decay // envMod/decay: additiv zu v6, ältere Patterns -> Standardwerte
     })),
+    acidAuto: { shape: autoShape, bars: autoBars, depth: autoDepth },
     fill: {
       lengthSteps: fillLengthSteps,
       everyN: fillEveryN,
@@ -4090,6 +4487,8 @@ function applyTrackAndFillData(data){
       tr.rootNote = saved.rootNote!=null ? saved.rootNote : 0;
       tr.cutoff = saved.cutoff!=null ? saved.cutoff : 0.5;
       tr.resonance = saved.resonance!=null ? saved.resonance : 0.35;
+      tr.envMod = saved.envMod!=null ? saved.envMod : 0.5;
+      tr.decay = saved.decay!=null ? saved.decay : 0.26;
     }
   });
   refreshSoloVisuals(); // Mute/Solo mehrerer Spuren gerade geändert -> Solo-Dimming einmal gesamt neu berechnen
@@ -4113,6 +4512,9 @@ function applyTrackAndFillData(data){
     FILL_STYLE_INFO.forEach(({id})=> fillStyleChipEls[id].classList.toggle('active', !!fillStyleEnabled[id]));
   }
 
+  const aa=data.acidAuto||{};
+  autoShape=aa.shape||'off'; autoBars=aa.bars||4; autoDepth=aa.depth!=null?aa.depth:0.6;
+  syncAutoUI();
   renderLengthChips();
   renderPageNav();
   selectTrack(activeTrackIdx);
@@ -4694,7 +5096,7 @@ function scheduleStep(step,time){
   const anySolo=TRACKS.some(t=>t.solo);
   const fillWindowStart=PATTERN_LENGTH-activeFillLength;
   const inFillWindow = currentLoopIsFill && fillOverride && step>=fillWindowStart;
-  scheduledSteps.push({step,time,isFill:inFillWindow});
+  scheduledSteps.push({step,time,isFill:inFillWindow,abs:curAbsStep});
   TRACKS.forEach(tr=>{
     let v;
     if(inFillWindow && fillOverride[tr.id]){
@@ -4720,7 +5122,8 @@ function scheduleStep(step,time){
       : v;
 
     if(tr.type==='arp'){
-      triggerArpStep(hitTime, tr, tr.notes[step]||0, playVel, !!tr.slides[step]);
+      const nx=(step+1)%PATTERN_LENGTH, pv=(step-1+PATTERN_LENGTH)%PATTERN_LENGTH;
+      triggerArpStep(hitTime, tr, tr.notes[step]||0, playVel, tr.steps[pv]>0 && !!tr.slides[pv], !!tr.slides[step] && tr.steps[nx]>0, curAbsStep);
     } else if(tr.id==='cy' && inFillWindow && fillOverride.cy && fillOverride.cy.chokeSteps && fillOverride.cy.chokeSteps[step-fillWindowStart]){
       triggerChokedCrash(hitTime, tr, playVel); // kurz abgeschnittener statt lang ausklingender Crash
     } else {
@@ -4735,7 +5138,9 @@ function scheduler(){
     // Step exakt gleich lang, damit sich die Gesamt-Pattern-Dauer/das Tempo
     // durch Swing nicht verändert (nur die Betonung innerhalb des Rasters).
     const swingOffset = (currentStep%2===1) ? stepDuration()*swing : 0;
+    curAbsStep=absStepCounter;
     scheduleStep(currentStep, nextNoteTime + swingOffset);
+    absStepCounter++;
     nextNoteTime += stepDuration();
     currentStep=(currentStep+1)%PATTERN_LENGTH;
     if(currentStep===0) onLoopRestart();
@@ -4746,6 +5151,8 @@ function start(){
   Promise.resolve(initAudio()).then(()=>{
     if(audioCtx.state==='suspended') audioCtx.resume();
     isPlaying=true; currentStep=0; nextNoteTime=audioCtx.currentTime+0.06; scheduledSteps=[];
+    TRACKS.forEach(t=>{ t._arpHeld=false; });
+    absStepCounter=0; modVisAbs=0;
     loopCount=0; currentLoopIsFill=false; fillOverride=null;
     scheduler();
     playBtn.textContent='■'; playBtn.classList.add('playing'); powerLed.classList.add('on');
@@ -4755,6 +5162,18 @@ function start(){
 function stop(){
   isPlaying=false; clearTimeout(timerID);
   stopLoopingSampleTrack();
+  // Acid-Stimme: gehaltene (Slide-)Noten würden sonst weiterklingen; bereits eingeplante Events werden verworfen
+  TRACKS.forEach(t=>{
+    if(t._arpAmp && audioCtx){
+      const n=audioCtx.currentTime;
+      try{
+        t._arpAmp.gain.cancelScheduledValues(n);
+        t._arpAmp.gain.setValueAtTime(Math.max(0.0001, t._arpAmp.gain.value), n);
+        t._arpAmp.gain.exponentialRampToValueAtTime(0.0008, n+0.05);
+      }catch(e){}
+    }
+    t._arpHeld=false;
+  });
   playBtn.textContent='▶'; playBtn.classList.remove('playing'); powerLed.classList.remove('on');
   document.querySelectorAll('.playcol').forEach(el=>el.classList.remove('playcol'));
 }
@@ -4767,6 +5186,7 @@ function visualLoop(){
   const now=audioCtx.currentTime;
   while(scheduledSteps.length && scheduledSteps[0].time<=now){
     const ev=scheduledSteps.shift();
+    modVisAbs=ev.abs; updateAutoVisual();
     if(ev.step!==lastDisplayStep){
       const page=Math.floor(ev.step/16), rel=ev.step%16;
       // Beim Überschreiten einer Seitengrenze blättert die Ansicht automatisch mit,
@@ -4779,6 +5199,7 @@ function visualLoop(){
       document.querySelectorAll('.playcol').forEach(el=>el.classList.remove('playcol'));
       TRACKS.forEach(tr=> tr._ovCells[rel].classList.add('playcol'));
       bigCells[rel].classList.add('playcol');
+      if(pitchCols[rel]) pitchCols[rel].forEach(el=>el.classList.add('playcol'));
       if(TRACKS[activeTrackIdx].steps[ev.step]){
         bigCells[rel].classList.add('flash');
         setTimeout(()=>bigCells[rel].classList.remove('flash'),90);
