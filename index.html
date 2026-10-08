@@ -680,6 +680,87 @@
   #patternEmpty{ font-size:11px; color:var(--dim); text-align:center; padding:6px 0; }
 
   #songOverlay{ flex-direction:column; gap:10px; }
+  #arrCard{ background:var(--panel); border-radius:8px; padding:10px 12px; display:flex; flex-direction:column; gap:8px; flex-shrink:0; }
+  .arr-head{ display:flex; align-items:center; justify-content:space-between; font-size:11px; letter-spacing:.1em; color:var(--blue-2); font-weight:700; }
+  #arrToggle{ min-width:64px; min-height:36px; border-radius:8px; border:1px solid rgba(63,169,255,.45); background:var(--panel-inset); color:var(--dim); font-family:inherit; font-weight:700; font-size:12px; cursor:pointer; }
+  #arrToggle.on{ background:var(--blue); color:#04121e; border-color:var(--blue); }
+  .arr-seg{ display:flex; border-radius:8px; overflow:hidden; border:1px solid rgba(255,255,255,.12); }
+  .arr-seg button{ flex:1; min-height:36px; border:0; background:var(--panel-inset); color:var(--dim); font-family:inherit; font-weight:700; font-size:12px; cursor:pointer; }
+  .arr-seg button.on{ background:rgba(63,169,255,.2); color:var(--blue-2); }
+  .arr-row{ display:flex; align-items:center; gap:8px; font-size:12px; color:var(--metal); }
+  .arr-row span{ flex:1; } .arr-row b{ min-width:24px; text-align:center; font-family:'JetBrains Mono',monospace; color:var(--blue-2); }
+  .arr-row button{ width:40px; height:34px; border-radius:7px; border:1px solid rgba(255,255,255,.12); background:var(--panel-inset); color:var(--blue-2); font-size:16px; cursor:pointer; }
+  #arrInfo{ font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--blue-2); line-height:1.5; }
+  .ar-row{ display:grid; grid-template-columns:84px 1fr; gap:6px; align-items:center; margin-bottom:6px; }
+  .ar-lab{ display:flex; flex-direction:column; gap:3px; font-size:11px; font-weight:700; color:var(--white); }
+  .ar-ms{ display:flex; gap:3px; }
+  .ar-ms button{ width:24px; height:22px; border-radius:5px; border:1px solid rgba(255,255,255,.14); background:var(--panel-inset); color:var(--dim); font-size:9px; font-weight:700; padding:0; cursor:pointer; }
+  .ar-ms button.on.m{ background:var(--blue); color:#04121e; border-color:var(--blue); } .ar-ms button.on.s{ background:#ffc247; color:#2a1a00; border-color:#ffc247; }
+  .ar-tl{ display:grid; gap:2px; height:44px; }
+  .ar-cell{ border-radius:3px; background:#0b0c0f; cursor:pointer; position:relative; overflow:hidden; }
+  .ar-cell.f{ background:rgba(63,169,255,.18); box-shadow:inset 0 0 0 1px rgba(63,169,255,.45); }
+  .ar-cell.ph{ outline:2px solid rgba(255,255,255,.75); outline-offset:-2px; z-index:1; }
+  .ar-cell svg{ position:absolute; inset:3px 2px; width:calc(100% - 4px); height:calc(100% - 6px); }
+  .ar-rl{ display:grid; gap:2px; margin:0 0 4px 90px; } .ar-rl span{ font:9px 'JetBrains Mono',monospace; color:var(--dim); text-align:center; }
+  .ar-save{ display:flex; gap:6px; }
+  #songNameInput{ flex:1; min-width:0; background:var(--panel-inset); border:1px solid rgba(255,255,255,.12); border-radius:6px; padding:8px 9px; color:var(--white); font-family:'Rajdhani',sans-serif; font-size:13px; }
+  #songNameInput::placeholder{ color:var(--dim); }
+  #songSaveBtn, #songUpdateBtn{ min-height:38px; padding:0 12px; border-radius:6px; border:1px solid rgba(63,169,255,.4); background:rgba(63,169,255,.12); color:var(--blue-2); font-family:inherit; font-weight:700; font-size:11px; letter-spacing:.04em; text-transform:uppercase; cursor:pointer; }
+  #songList{ display:flex; flex-direction:column; gap:5px; }
+  .sg-row{ display:flex; align-items:center; gap:6px; background:var(--panel-inset); border-radius:8px; padding:6px 8px; border:1px solid transparent; }
+  .sg-row.active{ border-color:var(--blue); background:rgba(63,169,255,.1); }
+  .sg-name{ flex:1; font-size:12px; color:var(--white); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .sg-date{ font:8px 'JetBrains Mono',monospace; color:var(--dim); }
+  .sg-row button{ width:34px; height:34px; border-radius:6px; border:1px solid rgba(255,255,255,.12); background:transparent; color:var(--blue-2); font-size:14px; cursor:pointer; padding:0; }
+  .sg-row button.del{ color:#ff9d7a; }
+  .sg-empty{ font-size:11px; color:var(--dim); text-align:center; padding:6px 0; }
+  #clipBanner{ position:sticky; top:0; z-index:30; align-items:center; gap:8px; flex-wrap:wrap; background:#0c1e2e; border:1px solid rgba(63,169,255,.5); border-radius:8px; padding:8px 10px; font-size:12px; color:var(--blue-2); }
+  #clipBanner span{ flex:1; min-width:150px; } #clipBanner small{ display:block; font-size:9px; color:var(--dim); margin-top:2px; }
+  #clipBanner button{ min-height:36px; padding:0 10px; border-radius:7px; border:1px solid rgba(63,169,255,.45); background:rgba(63,169,255,.14); color:var(--blue-2); font-family:inherit; font-weight:700; font-size:11px; cursor:pointer; }
+  #ovActions{ align-items:center; gap:6px; background:var(--panel-inset); border-radius:8px; padding:6px 8px; }
+  #ovActName{ flex:1; font-size:11px; font-weight:700; color:var(--blue-2); }
+  #ovActions button{ min-height:36px; padding:0 9px; border-radius:7px; border:1px solid rgba(255,255,255,.14); background:var(--panel); color:var(--blue-2); font-family:inherit; font-weight:700; font-size:11px; cursor:pointer; }
+  #ovDel{ color:#ff9d7a !important; }
+  .ar-cell.sel{ box-shadow:inset 0 0 0 2px var(--blue-2); background:rgba(63,169,255,.32); }
+  #beatTabs{ display:flex; border-radius:8px; overflow:hidden; border:1px solid rgba(255,255,255,.12); flex-shrink:0; }
+  #beatTabs button{ flex:1; min-height:38px; border:0; background:var(--panel); color:var(--dim); font-family:inherit; font-weight:700; font-size:12px; cursor:pointer; }
+  #beatTabs button.on{ background:rgba(63,169,255,.2); color:var(--blue-2); }
+  #patternsOverlay.grp #patternUpdateBtn, #patternsOverlay.grp #exportWavBtn, #patternsOverlay.grp #patternIORow{ display:none !important; }
+  #dsOpenBtn{ min-height:42px; margin-bottom:10px; border-radius:9px; border:1px solid rgba(63,169,255,.45); background:rgba(63,169,255,.12); color:var(--blue-2); font-family:inherit; font-weight:700; font-size:12px; cursor:pointer; flex-shrink:0; }
+  #drumSetOverlay{ display:none; position:fixed; inset:0; z-index:60; background:linear-gradient(180deg,var(--chassis),var(--chassis-2));
+    padding:14px; padding-top:max(14px, env(safe-area-inset-top)); padding-bottom:max(14px, env(safe-area-inset-bottom)); flex-direction:column; gap:8px; overflow:hidden; }
+  #drumSetOverlay.open{ display:flex; }
+  #dsHead{ display:flex; align-items:center; justify-content:space-between; padding-bottom:10px; border-bottom:1px solid rgba(255,255,255,.06); flex-shrink:0; }
+  #dsCloseBtn, #dsShX{ width:36px; height:36px; border-radius:8px; background:var(--panel); border:1px solid rgba(255,255,255,.1); color:var(--blue-2); font-size:16px; cursor:pointer; }
+  .ds-bar{ display:flex; gap:6px; flex-shrink:0; }
+  #dsName{ flex:1; min-width:0; background:var(--panel-inset); border:1px solid rgba(255,255,255,.12); border-radius:6px; padding:8px 9px; color:var(--white); font-family:'Rajdhani',sans-serif; font-size:13px; }
+  #dsSave, #dsLoad, #dsReset{ min-height:38px; padding:0 11px; border-radius:7px; border:1px solid rgba(63,169,255,.4); background:rgba(63,169,255,.12); color:var(--blue-2); font-family:inherit; font-weight:700; font-size:11px; letter-spacing:.04em; text-transform:uppercase; cursor:pointer; }
+  .ds-base{ display:flex; align-items:center; justify-content:space-between; font-size:11px; color:var(--dim); flex-shrink:0; } .ds-base b{ color:var(--blue-2); }
+  #dsRows{ flex:1; min-height:0; overflow-y:auto; }
+  .ds-row{ display:grid; grid-template-columns:34px 1fr 40px; gap:8px; align-items:center; background:var(--panel); border-radius:9px; padding:6px 8px; margin-bottom:6px; cursor:pointer; }
+  .ds-row b{ font-size:11px; color:var(--blue-2); } .ds-src{ min-width:0; display:flex; flex-direction:column; }
+  .ds-src span{ font-size:12px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } .ds-src small{ font-size:9px; color:var(--dim); }
+  .ds-src.smp span{ color:#ffc247; }
+  .ds-pv{ width:40px; height:36px; border-radius:8px; border:1px solid rgba(63,169,255,.4); background:rgba(63,169,255,.12); color:var(--blue-2); cursor:pointer; padding:0; }
+  #dsStatus{ font:11px 'JetBrains Mono',monospace; color:var(--blue-2); min-height:14px; text-align:center; flex-shrink:0; }
+  .ds-cap{ font-size:10px; color:var(--dim); line-height:1.4; flex-shrink:0; }
+  #dsSheet{ position:absolute; left:0; right:0; bottom:0; background:#0f1015; border-top:1px solid rgba(63,169,255,.4); border-radius:14px 14px 0 0; padding:12px 14px calc(16px + env(safe-area-inset-bottom));
+    transform:translateY(105%); transition:transform .2s; max-height:72%; display:flex; flex-direction:column; gap:8px; box-shadow:0 -10px 30px rgba(0,0,0,.6); z-index:5; }
+  #dsSheet.open{ transform:none; }
+  .ds-sh{ display:flex; justify-content:space-between; align-items:center; font-size:12px; font-weight:700; color:var(--blue-2); }
+  .ds-seg{ display:flex; border-radius:8px; overflow:hidden; border:1px solid rgba(255,255,255,.12); flex-shrink:0; }
+  .ds-seg button{ flex:1; min-height:38px; border:0; background:var(--panel); color:var(--dim); font-family:inherit; font-weight:700; font-size:12px; cursor:pointer; }
+  .ds-seg button.on{ background:rgba(63,169,255,.2); color:var(--blue-2); }
+  #dsList{ overflow-y:auto; display:flex; flex-direction:column; gap:5px; }
+  .ds-it{ display:flex; align-items:center; gap:8px; background:var(--panel-inset); border-radius:8px; padding:10px; font-size:12px; border:1px solid transparent; cursor:pointer; }
+  .ds-it.on{ border-color:var(--blue); background:rgba(63,169,255,.12); } .ds-it small{ margin-left:auto; font-size:9px; color:var(--dim); }
+  .ds-it.add{ border:1px dashed rgba(255,194,71,.5); color:#ffc247; } .ds-it button{ width:34px; height:30px; border-radius:6px; border:1px solid rgba(255,255,255,.12); background:transparent; color:#ff9d7a; cursor:pointer; }
+  #groupBar{ display:flex; gap:6px; }
+  .gb{ flex:1; padding:10px 0; border-radius:8px; border:1px solid rgba(255,255,255,.1); background:var(--panel); color:var(--dim); font-family:inherit; font-weight:700; font-size:12px; letter-spacing:.04em; cursor:pointer; }
+  .gb.on{ border-color:var(--blue); background:rgba(63,169,255,.14); color:var(--blue-2); box-shadow:0 0 10px rgba(63,169,255,.2); }
+  .gb:active{ transform:scale(.96); }
+  #ovToast{ min-height:14px; font:11px 'JetBrains Mono',monospace; color:var(--blue-2); }
+  .arr-hint{ font-size:10px; color:var(--dim); line-height:1.35; }
   #songTopRow{ display:flex; gap:8px; flex-shrink:0; }
   #songEnableBtn{ flex:1; font-size:13px; font-weight:700; letter-spacing:.04em; text-transform:uppercase;
     border:1px solid rgba(63,169,255,.4); border-radius:9px; padding:11px 0; cursor:pointer;
@@ -909,6 +990,7 @@ html,body{min-height:100%;height:100%;}
           <span class="lcd l2" style="color:var(--dim); letter-spacing:.15em; text-transform:uppercase;">Kit wählen</span>
           <button id="kitPickerCloseBtn" aria-label="Schließen">✕</button>
         </div>
+        <button id="dsOpenBtn">⚙ Eigenes Drum-Set bearbeiten</button>
         <div id="kitPickerList"></div>
       </div>
 
@@ -939,6 +1021,7 @@ html,body{min-height:100%;height:100%;}
           <span class="lcd l2" style="color:var(--dim); letter-spacing:.15em; text-transform:uppercase;">Beats</span>
           <button id="patternsOverlayCloseBtn" aria-label="Schließen">✕</button>
         </div>
+        <div id="beatTabs"><button data-t="all" class="on">Gesamt</button><button data-t="drums">Drums</button><button data-t="perc">Perc</button><button data-t="acid">Acid</button><button data-t="sample">Sample</button></div>
         <div id="patternSaveRow">
           <input type="text" id="patternNameInput" placeholder="Name für aktuellen Beat…" maxlength="40">
           <button id="patternUpdateBtn" title="Aktuell geladenen Beat mit diesem Zustand überschreiben">↻</button>
@@ -1043,6 +1126,20 @@ html,body{min-height:100%;height:100%;}
         </div>
       </div>
 
+      <div id="drumSetOverlay">
+        <div id="dsHead"><span class="lcd l2" style="color:var(--dim); letter-spacing:.15em; text-transform:uppercase;">Drum-Set</span><button id="dsCloseBtn" aria-label="Schließen">✕</button></div>
+        <div class="ds-bar"><input type="text" id="dsName" placeholder="Name für das Set…" maxlength="40"><button id="dsSave">Speichern</button><button id="dsLoad">Laden</button></div>
+        <div class="ds-base"><span>Basis-Kit: <b id="dsBase"></b></span><button id="dsReset">Alle auf Basis-Kit</button></div>
+        <div id="dsRows"></div>
+        <div id="dsStatus"></div>
+        <div class="ds-cap">Stimme antippen: Quelle wählen (Synth aus einem Kit oder eigenes Sample). ▶ hört an. Das Set gehört zum Song bzw. Gesamt-Beat und wird mit ihm gespeichert. Tune bleibt am Rädchen der Stimme.</div>
+        <div id="dsSheet">
+          <div class="ds-sh"><span id="dsShT"></span><button id="dsShX" aria-label="Schließen">✕</button></div>
+          <div class="ds-seg" id="dsSeg"><button data-m="syn">Synth</button><button data-m="smp">Sample</button></div>
+          <div id="dsList"></div>
+        </div>
+      </div>
+
       <div id="xyOverlay">
         <div id="xyHead"><span class="lcd l2" style="color:var(--dim); letter-spacing:.15em; text-transform:uppercase;">Acid Spielfläche</span><button id="xyCloseBtn" aria-label="Schließen">✕</button></div>
         <div id="xyRead"><span id="xyReadN">—</span><span id="xyReadC">CUT 50%</span></div>
@@ -1056,6 +1153,8 @@ html,body{min-height:100%;height:100%;}
       <div id="tabContent">
 
       <div id="tabPattern" class="tab-panel open">
+        <div id="clipBanner" style="display:none"><span>Clip bearbeiten: <b id="cbName"></b><small>Play und Export spielen jetzt das Arbeits-Pattern.</small></span><button id="cbSave">Zurückschreiben</button><button id="cbCancel">Abbrechen</button></div>
+        <div id="groupBar"></div>
         <div id="lengthRow"></div>
         <div id="overview"></div>
 
@@ -1181,12 +1280,25 @@ html,body{min-height:100%;height:100%;}
       </div>
 
       <div id="songOverlay" class="tab-panel">
+        <div id="arrCard">
+          <div class="arr-head"><span id="ovTitle">SONG · ÜBERSICHT</span><button id="arrToggle">Aus</button></div>
+          <div class="arr-seg" id="arrBars"><button data-b="4">4 Takte</button><button data-b="8" class="on">8 Takte</button><button data-b="16">16 Takte</button></div>
+          <div class="ar-save"><input type="text" id="songNameInput" placeholder="Name für den Song…" maxlength="40"><button id="songUpdateBtn" title="Geladenen Song überschreiben" style="display:none">↻</button><button id="songSaveBtn">Speichern</button></div>
+          <div id="ovRows"></div>
+          <div id="ovActions" style="display:none"><span id="ovActName"></span><button id="ovEdit">Bearbeiten</button><button id="ovDup">Duplizieren</button><button id="ovDel">Löschen</button></div>
+          <div id="ovToast"></div>
+          <div class="arr-hint">Leeren Takt antippen = aktuelles Pattern aus dem Pattern-Tab dort einsetzen. Belegten Clip antippen = auswählen (Bearbeiten, Duplizieren, Löschen). M / S wirken auf die ganze Gruppe, 🎲 würfelt das Arbeits-Pattern der Gruppe neu (danach Takte neu einsetzen). Fill ist im Arrangement aus. Ein Song speichert alles außer den Audiodaten der Samples (nur der Verweis).</div>
+          <div class="arr-head" style="margin-top:4px"><span>GESPEICHERTE SONGS</span></div>
+          <div id="songList"></div>
+        </div>
+        <div style="display:none">
         <div id="songTopRow">
           <button id="songEnableBtn">Song aus</button>
           <button id="songLoopBtn" class="on">🔁 Loop</button>
         </div>
         <div id="songHint">Patterns kommen aus dem Beats-Fenster (🎼+ an jedem Eintrag)</div>
         <div id="songSlotsList"></div>
+        </div>
       </div>
 
       </div>
@@ -1841,6 +1953,55 @@ const SCALES={
   pentaMinor:{label:'Pentatonik Moll', semis:[0,3,5,7,10]},
   blues:{label:'Blues', semis:[0,3,5,6,7,10]}
 };
+// =========================================================================
+// ARRANGEMENT (Beta, Schritt a) — Clips pro Spur statt eines gemeinsamen Patterns.
+// arr.clips[trackId] = [{start, bars, steps[], notes[], slides[]}] (start/bars in Takten à 16 Steps; Clip = KOPIE der Spurdaten).
+// Aus (Standard): Verhalten exakt wie bisher. An: Sequenzlänge = arr.bars*16, jede Spur liest ihre Clips.
+// stepInfo() ist die EINZIGE Stelle, die Step-Daten für Wiedergabe UND Export liefert (inkl. Nachbarn für Slide).
+// =========================================================================
+const arr={enabled:false, bars:8, clips:{}};
+let editClip=null; // Clip im Editor: dann spielen/exportieren Wiedergabe und Export das Arbeits-Pattern (Vorschau)
+function arrOn(){ return arr.enabled && !editClip; }
+// Übersichts-Gruppen: jede Gruppe ist eine Zeile in der Song-Übersicht; Clips liegen weiterhin pro Stimme/Spur.
+const ARR_GROUPS=[
+  {id:'drums', label:'DRUMS', ids:['bd','sd','ch','oh','lt','ht','cy']},
+  {id:'perc',  label:'PERC',  ids:['rs','hc','cb','cl','mr']},
+  {id:'acid',  label:'ACID',  ids:['arp']},
+  {id:'sample',label:'SAMPLE',ids:['mc']}
+];
+function seqLength(){ return arrOn() ? arr.bars*16 : PATTERN_LENGTH; }
+function stepInfo(tr, s){
+  const L=seqLength(); s=((s%L)+L)%L;
+  if(!arrOn()) return {v:tr.steps[s], note:tr.notes[s]||0, slide:!!tr.slides[s]};
+  const bar=Math.floor(s/16), list=arr.clips[tr.id]||[];
+  for(let k=0;k<list.length;k++){
+    const c=list[k];
+    if(bar>=c.start && bar<c.start+c.bars){ const i=s-c.start*16; return {v:c.steps[i]||0, note:(c.notes&&c.notes[i])||0, slide:!!(c.slides&&c.slides[i])}; }
+  }
+  return {v:0, note:0, slide:false};
+}
+function arrGroupTracks(gid){ const g=ARR_GROUPS.find(x=>x.id===gid); return TRACKS.filter(t=>g.ids.indexOf(t.id)>=0); }
+function arrClipAt(gid, bar){ const first=arrGroupTracks(gid)[0]; return first ? (arr.clips[first.id]||[]).find(c=>bar>=c.start && bar<c.start+c.bars) : null; }
+function clipV(trId, s){ const list=arr.clips[trId]||[], bar=Math.floor(s/16); for(let k=0;k<list.length;k++){ const c=list[k]; if(bar>=c.start && bar<c.start+c.bars) return c.steps[s-c.start*16]||0; } return 0; }
+// Stempeln: kopiert das aktuelle Arbeits-Pattern der Gruppe ab Takt b (überschreibt überlappende Clips der Gruppe)
+function arrStamp(gid, b, barsOverride){
+  const patBars=barsOverride||Math.max(1, PATTERN_LENGTH/16), bars=Math.min(patBars, arr.bars-b), n=bars*16;
+  if(bars<=0) return;
+  arrGroupTracks(gid).forEach(tr=>{
+    const list=(arr.clips[tr.id]||[]).filter(c=>!(c.start<b+bars && c.start+c.bars>b));
+    list.push({start:b, bars, steps:tr.steps.slice(0,n), notes:tr.notes?tr.notes.slice(0,n):[], slides:tr.slides?tr.slides.slice(0,n):[]});
+    list.sort((x,y)=>x.start-y.start); arr.clips[tr.id]=list;
+  });
+}
+function arrRemove(gid, b){ arrGroupTracks(gid).forEach(tr=>{ arr.clips[tr.id]=(arr.clips[tr.id]||[]).filter(c=>!(b>=c.start && b<c.start+c.bars)); }); }
+function arrFillAll(){ const patBars=Math.max(1, PATTERN_LENGTH/16); ARR_GROUPS.forEach(g=>{ for(let b=0;b<arr.bars;b+=patBars) arrStamp(g.id,b); }); }
+function arrHasClips(){ return Object.keys(arr.clips).some(k=>arr.clips[k].length>0); }
+function arrResize(nb){
+  Object.keys(arr.clips).forEach(k=>{
+    arr.clips[k]=arr.clips[k].filter(c=>c.start<nb).map(c=>{ const bars=Math.min(c.bars, nb-c.start), n=bars*16; return {start:c.start, bars, steps:c.steps.slice(0,n), notes:(c.notes||[]).slice(0,n), slides:(c.slides||[]).slice(0,n)}; });
+  });
+  arr.bars=nb;
+}
 function triggerArpStep(time, tr, degreeSemis, velocity, slide, holdNext, modPos){
   ensureArpVoice(tr);
   const freq=noteFreq(tr.rootNote + degreeSemis);
@@ -2134,11 +2295,32 @@ const VOICE_FNS={
   cl: playRim,
   mr: playMaracas
 };
+// Drum-Set: pro Stimme optional eine eigene Quelle statt des Basis-Kits. drumSet.voices[id] = {t:'syn',kitId} | {t:'smp',sampleId};
+// ohne Eintrag folgt die Stimme dem Basis-Kit (currentKitId). drumSet.buffers[id] = dekodierte Samples. Fehlt ein Sample: Fallback auf Synth.
+const drumSet={voices:{}, buffers:{}};
+let lastOpenSample=null;
+function voiceKitId(id){ const v=drumSet.voices[id]; return (v && v.t==='syn' && KITS[v.kitId]) ? v.kitId : currentKitId; }
+function chokeOpenSample(time){
+  if(!lastOpenSample) return; const o=lastOpenSample; lastOpenSample=null;
+  try{ o.g.gain.cancelScheduledValues(time); o.g.gain.setValueAtTime(o.g.gain.value, time); o.g.gain.linearRampToValueAtTime(0.0001, time+0.025); o.src.stop(time+0.03); }catch(e){}
+}
+function playDrumSample(tr, time, velocity){
+  const b=drumSet.buffers[tr.id]; if(!b || !audioCtx) return false;
+  const src=audioCtx.createBufferSource(); src.buffer=b.buffer; src.playbackRate.value=Math.pow(2,(tr.tune-0.5)*2);
+  const g=audioCtx.createGain(); g.gain.value=Math.max(0.0001, tr.vol*velocity*0.8);
+  src.connect(g).connect(getBus());
+  src.start(time, Math.min(b.offset||0, Math.max(0,b.buffer.duration-0.01)));
+  if(tr.id==='oh') lastOpenSample={src,g};
+  return true;
+}
 function triggerTrack(tr, time, velocity){
   currentTrackBus = tr.bus || master;
+  if(tr.id==='ch') chokeOpenSample(time); // Closed Hat kappt ein klingendes Open-Hat-Sample
   if(tr.type==='arp'){ triggerArpStep(time, tr, 0, velocity, false); return; } // Preview: Grundton
   if(tr.isSample){ playSample(time, tr.vol, tr.tune, velocity); return; }
-  const kp=KITS[currentKitId].voices[tr.id];
+  const ov=drumSet.voices[tr.id];
+  if(ov && ov.t==='smp' && playDrumSample(tr, time, velocity)) return;
+  const kp=KITS[voiceKitId(tr.id)].voices[tr.id];
   VOICE_FNS[tr.id](time, tr.vol, tr.tune, velocity, kp);
 }
 // "Choked" Crash: nutzt exakt dieselben Klang-Parameter des aktuellen Kits,
@@ -2153,7 +2335,9 @@ function triggerTrack(tr, time, velocity){
 // wieder hoch), unabhängig davon, wie Hall/Delay eingestellt sind.
 function triggerChokedCrash(time, tr, velocity){
   currentTrackBus = tr.bus || master;
-  const kp=KITS[currentKitId].voices.cy;
+  const ovc=drumSet.voices.cy;
+  if(ovc && ovc.t==='smp' && playDrumSample(tr, time, velocity)) return;
+  const kp=KITS[voiceKitId('cy')].voices.cy;
   const choked=Object.assign({}, kp, { ampDecay:0.085, noiseDecay:0.06 });
 
   const duckHold=0.11, duckRelease=0.09; // Sekunden: wie lange stumm, wie schnell zurück zur normalen Stärke
@@ -2275,7 +2459,7 @@ let songPatternCache={}; // patternId -> volle Pattern-Daten
 function onLoopRestart(){
   loopCount++;
   let songJustSwitchedSlot=false;
-  if(songEnabled && songSlots.length>0){
+  if(songEnabled && !arrOn() && songSlots.length>0){
     songSlotLoopsPlayed++;
     const slot=songSlots[currentSongSlotIndex];
     if(slot && songSlotLoopsPlayed>=(slot.repeats||1)){ advanceSongSlot(); songJustSwitchedSlot=true; }
@@ -2286,7 +2470,7 @@ function onLoopRestart(){
   // unabhängig von der fillEveryN-Einstellung — jeder Slot-Wechsel hätte ungewollt einen Fill erzwungen.
   // Der erste Durchlauf eines neuen Slots bleibt jetzt bewusst fill-frei, der normale Zyklus beginnt
   // danach ganz regulär wieder bei loopCount 0.
-  currentLoopIsFill = !songJustSwitchedSlot && fillEnabled && (loopCount % fillEveryN === 0) && fillLengthSteps <= PATTERN_LENGTH;
+  currentLoopIsFill = !arrOn() && !songJustSwitchedSlot && fillEnabled && (loopCount % fillEveryN === 0) && fillLengthSteps <= PATTERN_LENGTH;
   if(currentLoopIsFill){
     activeFillLength = fillLengthSteps; // für diesen Durchlauf fest — Live-Änderungen wirken erst ab dem nächsten
     fillOverride = generateFillOverride(activeFillLength);
@@ -2711,7 +2895,7 @@ Object.keys(KITS).forEach(kitId=>{
     currentKitId=kitId;
     document.querySelectorAll('.kit-chip').forEach(c=>c.classList.remove('active'));
     chip.classList.add('active');
-    lcdKit.textContent=kit.name;
+    lcdKit.textContent=kit.name; if(typeof updateKitLabel==='function') updateKitLabel();
     kitPickerOverlay.classList.remove('open');
     syncBottomBarVisibility();
   });
@@ -3274,9 +3458,26 @@ function closeXY(){ xyClear(); xyOverlay.classList.remove('open'); syncBottomBar
 document.getElementById('xyCloseBtn').addEventListener('click', closeXY);
 document.getElementById('arpXyBtn').addEventListener('click', openXY);
 
+// Spurleiste im Pattern-Tab: zeigt nur die Zeilen der gewählten Gruppe (gleiche Gruppen wie die Song-Übersicht)
+let patternGroup='drums';
+const groupBar=document.getElementById('groupBar');
+function groupOfTrack(tr){ const g=ARR_GROUPS.find(x=>x.ids.indexOf(tr.id)>=0); return g ? g.id : 'drums'; }
+ARR_GROUPS.forEach(g=>{
+  const b=document.createElement('button'); b.className='gb'+(g.id===patternGroup?' on':''); b.textContent=g.label; b.dataset.g=g.id;
+  b.addEventListener('click', ()=>setPatternGroup(g.id, true)); groupBar.appendChild(b);
+});
+function setPatternGroup(gid, select){
+  patternGroup=gid;
+  groupBar.querySelectorAll('.gb').forEach(b=>b.classList.toggle('on', b.dataset.g===gid));
+  TRACKS.forEach(tr=>{ if(tr._ovRow) tr._ovRow.style.display = groupOfTrack(tr)===gid ? '' : 'none'; });
+  if(select) selectTrack(TRACKS.findIndex(t=>groupOfTrack(t)===gid));
+}
+setPatternGroup(patternGroup,false);
+
 function selectTrack(idx){
   if(typeof taResetUndo==='function') taResetUndo();
   activeTrackIdx=idx;
+  { const g0=groupOfTrack(TRACKS[idx]); if(g0!==patternGroup) setPatternGroup(g0,false); }
   pitchFit=true; // beim Spurwechsel/Laden: Tonfenster auf vorhandene Töne zentrieren
   TRACKS.forEach((tr,i)=> tr._ovRow.classList.toggle('active', i===idx));
   renderTrackBar();
@@ -3456,7 +3657,7 @@ async function renderPatternToWav(){
 
   const secondsPerStep=60/bpm/4;
   const tailSeconds=2.6; // Hall-/Delay-Ausklang nach dem letzten Step
-  const totalSeconds=secondsPerStep*PATTERN_LENGTH + tailSeconds;
+  const totalSeconds=secondsPerStep*seqLength() + tailSeconds;
   const sampleRate=liveCtx.sampleRate;
   const OfflineCtor=window.OfflineAudioContext||window.webkitOfflineAudioContext;
   const offlineCtx=new OfflineCtor(2, Math.ceil(totalSeconds*sampleRate), sampleRate);
@@ -3493,18 +3694,18 @@ async function renderPatternToWav(){
   // ---- Alle Steps des Patterns direkt durchplanen (kein Echtzeit-Scheduler nötig) ----
   const anySolo=TRACKS.some(t=>t.solo);
   let t=0.05;
-  for(let step=0; step<PATTERN_LENGTH; step++){
+  for(let step=0; step<seqLength(); step++){
     let dur=secondsPerStep;
     if(step%2===1) dur += secondsPerStep*swing;
     TRACKS.forEach(tr=>{
-      const v=tr.steps[step];
+      const v=stepInfo(tr,step).v;
       if(v<=0) return;
       if(anySolo && !tr.solo) return;
       if(!anySolo && tr.muted) return;
       const hitTime=Math.max(0, t + (tr.feel||0)/1000);
       if(tr.type==='arp'){
-        const nx=(step+1)%PATTERN_LENGTH, pv=(step-1+PATTERN_LENGTH)%PATTERN_LENGTH;
-        triggerArpStep(hitTime, tr, tr.notes[step]||0, v, tr.steps[pv]>0 && !!tr.slides[pv], !!tr.slides[step] && tr.steps[nx]>0, step);
+        const si=stepInfo(tr,step), pi=stepInfo(tr,step-1), ni=stepInfo(tr,step+1);
+        triggerArpStep(hitTime, tr, si.note, v, pi.v>0 && pi.slide, si.slide && ni.v>0, step);
       } else {
         triggerTrack(tr, hitTime, v);
       }
@@ -3537,15 +3738,18 @@ async function renderPatternToWav(){
 // Store) ab. Der alte "samples"-Store bleibt bestehen (nur für die einmalige Migration
 // bestehender Aufnahmen gelesen, s. migrateLegacySamplesIfNeeded()), damit niemand seine
 // bereits aufgenommenen Samples durch dieses Update verliert.
-const IDB_NAME='RM909SampleDB', IDB_STORE='samples', IDB_KEY='micSample', IDB_PATTERNS='patterns', IDB_SAMPLES='sampleLibrary';
+const IDB_NAME='RM909SampleDB', IDB_STORE='samples', IDB_KEY='micSample', IDB_PATTERNS='patterns', IDB_SAMPLES='sampleLibrary', IDB_SONGS='songs', IDB_BEATS='beats', IDB_DRUMSETS='drumsets';
 function idbOpen(){
   return new Promise((resolve,reject)=>{
-    const req=indexedDB.open(IDB_NAME,3);
+    const req=indexedDB.open(IDB_NAME,6);
     req.onupgradeneeded=(e)=>{
       const db=req.result;
       if(!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE);
       if(!db.objectStoreNames.contains(IDB_PATTERNS)) db.createObjectStore(IDB_PATTERNS);
       if(!db.objectStoreNames.contains(IDB_SAMPLES)) db.createObjectStore(IDB_SAMPLES);
+      if(!db.objectStoreNames.contains(IDB_SONGS)) db.createObjectStore(IDB_SONGS);
+      if(!db.objectStoreNames.contains(IDB_BEATS)) db.createObjectStore(IDB_BEATS);
+      if(!db.objectStoreNames.contains(IDB_DRUMSETS)) db.createObjectStore(IDB_DRUMSETS);
     };
     req.onsuccess=()=>resolve(req.result);
     req.onerror=()=>reject(req.error);
@@ -4516,6 +4720,7 @@ function collectPatternData(name, id){
     schemaVersion: 6, // v6 = Humanize (global) + Feel (pro Spur); pan/EQ/muted/solo/fill (v6.1, rückwärtskompatibel) neu dazu
     bpm, swing, humanize,
     kitId: currentKitId,
+    drumSet: { voices: JSON.parse(JSON.stringify(drumSet.voices)) },
     patternLength: PATTERN_LENGTH,
     tracks: TRACKS.map(tr=>({
       id: tr.id,
@@ -4573,6 +4778,7 @@ function applyTrackAndFillData(data){
     lcdKit.textContent=KITS[data.kitId].name;
   }
 
+  drumSetApply(data.drumSet); // ältere Patterns/Beats ohne Set: alle Stimmen aus dem Basis-Kit
   PATTERN_LENGTH = data.patternLength || 16; // ältere Patterns hatten keine gespeicherte Länge → 16
   currentPage=0;
   data.tracks.forEach(saved=>{
@@ -4649,6 +4855,7 @@ function applyTrackAndFillData(data){
   renderAllForPage();
 }
 function applyPatternData(data){
+  clipEditEnd();
   swing=data.swing; humanize=data.humanize!=null ? data.humanize : 0; // alte Patterns: 0 = kein Humanize
   setBpm(data.bpm); // aktualisiert bpm + LCD-Kopfzeile + Tempo-Kachel + Overlay-Ziffer/-Slider synchron
   // Nur die 3 dynamisch erzeugten Drehregler entfernen — #tempoControl ist festes Markup
@@ -4762,6 +4969,7 @@ let currentLoadedPatternName=null; // Name dazu — für die Bestätigungsmeldun
 const patternList=document.getElementById('patternList');
 
 async function refreshPatternList(){
+  if(beatTab!=='all'){ return beatRenderGroupList(); }
   const items=await listPatternsFromIndexedDB();
   patternList.innerHTML='';
   if(items.length===0){
@@ -4802,6 +5010,9 @@ async function refreshPatternList(){
       showPatternIOStatus('„'+item.name+'“ dupliziert als „'+newName+'“ und geladen');
     });
 
+    const splitBtn=document.createElement('button'); splitBtn.className='prow-btn'; splitBtn.innerHTML='⛓'; splitBtn.title='In Beats pro Spurtyp aufteilen';
+    splitBtn.addEventListener('click', (e)=>{ e.stopPropagation(); beatSplitLegacy(item); });
+
     const renameBtn=document.createElement('button'); renameBtn.className='prow-btn'; renameBtn.innerHTML='✎'; renameBtn.title='Umbenennen';
     renameBtn.addEventListener('click', (e)=>{ e.stopPropagation(); startRenamePattern(row, item); });
 
@@ -4818,7 +5029,7 @@ async function refreshPatternList(){
       refreshPatternList();
     });
 
-    [loadBtn, copyBtn, renameBtn, songBtn, exportBtn, delBtn].forEach(b=>actions.appendChild(b));
+    [loadBtn, copyBtn, splitBtn, renameBtn, exportBtn, delBtn].forEach(b=>actions.appendChild(b));
     row.appendChild(actions);
     patternList.appendChild(row);
   });
@@ -5044,13 +5255,14 @@ const patternTabBtn=document.getElementById('patternTabBtn');
 const bottomTabBar=document.getElementById('bottomTabBar');
 // Einzige Quelle der Wahrheit: bei jeder Änderung an einem der vier echten Modals aufgerufen,
 // statt einen separaten "suppressed"-Flag mitzuführen, der aus dem Ruder laufen könnte.
+function switchTabIsSong(){ return songOverlay.classList.contains('open'); }
 function syncBottomBarVisibility(){
-  const anyModalOpen=[tempoOverlay, patternsOverlay, kitPickerOverlay, sampleEditorOverlay, xyOverlay]
+  const anyModalOpen=[tempoOverlay, patternsOverlay, kitPickerOverlay, sampleEditorOverlay, xyOverlay, drumSetOverlay]
     .some(el=> el && el.classList.contains('open'));
   bottomTabBar.classList.toggle('overlay-hidden', anyModalOpen);
 }
 function closeAllOverlays(){
-  [tempoOverlay, patternsOverlay, kitPickerOverlay, sampleEditorOverlay, xyOverlay].forEach(el=>{ if(el) el.classList.remove('open'); });
+  [tempoOverlay, patternsOverlay, kitPickerOverlay, sampleEditorOverlay, xyOverlay, drumSetOverlay].forEach(el=>{ if(el) el.classList.remove('open'); });
   xyClear();
   syncBottomBarVisibility();
 }
@@ -5067,7 +5279,7 @@ function switchTab(name){
     Promise.resolve(initAudio()).then(()=>{ if(!mixerMeterRAF) mixerMeterRAF=requestAnimationFrame(mixerMeterLoop); });
   }
   if(name==='song'){
-    refreshSongPatternCache();
+    ovRender(); songRefreshList();
   }
 }
 patternTabBtn.addEventListener('click', ()=> switchTab('pattern'));
@@ -5087,6 +5299,381 @@ songLoopBtn.addEventListener('click', ()=>{
   songLoopEnabled=!songLoopEnabled;
   songLoopBtn.classList.toggle('on', songLoopEnabled);
 });
+
+// ---- Song-Übersicht (Arrangement): Bedienung ----
+const arrToggle=document.getElementById('arrToggle'), ovRows=document.getElementById('ovRows'), ovToast=document.getElementById('ovToast');
+let ovToastTimer=null, ovSel=null;
+function ovSay(m){ ovToast.textContent=m; clearTimeout(ovToastTimer); ovToastTimer=setTimeout(()=>{ ovToast.textContent=''; },3000); }
+function ovPreview(g, b){
+  const trs=arrGroupTracks(g.id); let svg='<svg viewBox="0 0 16 10" preserveAspectRatio="none">';
+  for(let s=0;s<16;s++){ const n=trs.filter(t=>clipV(t.id,b*16+s)>0).length; if(n){ const hh=Math.max(2,Math.min(10,n/3*10)); svg+='<rect x="'+s+'" y="'+(10-hh)+'" width="0.7" height="'+hh+'" fill="#8fd4ff"/>'; } }
+  return svg+'</svg>';
+}
+function ovRender(){
+  arrToggle.classList.toggle('on', arr.enabled); arrToggle.textContent=arr.enabled?'An':'Aus';
+  document.querySelectorAll('#arrBars button').forEach(b=>b.classList.toggle('on', +b.dataset.b===arr.bars));
+  ovRows.innerHTML='';
+  const rl=document.createElement('div'); rl.className='ar-rl'; rl.style.gridTemplateColumns='repeat('+arr.bars+',1fr)';
+  for(let b=0;b<arr.bars;b++){ const sp=document.createElement('span'); sp.textContent=(b%4===0)?(b+1):'·'; rl.appendChild(sp); }
+  ovRows.appendChild(rl);
+  ARR_GROUPS.forEach(g=>{
+    const trs=arrGroupTracks(g.id), row=document.createElement('div'); row.className='ar-row';
+    const lab=document.createElement('div'); lab.className='ar-lab';
+    lab.innerHTML='<span>'+g.label+'</span><span class="ar-ms"><button class="m'+(trs.every(t=>t.muted)?' on':'')+'">M</button><button class="s'+(trs.every(t=>t.solo)?' on':'')+'">S</button><button class="r">🎲</button></span>';
+    const [bm,bs,br]=lab.querySelectorAll('button');
+    bm.onclick=()=>{ const all=trs.every(t=>t.muted); trs.forEach(t=>{ if(!!t.muted===all) toggleTrackMute(t); }); ovRender(); };
+    bs.onclick=()=>{ const all=trs.every(t=>t.solo); trs.forEach(t=>{ if(!!t.solo===all) toggleTrackSolo(t); }); ovRender(); };
+    br.onclick=()=>{ trs.forEach(t=>randomizeTrackPattern(t)); renderAllForPage(); ovSay('Arbeits-Pattern '+g.label+' gewürfelt — Takte neu einsetzen'); };
+    row.appendChild(lab);
+    const tl=document.createElement('div'); tl.className='ar-tl'; tl.style.gridTemplateColumns='repeat('+arr.bars+',1fr)';
+    for(let b=0;b<arr.bars;b++){
+      const cell=document.createElement('div'), clip=arrClipAt(g.id,b); cell.className='ar-cell'+(clip?' f':'')+(clip && ovSel && ovSel.gid===g.id && ovSel.start===clip.start ? ' sel':''); cell.dataset.bar=b;
+      if(clip) cell.innerHTML=ovPreview(g,b);
+      cell.onclick=()=>{ if(clip){ ovSel=(ovSel && ovSel.gid===g.id && ovSel.start===clip.start) ? null : {gid:g.id,start:clip.start}; } else { arrStamp(g.id,b); ovSel=null; } ovRender(); };
+      tl.appendChild(cell);
+    }
+    row.appendChild(tl); ovRows.appendChild(row);
+  });
+  ovActionsRender();
+}
+// ---- Clips bearbeiten: Clip ins Arbeits-Pattern laden, im Pattern-Tab bearbeiten, zurückschreiben ----
+const ovActions=document.getElementById('ovActions'), ovActName=document.getElementById('ovActName');
+const clipBanner=document.getElementById('clipBanner'), cbName=document.getElementById('cbName');
+function clipLabel(g,c){ return g.label+' · Takt '+(c.start+1)+(c.bars>1?'–'+(c.start+c.bars):''); }
+function ovActionsRender(){
+  if(ovSel && !arrClipAt(ovSel.gid, ovSel.start)) ovSel=null;
+  ovActions.style.display=ovSel?'flex':'none';
+  if(ovSel){ ovActName.textContent=clipLabel(ARR_GROUPS.find(x=>x.id===ovSel.gid), arrClipAt(ovSel.gid, ovSel.start)); }
+}
+function arrDuplicate(gid, start){
+  const first=arrGroupTracks(gid)[0], c=(arr.clips[first.id]||[]).find(x=>x.start===start); if(!c) return false;
+  const ns=start+c.bars; if(ns>=arr.bars) return false;
+  const bars=Math.min(c.bars, arr.bars-ns), n=bars*16;
+  arrGroupTracks(gid).forEach(tr=>{
+    const src=(arr.clips[tr.id]||[]).find(x=>x.start===start); if(!src) return;
+    const list=(arr.clips[tr.id]||[]).filter(x=>!(x.start<ns+bars && x.start+x.bars>ns));
+    list.push({start:ns, bars, steps:src.steps.slice(0,n), notes:(src.notes||[]).slice(0,n), slides:(src.slides||[]).slice(0,n)});
+    list.sort((p,q)=>p.start-q.start); arr.clips[tr.id]=list;
+  });
+  return ns;
+}
+function clipEditStart(){
+  if(!ovSel) return;
+  const g=ARR_GROUPS.find(x=>x.id===ovSel.gid), trs=arrGroupTracks(g.id), c0=arrClipAt(g.id, ovSel.start); if(!c0) return;
+  if(isPlaying) stop();
+  const n=c0.bars*16;
+  if(n>PATTERN_LENGTH) setPatternLength(n); // erweitert nur, andere Spuren werden mit "aus" aufgefüllt
+  trs.forEach(tr=>{
+    const c=(arr.clips[tr.id]||[]).find(x=>x.start===c0.start)||{steps:[],notes:[],slides:[]};
+    for(let i=0;i<PATTERN_LENGTH;i++){
+      tr.steps[i]= i<n ? (c.steps[i]||0) : VEL_OFF;
+      if(tr.notes) tr.notes[i]= i<n ? ((c.notes&&c.notes[i])||0) : 0;
+      if(tr.slides) tr.slides[i]= i<n ? !!(c.slides&&c.slides[i]) : false;
+    }
+  });
+  editClip={gid:g.id, start:c0.start, bars:c0.bars};
+  cbName.textContent=clipLabel(g,c0);
+  clipBanner.style.display='flex';
+  switchTab('pattern'); selectTrack(TRACKS.indexOf(trs[0])); renderAllForPage();
+}
+function clipEditEnd(){ editClip=null; if(clipBanner) clipBanner.style.display='none'; }
+document.getElementById('ovEdit').addEventListener('click', clipEditStart);
+document.getElementById('ovDup').addEventListener('click', ()=>{
+  if(!ovSel) return; const ns=arrDuplicate(ovSel.gid, ovSel.start);
+  if(ns===false) ovSay('Kein Platz hinter dem Clip'); else { ovSel={gid:ovSel.gid, start:ns}; ovSay('Clip dupliziert'); }
+  ovRender();
+});
+document.getElementById('ovDel').addEventListener('click', ()=>{ if(!ovSel) return; arrRemove(ovSel.gid, ovSel.start); ovSel=null; ovRender(); });
+document.getElementById('cbSave').addEventListener('click', ()=>{
+  if(!editClip) return; if(isPlaying) stop();
+  const e=editClip; arrStamp(e.gid, e.start, e.bars); clipEditEnd(); ovSel={gid:e.gid, start:e.start};
+  switchTab('song'); ovSay('Clip zurückgeschrieben');
+});
+document.getElementById('cbCancel').addEventListener('click', ()=>{ clipEditEnd(); switchTab('song'); });
+function ovPlayhead(bar){ ovRows.querySelectorAll('.ar-cell').forEach(c=>c.classList.toggle('ph', +c.dataset.bar===bar)); }
+arrToggle.addEventListener('click', ()=>{
+  if(isPlaying) stop();
+  arr.enabled=!arr.enabled;
+  if(arr.enabled && !arrHasClips()) arrFillAll(); // Startzustand: aktuelles Pattern über alle Takte und Gruppen
+  if(!arr.enabled) ovPlayhead(-1);
+  ovRender();
+});
+document.querySelectorAll('#arrBars button').forEach(b=>b.addEventListener('click', ()=>{ arrResize(+b.dataset.b); ovRender(); }));
+// ---- Song speichern/laden (IndexedDB-Store "songs"): kompletter Zustand + Arrangement ----
+async function songPut(d){ const db=await idbOpen(); db.transaction(IDB_SONGS,'readwrite').objectStore(IDB_SONGS).put(d, d.id); }
+async function songGet(id){ const db=await idbOpen(); return new Promise((res,rej)=>{ const r=db.transaction(IDB_SONGS,'readonly').objectStore(IDB_SONGS).get(id); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
+async function songDel(id){ const db=await idbOpen(); db.transaction(IDB_SONGS,'readwrite').objectStore(IDB_SONGS).delete(id); }
+async function songAll(){
+  const db=await idbOpen(), out=[];
+  await new Promise((res,rej)=>{ const q=db.transaction(IDB_SONGS,'readonly').objectStore(IDB_SONGS).openCursor(); q.onsuccess=e=>{ const c=e.target.result; if(c){ out.push(c.value); c.continue(); } else res(); }; q.onerror=()=>rej(q.error); });
+  return out.sort((a,b)=>b.savedAt-a.savedAt);
+}
+let currentSongId=null, currentSongName=null;
+const songNameInput=document.getElementById('songNameInput'), songSaveBtn=document.getElementById('songSaveBtn'), songUpdateBtn=document.getElementById('songUpdateBtn');
+const songListEl=document.getElementById('songList'), ovTitle=document.getElementById('ovTitle');
+function songCollect(name,id){
+  const d=collectPatternData(name,id);
+  d.kind='song';
+  d.arrangement={enabled:arr.enabled, bars:arr.bars, clips:JSON.parse(JSON.stringify(arr.clips))};
+  return d;
+}
+function songApply(d){
+  applyPatternData(d); // Tempo, Kit, Spur-Einstellungen, Arbeits-Pattern, Fill, Acid-Auto (stoppt die Wiedergabe)
+  const a=d.arrangement||{};
+  arr.bars=[4,8,16].indexOf(a.bars)>=0 ? a.bars : 8;
+  arr.clips=a.clips ? JSON.parse(JSON.stringify(a.clips)) : {};
+  arr.enabled=!!a.enabled;
+  ovRender();
+}
+function songUpdateUI(){
+  songUpdateBtn.style.display=currentSongId?'':'none';
+  ovTitle.textContent=currentSongName ? 'SONG · '+currentSongName : 'SONG · ÜBERSICHT';
+}
+function songSetCurrent(id,name){
+  currentSongId=id; currentSongName=name;
+  setCurrentLoadedPattern(null, name ? '♫ '+name : null); // Arbeits-Pattern gehört jetzt zum Song, nicht zu einem Beat
+  try{ if(id) localStorage.setItem('mrm44_lastSongId', id); else localStorage.removeItem('mrm44_lastSongId'); }catch(e){}
+  songUpdateUI();
+}
+async function songRefreshList(){
+  const items=await songAll(); songListEl.innerHTML='';
+  if(!items.length){ const e=document.createElement('div'); e.className='sg-empty'; e.textContent='Noch keine gespeicherten Songs'; songListEl.appendChild(e); return; }
+  items.forEach(it=>{
+    const row=document.createElement('div'); row.className='sg-row'+(it.id===currentSongId?' active':'');
+    row.innerHTML='<span class="sg-name"></span><span class="sg-date">'+new Date(it.savedAt).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'})+'</span><button class="load" title="Laden">▶</button><button class="del" title="Löschen">✕</button>';
+    row.querySelector('.sg-name').textContent=it.name;
+    row.querySelector('.load').onclick=async()=>{ const d=await songGet(it.id); if(d){ songApply(d); songSetCurrent(it.id,it.name); songRefreshList(); ovSay('„'+it.name+'“ geladen'); } };
+    row.querySelector('.del').onclick=async()=>{ await songDel(it.id); if(it.id===currentSongId) songSetCurrent(null,null); songRefreshList(); };
+    songListEl.appendChild(row);
+  });
+}
+songSaveBtn.addEventListener('click', async ()=>{
+  const typed=songNameInput.value.trim(); if(!typed) return;
+  const names=new Set((await songAll()).map(s=>s.name)), name=uniqueName(typed,names);
+  const d=songCollect(name, genId()); await songPut(d);
+  songSetCurrent(d.id,d.name); songNameInput.value=''; songRefreshList();
+  ovSay(name!==typed ? 'Name vergeben — gespeichert als „'+name+'“' : '„'+name+'“ gespeichert');
+});
+songUpdateBtn.addEventListener('click', async ()=>{
+  if(!currentSongId) return;
+  await songPut(songCollect(currentSongName,currentSongId)); songRefreshList(); ovSay('„'+currentSongName+'“ aktualisiert');
+});
+async function restoreLastSong(){
+  let id=null; try{ id=localStorage.getItem('mrm44_lastSongId'); }catch(e){}
+  if(!id) return;
+  try{ const d=await songGet(id); if(d){ songApply(d); songSetCurrent(id,d.name); songRefreshList(); } }
+  catch(err){ console.warn('Zuletzt geöffneter Song konnte nicht geladen werden:', err); }
+}
+ovRender(); songRefreshList();
+
+// =========================================================================
+// BEATS PRO SPURTYP (Drums / Perc / Acid / Sample) — Store "beats". Ein Beat = Muster einer Gruppe (Steps, bei Acid Noten + Slides, Länge)
+// plus Klang der Gruppe (Mixer-Werte, Acid-Filter/Skala, Sample-Verweis). Laden: nur Muster (▶) oder Muster + Klang (🔊) ins Arbeits-Pattern.
+// Das Kit ist global und wird nicht umgeschaltet (kitId nur gemerkt, für spätere Drum-Sets).
+// =========================================================================
+let beatTab='all';
+async function beatPut(d){ const db=await idbOpen(); db.transaction(IDB_BEATS,'readwrite').objectStore(IDB_BEATS).put(d, d.id); }
+async function beatDelete(id){ const db=await idbOpen(); db.transaction(IDB_BEATS,'readwrite').objectStore(IDB_BEATS).delete(id); }
+async function beatAll(){
+  const db=await idbOpen(), out=[];
+  await new Promise((res,rej)=>{ const q=db.transaction(IDB_BEATS,'readonly').objectStore(IDB_BEATS).openCursor(); q.onsuccess=e=>{ const c=e.target.result; if(c){ out.push(c.value); c.continue(); } else res(); }; q.onerror=()=>rej(q.error); });
+  return out.sort((a,b)=>b.savedAt-a.savedAt);
+}
+function beatTrackData(tr){
+  return { id:tr.id, steps:tr.steps.slice(), notes:tr.notes?tr.notes.slice():undefined, slides:tr.slides?tr.slides.slice():undefined,
+    vol:tr.vol, tune:tr.tune, pan:tr.pan||0, eqLowGain:tr.eqLowGain||0, eqMidGain:tr.eqMidGain||0, eqHighGain:tr.eqHighGain||0,
+    reverbAmount:tr.reverbAmount||0, delaySend:tr.delaySend||0, feel:tr.feel||0,
+    rootNote:tr.rootNote, cutoff:tr.cutoff, resonance:tr.resonance, envMod:tr.envMod, decay:tr.decay, scale:tr.scale };
+}
+function beatCollect(gid, name){
+  const d={ id:genId(), kind:'beat', group:gid, name, savedAt:Date.now(), length:PATTERN_LENGTH, kitId:currentKitId, tracks:arrGroupTracks(gid).map(beatTrackData) };
+  if(gid==='acid') d.acidAuto={shape:autoShape, bars:autoBars, depth:autoDepth};
+  if(gid==='sample') d.sampleId=sampleTrackSampleId;
+  return d;
+}
+function applyTrackSound(tr, sv){
+  if(sv.vol!=null) tr.vol=sv.vol; if(sv.tune!=null) tr.tune=sv.tune;
+  tr.reverbAmount=sv.reverbAmount||0; tr.pan=sv.pan||0; tr.feel=sv.feel||0; tr.delaySend=sv.delaySend||0;
+  tr.eqLowGain=sv.eqLowGain||0; tr.eqMidGain=sv.eqMidGain||0; tr.eqHighGain=sv.eqHighGain||0;
+  if(tr.eqLow) tr.eqLow.gain.value=tr.eqLowGain; if(tr.eqMid) tr.eqMid.gain.value=tr.eqMidGain; if(tr.eqHigh) tr.eqHigh.gain.value=tr.eqHighGain;
+  if(tr.sendGain) tr.sendGain.gain.value=tr.reverbAmount; if(tr.delaySendGain) tr.delaySendGain.gain.value=tr.delaySend; if(tr.panner) tr.panner.pan.value=tr.pan;
+  if(tr._mixFaderEl){ tr._mixFaderEl.value=tr.vol; if(tr._mixMeter) tr._mixMeter.dbReadout.textContent=dbLabel(tr.vol)+'dB'; }
+  if(tr._mixPanKnob) tr._mixPanKnob.setValue(tr.pan);
+  if(tr._mixEqKnobs){ ['eqLowGain','eqMidGain','eqHighGain'].forEach(k=>{ if(tr._mixEqKnobs[k]) tr._mixEqKnobs[k].setValue(tr[k]); }); }
+  if(tr.type==='arp'){
+    tr.rootNote=sv.rootNote!=null?sv.rootNote:0; tr.cutoff=sv.cutoff!=null?sv.cutoff:0.5; tr.resonance=sv.resonance!=null?sv.resonance:0.35;
+    tr.envMod=sv.envMod!=null?sv.envMod:0.5; tr.decay=sv.decay!=null?sv.decay:0.26; tr.scale=SCALES[sv.scale]?sv.scale:'minor';
+  }
+}
+async function beatApply(d, withSound){
+  if(isPlaying) stop();
+  if(d.length>PATTERN_LENGTH) setPatternLength(d.length); // nur erweitern, nie kürzen
+  d.tracks.forEach(sv=>{
+    const tr=TRACKS.find(t=>t.id===sv.id); if(!tr) return;
+    tr.steps=migrateStepsToVelocity(sv.steps, tr.id, undefined, PATTERN_LENGTH);
+    if(tr.type==='arp'){
+      tr.notes=new Array(PATTERN_LENGTH).fill(0); tr.slides=new Array(PATTERN_LENGTH).fill(false);
+      for(let i=0;i<Math.min(PATTERN_LENGTH,(sv.notes||[]).length);i++) tr.notes[i]=sv.notes[i];
+      for(let i=0;i<Math.min(PATTERN_LENGTH,(sv.slides||[]).length);i++) tr.slides[i]=!!sv.slides[i];
+      tr.rootNote=sv.rootNote!=null?sv.rootNote:tr.rootNote; tr.scale=SCALES[sv.scale]?sv.scale:(tr.scale||'minor'); // Noten sind relativ zu Grundton/Skala -> immer mit
+    }
+    if(withSound) applyTrackSound(tr, sv);
+  });
+  if(withSound && d.acidAuto){ autoShape=d.acidAuto.shape||'off'; autoBars=d.acidAuto.bars||4; autoDepth=d.acidAuto.depth!=null?d.acidAuto.depth:0.6; syncAutoUI(); }
+  if(withSound && d.sampleId){ try{ const e=await loadSampleLibraryEntry(d.sampleId); if(e) await applySampleToTrack(e); }catch(err){ console.warn('Sample zum Beat nicht gefunden', err); } }
+  pitchFit=true; selectTrack(activeTrackIdx); renderAllForPage(); ovRender();
+}
+async function beatSaveGroup(typed){
+  const names=new Set((await beatAll()).filter(b=>b.group===beatTab).map(b=>b.name)), name=uniqueName(typed,names);
+  await beatPut(beatCollect(beatTab,name)); patternNameInput.value=''; beatRenderGroupList();
+  showPatternIOStatus(name!==typed ? 'Name vergeben — gespeichert als „'+name+'“' : '„'+name+'“ gespeichert');
+}
+async function beatRenderGroupList(){
+  const items=(await beatAll()).filter(b=>b.group===beatTab); patternList.innerHTML='';
+  if(!items.length){ const e=document.createElement('div'); e.id='patternEmpty'; e.textContent='Noch keine Beats für diesen Spurtyp'; patternList.appendChild(e); return; }
+  items.forEach(it=>{
+    const row=document.createElement('div'); row.className='pattern-row';
+    const meta=document.createElement('div'); meta.className='prow-meta';
+    const n=document.createElement('div'); n.className='pname'; n.textContent=it.name;
+    const dt=document.createElement('div'); dt.className='pdate'; dt.textContent=(it.length||16)+' Steps · '+new Date(it.savedAt).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'});
+    meta.appendChild(n); meta.appendChild(dt); row.appendChild(meta);
+    const act=document.createElement('div'); act.className='prow-actions';
+    const mk=(txt,title,cls,fn)=>{ const b=document.createElement('button'); b.className='prow-btn '+cls; b.innerHTML=txt; b.title=title; b.addEventListener('click',fn); act.appendChild(b); };
+    mk('▶','Muster laden','pload', async()=>{ await beatApply(it,false); patternsOverlay.classList.remove('open'); syncBottomBarVisibility(); });
+    mk('🔊','Muster + Klang laden','', async()=>{ await beatApply(it,true); patternsOverlay.classList.remove('open'); syncBottomBarVisibility(); });
+    mk('✕','Löschen','prow-del', async()=>{ await beatDelete(it.id); beatRenderGroupList(); });
+    row.appendChild(act); patternList.appendChild(row);
+  });
+}
+// Alte Gesamt-Beats in Beats pro Spurtyp zerlegen (nur Gruppen mit mindestens einem aktiven Step)
+async function beatSplitLegacy(item){
+  const data=await loadPatternFromIndexedDB(item.id) || item;
+  const all=await beatAll(); let made=0;
+  for(const g of ARR_GROUPS){
+    const saved=data.tracks.filter(s=>g.ids.indexOf(s.id)>=0); if(!saved.length) continue;
+    const len=data.patternLength||16;
+    const tracks=saved.map(sv=>Object.assign({}, sv, { steps:migrateStepsToVelocity(sv.steps, sv.id, data.accentSteps, len) }));
+    if(!tracks.some(t=>t.steps.some(v=>v>0))) continue;
+    const names=new Set(all.filter(b=>b.group===g.id).map(b=>b.name));
+    const name=uniqueName(item.name+' · '+g.label, names); names.add(name);
+    const d={ id:genId(), kind:'beat', group:g.id, name, savedAt:Date.now(), length:len, kitId:data.kitId, tracks };
+    if(g.id==='acid' && data.acidAuto) d.acidAuto=data.acidAuto;
+    await beatPut(d); all.push(d); made++;
+  }
+  showPatternIOStatus(made ? '„'+item.name+'“ aufgeteilt in '+made+' Beat'+(made===1?'':'s')+' (Reiter Drums, Perc, Acid, Sample)' : 'Nichts zum Aufteilen gefunden', !made);
+}
+document.querySelectorAll('#beatTabs button').forEach(b=>b.addEventListener('click', ()=>{
+  beatTab=b.dataset.t;
+  document.querySelectorAll('#beatTabs button').forEach(x=>x.classList.toggle('on', x===b));
+  patternsOverlay.classList.toggle('grp', beatTab!=='all');
+  const g=ARR_GROUPS.find(x=>x.id===beatTab);
+  patternNameInput.placeholder = g ? 'Name für aktuellen '+g.label+'-Beat…' : 'Name für aktuellen Beat…';
+  refreshPatternList();
+}));
+
+// =========================================================================
+// DRUM-SET-EDITOR — pro Stimme Quelle wählen (Synth aus beliebigem Kit oder Sample aus der Bibliothek). Siehe drumSet in der Engine.
+// =========================================================================
+const drumSetOverlay=document.getElementById('drumSetOverlay'), dsRows=document.getElementById('dsRows'), dsSheet=document.getElementById('dsSheet');
+const dsList=document.getElementById('dsList'), dsSeg=document.getElementById('dsSeg'), dsShT=document.getElementById('dsShT'), dsStatus=document.getElementById('dsStatus');
+const DS_IDS=['bd','sd','ch','oh','lt','ht','rs','hc','cy','cb','cl','mr'];
+let dsCur=null, dsMode='syn', dsMsgTimer=null;
+function dsSay(m){ dsStatus.textContent=m; clearTimeout(dsMsgTimer); dsMsgTimer=setTimeout(()=>{ dsStatus.textContent=''; },3000); }
+function updateKitLabel(){ lcdKit.textContent=KITS[currentKitId].name+(Object.keys(drumSet.voices).length?' +':''); }
+async function drumSetLoadBuffers(){
+  drumSet.buffers={};
+  for(const id of Object.keys(drumSet.voices)){
+    const v=drumSet.voices[id]; if(v.t!=='smp') continue;
+    try{
+      const e=await loadSampleLibraryEntry(v.sampleId); if(!e) continue;
+      await Promise.resolve(initAudio());
+      const buf=await audioCtx.decodeAudioData(await e.blob.arrayBuffer());
+      drumSet.buffers[id]={buffer:buf, offset:e.offsetStart||0, name:e.name};
+    }catch(err){ console.warn('Drum-Set-Sample nicht ladbar:', id, err); }
+  }
+  if(drumSetOverlay.classList.contains('open')) dsRender();
+}
+function drumSetApply(ds){
+  drumSet.voices=(ds && ds.voices) ? JSON.parse(JSON.stringify(ds.voices)) : {};
+  drumSet.buffers={}; updateKitLabel(); drumSetLoadBuffers();
+}
+function dsPreview(id){
+  const tr=TRACKS.find(t=>t.id===id);
+  Promise.resolve(initAudio()).then(()=>{ if(audioCtx.state==='suspended') audioCtx.resume(); triggerTrack(tr, audioCtx.currentTime+0.01, VEL_NORMAL); });
+}
+function dsRender(){
+  document.getElementById('dsBase').textContent=KITS[currentKitId].name;
+  dsRows.innerHTML='';
+  DS_IDS.forEach(id=>{
+    const tr=TRACKS.find(t=>t.id===id), v=drumSet.voices[id], d=document.createElement('div'); d.className='ds-row';
+    let name, sub, smp=false;
+    if(v && v.t==='smp'){ smp=true; name=(drumSet.buffers[id] && drumSet.buffers[id].name) || 'Sample (lädt…)'; sub='Sample · aus Bibliothek'; if(!drumSet.buffers[id]) sub='Sample fehlt — Synth als Ersatz'; }
+    else if(v){ name=KITS[v.kitId].name; sub='Synth · '+tr.name; }
+    else { name=KITS[currentKitId].name+' (Basis)'; sub='Synth · '+tr.name; }
+    d.innerHTML='<b>'+id.toUpperCase()+'</b><div class="ds-src'+(smp?' smp':'')+'"><span></span><small>'+sub+'</small></div><button class="ds-pv">▶</button>';
+    d.querySelector('span').textContent=name;
+    d.querySelector('.ds-pv').onclick=e=>{ e.stopPropagation(); dsPreview(id); };
+    d.onclick=()=>dsOpenSheet(id); dsRows.appendChild(d);
+  });
+}
+async function dsRenderList(){
+  dsList.innerHTML=''; const id=dsCur, v=drumSet.voices[id];
+  dsSeg.querySelectorAll('button').forEach(b=>b.classList.toggle('on', b.dataset.m===dsMode));
+  if(dsMode==='syn'){
+    const base=document.createElement('div'); base.className='ds-it'+(!v?' on':''); base.innerHTML='↺ Basis-Kit folgen<small>'+KITS[currentKitId].name+'</small>';
+    base.onclick=()=>{ delete drumSet.voices[id]; delete drumSet.buffers[id]; updateKitLabel(); dsRender(); dsRenderList(); dsPreview(id); }; dsList.appendChild(base);
+    Object.keys(KITS).forEach(k=>{
+      const it=document.createElement('div'); it.className='ds-it'+(v && v.t==='syn' && v.kitId===k?' on':''); it.innerHTML=KITS[k].name+'<small>'+TRACKS.find(t=>t.id===id).name+'-Klang</small>';
+      it.onclick=()=>{ drumSet.voices[id]={t:'syn',kitId:k}; delete drumSet.buffers[id]; updateKitLabel(); dsRender(); dsRenderList(); dsPreview(id); }; dsList.appendChild(it);
+    });
+  } else {
+    const items=await listSampleLibrary();
+    items.forEach(e=>{
+      const it=document.createElement('div'); it.className='ds-it'+(v && v.t==='smp' && v.sampleId===e.id?' on':''); it.textContent=e.name||'Sample';
+      it.onclick=async()=>{ drumSet.voices[id]={t:'smp',sampleId:e.id}; updateKitLabel(); await drumSetLoadBuffers(); dsRender(); dsRenderList(); dsPreview(id); }; dsList.appendChild(it);
+    });
+    if(!items.length){ const e=document.createElement('div'); e.className='ds-it'; e.textContent='Noch keine Samples in der Bibliothek'; dsList.appendChild(e); }
+    const add=document.createElement('div'); add.className='ds-it add'; add.textContent='＋ Aufnehmen / Datei laden (Sample-Editor)';
+    add.onclick=()=>{ dsSheet.classList.remove('open'); openSampleEditor({sampleId:null}); }; dsList.appendChild(add);
+  }
+}
+function dsOpenSheet(id){
+  dsCur=id; const v=drumSet.voices[id]; dsMode=(v && v.t==='smp')?'smp':'syn';
+  dsShT.textContent=id.toUpperCase()+' · '+TRACKS.find(t=>t.id===id).name; dsSheet.classList.add('open'); dsRenderList();
+}
+dsSeg.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{ dsMode=b.dataset.m; dsRenderList(); }));
+document.getElementById('dsShX').addEventListener('click', ()=>dsSheet.classList.remove('open'));
+// Sets speichern/laden (Store "drumsets")
+async function dsPut(d){ const db=await idbOpen(); db.transaction(IDB_DRUMSETS,'readwrite').objectStore(IDB_DRUMSETS).put(d,d.id); }
+async function dsDel(id){ const db=await idbOpen(); db.transaction(IDB_DRUMSETS,'readwrite').objectStore(IDB_DRUMSETS).delete(id); }
+async function dsAll(){
+  const db=await idbOpen(), out=[];
+  await new Promise((res,rej)=>{ const q=db.transaction(IDB_DRUMSETS,'readonly').objectStore(IDB_DRUMSETS).openCursor(); q.onsuccess=e=>{ const c=e.target.result; if(c){ out.push(c.value); c.continue(); } else res(); }; q.onerror=()=>rej(q.error); });
+  return out.sort((a,b)=>b.savedAt-a.savedAt);
+}
+document.getElementById('dsSave').addEventListener('click', async ()=>{
+  const nameIn=document.getElementById('dsName'), typed=nameIn.value.trim(); if(!typed) return;
+  const name=uniqueName(typed, new Set((await dsAll()).map(s=>s.name)));
+  await dsPut({id:genId(), name, savedAt:Date.now(), baseKitId:currentKitId, voices:JSON.parse(JSON.stringify(drumSet.voices))});
+  nameIn.value=''; dsSay('„'+name+'“ gespeichert');
+});
+document.getElementById('dsLoad').addEventListener('click', async ()=>{
+  const items=await dsAll(); dsShT.textContent='Gespeicherte Sets'; dsSeg.style.display='none'; dsList.innerHTML='';
+  if(!items.length){ const e=document.createElement('div'); e.className='ds-it'; e.textContent='Noch keine gespeicherten Sets'; dsList.appendChild(e); }
+  items.forEach(s=>{
+    const it=document.createElement('div'); it.className='ds-it'; it.innerHTML='<span></span><small></small><button title="Löschen">✕</button>';
+    it.querySelector('span').textContent=s.name; it.querySelector('small').textContent=Object.keys(s.voices||{}).length+' Stimmen angepasst';
+    it.onclick=async()=>{ drumSetApply({voices:s.voices}); dsSheet.classList.remove('open'); dsSeg.style.display=''; setTimeout(dsRender,50); dsSay('„'+s.name+'“ geladen'); };
+    it.querySelector('button').onclick=async e=>{ e.stopPropagation(); await dsDel(s.id); document.getElementById('dsLoad').click(); };
+    dsList.appendChild(it);
+  });
+  dsSheet.classList.add('open');
+});
+document.getElementById('dsShX').addEventListener('click', ()=>{ dsSeg.style.display=''; });
+document.getElementById('dsReset').addEventListener('click', ()=>{ drumSet.voices={}; drumSet.buffers={}; updateKitLabel(); dsRender(); dsSay('Alle Stimmen folgen dem Basis-Kit'); });
+document.getElementById('dsOpenBtn').addEventListener('click', ()=>{ kitPickerOverlay.classList.remove('open'); dsRender(); drumSetOverlay.classList.add('open'); syncBottomBarVisibility(); });
+document.getElementById('dsCloseBtn').addEventListener('click', ()=>{ dsSheet.classList.remove('open'); dsSeg.style.display=''; drumSetOverlay.classList.remove('open'); syncBottomBarVisibility(); });
+updateKitLabel();
 
 // Von den Beats-Zeilen aus aufgerufen (🎼+-Button) — item ist bereits das volle
 // Pattern-Objekt aus listPatternsFromIndexedDB(), daher direkt cachebar ohne
@@ -5154,6 +5741,7 @@ function renderSongSlots(){
 patternSaveBtn.addEventListener('click', async ()=>{
   const typedName=patternNameInput.value.trim();
   if(!typedName) return;
+  if(beatTab!=='all'){ await beatSaveGroup(typedName); return; }
   const existingNames=new Set((await listPatternsFromIndexedDB()).map(p=>p.name));
   const finalName=uniqueName(typedName, existingNames);
   const data=collectPatternData(finalName, genId());
@@ -5231,7 +5819,7 @@ function scheduleStep(step,time){
     if(inFillWindow && fillOverride[tr.id]){
       v = fillOverride[tr.id].vel[step-fillWindowStart];
     } else {
-      v = tr.steps[step];
+      v = stepInfo(tr,step).v;
     }
     if(v<=0) return;
     if(anySolo && !tr.solo) return;          // andere Spuren stumm, solange irgendwo soliert wird
@@ -5251,8 +5839,8 @@ function scheduleStep(step,time){
       : v;
 
     if(tr.type==='arp'){
-      const nx=(step+1)%PATTERN_LENGTH, pv=(step-1+PATTERN_LENGTH)%PATTERN_LENGTH;
-      triggerArpStep(hitTime, tr, tr.notes[step]||0, playVel, tr.steps[pv]>0 && !!tr.slides[pv], !!tr.slides[step] && tr.steps[nx]>0, curAbsStep);
+      const si=stepInfo(tr,step), pi=stepInfo(tr,step-1), ni=stepInfo(tr,step+1);
+      triggerArpStep(hitTime, tr, si.note, playVel, pi.v>0 && pi.slide, si.slide && ni.v>0, curAbsStep);
     } else if(tr.id==='cy' && inFillWindow && fillOverride.cy && fillOverride.cy.chokeSteps && fillOverride.cy.chokeSteps[step-fillWindowStart]){
       triggerChokedCrash(hitTime, tr, playVel); // kurz abgeschnittener statt lang ausklingender Crash
     } else {
@@ -5271,7 +5859,7 @@ function scheduler(){
     scheduleStep(currentStep, nextNoteTime + swingOffset);
     absStepCounter++;
     nextNoteTime += stepDuration();
-    currentStep=(currentStep+1)%PATTERN_LENGTH;
+    currentStep=(currentStep+1)%seqLength();
     if(currentStep===0) onLoopRestart();
   }
   timerID=setTimeout(scheduler, lookahead);
@@ -5316,8 +5904,10 @@ function visualLoop(){
   while(scheduledSteps.length && scheduledSteps[0].time<=now){
     const ev=scheduledSteps.shift();
     modVisAbs=ev.abs; updateAutoVisual();
-    if(ev.step!==lastDisplayStep){
-      const page=Math.floor(ev.step/16), rel=ev.step%16;
+    if(arrOn() && switchTabIsSong()) ovPlayhead(Math.floor(ev.step/16));
+    const dstep=arrOn() ? ev.step%PATTERN_LENGTH : ev.step;
+    if(dstep!==lastDisplayStep){
+      const page=Math.floor(dstep/16), rel=dstep%16;
       // Beim Überschreiten einer Seitengrenze blättert die Ansicht automatisch mit,
       // damit der Playhead beim Abspielen längerer Patterns immer sichtbar bleibt.
       if(page!==currentPage){
@@ -5329,11 +5919,11 @@ function visualLoop(){
       TRACKS.forEach(tr=> tr._ovCells[rel].classList.add('playcol'));
       bigCells[rel].classList.add('playcol');
       if(pitchCols[rel]) pitchCols[rel].forEach(el=>el.classList.add('playcol'));
-      if(TRACKS[activeTrackIdx].steps[ev.step]){
+      if(TRACKS[activeTrackIdx].steps[dstep]){
         bigCells[rel].classList.add('flash');
         setTimeout(()=>bigCells[rel].classList.remove('flash'),90);
       }
-      lastDisplayStep=ev.step;
+      lastDisplayStep=dstep;
     }
   }
 }
@@ -5434,7 +6024,7 @@ async function restoreLastOpenedOrSeed(){
 })();
 
 restoreSampleAssignments();
-restoreLastOpenedOrSeed();
+restoreLastOpenedOrSeed().then(restoreLastSong);
 
 })();
 </script>
