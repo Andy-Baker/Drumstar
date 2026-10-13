@@ -4,8 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Datenschutz — MRM-44 · Drumstar</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Audiowide&family=Rajdhani:wght@500;600;700&family=VT323&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./fonts.css">
 <link rel="manifest" href="./manifest.webmanifest">
 <meta name="theme-color" content="#050507">
 <style>
@@ -75,6 +74,7 @@
   .legal-content ul{ margin:0 0 10px; padding-left:20px; }
   .legal-content li{ font-size:14.5px; line-height:1.55; color:#d7d9de; margin-bottom:4px; }
   .legal-content a{ color:var(--blue-2); }
+  .adrbox{ background:var(--panel); border:1px solid rgba(255,255,255,.1); border-radius:7px; padding:10px 12px; margin:6px 0 14px; font-size:14.5px; line-height:1.55; color:#d7d9de; }
   .fillbox{ background:var(--panel); border:1px dashed rgba(255,157,31,.45); border-radius:7px; padding:10px 12px; margin:6px 0 14px; }
   .fillbox .flabel{ font-family:'JetBrains Mono',monospace; font-size:10.5px; color:#ffb774; letter-spacing:.04em; display:block; margin-bottom:2px; }
   .goodnote{ background:rgba(63,169,255,.08); border:1px solid rgba(63,169,255,.25); border-radius:7px; padding:10px 12px; margin:8px 0 14px; }
@@ -107,25 +107,19 @@
 
       <div class="legal-content">
         <h1>Datenschutzerklärung</h1>
-        <p class="sub">Stand: August 2026</p>
+        <p class="sub">Stand: Oktober 2026</p>
 
         <h2>1. Überblick</h2>
         <p>MRM-44 / Drumstar ist eine rein clientseitige Web-App (HTML/CSS/JavaScript, Web Audio API). Es gibt kein eigenes Backend, keine Datenbank auf einem eigenen Server, keine Nutzerkonten und keine Zahlungsfunktion. Alle Klänge werden im Browser synthetisiert, alle Patterns und Aufnahmen werden ausschließlich lokal auf deinem Gerät gespeichert.</p>
 
         <h2>2. Verantwortlicher</h2>
-        <div class="fillbox">
-          <span class="flabel">⚠ BITTE AUSFÜLLEN</span>
-          [Vor- und Nachname]<br>
-          [Straße und Hausnummer]<br>
-          [PLZ, Ort]<br>
-          E-Mail: [deine-email@beispiel.de]
-        </div>
+        <div class="adrbox">Andreas Becker<br>Frühmesserstr. 23<br>69231 Rauenberg<br>Deutschland<br>E-Mail: willspass@gmail.com</div>
 
         <h2>3. Hosting (GitHub Pages)</h2>
         <p>Diese Seite wird über GitHub Pages ausgeliefert, einen Dienst von GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, USA (bzw. GitHub B.V. für den EU-Raum). Beim Aufruf der Seite verarbeitet GitHub automatisch technische Zugriffsdaten (u. a. IP-Adresse, Datum/Uhrzeit des Zugriffs, aufgerufene Datei, Browsertyp, Referrer-URL) in Server-Logfiles, um die Seite technisch ausliefern zu können. Auf diese Verarbeitung habe ich als Betreiber dieser Seite keinen Einfluss. Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an einer sicheren und funktionsfähigen Auslieferung der Seite). Weitere Informationen: <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener">GitHub Privacy Statement</a>.</p>
 
-        <h2>4. Google Fonts</h2>
-        <p>Diese Seite lädt Schriftarten (Cinzel, Audiowide, Rajdhani, VT323, JetBrains Mono) beim Seitenaufruf von Servern von Google (Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irland). Dabei wird deine IP-Adresse an Google übertragen; Google kann diese Anfrage protokollieren. Eine Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an einer einheitlichen, performanten Darstellung). Weitere Informationen: <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google-Datenschutzerklärung</a>.</p>
+        <h2>4. Schriftarten</h2>
+        <p>Die in dieser App verwendeten Schriftarten (Rajdhani, VT323, JetBrains Mono) werden lokal zusammen mit der App ausgeliefert, also von derselben Quelle wie die App selbst (siehe Punkt 3). Es findet keine Verbindung zu Servern von Google oder anderen Schriftanbietern statt.</p>
 
         <h2>5. Lokale Datenspeicherung im Browser</h2>
         <span class="tag-local">✓ bleibt auf deinem Gerät</span>
@@ -144,7 +138,7 @@
         <p>Diese Seite setzt keine Cookies, keine Analyse- oder Tracking-Tools (z. B. Google Analytics) und keine Werbenetzwerke ein.</p>
 
         <h2>8. Deine Rechte</h2>
-        <p>Dir stehen nach der DSGVO grundsätzlich folgende Rechte zu, soweit personenbezogene Daten von dir verarbeitet werden: Auskunft (Art. 15), Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung der Verarbeitung (Art. 18), Datenübertragbarkeit (Art. 20) sowie Widerspruch gegen die Verarbeitung (Art. 21). Da diese App so gut wie keine Daten an mich als Betreiber übermittelt (alles bleibt lokal auf deinem Gerät bzw. wird nur technisch von GitHub/Google verarbeitet), betreffen Auskunfts- oder Löschanfragen an mich in der Praxis meist nur die unter Punkt 3/4 genannten Drittanbieter. Zudem hast du das Recht, dich bei einer Datenschutz-Aufsichtsbehörde zu beschweren.</p>
+        <p>Dir stehen nach der DSGVO grundsätzlich folgende Rechte zu, soweit personenbezogene Daten von dir verarbeitet werden: Auskunft (Art. 15), Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung der Verarbeitung (Art. 18), Datenübertragbarkeit (Art. 20) sowie Widerspruch gegen die Verarbeitung (Art. 21). Da diese App so gut wie keine Daten an mich als Betreiber übermittelt (alles bleibt lokal auf deinem Gerät bzw. wird nur technisch von GitHub beim Hosting verarbeitet), betreffen Auskunfts- oder Löschanfragen an mich in der Praxis meist nur den unter Punkt 3 genannten Hosting-Anbieter. Zudem hast du das Recht, dich bei einer Datenschutz-Aufsichtsbehörde zu beschweren.</p>
 
         <h2>9. Kontakt</h2>
         <p>Für Fragen zum Datenschutz wende dich an die im <a href="./impressum.html">Impressum</a> genannte E-Mail-Adresse.</p>

@@ -2,10 +2,9 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>MRM-44 — Mobile Rhythm Machine</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Audiowide&family=Rajdhani:wght@500;600;700&family=VT323&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./fonts.css">
 <style>
   :root{
     --bg:#050507;
@@ -16,7 +15,7 @@
     --white:#f4f5f7; --dim:#7d818c; --metal:#c7cbd4;
     --lcd-bg:#04070a; --lcd-fg:#5fc2ff;
   }
-  *{box-sizing:border-box; -webkit-touch-callout:none;}
+  *{box-sizing:border-box; -webkit-touch-callout:none; -webkit-tap-highlight-color:transparent;}
   html,body{
     margin:0; height:100%; background:var(--bg);
     font-family:'Rajdhani',sans-serif; color:var(--white);
@@ -299,6 +298,24 @@
     padding:8px 12px; cursor:pointer; background:rgba(63,169,255,.12); color:var(--blue-2); white-space:nowrap; }
   #arpFilterRandBtn:active{ transform:scale(.94); }
 
+
+  /* ---------- COSMIC ARPEGGIO GENERATOR ---------- */
+  #arpGenPanel{display:none;flex-direction:column;gap:9px;margin-top:8px;padding:11px;background:linear-gradient(145deg,rgba(124,77,204,.13),var(--panel));border:1px solid rgba(184,140,255,.24);border-radius:10px}
+  #arpGenPanel.show{display:flex}
+  #arpGenHead{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  #arpGenTitle{font-size:11px;font-weight:800;letter-spacing:.12em;color:#cdb0ff}
+  #arpGenHint{font-size:10px;color:var(--dim)}
+  .ag-controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+  .ag-field{display:flex;flex-direction:column;gap:4px;min-width:0}
+  .ag-field label{font-size:9px;color:var(--dim);letter-spacing:.07em;text-transform:uppercase}
+  .ag-field select{width:100%;min-width:0;height:34px;border:1px solid rgba(255,255,255,.12);border-radius:6px;background:var(--panel-inset);color:var(--white);padding:0 6px;font-family:inherit;font-size:11px;font-weight:600;}
+  #arpGenActions{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:7px}
+  #arpGenActions button{min-height:38px;border-radius:7px;border:1px solid rgba(184,140,255,.32);background:rgba(124,77,204,.12);color:#d6c0ff;font-family:inherit;font-size:11px;font-weight:700;cursor:pointer}
+  #arpGenActions #arpGenGo{background:#7c4dcc;color:#fff;border-color:#a982ef}
+  #arpGenActions button:active{transform:scale(.97)}
+  #arpGenStatus{font-size:10px;color:var(--dim);min-height:12px}
+  @media(max-width:380px){.ag-controls{grid-template-columns:repeat(2,minmax(0,1fr))}#arpGenActions{grid-template-columns:1fr 1fr 1fr}}
+
   /* ---------- SPUR-AKTIONEN (Random / Leeren / Bereich) über dem Step-Grid ---------- */
   #trackActions{ display:flex; gap:6px; align-items:center; background:var(--panel-inset); border-radius:8px; padding:6px; margin:4px 0 2px; }
   .ta-btn{ flex:1; min-height:40px; border-radius:8px; border:1px solid rgba(255,255,255,.12); background:var(--panel);
@@ -324,13 +341,14 @@
     border-radius:10px; background:#0b0c0f;
     border:1px solid rgba(255,255,255,.06); box-shadow:inset 0 2px 4px rgba(0,0,0,.6);
     position:relative; cursor:pointer; display:flex; align-items:flex-end; justify-content:flex-start;
-    padding:5px; transition:filter .05s;
+    padding:5px;
   }
-  .bstep:active{ filter:brightness(1.3); }
+  .bstep::after{ content:""; position:absolute; inset:-1px; border-radius:inherit; pointer-events:none; }
+  .bstep:active::after{ background:rgba(255,255,255,.18); }
   .bstep .num{ font-family:'JetBrains Mono',monospace; font-size:10px; color:rgba(255,255,255,.28); }
   .bstep.beat-start{ border-left:2px solid rgba(255,255,255,.15); }
-  .bstep.playcol{ outline:2px solid rgba(255,255,255,.7); outline-offset:-2px; }
-  .bstep.flash{ filter:brightness(2); }
+  .bstep.playcol::after{ box-shadow:inset 0 0 0 2px rgba(255,255,255,.7); }
+  .bstep.flash::after{ background:rgba(255,255,255,.45); }
 
   /* ---------- VELOCITY-STUFEN (Ghost / Normal / Accent) ----------
      Ersetzt das alte reine an/aus + separaten globalen Accent-Modus.
@@ -820,7 +838,7 @@
     font-size:11px; line-height:1; color:#04121e; }
   .pe-c.in{ background:#12141a; } .pe-c.rt{ background:#101a26; }
   .pe-c.off{ opacity:.3; cursor:default; }
-  .pe-c.act{ background:var(--blue); box-shadow:0 0 8px rgba(63,169,255,.7); }
+  .pe-c.act{ background:var(--tc,var(--blue)); box-shadow:0 0 8px var(--tc,rgba(63,169,255,.7)); }
   .pe-c.act.gh{ opacity:.45; box-shadow:none; }
   .pe-c:not(.act){ color:var(--blue-2); }
   .pe-c.beat, .pe-hn.beat{ margin-left:1px; }
@@ -946,6 +964,89 @@ html,body{min-height:100%;height:100%;}
 }
 </style>
 
+<style>
+/* ===== UX v2 (Mockup v9) ===== */
+.brandtop,.brandbar,.screw{display:none!important}
+#panelContent{gap:10px;flex:1 0 auto}
+#tabContent{flex:1}
+#tabPattern{gap:10px}
+#tabPattern.open{flex:1}
+#transport{position:sticky;top:0;z-index:20;margin:-6px -9px 0;padding:max(8px,env(safe-area-inset-top)) 10px 8px;border-radius:0;background:#0c0d10f2;border-bottom:1px solid rgba(63,169,255,.3);box-shadow:none;gap:8px;flex-wrap:nowrap}
+@media (max-width:560px){#transport{margin:calc(-1*max(5px,env(safe-area-inset-top))) -9px 0}}
+#playBtn{width:48px;height:48px;font-size:18px}
+#transport .knob-cluster{justify-content:flex-start;min-width:0}
+#tempoControl .knob-label,#tempoControl .knob-val{display:none}
+#tempoChipDial{width:auto;height:auto;min-height:44px;padding:2px 10px;gap:6px;border-radius:8px}
+#tempoChipDial span{font-family:'VT323',monospace;font-size:26px;font-weight:400}
+#tempoChipDial small{font-size:13px;color:var(--dim)}
+.ib{width:48px;height:48px;border-radius:12px;border:1px solid rgba(63,169,255,.4);background:rgba(63,169,255,.1);color:var(--blue-2);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;flex-shrink:0}
+.ib:active{transform:scale(.93)} .ib:disabled{opacity:.3;cursor:default}
+.ib.clr{color:#ff9d7a;border-color:rgba(255,157,122,.4);background:rgba(255,157,122,.08)}
+.ib svg,#taScope svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.lcd-screen{display:block;padding:2px 12px;border-radius:8px}
+.lcd-row{min-height:44px}
+.lcd-row2{min-height:48px;justify-content:space-between;margin-top:0;padding-top:0}
+#lcdKit{font-size:22px} #lcdPatternName{font-size:18px;max-width:50vw}
+#lenBtn{min-height:40px;padding:0 12px;border-radius:6px;border:1px solid rgba(63,169,255,.35);background:rgba(63,169,255,.08);color:var(--lcd-fg);font-family:'VT323',monospace;font-size:18px;cursor:pointer}
+.lcdsel{position:relative}
+.lcdbtn{width:100%;min-height:48px;display:flex;align-items:center;gap:10px;background:#04070a;border:1px solid rgba(63,169,255,.25);border-radius:8px;padding:6px 12px;color:var(--lcd-fg);font-family:'VT323',monospace;font-size:22px;text-align:left;cursor:pointer}
+.lcdbtn .lbl{font-size:15px;color:var(--dim)} .lcdbtn .cnt{margin-left:auto;font-size:16px;opacity:.75}
+.lcdbtn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;flex-shrink:0}
+.menu{display:none;position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:30;background:#04070a;border:1px solid rgba(63,169,255,.5);border-radius:8px;max-height:50vh;overflow-y:auto;box-shadow:0 12px 30px #000c}
+.menu.open{display:block}
+.menu button{width:100%;min-height:52px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;padding:6px 12px;background:none;border:0;border-bottom:1px solid rgba(63,169,255,.12);color:var(--lcd-fg);font-family:'VT323',monospace;font-size:22px;text-align:left;cursor:pointer}
+.menu button small{font-size:15px;color:var(--dim)} .menu button.cur{background:rgba(63,169,255,.14)}
+#overview{padding:4px;border-radius:10px}
+.ov-row{grid-template-columns:42px repeat(16,1fr);column-gap:2px;min-height:34px;padding:2px 6px;border-radius:8px}
+.ov-row .ov-mute,.ov-row .ov-solo,.ov-row .ov-rand{display:none}
+.ov-row .ov-label{font-size:14px;padding-right:4px}
+.ov-cell{height:18px}
+.ov-row.solo{background:rgba(255,194,71,.12)}
+.ov-row.solo .ov-label,.ov-row.solo.active .ov-label{color:#ffc247}
+.ov-row.muted .ov-label{text-decoration:line-through}
+#trackBar{padding:8px 10px;gap:8px;border-radius:10px}
+#trackBar .name{font-size:18px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tbm{width:44px;height:44px;border-radius:8px;border:1px solid rgba(255,255,255,.14);background:var(--panel);color:var(--dim);font-weight:700;font-size:13px;flex-shrink:0;padding:0;cursor:pointer}
+#tbM.on{background:var(--blue);color:#04121e;border-color:var(--blue)} #tbS.on{background:#ffc247;color:#2a1a00;border-color:#ffc247}
+#lengthRow,#groupBar,#taToast{display:none}
+#pageNav{background:none;padding:0;gap:6px}
+#pageLabel{font-size:18px}
+#pageCopyBtn{flex:0 0 56px}
+#pinBtn{display:none;min-height:44px;border-radius:9px;border:1px solid rgba(63,169,255,.6);background:rgba(63,169,255,.14);color:var(--blue-2);font-weight:700;font-size:14px;cursor:pointer}
+#trackActions{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:12px;background:var(--panel-inset);margin:0}
+#trackActions .sp{flex:1}
+#taScope{border-radius:12px;border:1px solid rgba(63,169,255,.4)}
+#taScope button{width:48px;height:48px;min-height:0;padding:0;background:transparent;display:flex;align-items:center;justify-content:center}
+#taScope button.on{background:rgba(63,169,255,.25);color:var(--blue-2)}
+#brushRow{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+#brushRow button{min-height:48px;border-radius:9px;border:1px solid rgba(255,255,255,.12);background:var(--panel);color:var(--dim);font-family:inherit;font-weight:700;font-size:13px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:0;cursor:pointer}
+#brushRow button.on{border-color:var(--blue);background:rgba(63,169,255,.16);color:var(--blue-2)}
+#brushRow .sw{width:22px;height:10px;border-radius:3px;background:var(--blue);display:block;position:relative}
+#brushRow .sw.a::after{content:"";position:absolute;right:-3px;top:-3px;width:7px;height:7px;border-radius:50%;background:#fff}
+#bigGrid{flex:1;min-height:260px;grid-template-rows:repeat(4,1fr);gap:8px}
+.bstep{aspect-ratio:auto}
+#sheetVeil{position:fixed;inset:0;background:#0008;z-index:71;display:none}
+.sheet{position:fixed;left:0;right:0;bottom:0;margin:0 auto;max-width:520px;z-index:72;background:#0f1015;border-top:1px solid rgba(63,169,255,.4);border-radius:16px 16px 0 0;padding:14px 16px calc(24px + env(safe-area-inset-bottom));transform:translateY(105%);transition:transform .22s;display:flex;flex-direction:column;gap:6px;visibility:hidden}
+.sheet.open{transform:none;visibility:visible}
+.sheet .sh{display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:17px;margin-bottom:4px}
+.sheet .shx{width:44px;height:44px;border-radius:9px;border:1px solid rgba(255,255,255,.12);background:var(--panel);color:var(--blue-2);cursor:pointer}
+.srow{display:grid;grid-template-columns:64px 1fr 56px;align-items:center;gap:8px;min-height:44px}
+.srow label{font-size:14px;color:var(--dim)} .srow input{accent-color:var(--blue);height:36px;width:100%}
+.srow b{font-family:'VT323',monospace;font-size:20px;color:var(--lcd-fg);text-align:right;font-weight:400}
+.sheet .hl{font-size:12px;color:var(--dim);text-align:center}
+/* Spurleiste: Vorhören + Klang an M/S angleichen (44 px, Radius 8) */
+#trackBar{gap:6px;padding:8px}
+#trackBar .name{font-size:16px;gap:6px}
+#trackBar .preview,#trackBar #tbSound,#trackBar #tbSynth{width:44px;height:44px;border-radius:8px}
+#synthSheet{max-height:88vh;overflow-y:auto}
+#synthSheet.cos input[type=range]{accent-color:#b88cff}
+#synthSheet .srow{grid-template-columns:64px 1fr 66px}
+.sheet .acts{display:flex;gap:8px;margin-bottom:4px}
+.sheet .act{flex:1;min-height:44px;border-radius:9px;border:1px solid rgba(63,169,255,.4);background:rgba(63,169,255,.1);color:var(--blue-2);font:700 13px 'Rajdhani',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer}
+.sheet .act:active{transform:scale(.97)}
+.sheet .act svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.sheet .grp{font:700 11px 'Rajdhani',sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin:8px 0 0}
+</style>
 </head>
 <body>
 
@@ -966,7 +1067,20 @@ html,body{min-height:100%;height:100%;}
         <div class="tag">Mobile Rhythm Machine</div>
       </div>
 
-      <div class="lcd-screen">
+      <div class="transport" id="transport">
+        <div id="playBtn">▶</div>
+        <div class="knob-cluster" id="globalKnobs">
+          <div id="tempoControl" class="knob" role="button" tabindex="0" aria-label="Tempo-Einstellungen öffnen">
+            <div id="tempoChipDial"><span id="tempoChipVal">128</span><small>BPM</small></div>
+            <div class="knob-label">Tempo</div>
+            <div class="knob-val" style="visibility:hidden;" aria-hidden="true">0</div>
+          </div>
+        </div>
+        <button class="ib" id="settingsBtn" aria-label="Einstellungen" title="Einstellungen"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+        <div class="btn-cluster" style="display:none"><button class="chip-btn" id="randomBtn">Random</button><button class="chip-btn" id="clearBtn">Clear</button></div>
+      </div>
+
+      <div class="lcdsel"><div class="lcd-screen">
         <div class="lcd-row">
           <button class="lcd-tap" id="lcdKitBtn" aria-label="Kit wechseln">
             <span class="lcd l1" id="lcdKit">ROCK KIT</span>
@@ -979,23 +1093,9 @@ html,body{min-height:100%;height:100%;}
             <span class="lcd l2" id="lcdPatternName">—</span>
             <svg class="lcd-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
           </button>
+          <button id="lenBtn" aria-haspopup="listbox" aria-expanded="false">16 Steps ▾</button>
         </div>
-      </div>
-
-      <div class="transport">
-        <div id="playBtn">▶</div>
-        <div class="knob-cluster" id="globalKnobs">
-          <div id="tempoControl" class="knob" role="button" tabindex="0" aria-label="Tempo-Einstellungen öffnen">
-            <div id="tempoChipDial"><span id="tempoChipVal">128</span></div>
-            <div class="knob-label">Tempo</div>
-            <div class="knob-val" style="visibility:hidden;" aria-hidden="true">0</div>
-          </div>
-        </div>
-        <div class="btn-cluster">
-          <button class="chip-btn" id="randomBtn">Random</button>
-          <button class="chip-btn" id="clearBtn">Clear</button>
-        </div>
-      </div>
+      </div><div class="menu" id="lenMenu" role="listbox"></div></div>
 
       <div id="kitPickerOverlay">
         <div id="kitPickerHead">
@@ -1035,7 +1135,7 @@ html,body{min-height:100%;height:100%;}
           <span class="lcd l2" style="color:var(--dim); letter-spacing:.15em; text-transform:uppercase;">Beats</span>
           <button id="patternsOverlayCloseBtn" aria-label="Schließen">✕</button>
         </div>
-        <div id="beatTabs"><button data-t="all" class="on">Gesamt</button><button data-t="drums">Drums</button><button data-t="perc">Perc</button><button data-t="acid">Acid</button><button data-t="sample">Sample</button></div>
+        <div id="beatTabs"><button data-t="all" class="on">Gesamt</button><button data-t="drums">Drums</button><button data-t="perc">Perc</button><button data-t="acid">Acid</button><button data-t="sample">Sample</button><button data-t="cosmic">Cosmic</button></div>
         <div id="patternSaveRow">
           <input type="text" id="patternNameInput" placeholder="Name für aktuellen Beat…" maxlength="40">
           <button id="patternUpdateBtn" title="Aktuell geladenen Beat mit diesem Zustand überschreiben">↻</button>
@@ -1171,18 +1271,21 @@ html,body{min-height:100%;height:100%;}
       <div id="tabPattern" class="tab-panel open">
         <div id="clipBanner" style="display:none"><span>Clip bearbeiten: <b id="cbName"></b><small>Play und Export spielen jetzt das Arbeits-Pattern.</small></span><button id="cbSave">Zurückschreiben</button><button id="cbCancel">Abbrechen</button></div>
         <div id="groupBar"></div>
+        <div class="lcdsel" id="grpSel"><button class="lcdbtn" id="grpBtn" aria-haspopup="listbox" aria-expanded="false"><span class="lbl">SPUR</span><span id="grpName"></span><span class="cnt" id="grpCnt"></span><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button><div class="menu" id="grpMenu" role="listbox"></div></div>
         <div id="lengthRow"></div>
         <div id="overview"></div>
 
         <div id="trackBar">
           <div class="name"><span class="dot" id="tbDot"></span><span id="tbName">BASS DRUM</span></div>
-          <div class="mini-knobs" id="tbKnobs"></div>
+          <div class="mini-knobs" id="tbKnobs" style="display:none"></div>
+          <button class="tbm" id="tbM" aria-label="Spur stummschalten">M</button><button class="tbm" id="tbS" aria-label="Spur solo">S</button>
           <div class="preview" id="tbPreview" role="button" aria-label="Vorhören">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20" aria-hidden="true">
               <path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor" stroke="none"/>
               <path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8 8 0 0 1 0 12"/>
             </svg>
           </div>
+          <button class="ib" id="tbSound" aria-label="Klang der Spur" title="Klang der Spur"><svg viewBox="0 0 24 24"><path d="M5 4v16M12 4v16M19 4v16"/><circle cx="5" cy="14" r="2" fill="currentColor"/><circle cx="12" cy="8" r="2" fill="currentColor"/><circle cx="19" cy="15" r="2" fill="currentColor"/></svg></button><button class="ib" id="tbSynth" aria-label="Synth und Filter" title="Synth und Filter" style="display:none"><svg viewBox="0 0 24 24"><path d="M3 8h8c3 0 4 8 10 8"/><path d="M3 20h18" opacity=".45"/></svg></button>
         </div>
 
         <div id="sampleControls">
@@ -1206,6 +1309,25 @@ html,body{min-height:100%;height:100%;}
           <div id="arpDecayKnob"></div>
           <button id="arpFilterRandBtn" title="Cutoff, Resonanz, Env Mod und Decay zufällig setzen">🎲 Filter</button>
           <button id="arpXyBtn" title="XY-Pad: Cutoff und Reso live spielen">◎ XY</button>
+          <div id="arpCosmicControls" style="display:none;flex-basis:100%;align-items:center;gap:10px;flex-wrap:wrap;border-top:1px solid rgba(184,140,255,.22);padding-top:7px;margin-top:2px">
+            <div id="arpCosmicWidth"></div><div id="arpCosmicMotion"></div><div id="arpCosmicWarmth"></div><div id="arpCosmicAir"></div>
+            <span style="font-size:10px;color:var(--dim);max-width:180px">Cosmic Voice · Unison / Filter Drift / Sub / Air</span>
+          </div>
+        </div>
+
+
+        <div id="arpGenPanel" aria-label="Arpeggio-Generator">
+          <div id="arpGenHead"><span id="arpGenTitle">✦ ARPEGGIO GENERATOR</span><span id="arpGenHint">harmonisch · editierbar</span></div>
+          <div class="ag-controls">
+            <div class="ag-field"><label for="agStyle">Style</label><select id="agStyle"><option value="cosmic">Cosmic</option><option value="classic">Classic</option><option value="flow">Flow</option></select></div>
+            <div class="ag-field"><label for="agChord">Chord</label><select id="agChord"><option value="minor">Minor</option><option value="major">Major</option><option value="min7">Minor 7</option><option value="maj7">Major 7</option><option value="sus2">Sus 2</option><option value="sus4">Sus 4</option><option value="add9">Minor add9</option></select></div>
+            <div class="ag-field"><label for="agDir">Direction</label><select id="agDir"><option value="up">Up</option><option value="down">Down</option><option value="updown">Up / Down</option><option value="random">Random</option></select></div>
+            <div class="ag-field"><label for="agRate">Rate</label><select id="agRate"><option value="2">1/8</option><option value="1" selected>1/16</option></select></div>
+            <div class="ag-field"><label for="agRange">Octaves</label><select id="agRange"><option value="1">1 octave</option><option value="2" selected>2 octaves</option><option value="3">3 octaves</option></select></div>
+            <div class="ag-field"><label for="agDensity">Density</label><select id="agDensity"><option value="55">Sparse</option><option value="75" selected>Groovy</option><option value="92">Busy</option><option value="100">Every step</option></select></div>
+          </div>
+          <div id="arpGenActions"><button id="arpGenGo">✦ Generate</button><button id="arpGenVar">↻ Variation</button><button id="arpGenFill">⚡ Fill</button></div>
+          <div id="arpGenStatus" role="status" aria-live="polite">Erzeugt Noten aus Akkordtönen; Steps bleiben im Pattern editierbar.</div>
         </div>
 
         <div id="arpModPanel">
@@ -1226,19 +1348,27 @@ html,body{min-height:100%;height:100%;}
         <div id="pageNav">
           <button id="pagePrevBtn">◀</button>
           <span id="pageLabel" class="lcd l2 mono">Seite 1/1</span>
-          <button id="pageCopyBtn" title="Diese Seite in die nächste kopieren">⧉→</button>
           <button id="pageNextBtn">▶</button>
+          <button id="pageCopyBtn" title="Diese Seite in die nächste kopieren">⧉</button>
         </div>
 
-        <div id="trackActions">
-          <button id="taRandBtn" class="ta-btn rand">🎲 Random</button>
-          <button id="taClearBtn" class="ta-btn clean">✕ Leeren</button>
-          <button id="taUndoBtn" class="ta-btn sm" title="Rückgängig" aria-label="Rückgängig" disabled>↶</button>
+        <button id="pinBtn">Seite fixiert · tippen zum Mitlaufen</button>
+        <div id="trackActions" role="group" aria-label="Aktive Spur">
+          <button id="taRandBtn" class="ib" aria-label="Zufall" title="Zufall"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9" r="1" fill="currentColor"/><circle cx="15" cy="15" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg></button>
+          <button id="taClearBtn" class="ib clr" aria-label="Leeren" title="Leeren"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg></button>
+          <button id="taUndoBtn" class="ib" title="Rückgängig" aria-label="Rückgängig" disabled><svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg></button>
+          <div class="sp"></div>
           <div id="taScope" role="group" aria-label="Bereich">
-            <button data-s="page" class="on">Seite</button><button data-s="all">Alles</button>
+            <button data-s="page" class="on" aria-label="Nur diese Seite" title="Nur diese Seite"><svg viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="2"/></svg></button><button data-s="all" aria-label="Alle Seiten" title="Alle Seiten"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="10" height="14" rx="2"/><path d="M8 3h11a2 2 0 0 1 2 2v12"/></svg></button>
           </div>
         </div>
         <div id="taToast"></div>
+        <div id="brushRow" role="group" aria-label="Stärke beim Setzen">
+          <button data-v="0.15"><i class="sw" style="opacity:.2"></i>Ghost leise</button>
+          <button data-v="0.35"><i class="sw" style="opacity:.42"></i>Ghost</button>
+          <button data-v="0.85" class="on"><i class="sw"></i>Normal</button>
+          <button data-v="1.3"><i class="sw a"></i>Akzent</button>
+        </div>
 
         <div id="bigGrid"></div>
 
@@ -1255,7 +1385,7 @@ html,body{min-height:100%;height:100%;}
           <div id="peLegend">A = Accent · S = Slide zum nächsten Ton · ▲▼ = Ton außerhalb des Fensters</div>
         </div>
 
-        <footer class="hint">Tap = Step (aus→normal→accent→ghost→ghost soft) · Reihe = Instrument wählen · kleiner Regler = Lautstärke des Sounds · MIC SAMPLE wählen zum Aufnehmen</footer>
+        <footer class="hint">Tippen setzt die gewählte Stärke, gleiche Stärke nochmal tippen löscht den Step · Zeile = Spur wählen · MIC SAMPLE wählen zum Aufnehmen</footer>
         <footer class="legal-footer">
           <a href="./impressum.html">Impressum</a><span class="sep">·</span><a href="./datenschutz.html">Datenschutz</a>
         </footer>
@@ -1368,6 +1498,15 @@ html,body{min-height:100%;height:100%;}
     </div>
   </div>
 </div>
+
+<div id="sheetVeil"></div>
+<div class="sheet" id="setSheet"><div class="sh"><span>Einstellungen · ganzes Pattern</span><button class="shx" id="setX" aria-label="Schließen">✕</button></div>
+  <div class="srow"><label>Master</label><input type="range" min="0" max="100" data-def="85" id="sMaster"><b id="sMasterV"></b></div>
+  <div class="srow"><label>Swing</label><input type="range" min="0" max="100" data-def="0" id="sSwing"><b id="sSwingV"></b></div>
+  <div class="srow"><label>Humanize</label><input type="range" min="0" max="100" data-def="0" id="sHum"><b id="sHumV"></b></div>
+  <div class="hl">Master zusätzlich über die Lautstärketasten des Geräts. Doppeltippen setzt einen Regler zurück.</div></div>
+<div class="sheet" id="soundSheet"><div class="sh"><span id="sndT"></span><button class="shx" id="sndX" aria-label="Schließen">✕</button></div><div id="sndRows"></div></div>
+<div class="sheet" id="synthSheet"><div class="sh"><span id="synT"></span><button class="shx" id="synX" aria-label="Schließen">✕</button></div><div id="synthRows"></div><div class="hl">Doppeltippen setzt einen Regler zurück</div></div>
 
 <script>
 (function(){
@@ -1983,6 +2122,7 @@ const ARR_GROUPS=[
   {id:'drums', label:'DRUMS', ids:['bd','sd','ch','oh','lt','ht','cy']},
   {id:'perc',  label:'PERC',  ids:['rs','hc','cb','cl','mr']},
   {id:'acid',  label:'ACID',  ids:['arp']},
+  {id:'cosmic',label:'COSMIC',ids:['cosmic']},
   {id:'sample',label:'SAMPLE',ids:['mc']}
 ];
 function seqLength(){ return arrOn() ? arr.bars*16 : PATTERN_LENGTH; }
@@ -2018,7 +2158,90 @@ function arrResize(nb){
   });
   arr.bars=nb;
 }
+// COSMIC ARP — polyphoner, schimmernder 90s-Trance-Arpeggiator:
+// detunierte Sägezähne, weicher Filter-Pick und lange, über den Spur-Bus
+// geroutete Hall-/Delay-Sends. Eigenständige Stimmen pro Step, daher keine
+// Monophonie/Slides der Acid-Bass-Stimme.
+function triggerCosmicArpStep(time, tr, degreeSemis, velocity, modPos){
+  if(!audioCtx || !tr.bus) return;
+  const freq=noteFreq(tr.rootNote + degreeSemis + 24); // Cosmic lead: zwei Oktaven über der Bass-Arp-Lage
+  const dur=Math.max(0.075, stepDuration()*0.88);
+  const decay=arpDecaySeconds(tr.decay!=null?tr.decay:0.42);
+  const cutoff=700 + (tr.cutoff!=null?tr.cutoff:0.62)*7600;
+  const envMod=tr.envMod!=null?tr.envMod:0.62;
+  const width=Math.max(0,Math.min(1,tr.cosmicWidth!=null?tr.cosmicWidth:0.62));
+  const motion=Math.max(0,Math.min(1,tr.cosmicMotion!=null?tr.cosmicMotion:0.46));
+  const warmth=Math.max(0,Math.min(1,tr.cosmicWarmth!=null?tr.cosmicWarmth:0.22));
+  const air=Math.max(0,Math.min(1,tr.cosmicAir!=null?tr.cosmicAir:0.18));
+  const peak=Math.max(0.0001,Math.min(0.22,velocity*tr.vol*0.16));
+  const filter=audioCtx.createBiquadFilter(); filter.type='lowpass';
+  filter.Q.value=0.65 + (tr.resonance!=null?tr.resonance:0.22)*3.6;
+  // LFO-artige Filterbewegung ist an die Step-Dauer gekoppelt und bleibt auch
+  // bei unterschiedlichen Tempi musikalisch. Jede Note erhält eine weiche Rampe.
+  // Phase an der Step-Position (modPos) statt an der Uhrzeit -> Live und WAV-Export klingen gleich
+  const lfoPhase=(modPos!=null ? (modPos/8) : (time/Math.max(0.08,stepDuration()*8)))*Math.PI*2;
+  const motionMul=1 + Math.sin(lfoPhase)*motion*0.32;
+  const openCutoff=Math.min(15000,cutoff*(1.15+envMod*2.25)*motionMul);
+  const floorCutoff=Math.max(280,cutoff*(0.42+motion*0.08));
+  filter.frequency.setValueAtTime(Math.max(180,openCutoff),time);
+  filter.frequency.exponentialRampToValueAtTime(floorCutoff,time+Math.max(0.09,decay));
+  const amp=audioCtx.createGain();
+  amp.gain.setValueAtTime(0.0001,time);
+  amp.gain.linearRampToValueAtTime(peak,time+0.012);
+  amp.gain.setTargetAtTime(peak*0.76,time+0.013,Math.max(0.07,decay*0.75));
+  const end=time+Math.max(dur,Math.min(decay*1.65,dur*2.1))+0.16;
+  amp.gain.setTargetAtTime(0.0001,end,0.11);
+
+  // Unison-Saw: gegeneinander verstimmt und im Stereobild verteilt.
+  // Triangle-Sub gibt Wärme/Körper; ein sehr leiser Sinus-Oberton bringt Luft.
+  const left=audioCtx.createOscillator(), right=audioCtx.createOscillator();
+  left.type='sawtooth'; right.type='sawtooth';
+  left.frequency.setValueAtTime(freq,time); right.frequency.setValueAtTime(freq,time);
+  const detune=3+width*15;
+  left.detune.setValueAtTime(-detune,time); right.detune.setValueAtTime(detune,time);
+  const lp=audioCtx.createStereoPanner(), rp=audioCtx.createStereoPanner();
+  lp.pan.value=-(0.15+width*0.62); rp.pan.value=(0.15+width*0.62);
+  left.connect(lp).connect(filter); right.connect(rp).connect(filter);
+
+  const sub=audioCtx.createOscillator(), subGain=audioCtx.createGain();
+  sub.type='triangle'; sub.frequency.setValueAtTime(freq/2,time);
+  subGain.gain.setValueAtTime(0.015+warmth*0.095,time);
+  sub.connect(subGain).connect(filter);
+
+  const shimmer=audioCtx.createOscillator(), shimmerGain=audioCtx.createGain();
+  shimmer.type='sine'; shimmer.frequency.setValueAtTime(Math.min(12000,freq*2),time);
+  shimmerGain.gain.setValueAtTime(0.002+air*0.025,time);
+  shimmer.connect(shimmerGain).connect(amp);
+  filter.connect(amp).connect(tr.bus);
+  left.start(time); right.start(time); sub.start(time); shimmer.start(time);
+  const oscs=[left,right,sub,shimmer];
+  const isLive=!(typeof OfflineAudioContext!=='undefined' && audioCtx instanceof OfflineAudioContext);
+  let voice=null;
+  if(isLive){ voice={amp,oscs,t0:time}; (tr._cosVoices=tr._cosVoices||[]).push(voice); }
+  oscs.forEach(o=>{ o.stop(end+0.4); o.onended=()=>{ try{o.disconnect();}catch(e){}
+    if(voice && o===oscs[0] && tr._cosVoices){ const i=tr._cosVoices.indexOf(voice); if(i>=0) tr._cosVoices.splice(i,1); } }; });
+  [lp,rp,filter,subGain,shimmerGain,amp].forEach(n=>{ /* Nodes are released with their oscillator graph. */ });
+}
+// Stopp: laufende Cosmic-Stimmen kurz ausblenden, noch nicht gestartete verwerfen
+function stopCosmicVoices(){
+  if(!audioCtx) return;
+  const now=audioCtx.currentTime;
+  TRACKS.forEach(tr=>{
+    const list=tr._cosVoices; if(!list || !list.length) return;
+    tr._cosVoices=[];
+    list.forEach(v=>{ try{
+      v.amp.gain.cancelScheduledValues(now);
+      if(v.t0>=now){ v.amp.gain.setValueAtTime(0.0001,now); v.oscs.forEach(o=>{ try{o.stop(now);}catch(e){} }); }
+      else{
+        v.amp.gain.setValueAtTime(Math.max(0.0001,v.amp.gain.value),now);
+        v.amp.gain.linearRampToValueAtTime(0.0001,now+0.04);
+        v.oscs.forEach(o=>{ try{o.stop(now+0.06);}catch(e){} });
+      }
+    }catch(e){} });
+  });
+}
 function triggerArpStep(time, tr, degreeSemis, velocity, slide, holdNext, modPos){
+  if(tr.id==='cosmic') { triggerCosmicArpStep(time,tr,degreeSemis,velocity,modPos); return; }
   ensureArpVoice(tr);
   const freq=noteFreq(tr.rootNote + degreeSemis);
   const cutoffBase=300 + (tr.cutoff!=null?tr.cutoff:0.5)*4000;
@@ -2111,7 +2334,7 @@ function generateAcidBassline(tr, from=0, to=PATTERN_LENGTH){
   // Slide-Flag liegt am Quellton: nur sinnvoll, wenn Quelle UND Folgestep aktiv sind
   for(let s=from;s<to;s++){
     const nx=(s+1)%PATTERN_LENGTH;
-    tr.slides[s]= tr.steps[s]>0 && tr.steps[nx]>0 && Math.random()<0.25;
+    tr.slides[s]= tr.id!=='cosmic' && tr.steps[s]>0 && tr.steps[nx]>0 && Math.random()<0.25;
   }
 }
 
@@ -2385,16 +2608,18 @@ const TRACKS=[
   {id:'ch', name:'CL HIHAT',  color:'#e8f4ff', tune:0.5, vol:0.75},
   {id:'lt', name:'LOW TOM',   color:'#2f7fd4', tune:0.5, vol:0.8},
   {id:'ht', name:'HI TOM',    color:'#2f7fd4', tune:0.5, vol:0.8},
-  {id:'rs', name:'RIM SHOT',  color:'#bfe6ff', tune:0.5, vol:0.8},
-  {id:'hc', name:'HAND CLAP', color:'#5fc2ff', tune:0.5, vol:0.85},
+  {id:'rs', name:'RIM SHOT',  color:'#5eead4', tune:0.5, vol:0.8},
+  {id:'hc', name:'HAND CLAP', color:'#2dd4bf', tune:0.5, vol:0.85},
   {id:'oh', name:'OP HIHAT',  color:'#c7e6ff', tune:0.5, vol:0.7},
   {id:'cy', name:'CRASH',     color:'#a3d8ff', tune:0.5, vol:0.7},
-  {id:'cb', name:'COWBELL',  color:'#7fb8e8', tune:0.5, vol:0.75},
-  {id:'cl', name:'CLAVES',   color:'#4d8fc4', tune:0.5, vol:0.7},
-  {id:'mr', name:'MARACAS',  color:'#b8ddf5', tune:0.5, vol:0.65},
-  {id:'mc', name:'MIC SAMPLE', color:'#ffffff', tune:0.5, vol:0.9, isSample:true},
+  {id:'cb', name:'COWBELL',  color:'#14b8a6', tune:0.5, vol:0.75},
+  {id:'cl', name:'CLAVES',   color:'#99f6e4', tune:0.5, vol:0.7},
+  {id:'mr', name:'MARACAS',  color:'#7ff0dc', tune:0.5, vol:0.65},
+  {id:'mc', name:'MIC SAMPLE', color:'#8be86a', tune:0.5, vol:0.9, isSample:true},
   {id:'arp', name:'ACID BASS', color:'#ff6b35', tune:0.5, vol:0.8, type:'arp',
    rootNote:0, cutoff:0.5, resonance:0.35, envMod:0.5, decay:0.26, scale:'minor'},
+  {id:'cosmic', name:'COSMIC', short:'COS', color:'#b88cff', tune:0.5, vol:0.68, type:'arp',
+   rootNote:0, cutoff:0.62, resonance:0.22, envMod:0.62, decay:0.42, scale:'minor', reverbAmount:0.24, delaySend:0.28, cosmicWidth:0.62, cosmicMotion:0.46, cosmicWarmth:0.22, cosmicAir:0.18},
 ];
 // steps[s] speichert die Velocity eines Steps direkt als Zahl:
 // 0 = aus, 0.15 = Ghost soft (sehr leise), 0.35 = Ghost, 0.85 = Normal, 1.3 = Accent.
@@ -2624,7 +2849,7 @@ function generateFillOverride(len){
 // füllt neue mit "aus", kürzt überschüssige beim Verkleinern).
 function setPatternLength(newLen){
   if(newLen===PATTERN_LENGTH) return;
-  if(typeof taResetUndo==='function') taResetUndo();
+  if(typeof taSnapshot==='function') taSnapshot();
   if(isPlaying) stop();
   PATTERN_LENGTH=newLen;
   currentLoopIsFill=false; fillOverride=null; loopCount=0; // Sicherheit: alte Fill-Daten passen sonst nicht mehr zur neuen Länge
@@ -2710,12 +2935,7 @@ function setMasterMuted(m){
   if(master) master.gain.value = masterMuted ? 0 : masterVol;
   if(masterMuteBtnEl) masterMuteBtnEl.classList.toggle('on', masterMuted);
 }
-const globalKnobs=document.getElementById('globalKnobs');
-[
-  makeKnob({label:'SWING', min:0, max:0.6, value:swing, fmt:v=>Math.round(v/0.6*100)+'%', onChange:v=>swing=v}),
-  makeKnob({label:'HUMANIZE', min:0, max:1, value:humanize, fmt:v=>Math.round(v*100)+'%', onChange:v=>humanize=v}),
-  (masterVolKnobRef=makeKnob({label:'VOLUME', min:0, max:1, value:masterVol, fmt:v=>Math.round(v*100)+'%', onChange:v=>setMasterVol(v)})),
-].forEach(k=>globalKnobs.appendChild(k.el));
+masterVolKnobRef={setValue(){ syncSettingsUI(); }};
 
 // =========================================================================
 // TEMPO — digitale Anzeige statt Drehregler. Ersetzt den früheren TEMPO-Knob:
@@ -2816,7 +3036,7 @@ setBpm(bpm); // initiale Anzeige synchronisieren
 // als auch die (später gebauten) Mixer-Kanalzug-Buttons, damit beide Ansichten
 // immer denselben Zustand zeigen, egal wo zuerst geklickt wurde.
 function toggleTrackMute(tr){
-  tr.muted=!tr.muted;
+  tr.muted=!tr.muted; syncTbMS();
   if(tr._ovMuteBtn) tr._ovMuteBtn.classList.toggle('on', tr.muted);
   if(tr._ovRow) tr._ovRow.classList.toggle('muted', tr.muted);
   if(tr._mixMuteBtn) tr._mixMuteBtn.classList.toggle('on', tr.muted);
@@ -2845,7 +3065,7 @@ TRACKS.forEach((tr,idx)=>{
   row.className='ov-row'; row.style.setProperty('--tc', tr.color);
   row.dataset.idx=idx;
 
-  const lab=document.createElement('div'); lab.className='ov-label'; lab.textContent=tr.id.toUpperCase();
+  const lab=document.createElement('div'); lab.className='ov-label'; lab.textContent=tr.short||tr.id.toUpperCase();
   lab.addEventListener('click', ()=>selectTrack(idx));
   row.appendChild(lab);
 
@@ -2882,9 +3102,9 @@ TRACKS.forEach((tr,idx)=>{
 // Zeigt an, welche Spuren durch aktive Solo-Schaltung(en) gerade stummgeschaltet
 // sind (alle nicht-solierten, sobald mindestens eine Spur soliert ist).
 function refreshSoloVisuals(){
-  const anySolo=TRACKS.some(t=>t.solo);
+  const anySolo=TRACKS.some(t=>t.solo); syncTbMS();
   TRACKS.forEach(tr=>{
-    tr._ovRow.classList.toggle('solo-dim', anySolo && !tr.solo);
+    tr._ovRow.classList.toggle('solo-dim', anySolo && !tr.solo); tr._ovRow.classList.toggle('solo', !!tr.solo);
   });
 }
 // Aktualisiert nur die Step-Anzeige einer einzelnen Spur (Overview-Zeile +
@@ -2949,6 +3169,7 @@ LENGTH_OPTIONS.forEach(len=>{
 });
 function renderLengthChips(){
   LENGTH_OPTIONS.forEach(len=> lengthChips[len].classList.toggle('active', len===PATTERN_LENGTH));
+  lenUiRender();
 }
 
 // ---- Seiten-Navigation (nur sichtbar, wenn Pattern >16 Steps hat) ----
@@ -2957,19 +3178,25 @@ const pageLabel=document.getElementById('pageLabel');
 const pagePrevBtn=document.getElementById('pagePrevBtn');
 const pageNextBtn=document.getElementById('pageNextBtn');
 const pageCopyBtn=document.getElementById('pageCopyBtn');
+let pagePinned=false;
+const pinBtn=document.getElementById('pinBtn');
+function renderPinChip(){ pinBtn.style.display = pagePinned && isPlaying ? 'block' : 'none'; }
+function pinIfPlaying(){ if(isPlaying){ pagePinned=true; renderPinChip(); } }
+pinBtn.addEventListener('click', ()=>{ pagePinned=false; renderPinChip(); if(isPlaying && lastDisplayStep>=0){ currentPage=Math.floor(lastDisplayStep/16); renderPageNav(); renderAllForPage(); } });
 function renderPageNav(){
   const total=totalPages();
   pageNav.classList.toggle('show', total>1);
   pageLabel.textContent='Seite '+(currentPage+1)+'/'+total;
   pagePrevBtn.disabled = currentPage===0;
   pageNextBtn.disabled = currentPage===total-1;
-  pageCopyBtn.disabled = currentPage===total-1; // keine nächste Seite zum Reinkopieren vorhanden
+  pageCopyBtn.disabled = currentPage===total-1;
+  document.getElementById('taScope').style.display = total>1 ? 'flex' : 'none';
 }
 pagePrevBtn.addEventListener('click', ()=>{
-  if(currentPage>0){ currentPage--; renderPageNav(); renderAllForPage(); }
+  if(currentPage>0){ currentPage--; pinIfPlaying(); renderPageNav(); renderAllForPage(); }
 });
 pageNextBtn.addEventListener('click', ()=>{
-  if(currentPage<totalPages()-1){ currentPage++; renderPageNav(); renderAllForPage(); }
+  if(currentPage<totalPages()-1){ currentPage++; pinIfPlaying(); renderPageNav(); renderAllForPage(); }
 });
 // Dupliziert die 16 Steps (inkl. Noten/Slides für Acid Bass) der aktuellen Seite auf
 // die direkt folgende Seite und springt dorthin — schnellster Weg, um z.B. aus einem
@@ -2986,7 +3213,7 @@ function copyCurrentPageToNext(){
       if(tr.slides) tr.slides[to+i]=tr.slides[from+i];
     }
   });
-  currentPage++;
+  currentPage++; pinIfPlaying();
   renderPageNav();
   renderAllForPage();
 }
@@ -3003,14 +3230,10 @@ const taScopeEl=document.getElementById('taScope');
 let taScope='page';
 let taUndo=null; // ein Schritt: Snapshot der aktiven Spur (steps + notes + slides) vor der letzten Aktion
 let taToastTimer=null;
-function taSay(msg){
-  taToastEl.textContent=msg;
-  clearTimeout(taToastTimer);
-  taToastTimer=setTimeout(()=>{ taToastEl.textContent=''; }, 2200);
-}
+function taSay(){}
 function taResetUndo(){ taUndo=null; taUndoBtn.disabled=true; }
-function taSnapshot(tr){
-  taUndo={ trackIdx:activeTrackIdx, len:PATTERN_LENGTH, steps:tr.steps.slice(), notes:tr.notes.slice(), slides:tr.slides.slice(), cutoff:tr.cutoff, resonance:tr.resonance, envMod:tr.envMod, decay:tr.decay };
+function taSnapshot(){
+  taUndo={ len:PATTERN_LENGTH, tracks:TRACKS.map(t=>({steps:t.steps.slice(), notes:t.notes.slice(), slides:t.slides.slice(), cutoff:t.cutoff, resonance:t.resonance, envMod:t.envMod, decay:t.decay, cosmicWidth:t.cosmicWidth, cosmicMotion:t.cosmicMotion, cosmicWarmth:t.cosmicWarmth, cosmicAir:t.cosmicAir})) };
   taUndoBtn.disabled=false;
 }
 function taRange(){
@@ -3035,14 +3258,13 @@ taClearBtn.addEventListener('click', ()=>{
   taSay('Geleert · '+tr.name+' — ↶ zum Zurückholen');
 });
 taUndoBtn.addEventListener('click', ()=>{
-  const tr=TRACKS[activeTrackIdx];
-  if(!taUndo || taUndo.trackIdx!==activeTrackIdx || taUndo.len!==PATTERN_LENGTH){ taResetUndo(); return; }
-  tr.steps=taUndo.steps; tr.notes=taUndo.notes; tr.slides=taUndo.slides;
-  if(tr.type==='arp' && taUndo.cutoff!=null){ tr.cutoff=taUndo.cutoff; tr.resonance=taUndo.resonance; tr.envMod=taUndo.envMod; tr.decay=taUndo.decay; renderArpControls(tr); }
-  taResetUndo();
-  // Overview zeigt alle Spuren — hier reicht die aktive, aber renderAllForPage ist robust gegen Seitenwechsel
-  renderAllForPage();
-  taSay('Wiederhergestellt');
+  if(!taUndo) return;
+  const u=taUndo; taResetUndo();
+  if(isPlaying && u.len!==PATTERN_LENGTH) stop();
+  PATTERN_LENGTH=u.len; currentPage=Math.min(currentPage,totalPages()-1);
+  TRACKS.forEach((tr,i)=>{ const d=u.tracks[i]; tr.steps=d.steps; tr.notes=d.notes; tr.slides=d.slides;
+    if(tr.type==='arp' && d.cutoff!=null){ tr.cutoff=d.cutoff; tr.resonance=d.resonance; tr.envMod=d.envMod; tr.decay=d.decay; tr.cosmicWidth=d.cosmicWidth; tr.cosmicMotion=d.cosmicMotion; tr.cosmicWarmth=d.cosmicWarmth; tr.cosmicAir=d.cosmicAir; renderArpControls(tr); } });
+  renderLengthChips(); renderPageNav(); renderAllForPage();
 });
 taScopeEl.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{
   taScope=b.dataset.s;
@@ -3057,52 +3279,175 @@ const scHint=document.getElementById('scHint');
 const recDur=document.getElementById('recDur');
 const arpControls=document.getElementById('arpControls');
 const NOTE_NAMES=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+
+// Musical arpeggio generator: chord tones first, optional scale passing notes.
+// Notes are semitone offsets relative to the track root, matching the pitch editor.
+const arpGenStatus=document.getElementById('arpGenStatus');
+const arpGenChordTones={minor:[0,3,7],major:[0,4,7],min7:[0,3,7,10],maj7:[0,4,7,11],sus2:[0,2,7],sus4:[0,5,7],add9:[0,3,7,14]};
+// Akkordverläufe: [Halbtöne ab Grundton, 'm'=Moll/'M'=Dur]. Pro Takt ein Akkord (bei 16 Steps alle 8 Steps).
+const ARP_PROGS={
+  minor:[
+    {id:'m1',rn:'i–VI–III–VII',steps:[[0,'m'],[8,'M'],[3,'M'],[10,'M']]},
+    {id:'m2',rn:'i–VII–VI–VII',steps:[[0,'m'],[10,'M'],[8,'M'],[10,'M']]},
+    {id:'m3',rn:'i–iv–VII–III',steps:[[0,'m'],[5,'m'],[10,'M'],[3,'M']]},
+    {id:'m4',rn:'i–VI–VII–i',steps:[[0,'m'],[8,'M'],[10,'M'],[0,'m']]},
+    {id:'m5',rn:'i–III–VII–VI',steps:[[0,'m'],[3,'M'],[10,'M'],[8,'M']]},
+    {id:'m6',rn:'i–v–VI–iv',steps:[[0,'m'],[7,'m'],[8,'M'],[5,'m']]},
+    {id:'m7',rn:'VI–VII–i–i',steps:[[8,'M'],[10,'M'],[0,'m'],[0,'m']]},
+    {id:'m8',rn:'i–VII',steps:[[0,'m'],[10,'M']]},
+    {id:'m9',rn:'i–iv–v–i',steps:[[0,'m'],[5,'m'],[7,'m'],[0,'m']]}
+  ],
+  major:[
+    {id:'M1',rn:'I–V–vi–IV',steps:[[0,'M'],[7,'M'],[9,'m'],[5,'M']]},
+    {id:'M2',rn:'vi–IV–I–V',steps:[[9,'m'],[5,'M'],[0,'M'],[7,'M']]},
+    {id:'M3',rn:'I–IV–V–IV',steps:[[0,'M'],[5,'M'],[7,'M'],[5,'M']]}
+  ]
+};
+const ARP_PROGS_ALL={}; Object.keys(ARP_PROGS).forEach(g=>ARP_PROGS[g].forEach(p=>ARP_PROGS_ALL['prog:'+p.id]=p));
+function arpChordName(tr,st){ return NOTE_NAMES[(((9+tr.rootNote+st[0])%12)+12)%12]+(st[1]==='m'?'m':''); }
+const AG_SINGLE='<optgroup label="Einzelner Akkord"><option value="minor">Minor</option><option value="major">Major</option><option value="min7">Minor 7</option><option value="maj7">Major 7</option><option value="sus2">Sus 2</option><option value="sus4">Sus 4</option><option value="add9">Minor add9</option></optgroup>';
+let agOptKey='';
+// Dropdown "Chord": Einzelakkorde + Verläufe (Liste je nach Skala der Spur, Namen je nach Grundton)
+function agRefreshChordOptions(tr){
+  const sel=document.getElementById('agChord'); if(!sel) return;
+  const key=(tr.scale||'minor')+'|'+tr.rootNote; if(key===agOptKey) return; agOptKey=key;
+  const cur=sel.value, list=tr.scale==='major' ? ARP_PROGS.major : ARP_PROGS.minor;
+  let h=AG_SINGLE+'<optgroup label="Verlauf · pro Takt ein Akkord">';
+  list.forEach(p=>{ h+='<option value="prog:'+p.id+'">'+p.steps.slice(0,4).map(st=>arpChordName(tr,st)).join(' ')+' · '+p.rn+'</option>'; });
+  sel.innerHTML=h+'</optgroup>';
+  sel.value=Array.prototype.some.call(sel.options,o=>o.value===cur) ? cur : 'minor';
+}
+function arpGenBuild(tr, mode='generate'){
+  const style=document.getElementById('agStyle').value;
+  const chord=document.getElementById('agChord').value;
+  const dir=document.getElementById('agDir').value;
+  const rate=Math.max(1,+document.getElementById('agRate').value||1);
+  const octaves=Math.max(1,+document.getElementById('agRange').value||2);
+  const density=(+document.getElementById('agDensity').value||75)/100;
+  const [from,to]=taRange(); // wie Zufall/Leeren: nur sichtbare Seite oder alle Seiten
+  // Notenbereich = das, was der Tonhöhen-Editor per Okt −/+ erreicht (0..36); Überhang wird oktavweise zurückgefaltet
+  const MAXN=Math.min(36, octaves*12+14);
+  const fold=n=>{ while(n>MAXN) n-=12; while(n<0) n+=12; return n; };
+  const scale=(SCALES[tr.scale]||SCALES.minor).semis;
+  const prog=ARP_PROGS_ALL[chord]||null;
+  const segLen=PATTERN_LENGTH===16 ? 8 : 16; // Akkordwechsel: pro Takt (bei nur einem Takt alle 8 Steps)
+  const segIdx=s=>Math.floor(s/segLen);
+  const seqCache={};
+  const seqFor=tones=>{
+    const seq=[];
+    for(let o=0;o<octaves;o++) tones.forEach(n=>seq.push(n+o*12));
+    if(dir==='down') seq.reverse();
+    else if(dir==='updown' && seq.length>2) seq.push(...seq.slice(1,-1).reverse());
+    return seq.length?seq:[0,3,7];
+  };
+  const seqAt=s=>{
+    const k=prog ? segIdx(s)%prog.steps.length : 0;
+    if(!seqCache[k]){
+      const tones=prog ? (prog.steps[k][1]==='m'?[0,3,7]:[0,4,7]).map(i=>i+prog.steps[k][0]) : (arpGenChordTones[chord]||arpGenChordTones.minor).slice();
+      seqCache[k]=seqFor(tones);
+    }
+    return seqCache[k];
+  };
+  let cursor=-1, active=0, lastSeg=-1;
+  const oldSteps=tr.steps.slice(), oldNotes=tr.notes.slice();
+  if(mode==='generate'){
+    for(let s=from;s<to;s++){
+      const av=seqAt(s);
+      const stepInBar=s%16;
+      if(prog && segIdx(s)!==lastSeg) cursor=-1; // neuer Akkord beginnt auf dem Grundton
+      lastSeg=segIdx(s);
+      if(stepInBar%rate!==0){tr.steps[s]=VEL_OFF;tr.notes[s]=0;tr.slides[s]=false;continue;}
+      let chance=density;
+      if(style==='cosmic' && stepInBar%4!==0) chance=Math.max(.35,density-.12);
+      if(style==='flow' && stepInBar%8===6) chance=Math.min(1,density+.18);
+      if(Math.random()>chance){tr.steps[s]=VEL_OFF;tr.notes[s]=0;tr.slides[s]=false;continue;}
+      if(dir==='random') cursor=Math.floor(Math.random()*av.length);
+      else if(style==='flow' && Math.random()<.17) cursor=(cursor+2+Math.floor(Math.random()*2))%av.length;
+      else cursor=(cursor+1)%av.length;
+      let note=av[cursor];
+      if(style==='cosmic' && Math.random()<.18) note+=12*(Math.random()<.5?1:-1);
+      if(style==='flow' && Math.random()<.16){
+        // Durchgangston = Nachbar-Skalenton (max. kleine Terz entfernt), nie skalenfremd
+        const pool=[]; for(let o=-1;o<=octaves+1;o++) scale.forEach(sv=>pool.push(sv+o*12));
+        const near=pool.filter(n=>n!==note && n>=0 && Math.abs(n-note)<=3);
+        if(near.length) note=near[Math.floor(Math.random()*near.length)];
+      }
+      tr.notes[s]=fold(note);
+      const accent=(stepInBar%4===0) || (style==='cosmic' && Math.random()<.12);
+      tr.steps[s]=accent?VEL_ACCENT:(Math.random()<.2?VEL_GHOST:VEL_NORMAL);
+      tr.slides[s]=false;
+      active++;
+    }
+    if(active===0){ tr.steps[from]=VEL_ACCENT; tr.notes[from]=0; active=1; }
+  } else if(mode==='variation'){
+    for(let s=from;s<to;s++){
+      const av=seqAt(s);
+      if(oldSteps[s]===VEL_OFF){
+        if(Math.random()<.18 && s%rate===0){ tr.steps[s]=VEL_GHOST; tr.notes[s]=av[Math.floor(Math.random()*av.length)]; tr.slides[s]=false; active++; }
+        continue;
+      }
+      if(Math.random()<.28){
+        let note=oldNotes[s]||0;
+        const candidates=av.filter(n=>Math.abs(n-note)<=7);
+        note=candidates.length?candidates[Math.floor(Math.random()*candidates.length)]:av[Math.floor(Math.random()*av.length)];
+        if(style==='cosmic' && Math.random()<.2) note+=12;
+        tr.notes[s]=fold(note);
+      }
+      if(Math.random()<.12) tr.steps[s]=tr.steps[s]===VEL_ACCENT?VEL_NORMAL:VEL_ACCENT;
+      active++;
+    }
+  } else if(mode==='fill'){
+    // letzter Beat jedes Takts als kompakter Lauf
+    for(let s=from;s<to;s++){
+      const av=seqAt(s);
+      const pos=s%16;
+      if(pos<12) continue;
+      tr.notes[s]=fold(av[(pos-12)%av.length]);
+      tr.steps[s]=(pos===12||pos===15)?VEL_ACCENT:VEL_NORMAL;
+      tr.slides[s]=false;
+      active++;
+    }
+  }
+  pitchFit=true;
+  refreshTrackStepVisuals(tr);
+  if(tr===TRACKS[activeTrackIdx]) renderPitchEditor(tr);
+  const bars=(to-from)/16;
+  if(arpGenStatus) arpGenStatus.textContent=(prog?'Verlauf '+prog.steps.slice(0,4).map(st=>arpChordName(tr,st)).join(' · ')+' — ':'')+(mode==='variation'?'Variation':mode==='fill'?'Fill ergänzt':'Arpeggio erzeugt')+' · '+active+' aktive Steps · '+bars+(bars===1?' Takt':' Takte');
+}
+function arpGenRun(mode){
+  const tr=TRACKS[activeTrackIdx];
+  if(!tr || tr.type!=='arp') return;
+  taSnapshot();
+  arpGenBuild(tr,mode);
+  taSay('Arpeggio '+(mode==='variation'?'variiert':mode==='fill'?'Fill ergänzt':'generiert')+' — ↶ zum Zurückholen');
+}
+['arpGenGo','arpGenVar','arpGenFill'].forEach((id,i)=>{
+  const el=document.getElementById(id);
+  if(el) el.addEventListener('click',()=>arpGenRun(['generate','variation','fill'][i]));
+});
+
 function renderTrackBar(){
   const tr=TRACKS[activeTrackIdx];
   tbName.textContent=tr.name;
   tbDot.style.background=tr.color; tbDot.style.boxShadow='0 0 6px '+tr.color;
-  tbKnobs.innerHTML='';
-  tbVolKnob=makeKnob({label:'VOL', size:'26px', min:0,max:1, value:tr.vol, fmt:v=>Math.round(v*100),
-    onChange:v=>{ setTrackVol(tr, v); }});
-
-  if(tr.type==='arp'){
-    // Beim Acid-Bass-Track ersetzt der Tune-Knob-Slot die Grundton-Auswahl (Root Note)
-    tbTuneKnob=makeKnob({label:'ROOT', size:'26px', min:0,max:11, value:tr.rootNote, fmt:v=>NOTE_NAMES[(Math.round(v)+9)%12],
-      onChange:v=>{ const r=Math.round(v); if(r!==tr.rootNote){ tr.rootNote=r; renderPitchEditor(tr); } }});
-  } else {
-    const tuneLabel = tr.isSample ? v=>Math.round((Math.pow(2,(v-0.5)*2))*100)+'%' : v=>Math.round(v*100);
-    tbTuneKnob=makeKnob({label:'TUNE', size:'26px', min:0,max:1, value:tr.tune, fmt:tuneLabel, onChange:v=>tr.tune=v});
-  }
-  tbKnobs.appendChild(tbVolKnob.el); tbKnobs.appendChild(tbTuneKnob.el);
-
-  const revLabel=v=>Math.round(v*100)+'%';
-  tbRevKnob=makeKnob({label:'HALL', size:'26px', min:0, max:1, value:tr.reverbAmount||0, fmt:revLabel,
-    onChange:v=>{ tr.reverbAmount=v; if(tr.sendGain) tr.sendGain.gain.value=v; }});
-  tbKnobs.appendChild(tbRevKnob.el);
-
-  const delayLabel=v=>Math.round(v*100)+'%';
-  tbDelayKnob=makeKnob({label:'DELAY', size:'26px', min:0, max:1, value:tr.delaySend||0, fmt:delayLabel,
-    onChange:v=>{ tr.delaySend=v; if(tr.delaySendGain) tr.delaySendGain.gain.value=v; }});
-  tbKnobs.appendChild(tbDelayKnob.el);
-
-  // Feel: fester Zeitversatz in ms, unabhängig vom Humanize-Zufall — für bewusstes
-  // "Vorziehen" (negativ, drängender) oder "Zurücklehnen" (positiv, laid back) einer Spur.
-  const feelLabel=v=> (v>0?'+':'')+Math.round(v)+'ms';
-  tbFeelKnob=makeKnob({label:'FEEL', size:'26px', min:-30, max:30, value:tr.feel||0, fmt:feelLabel,
-    onChange:v=>{ tr.feel=v; }});
-  tbKnobs.appendChild(tbFeelKnob.el);
+  tbKnobs.innerHTML=''; tbVolKnob=null; syncTbMS();
+  $id('tbSynth').style.display = tr.type==='arp' ? '' : 'none';
 
   sampleControls.style.display='none';
   arpControls.style.display='none';
   arpModPanel.style.display='none';
+  const arpGenPanel=document.getElementById('arpGenPanel');
+  if(arpGenPanel) arpGenPanel.classList.toggle('show', tr.type==='arp');
   tbPreview.style.display='';
   if(tr.isSample){
     sampleControls.style.display='flex';
     tbPreview.style.display='none';
     updateRecStatus();
   } else if(tr.type==='arp'){
-    arpControls.style.display='flex';
-    arpModPanel.style.display='flex';
+    arpControls.style.display='none'; // Filter-Regler liegen jetzt im Synth-Sheet
+    arpModPanel.style.display=tr.id==='cosmic'?'none':'flex';
+    const xyBtn=document.getElementById('arpXyBtn');
+    if(xyBtn) xyBtn.style.display=tr.id==='cosmic'?'none':'';
     renderArpControls(tr);
   }
 }
@@ -3111,6 +3456,7 @@ const arpCutoffEl=document.getElementById('arpCutoffKnob');
 const arpResEl=document.getElementById('arpResKnob');
 const arpEnvEl=document.getElementById('arpEnvKnob');
 const arpDecayEl=document.getElementById('arpDecayKnob');
+const arpCosmicControlsEl=document.getElementById('arpCosmicControls');
 function renderArpControls(tr){
   arpCutoffEl.innerHTML=''; arpResEl.innerHTML='';
   const cutoffKnob=makeKnob({label:'CUTOFF', size:'26px', min:0, max:1, value:tr.cutoff, fmt:v=>Math.round(v*100)+'%',
@@ -3127,11 +3473,26 @@ function renderArpControls(tr){
     onChange:v=>tr.decay=v});
   arpEnvEl.appendChild(envKnob.el);
   arpDecayEl.appendChild(decayKnob.el);
+  if(arpCosmicControlsEl){
+    const isCosmic=tr.id==='cosmic';
+    arpCosmicControlsEl.style.display=isCosmic?'flex':'none';
+    if(isCosmic){
+      const addCosmicKnob=(id,label,key,fmt)=>{
+        const el=document.getElementById(id); el.innerHTML='';
+        const k=makeKnob({label,size:'26px',min:0,max:1,value:tr[key]!=null?tr[key]:0.5,fmt:fmt|| (v=>Math.round(v*100)+'%'),onChange:v=>tr[key]=v});
+        el.appendChild(k.el);
+      };
+      addCosmicKnob('arpCosmicWidth','WIDTH','cosmicWidth');
+      addCosmicKnob('arpCosmicMotion','MOTION','cosmicMotion');
+      addCosmicKnob('arpCosmicWarmth','WARMTH','cosmicWarmth');
+      addCosmicKnob('arpCosmicAir','AIR','cosmicAir');
+    }
+  }
 }
 // Würfelt die vier Filterwerte (Cutoff/Reso/Env Mod/Decay) — in musikalischen Grenzen, voller Bereich würde pfeifen/übersteuern
 const arpFilterRandBtn=document.getElementById('arpFilterRandBtn');
 arpFilterRandBtn.addEventListener('click', ()=>{
-  const tr=TRACKS.find(t=>t.type==='arp');
+  const tr=TRACKS[activeTrackIdx]?.type==='arp' ? TRACKS[activeTrackIdx] : TRACKS.find(t=>t.type==='arp');
   taSnapshot(tr);
   tr.cutoff=0.15+Math.random()*0.7;
   tr.resonance=0.1+Math.random()*0.6;
@@ -3150,6 +3511,7 @@ tbPreview.addEventListener('click', ()=>{
 // =========================================================================
 // UI: GROSSES EDIT-GRID (4x4 = 16 Steps des aktiven Tracks)
 // =========================================================================
+let stepBrush=VEL_NORMAL;
 const bigGrid=document.getElementById('bigGrid');
 const bigCells=[];
 const bigCellNums=[];
@@ -3165,7 +3527,7 @@ for(let s=0;s<16;s++){
   c.addEventListener('click', ()=>{
     const tr=TRACKS[activeTrackIdx];
     const abs=currentPage*16+s;
-    tr.steps[abs]=nextVelocity(tr.steps[abs]);
+    tr.steps[abs]= tr.steps[abs]===stepBrush ? VEL_OFF : stepBrush;
     updateStepVisual(c, tr.steps[abs]);
     if(tr._ovCells) updateStepVisual(tr._ovCells[s], tr.steps[abs]);
   });
@@ -3201,14 +3563,14 @@ const peScaleBtn=document.getElementById('peScaleBtn');
 let pitchLo=0, pitchScaleOnly=true, pitchFit=false, pitchCols=[];
 const PITCH_MINOR=[0,2,3,5,7,8,10];
 function pitchNoteName(tr,v){
-  const t=9+tr.rootNote+v;
+  const t=9+tr.rootNote+v+(tr.id==='cosmic'?24:0); // Cosmic klingt 2 Oktaven höher -> Namen passen zum Klang
   return NOTE_NAMES[((t%12)+12)%12]+(Math.floor(t/12)+1);
 }
 function pitchInScale(v,tr){ return (SCALES[(tr&&tr.scale)||'minor']||SCALES.minor).semis.indexOf(((v%12)+12)%12)>=0; }
 // Fenster wählen, in dem die meisten vorhandenen Töne sichtbar sind (Fenster liegen auf Oktavgrenzen, -24..+12)
 function pitchDoFit(tr){
   let best=0, bestCount=-1;
-  [0,-12,12,-24].forEach(lo=>{ // bei Gleichstand gewinnt das frühere (näher an Grundton)
+  [0,-12,12,-24,24].forEach(lo=>{ // bei Gleichstand gewinnt das frühere (näher an Grundton)
     let cnt=0;
     for(let s=0;s<PATTERN_LENGTH;s++){ const n=tr.notes[s]||0; if(tr.steps[s]>0 && n>=lo && n<=lo+12) cnt++; }
     if(cnt>bestCount){ bestCount=cnt; best=lo; }
@@ -3218,11 +3580,14 @@ function pitchDoFit(tr){
 function renderPitchEditor(tr){
   const isArp=tr.type==='arp';
   pitchEditor.style.display=isArp?'':'none';
-  bigGrid.style.display=isArp?'none':'';
+  bigGrid.style.display=isArp?'none':''; document.getElementById('brushRow').style.display=isArp?'none':'';
   if(!isArp){ pitchCols=[]; return; }
+  agRefreshChordOptions(tr);
+  pitchEditor.style.setProperty('--tc', tr.color); // Tonzellen in der Spurfarbe (Acid orange, Cosmic lila)
   if(pitchFit){ pitchDoFit(tr); pitchFit=false; }
   peScaleSel.value=tr.scale||'minor';
   peOctLabel.textContent=pitchNoteName(tr,pitchLo)+' – '+pitchNoteName(tr,pitchLo+12);
+  document.getElementById('peLegend').textContent = tr.id==='cosmic' ? 'A = Accent · ▲▼ = Ton außerhalb des Fensters (Okt −/+)' : 'A = Accent · S = Slide zum nächsten Ton · ▲▼ = Ton außerhalb des Fensters';
   const base=currentPage*16;
   let h='<div></div>';
   for(let c=0;c<16;c++) h+='<div class="pe-hn'+(c%4===0?' beat':'')+'" data-col="'+c+'">'+(base+c+1)+'</div>';
@@ -3242,9 +3607,11 @@ function renderPitchEditor(tr){
   h+='<div class="pe-rl">A</div>';
   for(let c=0;c<16;c++){ const i=base+c;
     h+='<button class="pe-ab a'+(tr.steps[i]===VEL_ACCENT?' on':'')+(tr.steps[i]>0?'':' dis')+'" data-a="'+c+'" aria-label="Accent Step '+(i+1)+'">A</button>'; }
-  h+='<div class="pe-rl">S</div>';
-  for(let c=0;c<16;c++){ const i=base+c;
-    h+='<button class="pe-ab s'+(tr.slides[i]?' on':'')+(tr.steps[i]>0?'':' dis')+'" data-s="'+c+'" aria-label="Slide Step '+(i+1)+'">S</button>'; }
+  if(tr.id!=='cosmic'){ // Cosmic hat keine Slides
+    h+='<div class="pe-rl">S</div>';
+    for(let c=0;c<16;c++){ const i=base+c;
+      h+='<button class="pe-ab s'+(tr.slides[i]?' on':'')+(tr.steps[i]>0?'':' dis')+'" data-s="'+c+'" aria-label="Slide Step '+(i+1)+'">S</button>'; }
+  }
   pitchGrid.innerHTML=h;
   pitchCols=Array.from({length:16},()=>[]);
   pitchGrid.querySelectorAll('[data-col]').forEach(el=>pitchCols[+el.dataset.col].push(el));
@@ -3288,7 +3655,7 @@ pitchGrid.addEventListener('click', (e)=>{
   renderPitchEditor(tr);
 });
 document.getElementById('peOctDown').addEventListener('click', ()=>{ pitchLo=Math.max(-24,pitchLo-12); renderPitchEditor(TRACKS[activeTrackIdx]); });
-document.getElementById('peOctUp').addEventListener('click', ()=>{ pitchLo=Math.min(12,pitchLo+12); renderPitchEditor(TRACKS[activeTrackIdx]); });
+document.getElementById('peOctUp').addEventListener('click', ()=>{ pitchLo=Math.min(24,pitchLo+12); renderPitchEditor(TRACKS[activeTrackIdx]); });
 peScaleBtn.addEventListener('click', ()=>{
   pitchScaleOnly=!pitchScaleOnly;
   peScaleBtn.classList.toggle('on', pitchScaleOnly);
@@ -3367,14 +3734,15 @@ function xyBuild(){
   xyReso.value=Math.round((tr.resonance!=null?tr.resonance:0.35)*100); xyResoVal.textContent=xyReso.value+'%';
 }
 // Skala wechseln: gilt für die ganze Acid-Spur (Spielfläche, Tonhöhen-Editor "Nur Skala", Random)
-function setAcidScale(id){
-  const tr=xyTrack(); if(!tr || !SCALES[id]) return;
-  tr.scale=id; xyScaleSel.value=id; peScaleSel.value=id;
-  renderPitchEditor(tr);
-  if(xyOverlay.classList.contains('open')) xyBuild();
+function setAcidScale(id, tr){
+  tr=tr||xyTrack(); if(!tr || !SCALES[id]) return;
+  tr.scale=id;
+  if(tr===xyTrack()) xyScaleSel.value=id;
+  if(tr===TRACKS[activeTrackIdx]){ peScaleSel.value=id; renderPitchEditor(tr); }
+  if(tr===xyTrack() && xyOverlay.classList.contains('open')) xyBuild();
 }
 xyScaleSel.addEventListener('change', ()=>setAcidScale(xyScaleSel.value));
-peScaleSel.addEventListener('change', ()=>setAcidScale(peScaleSel.value));
+peScaleSel.addEventListener('change', ()=>setAcidScale(peScaleSel.value, TRACKS[activeTrackIdx]));
 
 function xyEnsureVoice(tr){
   if(tr._live) return tr._live;
@@ -3479,13 +3847,109 @@ ARR_GROUPS.forEach(g=>{
 function setPatternGroup(gid, select){
   patternGroup=gid;
   groupBar.querySelectorAll('.gb').forEach(b=>b.classList.toggle('on', b.dataset.g===gid));
+  grpSelRender();
   TRACKS.forEach(tr=>{ if(tr._ovRow) tr._ovRow.style.display = groupOfTrack(tr)===gid ? '' : 'none'; });
   if(select) selectTrack(TRACKS.findIndex(t=>groupOfTrack(t)===gid));
 }
 setPatternGroup(patternGroup,false);
 
+// =========================================================================
+// UX v2: Menüs (Spur, Länge), Sheets (Einstellungen, Klang), Mute/Solo in der Spurleiste
+// =========================================================================
+function $id(id){ return document.getElementById(id); }
+function closeMenus(){ ['grpMenu','lenMenu'].forEach(i=>$id(i).classList.remove('open')); $id('grpBtn').setAttribute('aria-expanded','false'); $id('lenBtn').setAttribute('aria-expanded','false'); }
+function toggleMenu(menuId, btnId){ const o=!$id(menuId).classList.contains('open'); closeMenus(); if(o){ $id(menuId).classList.add('open'); $id(btnId).setAttribute('aria-expanded','true'); } }
+$id('grpBtn').addEventListener('click', ()=>toggleMenu('grpMenu','grpBtn'));
+$id('lenBtn').addEventListener('click', ()=>toggleMenu('lenMenu','lenBtn'));
+document.addEventListener('click', e=>{ if(!e.target.closest('.lcdsel')) closeMenus(); });
+function grpSelRender(){
+  const m=$id('grpMenu'); if(!m) return; m.innerHTML='';
+  ARR_GROUPS.forEach(g=>{ const b=document.createElement('button'); b.setAttribute('role','option'); if(g.id===patternGroup) b.className='cur';
+    b.innerHTML=g.label+'<small>'+g.ids.map(i=>i.toUpperCase()).join(' ')+'</small>';
+    b.onclick=()=>{ closeMenus(); setPatternGroup(g.id,true); }; m.appendChild(b); });
+  const g=ARR_GROUPS.find(x=>x.id===patternGroup), n=g.ids.length;
+  $id('grpName').textContent=g.label; $id('grpCnt').textContent=n+(n===1?' Spur':' Spuren');
+}
+function lenUiRender(){
+  const m=$id('lenMenu'); if(!m) return; $id('lenBtn').textContent=PATTERN_LENGTH+' Steps ▾'; m.innerHTML='';
+  LENGTH_OPTIONS.forEach(n=>{ const b=document.createElement('button'); b.setAttribute('role','option'); if(n===PATTERN_LENGTH) b.className='cur';
+    b.innerHTML=n+' Steps<small>'+(n/16)+(n===16?' Takt':' Takte')+(n<PATTERN_LENGTH?' · Rest wird abgeschnitten':'')+'</small>';
+    b.onclick=()=>{ closeMenus(); setPatternLength(n); }; m.appendChild(b); });
+}
+grpSelRender(); lenUiRender();
+function syncTbMS(){ const tr=TRACKS[activeTrackIdx], m=$id('tbM'), s2=$id('tbS'); if(!tr||!m) return; m.classList.toggle('on',!!tr.muted); s2.classList.toggle('on',!!tr.solo); }
+$id('tbM').addEventListener('click', ()=>toggleTrackMute(TRACKS[activeTrackIdx]));
+$id('tbS').addEventListener('click', ()=>toggleTrackSolo(TRACKS[activeTrackIdx]));
+$id('tbSound').addEventListener('click', openSoundSheet);
+$id('tbSynth').addEventListener('click', ()=>{ const tr=TRACKS[activeTrackIdx]; if(tr.type==='arp'){ buildSynthSheet(tr); openSheet('synthSheet'); } });
+
+function closeSheets(){ $id('sheetVeil').style.display='none'; ['setSheet','soundSheet','synthSheet'].forEach(i=>$id(i).classList.remove('open')); }
+function openSheet(id){ closeMenus(); $id('sheetVeil').style.display='block'; $id(id).classList.add('open'); }
+$id('sheetVeil').addEventListener('click', closeSheets); $id('setX').addEventListener('click', closeSheets); $id('sndX').addEventListener('click', closeSheets); $id('synX').addEventListener('click', closeSheets);
+document.querySelectorAll('.sheet').forEach(sh=>sh.addEventListener('dblclick', e=>{ const i=e.target; if(i.type==='range' && i.dataset.def!=null){ i.value=i.dataset.def; i.dispatchEvent(new Event('input')); } }));
+function syncSettingsUI(){
+  $id('sMaster').value=Math.round(masterVol*100); $id('sMasterV').textContent=$id('sMaster').value+'%';
+  $id('sSwing').value=Math.round(swing/0.6*100); $id('sSwingV').textContent=$id('sSwing').value+'%';
+  $id('sHum').value=Math.round(humanize*100); $id('sHumV').textContent=$id('sHum').value+'%';
+}
+$id('sMaster').addEventListener('input', e=>setMasterVol(e.target.value/100));
+$id('sSwing').addEventListener('input', e=>{ swing=e.target.value/100*0.6; syncSettingsUI(); });
+$id('sHum').addEventListener('input', e=>{ humanize=e.target.value/100; syncSettingsUI(); });
+syncSettingsUI();
+$id('settingsBtn').addEventListener('click', ()=>{ syncSettingsUI(); openSheet('setSheet'); });
+
+function soundRow(label,min,max,val,def,fmt,on){
+  const r=document.createElement('div'); r.className='srow';
+  r.innerHTML='<label>'+label+'</label><input type="range" min="'+min+'" max="'+max+'" step="1"><b></b>';
+  const inp=r.querySelector('input'), b=r.querySelector('b'); inp.value=Math.round(val); inp.dataset.def=def; b.textContent=fmt(+inp.value);
+  inp.addEventListener('input', ()=>{ b.textContent=fmt(+inp.value); on(+inp.value); });
+  return r;
+}
+// Synth-Sheet (Acid + Cosmic): Filter- und Klangregler als Slider, Werte direkt auf tr.*
+function buildSynthSheet(tr){
+  const box=$id('synthRows'), cos=tr.id==='cosmic'; box.innerHTML='';
+  $id('synT').textContent='Synth · '+tr.name; $id('synthSheet').classList.toggle('cos', cos);
+  const ico=(d)=>'<svg viewBox="0 0 24 24" aria-hidden="true">'+d+'</svg>';
+  const acts=document.createElement('div'); acts.className='acts';
+  acts.innerHTML='<button class="act" id="synRand">'+ico('<rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9" r="1" fill="currentColor"/><circle cx="15" cy="15" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/>')+'Filter würfeln</button>'
+    +(cos?'':'<button class="act" id="synXy">'+ico('<circle cx="12" cy="12" r="8"/><path d="M12 4v16M4 12h16"/>')+'XY-Pad</button>');
+  box.appendChild(acts);
+  const grp=t=>{ const g=document.createElement('div'); g.className='grp'; g.textContent=t; box.appendChild(g); };
+  const pct=v=>v+'%';
+  const dec=v=>{ const sec=arpDecaySeconds(v/100); return sec<1 ? Math.round(sec*1000)+'ms' : sec.toFixed(1)+'s'; };
+  const num=(v,d)=>v!=null?v:d;
+  const D=cos?{cut:62,res:22,env:62,dec:42}:{cut:50,res:35,env:50,dec:26};
+  grp('Filter');
+  box.appendChild(soundRow('Cutoff',0,100,num(tr.cutoff,D.cut/100)*100,D.cut,pct,v=>tr.cutoff=v/100));
+  box.appendChild(soundRow('Reso',0,100,num(tr.resonance,D.res/100)*100,D.res,pct,v=>tr.resonance=v/100));
+  box.appendChild(soundRow('Env Mod',0,100,num(tr.envMod,D.env/100)*100,D.env,pct,v=>tr.envMod=v/100));
+  box.appendChild(soundRow('Decay',0,100,num(tr.decay,D.dec/100)*100,D.dec,dec,v=>tr.decay=v/100));
+  if(cos){
+    grp('Klang');
+    [['Width','cosmicWidth',62],['Motion','cosmicMotion',46],['Warmth','cosmicWarmth',22],['Air','cosmicAir',18]].forEach(([l,k,d])=>
+      box.appendChild(soundRow(l,0,100,num(tr[k],d/100)*100,d,pct,v=>tr[k]=v/100)));
+  }
+  $id('synRand').addEventListener('click', ()=>{ arpFilterRandBtn.click(); buildSynthSheet(tr); });
+  const xy=$id('synXy'); if(xy) xy.addEventListener('click', ()=>{ closeSheets(); openXY(); });
+}
+function openSoundSheet(){
+  const tr=TRACKS[activeTrackIdx], box=$id('sndRows'); box.innerHTML='';
+  $id('sndT').textContent='Klang · '+tr.name;
+  box.appendChild(soundRow('Laut',0,100,tr.vol*100,80,v=>v,v=>setTrackVol(tr,v/100)));
+  if(tr.type==='arp') box.appendChild(soundRow('Grundton',0,11,tr.rootNote,0,v=>NOTE_NAMES[(v+9)%12],v=>{ if(v!==tr.rootNote){ tr.rootNote=v; renderPitchEditor(tr); } }));
+  else box.appendChild(soundRow('Tune',0,100,tr.tune*100,50,v=>tr.isSample?Math.round(Math.pow(2,(v/100-0.5)*2)*100)+'%':v,v=>tr.tune=v/100));
+  box.appendChild(soundRow('Hall',0,100,(tr.reverbAmount||0)*100,0,v=>v+'%',v=>{ tr.reverbAmount=v/100; if(tr.sendGain) tr.sendGain.gain.value=tr.reverbAmount; }));
+  box.appendChild(soundRow('Delay',0,100,(tr.delaySend||0)*100,0,v=>v+'%',v=>{ tr.delaySend=v/100; if(tr.delaySendGain) tr.delaySendGain.gain.value=tr.delaySend; }));
+  box.appendChild(soundRow('Feel',-30,30,tr.feel||0,0,v=>(v>0?'+':'')+v+'ms',v=>tr.feel=v));
+  openSheet('soundSheet');
+}
+document.querySelectorAll('#brushRow button').forEach(b=>b.addEventListener('click', ()=>{
+  stepBrush=parseFloat(b.dataset.v);
+  document.querySelectorAll('#brushRow button').forEach(x=>x.classList.toggle('on',x===b));
+}));
+
 function selectTrack(idx){
-  if(typeof taResetUndo==='function') taResetUndo();
+  
   activeTrackIdx=idx;
   { const g0=groupOfTrack(TRACKS[idx]); if(g0!==patternGroup) setPatternGroup(g0,false); }
   pitchFit=true; // beim Spurwechsel/Laden: Tonfenster auf vorhandene Töne zentrieren
@@ -4004,7 +4468,7 @@ function buildMixerChannel(tr, isMaster){
     btns.appendChild(soloBtn);
     tr._mixSoloBtn=soloBtn;
   }
-  if(!isMaster && tr.type==='arp'){
+  if(!isMaster && tr.type==='arp' && tr.id!=='cosmic'){
     const xb=document.createElement('button'); xb.className='mix-mute'; xb.textContent='◎'; xb.title='XY-Filter';
     xb.addEventListener('click', openXY); btns.appendChild(xb);
   }
@@ -4748,7 +5212,7 @@ function collectPatternData(name, id){
       reverbAmount: tr.reverbAmount || 0,
       feel: tr.feel || 0,
       delaySend: tr.delaySend || 0,
-      rootNote: tr.rootNote, cutoff: tr.cutoff, resonance: tr.resonance, envMod: tr.envMod, decay: tr.decay, scale: tr.scale // envMod/decay: additiv zu v6, ältere Patterns -> Standardwerte
+      rootNote: tr.rootNote, cutoff: tr.cutoff, resonance: tr.resonance, envMod: tr.envMod, decay: tr.decay, scale: tr.scale, cosmicWidth:tr.cosmicWidth, cosmicMotion:tr.cosmicMotion, cosmicWarmth:tr.cosmicWarmth, cosmicAir:tr.cosmicAir // neue Cosmic-Parameter sind optional für ältere Pattern
     })),
     acidAuto: { shape: autoShape, bars: autoBars, depth: autoDepth },
     fill: {
@@ -4791,6 +5255,21 @@ function applyTrackAndFillData(data){
   drumSetApply(data.drumSet); // ältere Patterns/Beats ohne Set: alle Stimmen aus dem Basis-Kit
   PATTERN_LENGTH = data.patternLength || 16; // ältere Patterns hatten keine gespeicherte Länge → 16
   currentPage=0;
+  // Neue Spuren, die in älteren gespeicherten Patterns noch nicht existierten,
+  // starten beim Laden leer statt den Zustand des zuvor geladenen Beats zu behalten.
+  const cosmicSaved=(data.tracks||[]).some(saved=>saved.id==='cosmic');
+  if(!cosmicSaved){
+    const cosmic=TRACKS.find(t=>t.id==='cosmic');
+    if(cosmic){
+      cosmic.steps=new Array(PATTERN_LENGTH).fill(VEL_OFF);
+      cosmic.notes=new Array(PATTERN_LENGTH).fill(0);
+      cosmic.slides=new Array(PATTERN_LENGTH).fill(false);
+      cosmic.muted=false; cosmic.solo=false;
+      if(cosmic._ovMuteBtn) cosmic._ovMuteBtn.classList.remove('on'); if(cosmic._ovRow) cosmic._ovRow.classList.remove('muted');
+      if(cosmic._mixMuteBtn) cosmic._mixMuteBtn.classList.remove('on'); if(cosmic._ovSoloBtn) cosmic._ovSoloBtn.classList.remove('on'); if(cosmic._mixSoloBtn) cosmic._mixSoloBtn.classList.remove('on');
+      applyTrackSound(cosmic,{vol:0.68,tune:0.5,rootNote:0,cutoff:0.62,resonance:0.22,envMod:0.62,decay:0.42,scale:'minor',reverbAmount:0.24,delaySend:0.28,cosmicWidth:0.62,cosmicMotion:0.46,cosmicWarmth:0.22,cosmicAir:0.18});
+    }
+  }
   data.tracks.forEach(saved=>{
     const tr=TRACKS.find(t=>t.id===saved.id);
     if(!tr) return;
@@ -4832,6 +5311,10 @@ function applyTrackAndFillData(data){
       tr.resonance = saved.resonance!=null ? saved.resonance : 0.35;
       tr.envMod = saved.envMod!=null ? saved.envMod : 0.5;
       tr.decay = saved.decay!=null ? saved.decay : 0.26;
+      tr.cosmicWidth = saved.cosmicWidth!=null ? saved.cosmicWidth : 0.62;
+      tr.cosmicMotion = saved.cosmicMotion!=null ? saved.cosmicMotion : 0.46;
+      tr.cosmicWarmth = saved.cosmicWarmth!=null ? saved.cosmicWarmth : 0.22;
+      tr.cosmicAir = saved.cosmicAir!=null ? saved.cosmicAir : 0.18;
       tr.scale = SCALES[saved.scale] ? saved.scale : 'minor';
     }
   });
@@ -4868,14 +5351,7 @@ function applyPatternData(data){
   clipEditEnd();
   swing=data.swing; humanize=data.humanize!=null ? data.humanize : 0; // alte Patterns: 0 = kein Humanize
   setBpm(data.bpm); // aktualisiert bpm + LCD-Kopfzeile + Tempo-Kachel + Overlay-Ziffer/-Slider synchron
-  // Nur die 3 dynamisch erzeugten Drehregler entfernen — #tempoControl ist festes Markup
-  // (erstes Kind von globalKnobs) und darf hier NICHT mit gelöscht werden.
-  Array.from(globalKnobs.children).forEach(el=>{ if(el.id!=='tempoControl') el.remove(); });
-  [
-    makeKnob({label:'SWING', min:0, max:0.6, value:swing, fmt:v=>Math.round(v/0.6*100)+'%', onChange:v=>swing=v}),
-    makeKnob({label:'HUMANIZE', min:0, max:1, value:humanize, fmt:v=>Math.round(v*100)+'%', onChange:v=>humanize=v}),
-    (masterVolKnobRef=makeKnob({label:'VOLUME', min:0, max:1, value:masterVol, fmt:v=>Math.round(v*100)+'%', onChange:v=>setMasterVol(v)})),
-  ].forEach(k=>globalKnobs.appendChild(k.el));
+  syncSettingsUI();
 
   if(isPlaying) stop();
   applyTrackAndFillData(data);
@@ -5272,6 +5748,7 @@ function syncBottomBarVisibility(){
   bottomTabBar.classList.toggle('overlay-hidden', anyModalOpen);
 }
 function closeAllOverlays(){
+  closeSheets(); closeMenus();
   [tempoOverlay, patternsOverlay, kitPickerOverlay, sampleEditorOverlay, xyOverlay, drumSetOverlay, kitConfirm].forEach(el=>{ if(el) el.classList.remove('open'); });
   xyClear();
   syncBottomBarVisibility();
@@ -5493,7 +5970,8 @@ function beatTrackData(tr){
   return { id:tr.id, steps:tr.steps.slice(), notes:tr.notes?tr.notes.slice():undefined, slides:tr.slides?tr.slides.slice():undefined,
     vol:tr.vol, tune:tr.tune, pan:tr.pan||0, eqLowGain:tr.eqLowGain||0, eqMidGain:tr.eqMidGain||0, eqHighGain:tr.eqHighGain||0,
     reverbAmount:tr.reverbAmount||0, delaySend:tr.delaySend||0, feel:tr.feel||0,
-    rootNote:tr.rootNote, cutoff:tr.cutoff, resonance:tr.resonance, envMod:tr.envMod, decay:tr.decay, scale:tr.scale };
+    rootNote:tr.rootNote, cutoff:tr.cutoff, resonance:tr.resonance, envMod:tr.envMod, decay:tr.decay, scale:tr.scale,
+    cosmicWidth:tr.cosmicWidth, cosmicMotion:tr.cosmicMotion, cosmicWarmth:tr.cosmicWarmth, cosmicAir:tr.cosmicAir };
 }
 function beatCollect(gid, name){
   const d={ id:genId(), kind:'beat', group:gid, name, savedAt:Date.now(), length:PATTERN_LENGTH, kitId:currentKitId, tracks:arrGroupTracks(gid).map(beatTrackData) };
@@ -5514,6 +5992,7 @@ function applyTrackSound(tr, sv){
     tr.rootNote=sv.rootNote!=null?sv.rootNote:0; tr.cutoff=sv.cutoff!=null?sv.cutoff:0.5; tr.resonance=sv.resonance!=null?sv.resonance:0.35;
     tr.envMod=sv.envMod!=null?sv.envMod:0.5; tr.decay=sv.decay!=null?sv.decay:0.26; tr.scale=SCALES[sv.scale]?sv.scale:'minor';
   }
+  if(tr.id==='cosmic'){ tr.cosmicWidth=sv.cosmicWidth!=null?sv.cosmicWidth:0.62; tr.cosmicMotion=sv.cosmicMotion!=null?sv.cosmicMotion:0.46; tr.cosmicWarmth=sv.cosmicWarmth!=null?sv.cosmicWarmth:0.22; tr.cosmicAir=sv.cosmicAir!=null?sv.cosmicAir:0.18; }
 }
 async function beatApply(d, withSound){
   if(isPlaying) stop();
@@ -5917,7 +6396,7 @@ function scheduler(){
 function start(){
   Promise.resolve(initAudio()).then(()=>{
     if(audioCtx.state==='suspended') audioCtx.resume();
-    isPlaying=true; currentStep=0; nextNoteTime=audioCtx.currentTime+0.06; scheduledSteps=[];
+    isPlaying=true; pagePinned=false; renderPinChip(); currentStep=0; nextNoteTime=audioCtx.currentTime+0.06; scheduledSteps=[];
     TRACKS.forEach(t=>{ t._arpHeld=false; });
     absStepCounter=0; modVisAbs=0;
     loopCount=0; currentLoopIsFill=false; fillOverride=null;
@@ -5927,8 +6406,8 @@ function start(){
   });
 }
 function stop(){
-  isPlaying=false; clearTimeout(timerID);
-  stopLoopingSampleTrack();
+  isPlaying=false; pagePinned=false; renderPinChip(); clearTimeout(timerID);
+  stopLoopingSampleTrack(); stopCosmicVoices();
   // Acid-Stimme: gehaltene (Slide-)Noten würden sonst weiterklingen; bereits eingeplante Events werden verworfen
   TRACKS.forEach(t=>{
     if(t._arpAmp && audioCtx){
@@ -5960,16 +6439,16 @@ function visualLoop(){
       const page=Math.floor(dstep/16), rel=dstep%16;
       // Beim Überschreiten einer Seitengrenze blättert die Ansicht automatisch mit,
       // damit der Playhead beim Abspielen längerer Patterns immer sichtbar bleibt.
-      if(page!==currentPage){
+      if(page!==currentPage && !pagePinned){
         currentPage=page;
         renderAllForPage();
         renderPageNav();
       }
       document.querySelectorAll('.playcol').forEach(el=>el.classList.remove('playcol'));
-      TRACKS.forEach(tr=> tr._ovCells[rel].classList.add('playcol'));
+      if(page===currentPage){ TRACKS.forEach(tr=> tr._ovCells[rel].classList.add('playcol'));
       bigCells[rel].classList.add('playcol');
-      if(pitchCols[rel]) pitchCols[rel].forEach(el=>el.classList.add('playcol'));
-      if(TRACKS[activeTrackIdx].steps[dstep]){
+      if(pitchCols[rel]) pitchCols[rel].forEach(el=>el.classList.add('playcol')); }
+      if(page===currentPage && TRACKS[activeTrackIdx].steps[dstep]){
         bigCells[rel].classList.add('flash');
         setTimeout(()=>bigCells[rel].classList.remove('flash'),90);
       }
