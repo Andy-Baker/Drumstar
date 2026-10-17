@@ -1008,7 +1008,7 @@ html,body{min-height:100%;height:100%;}
 #trackBar .name{font-size:18px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tbm{width:44px;height:44px;border-radius:8px;border:1px solid rgba(255,255,255,.14);background:var(--panel);color:var(--dim);font-weight:700;font-size:13px;flex-shrink:0;padding:0;cursor:pointer}
 #tbM.on{background:var(--blue);color:#04121e;border-color:var(--blue)} #tbS.on{background:#ffc247;color:#2a1a00;border-color:#ffc247}
-#lengthRow,#groupBar,#taToast{display:none}
+#groupBar,#taToast{display:none}
 #pageNav{background:none;padding:0;gap:6px}
 #pageLabel{font-size:18px}
 #pageCopyBtn{flex:0 0 56px}
@@ -1046,6 +1046,34 @@ html,body{min-height:100%;height:100%;}
 .sheet .act:active{transform:scale(.97)}
 .sheet .act svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .sheet .grp{font:700 11px 'Rajdhani',sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin:8px 0 0}
+/* Kit/Fill-Zeile (nur Drums/Perc), Footer-Logo */
+.lcd-row2{border-top:0}
+#ctxRow{display:flex;gap:8px}
+.kitpill{flex:1;min-width:0;min-height:48px;border-radius:10px;border:1px solid rgba(63,169,255,.4);background:rgba(63,169,255,.1);display:flex;align-items:center;gap:8px;padding:0 12px;color:var(--lcd-fg);font-family:'VT323',monospace;font-size:22px;text-align:left;cursor:pointer}
+.kitpill .kp-l{font:700 11px 'Rajdhani',sans-serif;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.kitpill #lcdKit{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kitpill .lcd-chev{margin-left:auto}
+#fillBtn{width:48px;height:48px;border-radius:10px;position:relative}
+#fillBtn::after{content:"";position:absolute;top:5px;right:5px;width:8px;height:8px;border-radius:50%;background:#2a2d34}
+#fillBtn.on::after{background:var(--blue);box-shadow:0 0 7px var(--blue)}
+#fillSheet{max-height:90vh;overflow-y:auto}
+#fillSheet #fillOverlay{display:flex;flex-direction:column;gap:12px}
+#fillSheet .fillSectionLabel{margin-bottom:6px}
+/* Header kompakt: Pattern in der Transportleiste, Spur+Kit+Fill in einer Zeile */
+#transport .knob-cluster{flex:0 0 auto;min-width:0}
+.patb{flex:1;min-width:0;min-height:44px;border-radius:8px;border:1px solid rgba(63,169,255,.3);background:#04070a;padding:0 10px;gap:6px;color:var(--lcd-fg);cursor:pointer}
+.patb #lcdPatternName{flex:1;min-width:0;max-width:none;font-size:20px;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#spurRow{display:flex;gap:8px;align-items:stretch}
+#spurRow .lcdsel{flex:1.1;min-width:0}
+#spurRow .kitpill{flex:.9}
+#spurRow .kitpill #lcdKit{flex:1;min-width:0}
+#spurRow.hasKit #grpBtn .lbl,#spurRow.hasKit #grpBtn .cnt{display:none}
+#spurRow.hasKit #grpBtn svg{margin-left:auto}
+#spurRow #grpMenu{right:auto;min-width:240px}
+#lengthRow .len-chip{min-height:44px;display:flex;align-items:center;justify-content:center;font-size:14px}
+.len-hint{font-size:11px;color:var(--dim);margin:0 2px;flex-shrink:0}
+.footer-logo{display:flex;justify-content:center;padding:6px 0 4px}
+.footer-logo img{height:34px;width:auto;max-width:60%;object-fit:contain;filter:drop-shadow(0 0 6px rgba(63,169,255,.45))}
 </style>
 </head>
 <body>
@@ -1076,26 +1104,11 @@ html,body{min-height:100%;height:100%;}
             <div class="knob-val" style="visibility:hidden;" aria-hidden="true">0</div>
           </div>
         </div>
+        <button class="lcd-tap patb" id="lcdPatternBtn" aria-label="Pattern wechseln"><svg class="lcd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="3.2" rx="1"/><rect x="4" y="10.4" width="16" height="3.2" rx="1"/><rect x="4" y="15.8" width="10" height="3.2" rx="1"/></svg><span class="lcd l2" id="lcdPatternName">—</span><svg class="lcd-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
         <button class="ib" id="settingsBtn" aria-label="Einstellungen" title="Einstellungen"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
         <div class="btn-cluster" style="display:none"><button class="chip-btn" id="randomBtn">Random</button><button class="chip-btn" id="clearBtn">Clear</button></div>
       </div>
 
-      <div class="lcdsel"><div class="lcd-screen">
-        <div class="lcd-row">
-          <button class="lcd-tap" id="lcdKitBtn" aria-label="Kit wechseln">
-            <span class="lcd l1" id="lcdKit">ROCK KIT</span>
-            <svg class="lcd-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
-          </button>
-        </div>
-        <div class="lcd-row lcd-row2">
-          <button class="lcd-tap" id="lcdPatternBtn" aria-label="Pattern wechseln">
-            <svg class="lcd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="3.2" rx="1"/><rect x="4" y="10.4" width="16" height="3.2" rx="1"/><rect x="4" y="15.8" width="10" height="3.2" rx="1"/></svg>
-            <span class="lcd l2" id="lcdPatternName">—</span>
-            <svg class="lcd-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
-          </button>
-          <button id="lenBtn" aria-haspopup="listbox" aria-expanded="false">16 Steps ▾</button>
-        </div>
-      </div><div class="menu" id="lenMenu" role="listbox"></div></div>
 
       <div id="kitPickerOverlay">
         <div id="kitPickerHead">
@@ -1135,6 +1148,9 @@ html,body{min-height:100%;height:100%;}
           <span class="lcd l2" style="color:var(--dim); letter-spacing:.15em; text-transform:uppercase;">Beats</span>
           <button id="patternsOverlayCloseBtn" aria-label="Schließen">✕</button>
         </div>
+        <div class="kp-sec" style="margin:2px 2px 0">Länge (Steps)</div>
+        <div id="lengthRow"></div>
+        <div class="len-hint">Kürzer wählen schneidet den Rest ab – die Rückgängig-Taste holt ihn zurück.</div>
         <div id="beatTabs"><button data-t="all" class="on">Gesamt</button><button data-t="drums">Drums</button><button data-t="perc">Perc</button><button data-t="acid">Acid</button><button data-t="sample">Sample</button><button data-t="cosmic">Cosmic</button></div>
         <div id="patternSaveRow">
           <input type="text" id="patternNameInput" placeholder="Name für aktuellen Beat…" maxlength="40">
@@ -1271,8 +1287,8 @@ html,body{min-height:100%;height:100%;}
       <div id="tabPattern" class="tab-panel open">
         <div id="clipBanner" style="display:none"><span>Clip bearbeiten: <b id="cbName"></b><small>Play und Export spielen jetzt das Arbeits-Pattern.</small></span><button id="cbSave">Zurückschreiben</button><button id="cbCancel">Abbrechen</button></div>
         <div id="groupBar"></div>
-        <div class="lcdsel" id="grpSel"><button class="lcdbtn" id="grpBtn" aria-haspopup="listbox" aria-expanded="false"><span class="lbl">SPUR</span><span id="grpName"></span><span class="cnt" id="grpCnt"></span><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button><div class="menu" id="grpMenu" role="listbox"></div></div>
-        <div id="lengthRow"></div>
+        <div id="spurRow" class="hasKit"><div class="lcdsel" id="grpSel"><button class="lcdbtn" id="grpBtn" aria-haspopup="listbox" aria-expanded="false"><span class="lbl">SPUR</span><span id="grpName"></span><span class="cnt" id="grpCnt"></span><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button><div class="menu" id="grpMenu" role="listbox"></div></div><button class="kitpill" id="lcdKitBtn" aria-label="Kit wechseln" title="Kit"><span id="lcdKit">ROCK KIT</span><svg class="lcd-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button><button class="ib" id="fillBtn" aria-label="Fill" title="Fill"><svg viewBox="0 0 24 24"><path d="M5 19v-3M9.7 19v-6M14.3 19V9M19 19V5"/></svg></button></div>
+        
         <div id="overview"></div>
 
         <div id="trackBar">
@@ -1319,11 +1335,12 @@ html,body{min-height:100%;height:100%;}
         <div id="arpGenPanel" aria-label="Arpeggio-Generator">
           <div id="arpGenHead"><span id="arpGenTitle">✦ ARPEGGIO GENERATOR</span><span id="arpGenHint">harmonisch · editierbar</span></div>
           <div class="ag-controls">
-            <div class="ag-field"><label for="agStyle">Style</label><select id="agStyle"><option value="cosmic">Cosmic</option><option value="classic">Classic</option><option value="flow">Flow</option></select></div>
+            <div class="ag-field"><label for="agStyle">Style</label><select id="agStyle"><optgroup label="Arpeggio"><option value="cosmic">Cosmic</option><option value="classic">Classic</option><option value="flow">Flow</option></optgroup><optgroup label="Bass (nur Acid)"><option value="off">Off-Beat</option><option value="roll">Rolling</option><option value="pulse">Pulse</option></optgroup></select></div>
             <div class="ag-field"><label for="agChord">Chord</label><select id="agChord"><option value="minor">Minor</option><option value="major">Major</option><option value="min7">Minor 7</option><option value="maj7">Major 7</option><option value="sus2">Sus 2</option><option value="sus4">Sus 4</option><option value="add9">Minor add9</option></select></div>
             <div class="ag-field"><label for="agDir">Direction</label><select id="agDir"><option value="up">Up</option><option value="down">Down</option><option value="updown">Up / Down</option><option value="random">Random</option></select></div>
             <div class="ag-field"><label for="agRate">Rate</label><select id="agRate"><option value="2">1/8</option><option value="1" selected>1/16</option></select></div>
             <div class="ag-field"><label for="agRange">Octaves</label><select id="agRange"><option value="1">1 octave</option><option value="2" selected>2 octaves</option><option value="3">3 octaves</option></select></div>
+            <div class="ag-field" id="agLageF" style="display:none"><label for="agLage">Lage</label><select id="agLage"><option value="0">Tief</option><option value="12">Hoch</option></select></div>
             <div class="ag-field"><label for="agDensity">Density</label><select id="agDensity"><option value="55">Sparse</option><option value="75" selected>Groovy</option><option value="92">Busy</option><option value="100">Every step</option></select></div>
           </div>
           <div id="arpGenActions"><button id="arpGenGo">✦ Generate</button><button id="arpGenVar">↻ Variation</button><button id="arpGenFill">⚡ Fill</button></div>
@@ -1384,32 +1401,10 @@ html,body{min-height:100%;height:100%;}
           <div id="peReadout">Zelle antippen: Ton setzen · nochmal antippen: Step aus</div>
           <div id="peLegend">A = Accent · S = Slide zum nächsten Ton · ▲▼ = Ton außerhalb des Fensters</div>
         </div>
-
-        <footer class="hint">Tippen setzt die gewählte Stärke, gleiche Stärke nochmal tippen löscht den Step · Zeile = Spur wählen · MIC SAMPLE wählen zum Aufnehmen</footer>
         <footer class="legal-footer">
           <a href="./impressum.html">Impressum</a><span class="sep">·</span><a href="./datenschutz.html">Datenschutz</a>
         </footer>
-      </div>
-
-      <div id="fillOverlay" class="tab-panel">
-        <button id="fillEnableBtn" class="on">Fill aktiv</button>
-        <div class="fillSection">
-          <div class="fillSectionLabel">Länge</div>
-          <div class="fillChips" id="fillLenChips"></div>
-        </div>
-        <div class="fillSection">
-          <div class="fillSectionLabel">Alle</div>
-          <div class="fillChips" id="fillEveryChips"></div>
-        </div>
-        <div class="fillSection">
-          <div class="fillSectionLabel">Intensität</div>
-          <input id="fillIntensitySlider" type="range" min="0" max="100" value="50">
-          <div id="fillIntensityValue">50%</div>
-        </div>
-        <div class="fillSection">
-          <div class="fillSectionLabel">Stile</div>
-          <div class="fillChips fillChips-wrap" id="fillStyleChips"></div>
-        </div>
+        <div class="footer-logo"><img src="./icons/logo-drumstar.png" alt="Drumstar"></div>
       </div>
 
       <div id="padOverlay" class="tab-panel">
@@ -1458,17 +1453,6 @@ html,body{min-height:100%;height:100%;}
           </svg>
           <span class="ti-lbl">Pattern</span>
         </button>
-        <button class="tab-item" id="fillToggleBtn" data-tab="fill">
-          <svg class="ti-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <rect x="4" y="4" width="16" height="16" rx="3"/>
-            <circle cx="8.5" cy="8.5" r="1" fill="currentColor" stroke="none"/>
-            <circle cx="15.5" cy="8.5" r="1" fill="currentColor" stroke="none"/>
-            <circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/>
-            <circle cx="8.5" cy="15.5" r="1" fill="currentColor" stroke="none"/>
-            <circle cx="15.5" cy="15.5" r="1" fill="currentColor" stroke="none"/>
-          </svg>
-          <span class="ti-lbl">Fill</span>
-        </button>
         <button class="tab-item" id="padsToggleBtn" data-tab="pads">
           <svg class="ti-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <rect x="4" y="4" width="4.5" height="4.5" rx="1"/><rect x="9.75" y="4" width="4.5" height="4.5" rx="1"/><rect x="15.5" y="4" width="4.5" height="4.5" rx="1"/>
@@ -1504,9 +1488,31 @@ html,body{min-height:100%;height:100%;}
   <div class="srow"><label>Master</label><input type="range" min="0" max="100" data-def="85" id="sMaster"><b id="sMasterV"></b></div>
   <div class="srow"><label>Swing</label><input type="range" min="0" max="100" data-def="0" id="sSwing"><b id="sSwingV"></b></div>
   <div class="srow"><label>Humanize</label><input type="range" min="0" max="100" data-def="0" id="sHum"><b id="sHumV"></b></div>
-  <div class="hl">Master zusätzlich über die Lautstärketasten des Geräts. Doppeltippen setzt einen Regler zurück.</div></div>
+  <div class="hl">Master zusätzlich über die Lautstärketasten des Geräts.</div></div>
 <div class="sheet" id="soundSheet"><div class="sh"><span id="sndT"></span><button class="shx" id="sndX" aria-label="Schließen">✕</button></div><div id="sndRows"></div></div>
-<div class="sheet" id="synthSheet"><div class="sh"><span id="synT"></span><button class="shx" id="synX" aria-label="Schließen">✕</button></div><div id="synthRows"></div><div class="hl">Doppeltippen setzt einen Regler zurück</div></div>
+<div class="sheet" id="synthSheet"><div class="sh"><span id="synT"></span><button class="shx" id="synX" aria-label="Schließen">✕</button></div><div id="synthRows"></div></div>
+<div class="sheet" id="fillSheet"><div class="sh"><span>Fill · Drums</span><button class="shx" id="fillX" aria-label="Schließen">✕</button></div>
+      <div id="fillOverlay">
+        <button id="fillEnableBtn" class="on">Fill aktiv</button>
+        <div class="fillSection">
+          <div class="fillSectionLabel">Länge</div>
+          <div class="fillChips" id="fillLenChips"></div>
+        </div>
+        <div class="fillSection">
+          <div class="fillSectionLabel">Alle</div>
+          <div class="fillChips" id="fillEveryChips"></div>
+        </div>
+        <div class="fillSection">
+          <div class="fillSectionLabel">Intensität</div>
+          <input id="fillIntensitySlider" type="range" min="0" max="100" value="50">
+          <div id="fillIntensityValue">50%</div>
+        </div>
+        <div class="fillSection">
+          <div class="fillSectionLabel">Stile</div>
+          <div class="fillChips fillChips-wrap" id="fillStyleChips"></div>
+        </div>
+      </div>
+</div>
 
 <script>
 (function(){
@@ -2773,7 +2779,7 @@ function generateFillOverride(len){
     // Crash darf hier NUR auf Pause-Steps einstreuen — sonst würde er sich
     // mit dem gerade gesetzten Trommel-Hit überlagern und das "linear"-
     // Versprechen (immer nur ein Instrument pro Step) brechen.
-    const pool=[lt,ht,sd,rs,hc];
+    const pool=[lt,ht,sd]; // Fill steuert nur Drums (Perc bleibt unberührt)
     let lastTrack=null;
     for(let s=0;s<len-1;s++){ // letzter Step bleibt für den Übergangs-Crash reserviert
       const restChance=0.34-intensity*0.28;
@@ -2812,14 +2818,14 @@ function generateFillOverride(len){
     for(let s=0;s<len;s++){
       if(s%2===0 || Math.random()<intensity*0.5) (s%4===0?lt:ht)[s]=VEL_NORMAL;
     }
-    if(len>=4) rs[len-2]=VEL_ACCENT; // kleiner Rimshot-Akzent kurz vorm Übergang
+    if(len>=4) sd[len-2]=VEL_ACCENT; // kleiner Snare-Akzent kurz vorm Übergang
   } else if(style==='oneDrop'){
     // Reggae/Dancehall-inspiriert: Kick und Snare treffen GEMEINSAM auf einem
     // späten, betonten Punkt statt eines Wirbels — bewusste Leere drumherum
     // ist hier der Punkt, nicht Dichte. Klassisches "Space"-Feeling.
     const dropStep=Math.max(0, len-Math.ceil(len/3));
     bd[dropStep]=VEL_ACCENT; sd[dropStep]=VEL_ACCENT;
-    if(dropStep>0 && Math.random()<0.3+intensity*0.3) rs[dropStep-1]=VEL_GHOST; // leiser Vorschlag
+    if(dropStep>0 && Math.random()<0.3+intensity*0.3) sd[dropStep-1]=VEL_GHOST; // leiser Vorschlag
     if(Math.random()<0.25+intensity*0.4) cy[dropStep]=VEL_ACCENT; // Crash optional zusammen mit dem Drop
   } else if(style==='chokeCrash'){
     // Zusammengespielte Akzente aus Crash + Kick/Snare, das Becken wird dabei
@@ -2840,7 +2846,7 @@ function generateFillOverride(len){
     }
   }
 
-  set('lt',lt); set('ht',ht); set('sd',sd); set('rs',rs); set('bd',bd); set('hc',hc);
+  set('lt',lt); set('ht',ht); set('sd',sd); set('bd',bd);
   override.cy={vel:cy, chokeSteps};
   set('ch', new Array(len).fill(VEL_OFF)); set('oh', new Array(len).fill(VEL_OFF)); // Hi-Hats pausieren immer
   return override;
@@ -3317,8 +3323,52 @@ function agRefreshChordOptions(tr){
   sel.innerHTML=h+'</optgroup>';
   sel.value=Array.prototype.some.call(sel.options,o=>o.value===cur) ? cur : 'minor';
 }
+// ---- Bass-Modus (Acid): Grundton des aktuellen Akkords/Verlaufs als Bass-Muster ----
+const AG_BASS_NAMES={off:'Off-Beat',roll:'Rolling',pulse:'Pulse'};
+function agIsBass(v){ return v==='off'||v==='roll'||v==='pulse'; }
+function arpBassBuild(tr,mode,style){
+  const chord=document.getElementById('agChord').value, prog=ARP_PROGS_ALL[chord]||null;
+  const lage=+document.getElementById('agLage').value||0;
+  const [from,to]=taRange(); const segLen=PATTERN_LENGTH===16 ? 8 : 16;
+  // Grundton je Takt; hohe Akkorde (VI, VII) eine Oktave nach unten, damit die Bass-Lage gleich bleibt
+  const rootAt=s=>{ if(!prog) return 0; const r=prog.steps[Math.floor(s/segLen)%prog.steps.length][0]; return r>6 ? r-12 : r; };
+  let active=0;
+  const put=(s,note,acc)=>{ tr.steps[s]=acc?VEL_ACCENT:VEL_NORMAL; tr.notes[s]=note; tr.slides[s]=false; active++; };
+  const clr=s=>{ tr.steps[s]=VEL_OFF; tr.notes[s]=0; tr.slides[s]=false; };
+  for(let s=from;s<to;s++){
+    const st=s%16, rb=rootAt(s)+lage;
+    if(mode==='fill'){ if(st>=12) put(s, rb+(st===15?12:0), st===12); continue; } // letzter Schlag: Lauf auf dem Grundton
+    clr(s); // Generate und Variation würfeln Oktaven/Akzente neu, der Rhythmus des Stils bleibt
+    if(style==='off'){ if(st===2||st===6||st===10||st===14) put(s, rb+(st===14&&Math.random()<.5?12:0), st===2&&Math.random()<.4); }
+    else if(style==='roll'){ put(s, rb+(st%4===3&&Math.random()<.65?12:0), st===0||(st%4===0&&Math.random()<.35)); }
+    else if(style==='pulse'){ if(st%4===0) put(s, rb+(st===12&&Math.random()<.3?7:0), st===0); }
+  }
+  pitchFit=true;
+  refreshTrackStepVisuals(tr);
+  if(tr===TRACKS[activeTrackIdx]) renderPitchEditor(tr);
+  const bars=(to-from)/16;
+  const names=prog ? ' · Verlauf '+prog.steps.slice(0,4).map(st=>arpChordName(tr,st)).join(' · ') : '';
+  if(arpGenStatus) arpGenStatus.textContent='Bass · '+AG_BASS_NAMES[style]+names+' — '+(mode==='fill'?'Fill ergänzt':active+' aktive Steps')+' · '+bars+(bars===1?' Takt':' Takte');
+}
+// Style-Liste je Spur (Bass-Stile nur bei Acid) und passende Felder
+let agStyleKey='';
+function agSyncStyleUI(tr){
+  const sel=document.getElementById('agStyle'); if(!sel) return;
+  const cos=tr.id==='cosmic', key=cos?'c':'a';
+  if(key!==agStyleKey){
+    agStyleKey=key; const cur=sel.value;
+    sel.innerHTML='<optgroup label="Arpeggio"><option value="cosmic">Cosmic</option><option value="classic">Classic</option><option value="flow">Flow</option></optgroup>'
+      +(cos?'':'<optgroup label="Bass (nur Acid)"><option value="off">Off-Beat</option><option value="roll">Rolling</option><option value="pulse">Pulse</option></optgroup>');
+    sel.value=Array.prototype.some.call(sel.options,o=>o.value===cur) ? cur : 'cosmic';
+  }
+  const bass=agIsBass(sel.value);
+  ['agDir','agRate','agRange','agDensity'].forEach(id=>{ const f=document.getElementById(id).closest('.ag-field'); if(f) f.style.display=bass?'none':''; });
+  document.getElementById('agLageF').style.display=bass?'':'none';
+}
+document.getElementById('agStyle').addEventListener('change',()=>agSyncStyleUI(TRACKS[activeTrackIdx]));
 function arpGenBuild(tr, mode='generate'){
   const style=document.getElementById('agStyle').value;
+  if(agIsBass(style) && tr.id!=='cosmic'){ arpBassBuild(tr,mode,style); return; }
   const chord=document.getElementById('agChord').value;
   const dir=document.getElementById('agDir').value;
   const rate=Math.max(1,+document.getElementById('agRate').value||1);
@@ -3583,6 +3633,7 @@ function renderPitchEditor(tr){
   bigGrid.style.display=isArp?'none':''; document.getElementById('brushRow').style.display=isArp?'none':'';
   if(!isArp){ pitchCols=[]; return; }
   agRefreshChordOptions(tr);
+  agSyncStyleUI(tr);
   pitchEditor.style.setProperty('--tc', tr.color); // Tonzellen in der Spurfarbe (Acid orange, Cosmic lila)
   if(pitchFit){ pitchDoFit(tr); pitchFit=false; }
   peScaleSel.value=tr.scale||'minor';
@@ -3848,6 +3899,7 @@ function setPatternGroup(gid, select){
   patternGroup=gid;
   groupBar.querySelectorAll('.gb').forEach(b=>b.classList.toggle('on', b.dataset.g===gid));
   grpSelRender();
+  { const kitOn=(gid==='drums'||gid==='perc'); $id('spurRow').classList.toggle('hasKit',kitOn); $id('lcdKitBtn').style.display=kitOn?'':'none'; $id('fillBtn').style.display=gid==='drums'?'':'none'; }
   TRACKS.forEach(tr=>{ if(tr._ovRow) tr._ovRow.style.display = groupOfTrack(tr)===gid ? '' : 'none'; });
   if(select) selectTrack(TRACKS.findIndex(t=>groupOfTrack(t)===gid));
 }
@@ -3857,10 +3909,9 @@ setPatternGroup(patternGroup,false);
 // UX v2: Menüs (Spur, Länge), Sheets (Einstellungen, Klang), Mute/Solo in der Spurleiste
 // =========================================================================
 function $id(id){ return document.getElementById(id); }
-function closeMenus(){ ['grpMenu','lenMenu'].forEach(i=>$id(i).classList.remove('open')); $id('grpBtn').setAttribute('aria-expanded','false'); $id('lenBtn').setAttribute('aria-expanded','false'); }
+function closeMenus(){ $id('grpMenu').classList.remove('open'); $id('grpBtn').setAttribute('aria-expanded','false'); }
 function toggleMenu(menuId, btnId){ const o=!$id(menuId).classList.contains('open'); closeMenus(); if(o){ $id(menuId).classList.add('open'); $id(btnId).setAttribute('aria-expanded','true'); } }
 $id('grpBtn').addEventListener('click', ()=>toggleMenu('grpMenu','grpBtn'));
-$id('lenBtn').addEventListener('click', ()=>toggleMenu('lenMenu','lenBtn'));
 document.addEventListener('click', e=>{ if(!e.target.closest('.lcdsel')) closeMenus(); });
 function grpSelRender(){
   const m=$id('grpMenu'); if(!m) return; m.innerHTML='';
@@ -3883,9 +3934,9 @@ $id('tbS').addEventListener('click', ()=>toggleTrackSolo(TRACKS[activeTrackIdx])
 $id('tbSound').addEventListener('click', openSoundSheet);
 $id('tbSynth').addEventListener('click', ()=>{ const tr=TRACKS[activeTrackIdx]; if(tr.type==='arp'){ buildSynthSheet(tr); openSheet('synthSheet'); } });
 
-function closeSheets(){ $id('sheetVeil').style.display='none'; ['setSheet','soundSheet','synthSheet'].forEach(i=>$id(i).classList.remove('open')); }
+function closeSheets(){ $id('sheetVeil').style.display='none'; ['setSheet','soundSheet','synthSheet','fillSheet'].forEach(i=>$id(i).classList.remove('open')); }
 function openSheet(id){ closeMenus(); $id('sheetVeil').style.display='block'; $id(id).classList.add('open'); }
-$id('sheetVeil').addEventListener('click', closeSheets); $id('setX').addEventListener('click', closeSheets); $id('sndX').addEventListener('click', closeSheets); $id('synX').addEventListener('click', closeSheets);
+$id('sheetVeil').addEventListener('click', closeSheets); $id('setX').addEventListener('click', closeSheets); $id('sndX').addEventListener('click', closeSheets); $id('synX').addEventListener('click', closeSheets); $id('fillX').addEventListener('click', closeSheets);
 document.querySelectorAll('.sheet').forEach(sh=>sh.addEventListener('dblclick', e=>{ const i=e.target; if(i.type==='range' && i.dataset.def!=null){ i.value=i.dataset.def; i.dispatchEvent(new Event('input')); } }));
 function syncSettingsUI(){
   $id('sMaster').value=Math.round(masterVol*100); $id('sMasterV').textContent=$id('sMaster').value+'%';
@@ -5249,7 +5300,7 @@ function applyTrackAndFillData(data){
     currentKitId=data.kitId;
     document.querySelectorAll('.kit-chip').forEach(c=>c.classList.remove('active'));
     if(KITS[data.kitId]._chip) KITS[data.kitId]._chip.classList.add('active');
-    lcdKit.textContent=KITS[data.kitId].name;
+    updateKitLabel();
   }
 
   drumSetApply(data.drumSet); // ältere Patterns/Beats ohne Set: alle Stimmen aus dem Basis-Kit
@@ -5662,7 +5713,7 @@ patternImportInput.addEventListener('change', async (e)=>{
 });
 
 // ---- Fill-In-Overlay ----
-const fillToggleBtn=document.getElementById('fillToggleBtn');
+const fillToggleBtn=document.getElementById('fillBtn'); // Fill-Taste in der Drums-Zeile (Licht = aktiv)
 const fillOverlay=document.getElementById('fillOverlay');
 const fillLenChips=document.getElementById('fillLenChips');
 const fillEveryChips=document.getElementById('fillEveryChips');
@@ -5757,7 +5808,7 @@ function closeAllOverlays(){
 // anderen aus, und markiert den passenden Bottom-Bar-Button als aktuell aktiv.
 // Ersetzt das frühere "Overlay öffnen/schließen"-Modell — kein Schließen-Button
 // mehr nötig, da immer genau ein Panel sichtbar ist.
-const TAB_PANELS={ pattern:tabPattern, fill:fillOverlay, pads:padOverlay, mixer:mixerOverlay, song:songOverlay };
+const TAB_PANELS={ pattern:tabPattern, pads:padOverlay, mixer:mixerOverlay, song:songOverlay };
 function switchTab(name){
   closeAllOverlays();
   Object.keys(TAB_PANELS).forEach(k=> TAB_PANELS[k].classList.toggle('open', k===name));
@@ -5770,7 +5821,7 @@ function switchTab(name){
   }
 }
 patternTabBtn.addEventListener('click', ()=> switchTab('pattern'));
-fillToggleBtn.addEventListener('click', ()=> switchTab('fill'));
+fillToggleBtn.addEventListener('click', ()=> openSheet('fillSheet'));
 padsToggleBtn.addEventListener('click', ()=> switchTab('pads'));
 mixerToggleBtn.addEventListener('click', ()=> switchTab('mixer'));
 songToggleBtn.addEventListener('click', ()=> switchTab('song'));
@@ -6073,7 +6124,8 @@ let dsCur=null, dsMode='syn', dsMsgTimer=null, kitPending=null;
 function dsSay(m){ dsStatus.textContent=m; clearTimeout(dsMsgTimer); dsMsgTimer=setTimeout(()=>{ dsStatus.textContent=''; },3000); }
 function updateKitLabel(){
   const custom=!currentSet.name && Object.keys(drumSet.voices).length>0;
-  lcdKit.textContent=(currentSet.name || KITS[currentKitId].name)+(currentSet.dirty?' *':(custom?' +':''));
+  const KIT_SHORT={rock:'ROCK',fm909:'909',fm808:'808',real808:'808 A',acid:'ACID',lofi:'LO-FI'};
+  lcdKit.textContent=(currentSet.name || KIT_SHORT[currentKitId] || KITS[currentKitId].name)+(currentSet.dirty?' *':(custom?' +':''));
 }
 async function drumSetLoadBuffers(){
   drumSet.buffers={};
