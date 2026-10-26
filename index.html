@@ -302,7 +302,12 @@
   /* ---------- COSMIC ARPEGGIO GENERATOR ---------- */
   #arpGenPanel{display:none;flex-direction:column;gap:9px;margin-top:8px;padding:11px;background:linear-gradient(145deg,rgba(124,77,204,.13),var(--panel));border:1px solid rgba(184,140,255,.24);border-radius:10px}
   #arpGenPanel.show{display:flex}
-  #arpGenHead{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  #arpGenHead{display:flex;align-items:center;gap:8px;width:100%;min-height:36px;background:none;border:0;padding:0;font-family:inherit;cursor:pointer;text-align:left}
+  #arpGenHead .am-chev{width:14px;height:14px;flex-shrink:0;color:#cdb0ff;transition:transform .15s}
+  #arpGenHead[aria-expanded="true"] .am-chev{transform:rotate(180deg)}
+  #arpGenHint{margin-left:auto}
+  #arpGenBody{display:none;flex-direction:column;gap:9px}
+  #arpGenBody.open{display:flex}
   #arpGenTitle{font-size:11px;font-weight:800;letter-spacing:.12em;color:#cdb0ff}
   #arpGenHint{font-size:10px;color:var(--dim)}
   .ag-controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
@@ -1411,7 +1416,8 @@ html,body{min-height:100%;height:100%;}
 
 
         <div id="arpGenPanel" aria-label="Arpeggio-Generator">
-          <div id="arpGenHead"><span id="arpGenTitle">✦ ARPEGGIO GENERATOR</span><span id="arpGenHint">harmonisch · editierbar</span></div>
+          <button id="arpGenHead" type="button" aria-expanded="false" aria-controls="arpGenBody"><span id="arpGenTitle">✦ ARPEGGIO GENERATOR</span><span id="arpGenHint">Cosmic · Minor</span><svg class="am-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+          <div id="arpGenBody">
           <div class="ag-controls">
             <div class="ag-field"><label for="agStyle">Style</label><select id="agStyle"><optgroup label="Arpeggio"><option value="cosmic">Cosmic</option><option value="classic">Classic</option><option value="flow">Flow</option></optgroup><optgroup label="Bass (nur Acid)"><option value="off">Off-Beat</option><option value="roll">Rolling</option><option value="pulse">Pulse</option></optgroup></select></div>
             <div class="ag-field"><label for="agChord">Chord</label><select id="agChord"><option value="minor">Minor</option><option value="major">Major</option><option value="min7">Minor 7</option><option value="maj7">Major 7</option><option value="sus2">Sus 2</option><option value="sus4">Sus 4</option><option value="add9">Minor add9</option></select></div>
@@ -1423,6 +1429,7 @@ html,body{min-height:100%;height:100%;}
           </div>
           <div id="arpGenActions"><button id="arpGenGo">✦ Generate</button><button id="arpGenVar">↻ Variation</button><button id="arpGenFill">⚡ Fill</button></div>
           <div id="arpGenStatus" role="status" aria-live="polite">Erzeugt Noten aus Akkordtönen; Steps bleiben im Pattern editierbar.</div>
+          </div>
         </div>
 
         <div id="arpModPanel">
@@ -3605,6 +3612,7 @@ function agSyncStyleUI(tr){
   const bass=agIsBass(sel.value);
   ['agDir','agRate','agRange','agDensity'].forEach(id=>{ const f=document.getElementById(id).closest('.ag-field'); if(f) f.style.display=bass?'none':''; });
   document.getElementById('agLageF').style.display=bass?'':'none';
+  if(window.agSum) window.agSum();
 }
 document.getElementById('agStyle').addEventListener('change',()=>agSyncStyleUI(TRACKS[activeTrackIdx]));
 function arpGenBuildCore(tr, mode='generate'){
@@ -3988,6 +3996,13 @@ function updateAutoVisual(){
   const per=autoBars*16, x=(((modVisAbs%per)+per)%per)/per*340;
   autoCurvePh.setAttribute('x1',x); autoCurvePh.setAttribute('x2',x);
 }
+// Arpeggio-Generator: einklappbar (Standard zu), Kurzinfo = Style · Akkord
+(function(){
+  const head=document.getElementById('arpGenHead'), body=document.getElementById('arpGenBody'), hint=document.getElementById('arpGenHint');
+  const sum=window.agSum=()=>{ const st=document.getElementById('agStyle'), ch=document.getElementById('agChord'); hint.textContent=(st.options[st.selectedIndex]||{}).text+' · '+(ch.options[ch.selectedIndex]||{}).text; };
+  head.addEventListener('click',()=>{ const o=!body.classList.contains('open'); body.classList.toggle('open',o); head.setAttribute('aria-expanded',o?'true':'false'); });
+  ['agStyle','agChord'].forEach(id=>document.getElementById(id).addEventListener('change',sum)); sum();
+})();
 autoToggle.addEventListener('click', ()=>{
   const open=!autoBody.classList.contains('open');
   autoBody.classList.toggle('open', open);

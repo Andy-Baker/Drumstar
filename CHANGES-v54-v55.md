@@ -11,3 +11,6 @@ Klaviatur (1,5 Oktaven), Balken-Anzeige, Rec, Halten, Anschlag nach Tastenhöhe.
 
 ## v56
 - manifest: orientation "any" (vorher portrait-primary sperrte Querformat in der installierten App). Auf dem Handy ggf. App neu zum Homescreen hinzufügen, damit das Manifest neu gelesen wird.
+
+## v57
+- Arpeggio-Generator einklappbar (Standard zu, Kurzinfo Style · Akkord), gilt für Acid, Cosmic und Piano.
