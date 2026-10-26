@@ -15,3 +15,6 @@ Browser-Drum-Machine/Sequencer, Vanilla JS + Web Audio, eine `index.html` + `sw.
 
 ## Offen
 Piano-Klang hören/verbessern, Sample-Tasten, Mixer-Solo-Link, alten Tonhöhen-Editor entfernen.
+
+## Langfristig
+Spuren frei hinzufügen (Schichten, mehrere Keys-Spuren; Sound pro Spur über `tr.sound`). Zurückgestellt, erst Keys-Klang fine-tunen. Mockup: add-track-mockup.html (Chat). Größter Aufwand: Spuren sind fest in TRACKS/ARR_GROUPS verdrahtet.
