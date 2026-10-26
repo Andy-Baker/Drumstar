@@ -374,7 +374,7 @@
   footer.hint{ text-align:center; font-size:clamp(8px,2vw,10px); color:var(--dim); letter-spacing:.05em; padding:2px 0 2px; }
 
   /* ---------- RECHTLICHES-FOOTER (Impressum/Datenschutz) ---------- */
-  footer.legal-footer{ text-align:center; font-size:clamp(8px,2vw,10px); letter-spacing:.05em; padding:0 0 4px; }
+  footer.legal-footer{ text-align:center; font-size:clamp(8px,2vw,10px); letter-spacing:.05em; padding:6px 0 4px; }
   footer.legal-footer a{ color:var(--dim); text-decoration:none; border-bottom:1px solid transparent; transition:color .15s, border-color .15s; }
   footer.legal-footer a:hover, footer.legal-footer a:active{ color:var(--blue-2); border-bottom-color:rgba(63,169,255,.4); }
   footer.legal-footer .sep{ margin:0 7px; opacity:.4; color:var(--dim); }
@@ -1370,7 +1370,7 @@ html,body{min-height:100%;height:100%;}
       <div id="tabPattern" class="tab-panel open">
         <div id="clipBanner" style="display:none"><span>Clip bearbeiten: <b id="cbName"></b><small>Play und Export spielen jetzt das Arbeits-Pattern.</small></span><button id="cbSave">Zurückschreiben</button><button id="cbCancel">Abbrechen</button></div>
         <div id="groupBar"></div>
-        <div id="spurRow" class="hasKit"><div class="lcdsel" id="grpSel"><button class="lcdbtn" id="grpBtn" aria-haspopup="listbox" aria-expanded="false"><span class="lbl">SPUR</span><span id="grpName"></span><span class="cnt" id="grpCnt"></span><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button><div class="menu" id="grpMenu" role="listbox"></div></div><button class="kitpill" id="lcdKitBtn" aria-label="Kit wechseln" title="Kit"><span id="lcdKit">ROCK KIT</span><svg class="lcd-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button><button class="ib" id="fillBtn" aria-label="Fill" title="Fill"><svg viewBox="0 0 24 24"><path d="M5 19v-3M9.7 19v-6M14.3 19V9M19 19V5"/></svg></button></div>
+        <div id="spurRow" class="hasKit"><div class="lcdsel" id="grpSel"><button class="lcdbtn" id="grpBtn" aria-haspopup="listbox" aria-expanded="false"><span class="lbl">SPUR</span><span id="grpName"></span><span class="cnt" id="grpCnt"></span><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button><div class="menu" id="grpMenu" role="listbox"></div></div><button class="kitpill" id="lcdKitBtn" aria-label="Kit wechseln" title="Kit"><span id="lcdKit">ROCK KIT</span><svg class="lcd-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button><button class="ib" id="fillBtn" aria-label="Fill" title="Fill"><svg viewBox="0 0 24 24"><path d="M5 5l9 9M19 5l-9 9"/><circle cx="6" cy="18" r="1.6"/><circle cx="12" cy="19" r="1.6"/><circle cx="18" cy="18" r="1.6"/></svg></button></div>
         
         <div id="overview"></div>
 
@@ -1488,10 +1488,10 @@ html,body{min-height:100%;height:100%;}
           <div id="peLegend">A = Accent · S = Slide zum nächsten Ton · ▲▼ = Ton außerhalb des Fensters</div>
         </div>
         <div id="prPreview"><div id="prPv" role="button" aria-label="Piano Roll öffnen"></div><div id="prPvCap">Antippen zum Bearbeiten</div></div>
+        <div class="footer-logo"><img src="./icons/logo-drumstar.png" alt="Drumstar"></div>
         <footer class="legal-footer">
           <a href="./impressum.html">Impressum</a><span class="sep">·</span><a href="./datenschutz.html">Datenschutz</a>
         </footer>
-        <div class="footer-logo"><img src="./icons/logo-drumstar.png" alt="Drumstar"></div>
       </div>
 
       <div id="padOverlay" class="tab-panel">

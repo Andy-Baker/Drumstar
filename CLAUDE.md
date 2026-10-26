@@ -3,7 +3,7 @@ Browser-Drum-Machine/Sequencer, Vanilla JS + Web Audio, eine `index.html` + `sw.
 
 ## Regeln
 - Kein Framework, kein Build. Plain HTML/CSS/JS.
-- Bei jedem Deploy `CACHE` in `sw.js` erhöhen (aktuell `mrm44-v57`).
+- Bei jedem Deploy `CACHE` in `sw.js` erhöhen (aktuell `mrm44-v58`).
 - UI: erst interaktives Mockup (HTML), dann Umbau. Design braucht Platz; dunkles Chassis, blaue Controls, Instrumentfarben (Acid orange, Cosmic lila, Piano gelb, Sample grün, Drums blau, Perc türkis).
 - Versionen über Git-Commits/Tags, nicht über Datei-Suffixe.
 

@@ -14,3 +14,6 @@ Klaviatur (1,5 Oktaven), Balken-Anzeige, Rec, Halten, Anschlag nach Tastenhöhe.
 
 ## v57
 - Arpeggio-Generator einklappbar (Standard zu, Kurzinfo Style · Akkord), gilt für Acid, Cosmic und Piano.
+
+## v58
+- Footer: Impressum/Datenschutz unter dem Drumstar-Logo. Fill-Button: Icon Sticks + Toms statt Balken.
