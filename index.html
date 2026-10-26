@@ -95,6 +95,14 @@
     border:1px solid rgba(255,255,255,.1); color:var(--blue-2); font-size:16px; cursor:pointer;
     display:flex; align-items:center; justify-content:center; }
   #kitPickerCloseBtn:active{ transform:scale(.92); }
+  #soundPickerOverlay{ display:none; position:fixed; inset:0; z-index:60; background:linear-gradient(180deg,var(--chassis),var(--chassis-2));
+    padding:14px; padding-top:max(14px, env(safe-area-inset-top)); padding-bottom:max(14px, env(safe-area-inset-bottom)); flex-direction:column; overflow-y:auto; }
+  #soundPickerOverlay.open{ display:flex; }
+  #soundPickerHead{ display:flex; align-items:center; justify-content:space-between; padding-bottom:12px; border-bottom:1px solid rgba(255,255,255,.06); flex-shrink:0; margin-bottom:12px; }
+  #soundPickerCloseBtn{ width:36px; height:36px; border-radius:8px; background:var(--panel); border:1px solid rgba(255,255,255,.1); color:var(--blue-2); font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  #soundPickerList{ display:flex; flex-direction:column; gap:6px; }
+  #soundPickerList .kit-chip{ display:flex; flex-direction:column; gap:2px; padding:12px 14px; min-width:0; }
+  .kitpill.keys{ border-color:rgba(255,209,102,.45); background:rgba(255,209,102,.1); color:#ffd166; }
   #kitPickerList{ display:flex; flex-direction:column; gap:6px; }
   #kitPickerList .kit-chip{ display:flex; flex-direction:column; gap:2px; padding:12px 14px; min-width:0; }
 
@@ -1204,6 +1212,15 @@ html,body{min-height:100%;height:100%;}
         <div id="kitOwnList"></div>
       </div>
 
+      <div id="soundPickerOverlay">
+        <div id="soundPickerHead">
+          <span class="lcd l2" style="color:var(--dim); letter-spacing:.15em; text-transform:uppercase;">Sound wählen</span>
+          <button id="soundPickerCloseBtn" aria-label="Schließen">✕</button>
+        </div>
+        <div class="kp-sec">Keys</div>
+        <div id="soundPickerList"></div>
+      </div>
+
       <div id="tempoOverlay">
         <div id="tempoOverlayHead">
           <span class="lcd l2" style="color:var(--dim); letter-spacing:.15em; text-transform:uppercase;">Tempo</span>
@@ -1234,7 +1251,7 @@ html,body{min-height:100%;height:100%;}
         <div class="kp-sec" style="margin:2px 2px 0">Länge (Steps)</div>
         <div id="lengthRow"></div>
         <div class="len-hint">Kürzer wählen schneidet den Rest ab – die Rückgängig-Taste holt ihn zurück.</div>
-        <div id="beatTabs"><button data-t="all" class="on">Gesamt</button><button data-t="drums">Drums</button><button data-t="perc">Perc</button><button data-t="acid">Acid</button><button data-t="sample">Sample</button><button data-t="cosmic">Cosmic</button><button data-t="piano">Piano</button></div>
+        <div id="beatTabs"><button data-t="all" class="on">Gesamt</button><button data-t="drums">Drums</button><button data-t="perc">Perc</button><button data-t="acid">Acid</button><button data-t="sample">Sample</button><button data-t="cosmic">Cosmic</button><button data-t="piano">Keys</button></div>
         <div id="patternSaveRow">
           <input type="text" id="patternNameInput" placeholder="Name für aktuellen Beat…" maxlength="40">
           <button id="patternUpdateBtn" title="Aktuell geladenen Beat mit diesem Zustand überschreiben">↻</button>
@@ -2238,7 +2255,7 @@ const ARR_GROUPS=[
   {id:'perc',  label:'PERC',  ids:['rs','hc','cb','cl','mr']},
   {id:'acid',  label:'ACID',  ids:['arp']},
   {id:'cosmic',label:'COSMIC',ids:['cosmic']},
-  {id:'piano',label:'PIANO',ids:['piano']},
+  {id:'piano',label:'KEYS',ids:['piano']},
   {id:'sample',label:'SAMPLE',ids:['mc']}
 ];
 // Polyphone Melodiespuren (Akkorde, keine Slides): Cosmic + Piano. trOct = Oktavlage der Namen/Töne
@@ -2432,7 +2449,41 @@ function pianoNoise(){
   let seed=12345; for(let i=0;i<len;i++){ seed=(seed*1664525+1013904223)>>>0; d[i]=(seed/4294967296*2-1)*Math.pow(1-i/len,2); } // deterministisch -> Live = Export
   return audioCtx._pnz=buf;
 }
+// Keys-Sounds (pro Spur: tr.sound). def = Reglerwerte beim Umschalten
+const KEY_SOUNDS={
+  piano:{name:'PIANO', desc:'Hammer · Saiten · warm', def:{cutoff:0.55, envMod:0.5, decay:0.5, tremolo:0}},
+  rhodes:{name:'RHODES', desc:'E-Piano · Glocke · Tremolo', def:{cutoff:0.5, envMod:0.45, decay:0.55, tremolo:0.35}}
+};
+function rhodesVoice(tr,time,n,vel,holdSec){
+  const freq=noteFreq(tr.rootNote+n+12);
+  const tone=tr.cutoff!=null?tr.cutoff:0.5, bite=tr.envMod!=null?tr.envMod:0.45, trem=tr.tremolo!=null?tr.tremolo:0.35;
+  const v=Math.max(0.05,Math.min(1.2,vel));
+  const T=0.6+arpDecaySeconds(tr.decay!=null?tr.decay:0.55)*1.6;
+  const peak=Math.max(0.0001,Math.min(0.22,v*tr.vol*0.12));
+  const lp=audioCtx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.setValueAtTime(Math.min(15000,(1500+tone*6500)*(0.6+v*0.5)),time); lp.Q.value=0.5;
+  const tm=audioCtx.createGain(); tm.gain.value=1-trem*0.18;
+  const lfo=audioCtx.createOscillator(), lg=audioCtx.createGain(); lfo.frequency.value=5.2; lg.gain.value=trem*0.35; lfo.connect(lg).connect(tm.gain);
+  const amp=audioCtx.createGain(); amp.gain.setValueAtTime(0.0001,time); amp.gain.linearRampToValueAtTime(peak,time+0.003);
+  amp.gain.setTargetAtTime(peak*0.5,time+0.01,T*0.22); amp.gain.setTargetAtTime(0.0001,time+0.4,T*0.55);
+  const pan=audioCtx.createStereoPanner(); pan.pan.value=Math.max(-0.4,Math.min(0.4,(n-20)/50));
+  const car=audioCtx.createOscillator(), mod=audioCtx.createOscillator(), mg=audioCtx.createGain();
+  car.frequency.setValueAtTime(freq,time); mod.frequency.setValueAtTime(freq,time);
+  mg.gain.setValueAtTime(freq*(0.5+bite*4.5)*(0.5+v*0.5),time); mg.gain.setTargetAtTime(freq*0.22,time,0.25); mod.connect(mg).connect(car.frequency);
+  const bell=audioCtx.createOscillator(), bg=audioCtx.createGain(); bell.frequency.setValueAtTime(Math.min(12000,freq*7.1),time);
+  bg.gain.setValueAtTime(0.03+bite*0.09*v,time); bg.gain.setTargetAtTime(0.0001,time,0.05);
+  car.connect(tm); tm.connect(lp); bell.connect(bg).connect(lp); lp.connect(amp).connect(pan).connect(tr.bus);
+  const oscs=[car,mod,bell,lfo]; oscs.forEach(o=>o.start(time));
+  const voice={amp,oscs,t0:time,
+    rel(at){ const now=Math.max(time,at!=null?at:audioCtx.currentTime); try{ amp.gain.cancelScheduledValues(now); amp.gain.setValueAtTime(Math.max(0.0001,amp.gain.value||peak),now); amp.gain.setTargetAtTime(0.0001,now,0.12); oscs.forEach(o=>{ try{o.stop(now+0.8);}catch(e){} }); }catch(e){} }};
+  car.onended=()=>{ try{ amp.disconnect(); }catch(e){} if(tr._cosVoices){ const i=tr._cosVoices.indexOf(voice); if(i>=0) tr._cosVoices.splice(i,1); } };
+  const isLive=!(typeof OfflineAudioContext!=='undefined' && audioCtx instanceof OfflineAudioContext);
+  if(isLive){ (tr._cosVoices=tr._cosVoices||[]).push(voice);
+    while(tr._cosVoices.length>10){ const old=tr._cosVoices.shift(); try{ old.amp.gain.cancelScheduledValues(time); old.amp.gain.setTargetAtTime(0.0001,time,0.03); old.oscs.forEach(x=>{ try{x.stop(time+0.15);}catch(e){} }); }catch(e){} } }
+  if(holdSec!=null) voice.rel(time+holdSec); else oscs.forEach(o=>{ try{o.stop(time+T*5);}catch(e){} });
+  return voice;
+}
 function pianoVoice(tr,time,n,vel,holdSec){
+  if(tr.sound==='rhodes') return rhodesVoice(tr,time,n,vel,holdSec);
   const freq=noteFreq(tr.rootNote+n+12);
   const hard=tr.envMod!=null?tr.envMod:0.5, tone=tr.cutoff!=null?tr.cutoff:0.55;
   const v=Math.max(0.05,Math.min(1.2,vel));
@@ -2883,7 +2934,7 @@ const TRACKS=[
    rootNote:0, cutoff:0.5, resonance:0.35, envMod:0.5, decay:0.26, scale:'minor'},
   {id:'cosmic', name:'COSMIC', short:'COS', color:'#b88cff', tune:0.5, vol:0.68, type:'arp',
    rootNote:0, cutoff:0.62, resonance:0.22, envMod:0.62, decay:0.42, scale:'minor', reverbAmount:0.24, delaySend:0.28, cosmicWidth:0.62, cosmicMotion:0.46, cosmicWarmth:0.22, cosmicAir:0.18},
-  {id:'piano', name:'PIANO', short:'PNO', color:'#ffd166', tune:0.5, vol:0.8, type:'arp',
+  {id:'piano', name:'KEYS', short:'KEY', sound:'piano', tremolo:0, color:'#ffd166', tune:0.5, vol:0.8, type:'arp',
    rootNote:0, cutoff:0.55, resonance:0.2, envMod:0.5, decay:0.5, scale:'minor', reverbAmount:0.18, delaySend:0},
 ];
 // steps[s] speichert die Velocity eines Steps direkt als Zahl:
@@ -3389,6 +3440,23 @@ const tbKnobs=document.getElementById('tbKnobs'), tbPreview=document.getElementB
 const lcdKit=document.getElementById('lcdKit');
 const kitPickerList=document.getElementById('kitPickerList');
 const kitPickerOverlay=document.getElementById('kitPickerOverlay');
+const soundPickerOverlay=document.getElementById('soundPickerOverlay');
+function soundPickerRefresh(){
+  const tr=TRACKS.find(t=>t.id==='piano'), box=document.getElementById('soundPickerList'); box.innerHTML='';
+  Object.keys(KEY_SOUNDS).forEach(id=>{
+    const k=KEY_SOUNDS[id], chip=document.createElement('div'); chip.className='kit-chip'+(tr.sound===id?' active':'');
+    chip.innerHTML='<div class="kn">'+k.name+'</div><div class="kd">'+k.desc+'</div>';
+    chip.addEventListener('click', ()=>{ keysSetSound(tr,id); soundPickerRefresh(); });
+    box.appendChild(chip);
+  });
+}
+function keysSetSound(tr,id){
+  if(tr.sound!==id){ tr.sound=id; Object.assign(tr,KEY_SOUNDS[id].def); }
+  updateKitLabel();
+  Promise.resolve(initAudio()).then(()=>{ if(audioCtx.state==='suspended') audioCtx.resume(); if(isPlaying) return;
+    const t=audioCtx.currentTime+0.02; [0,4,7].forEach((n,i)=>pianoVoice(tr,t+i*0.015,n+12,0.8,0.9)); });
+}
+document.getElementById('soundPickerCloseBtn').addEventListener('click', ()=>{ soundPickerOverlay.classList.remove('open'); syncBottomBarVisibility(); });
 Object.keys(KITS).forEach(kitId=>{
   const kit=KITS[kitId];
   const chip=document.createElement('div');
@@ -3400,7 +3468,7 @@ Object.keys(KITS).forEach(kitId=>{
 });
 const lcdKitBtn=document.getElementById('lcdKitBtn');
 const kitPickerCloseBtn=document.getElementById('kitPickerCloseBtn');
-lcdKitBtn.addEventListener('click', ()=>{ closeAllOverlays(); kitPickerOverlay.classList.add('open'); syncBottomBarVisibility(); kitPickerRefresh(); });
+lcdKitBtn.addEventListener('click', ()=>{ closeAllOverlays(); if(patternGroup==='piano'){ soundPickerOverlay.classList.add('open'); syncBottomBarVisibility(); soundPickerRefresh(); return; } kitPickerOverlay.classList.add('open'); syncBottomBarVisibility(); kitPickerRefresh(); });
 kitPickerCloseBtn.addEventListener('click', ()=>{ kitPickerOverlay.classList.remove('open'); syncBottomBarVisibility(); });
 const lcdPatternBtn=document.getElementById('lcdPatternBtn');
 const lcdPatternName=document.getElementById('lcdPatternName');
@@ -4173,7 +4241,7 @@ function setPatternGroup(gid, select){
   patternGroup=gid;
   groupBar.querySelectorAll('.gb').forEach(b=>b.classList.toggle('on', b.dataset.g===gid));
   grpSelRender();
-  { const kitOn=(gid==='drums'||gid==='perc'); $id('spurRow').classList.toggle('hasKit',kitOn); $id('lcdKitBtn').style.display=kitOn?'':'none'; $id('fillBtn').style.display=gid==='drums'?'':'none'; }
+  { const kitOn=(gid==='drums'||gid==='perc'||gid==='piano'); $id('spurRow').classList.toggle('hasKit',kitOn); $id('lcdKitBtn').style.display=kitOn?'':'none'; $id('lcdKitBtn').classList.toggle('keys',gid==='piano'); updateKitLabel(); $id('fillBtn').style.display=gid==='drums'?'':'none'; }
   TRACKS.forEach(tr=>{ if(tr._ovRow) tr._ovRow.style.display = groupOfTrack(tr)===gid ? '' : 'none'; });
   if(select) selectTrack(TRACKS.findIndex(t=>groupOfTrack(t)===gid));
 }
@@ -4245,10 +4313,11 @@ function buildSynthSheet(tr){
   const num=(v,d)=>v!=null?v:d;
   const D=cos?{cut:62,res:22,env:62,dec:42}:{cut:50,res:35,env:50,dec:26};
   if(tr.id==='piano'){
-    grp('Klang');
+    const rh=tr.sound==='rhodes'; grp('Klang · '+(KEY_SOUNDS[tr.sound]||KEY_SOUNDS.piano).name);
     box.appendChild(soundRow('Ton',0,100,num(tr.cutoff,.55)*100,55,pct,v=>tr.cutoff=v/100));
-    box.appendChild(soundRow('Härte',0,100,num(tr.envMod,.5)*100,50,pct,v=>tr.envMod=v/100));
+    box.appendChild(soundRow(rh?'Biss':'Härte',0,100,num(tr.envMod,.5)*100,50,pct,v=>tr.envMod=v/100));
     box.appendChild(soundRow('Ausklang',0,100,num(tr.decay,.5)*100,50,pct,v=>tr.decay=v/100));
+    if(rh) box.appendChild(soundRow('Tremolo',0,100,num(tr.tremolo,.35)*100,35,pct,v=>tr.tremolo=v/100));
     $id('synRand').style.display='none';
     return;
   }
@@ -5546,7 +5615,7 @@ function collectPatternData(name, id){
       reverbAmount: tr.reverbAmount || 0,
       feel: tr.feel || 0,
       delaySend: tr.delaySend || 0,
-      accentAmt: tr.accentAmt, rootNote: tr.rootNote, cutoff: tr.cutoff, resonance: tr.resonance, envMod: tr.envMod, decay: tr.decay, scale: tr.scale, cosmicWidth:tr.cosmicWidth, cosmicMotion:tr.cosmicMotion, cosmicWarmth:tr.cosmicWarmth, cosmicAir:tr.cosmicAir // neue Cosmic-Parameter sind optional für ältere Pattern
+      accentAmt: tr.accentAmt, rootNote: tr.rootNote, cutoff: tr.cutoff, resonance: tr.resonance, envMod: tr.envMod, decay: tr.decay, scale: tr.scale, cosmicWidth:tr.cosmicWidth, cosmicMotion:tr.cosmicMotion, cosmicWarmth:tr.cosmicWarmth, cosmicAir:tr.cosmicAir, sound:tr.sound, tremolo:tr.tremolo // neue Cosmic-Parameter sind optional für ältere Pattern
     })),
     acidAuto: { shape: autoShape, bars: autoBars, depth: autoDepth },
     fill: {
@@ -5651,6 +5720,7 @@ function applyTrackAndFillData(data){
       tr.cosmicMotion = saved.cosmicMotion!=null ? saved.cosmicMotion : 0.46;
       tr.cosmicWarmth = saved.cosmicWarmth!=null ? saved.cosmicWarmth : 0.22;
       tr.cosmicAir = saved.cosmicAir!=null ? saved.cosmicAir : 0.18;
+      if(tr.id==='piano'){ tr.sound=KEY_SOUNDS[saved.sound]?saved.sound:'piano'; tr.tremolo=saved.tremolo!=null?saved.tremolo:0; }
       tr.scale = SCALES[saved.scale] ? saved.scale : 'minor';
       tr.accentAmt = saved.accentAmt!=null ? saved.accentAmt : 0.5;
     }
@@ -6080,13 +6150,13 @@ const bottomTabBar=document.getElementById('bottomTabBar');
 // statt einen separaten "suppressed"-Flag mitzuführen, der aus dem Ruder laufen könnte.
 function switchTabIsSong(){ return songOverlay.classList.contains('open'); }
 function syncBottomBarVisibility(){
-  const anyModalOpen=[tempoOverlay, patternsOverlay, kitPickerOverlay, sampleEditorOverlay, xyOverlay, drumSetOverlay, document.getElementById('prWin')]
+  const anyModalOpen=[tempoOverlay, patternsOverlay, kitPickerOverlay, soundPickerOverlay, sampleEditorOverlay, xyOverlay, drumSetOverlay, document.getElementById('prWin')]
     .some(el=> el && el.classList.contains('open'));
   bottomTabBar.classList.toggle('overlay-hidden', anyModalOpen);
 }
 function closeAllOverlays(){
   closeSheets(); closeMenus();
-  [tempoOverlay, patternsOverlay, kitPickerOverlay, sampleEditorOverlay, xyOverlay, drumSetOverlay, document.getElementById('prWin'), kitConfirm].forEach(el=>{ if(el) el.classList.remove('open'); });
+  [tempoOverlay, patternsOverlay, kitPickerOverlay, soundPickerOverlay, sampleEditorOverlay, xyOverlay, drumSetOverlay, document.getElementById('prWin'), kitConfirm].forEach(el=>{ if(el) el.classList.remove('open'); });
   xyClear();
   syncBottomBarVisibility();
 }
@@ -6309,7 +6379,7 @@ function beatTrackData(tr){
     vol:tr.vol, tune:tr.tune, pan:tr.pan||0, eqLowGain:tr.eqLowGain||0, eqMidGain:tr.eqMidGain||0, eqHighGain:tr.eqHighGain||0,
     reverbAmount:tr.reverbAmount||0, delaySend:tr.delaySend||0, feel:tr.feel||0,
     accentAmt:tr.accentAmt, rootNote:tr.rootNote, cutoff:tr.cutoff, resonance:tr.resonance, envMod:tr.envMod, decay:tr.decay, scale:tr.scale,
-    cosmicWidth:tr.cosmicWidth, cosmicMotion:tr.cosmicMotion, cosmicWarmth:tr.cosmicWarmth, cosmicAir:tr.cosmicAir };
+    cosmicWidth:tr.cosmicWidth, cosmicMotion:tr.cosmicMotion, cosmicWarmth:tr.cosmicWarmth, cosmicAir:tr.cosmicAir, sound:tr.sound, tremolo:tr.tremolo };
 }
 function beatCollect(gid, name){
   const d={ id:genId(), kind:'beat', group:gid, name, savedAt:Date.now(), length:PATTERN_LENGTH, kitId:currentKitId, tracks:arrGroupTracks(gid).map(beatTrackData) };
@@ -6330,6 +6400,7 @@ function applyTrackSound(tr, sv){
     tr.rootNote=sv.rootNote!=null?sv.rootNote:0; tr.cutoff=sv.cutoff!=null?sv.cutoff:0.5; tr.resonance=sv.resonance!=null?sv.resonance:0.35;
     tr.envMod=sv.envMod!=null?sv.envMod:0.5; tr.decay=sv.decay!=null?sv.decay:0.26; tr.scale=SCALES[sv.scale]?sv.scale:'minor'; tr.accentAmt=sv.accentAmt!=null?sv.accentAmt:0.5;
   }
+  if(tr.id==='piano'){ tr.sound=KEY_SOUNDS[sv.sound]?sv.sound:'piano'; tr.tremolo=sv.tremolo!=null?sv.tremolo:0; }
   if(tr.id==='cosmic'){ tr.cosmicWidth=sv.cosmicWidth!=null?sv.cosmicWidth:0.62; tr.cosmicMotion=sv.cosmicMotion!=null?sv.cosmicMotion:0.46; tr.cosmicWarmth=sv.cosmicWarmth!=null?sv.cosmicWarmth:0.22; tr.cosmicAir=sv.cosmicAir!=null?sv.cosmicAir:0.18; }
 }
 async function beatApply(d, withSound){
@@ -6408,6 +6479,7 @@ const DS_IDS=['bd','sd','ch','oh','lt','ht','rs','hc','cy','cb','cl','mr'];
 let dsCur=null, dsMode='syn', dsMsgTimer=null, kitPending=null;
 function dsSay(m){ dsStatus.textContent=m; clearTimeout(dsMsgTimer); dsMsgTimer=setTimeout(()=>{ dsStatus.textContent=''; },3000); }
 function updateKitLabel(){
+  if(typeof patternGroup!=='undefined' && patternGroup==='piano'){ const k=TRACKS.find(t=>t.id==='piano'); lcdKit.textContent=(KEY_SOUNDS[k&&k.sound]||KEY_SOUNDS.piano).name; return; }
   const custom=!currentSet.name && Object.keys(drumSet.voices).length>0;
   const KIT_SHORT={rock:'ROCK',fm909:'909',fm808:'808',real808:'808 A',acid:'ACID',lofi:'LO-FI'};
   lcdKit.textContent=(currentSet.name || KIT_SHORT[currentKitId] || KITS[currentKitId].name)+(currentSet.dirty?' *':(custom?' +':''));
@@ -6906,7 +6978,7 @@ const prKb=document.getElementById('prKb'), prLive=new Map(), prSust=[];
 function prIsOpen(){ return prWin.classList.contains('open'); }
 function prSyncPlay(){ const b=document.getElementById('prPlay'); if(b){ b.textContent=isPlaying?'■':'▶'; b.classList.toggle('on',isPlaying); } if(!isPlaying) prRecSnap=false; }
 function prHidePh(){ const a=document.getElementById('prPh'), b=document.querySelector('#prPv .pph'); if(a) a.style.display='none'; if(b) b.style.display='none'; }
-function prName(tr){ return tr.id==='arp' ? 'ACID' : tr.id==='cosmic' ? 'COSMIC' : tr.id==='piano' ? 'PIANO' : tr.name; }
+function prName(tr){ return tr.id==='arp' ? 'ACID' : tr.id==='cosmic' ? 'COSMIC' : tr.id==='piano' ? 'KEYS' : tr.name; }
 function prWhite(tr,n){ return [0,2,4,5,7,9,11].indexOf((((9+tr.rootNote+n)%12)+12)%12)>=0; }
 function prBase(){ return currentPage*16; }
 function prFit(){
