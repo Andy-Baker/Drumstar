@@ -20,3 +20,6 @@ Klaviatur (1,5 Oktaven), Balken-Anzeige, Rec, Halten, Anschlag nach Tastenhöhe.
 
 ## v59
 - Piano-Klang: Hammer-Rauschimpuls, zweistufiges Ausklingen, Filter wird nach dem Anschlag weicher, Doppelsaiten, Stereo nach Tonhöhe, tiefe Töne länger. Pegel -2 dB. Nur gemessen, nicht gehört.
+
+## v60
+- Keys (vorher Piano): Sound-Feld in der Spur-Zeile wie das Kit-Feld bei Drums; Auswahl Piano / Rhodes (Vollbild-Liste, Probe-Akkord). Sound pro Spur (tr.sound), wird mit Beats gespeichert, alte Stände = Piano. Rhodes: FM-Stimme mit Glocke und Tremolo (Regler Ton, Biss, Ausklang, Tremolo). Nur gemessen, nicht gehört.
