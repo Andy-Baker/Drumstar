@@ -8,3 +8,6 @@ Klaviatur (1,5 Oktaven), Balken-Anzeige, Rec, Halten, Anschlag nach Tastenhöhe.
 - Roll-Fenster: Instrumentmenü zeigt 3 Spuren, Spielen-Modus mit Piano-Stimmen (Halten, Rec).
 - Laden älterer Stände ohne Piano: Spur startet leer mit Standardklang.
 - Noch nicht auf echtem Handy gehört; Klang ist ein erster Entwurf.
+
+## v56
+- manifest: orientation "any" (vorher portrait-primary sperrte Querformat in der installierten App). Auf dem Handy ggf. App neu zum Homescreen hinzufügen, damit das Manifest neu gelesen wird.
