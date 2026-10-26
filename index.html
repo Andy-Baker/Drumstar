@@ -2426,38 +2426,54 @@ function triggerCosmicArpStep(time, tr, degreeSemis, velocity, modPos, lenSteps,
   [lp,rp,filter,subGain,shimmerGain,amp].forEach(n=>{ /* Nodes are released with their oscillator graph. */ });
 }
 // ---- PIANO: additive Teiltöne, nach oben schneller abklingend, Härte = Anschlag-Helligkeit ----
+function pianoNoise(){
+  if(audioCtx._pnz) return audioCtx._pnz;
+  const len=Math.floor(audioCtx.sampleRate*0.06), buf=audioCtx.createBuffer(1,len,audioCtx.sampleRate), d=buf.getChannelData(0);
+  let seed=12345; for(let i=0;i<len;i++){ seed=(seed*1664525+1013904223)>>>0; d[i]=(seed/4294967296*2-1)*Math.pow(1-i/len,2); } // deterministisch -> Live = Export
+  return audioCtx._pnz=buf;
+}
 function pianoVoice(tr,time,n,vel,holdSec){
   const freq=noteFreq(tr.rootNote+n+12);
   const hard=tr.envMod!=null?tr.envMod:0.5, tone=tr.cutoff!=null?tr.cutoff:0.55;
-  const T=arpDecaySeconds(tr.decay!=null?tr.decay:0.5)*Math.max(0.45,Math.min(1.6,Math.pow(220/freq,0.4)))*2.2;
   const v=Math.max(0.05,Math.min(1.2,vel));
-  const peak=Math.max(0.0001,Math.min(0.24,v*tr.vol*0.14));
-  const lp=audioCtx.createBiquadFilter(); lp.type='lowpass'; lp.Q.value=0.5;
-  lp.frequency.setValueAtTime(Math.min(16000,(600+tone*7000)*(0.5+v*(0.6+hard*1.2))+freq*2),time);
-  const amp=audioCtx.createGain(); amp.gain.setValueAtTime(0.0001,time); amp.gain.linearRampToValueAtTime(peak,time+0.004);
-  const oscs=[], K=6;
-  for(let k=1;k<=K;k++){
-    const f=freq*k*Math.sqrt(1+0.0005*k*k); if(f>12000) break;
-    const o=audioCtx.createOscillator(); o.type='sine'; o.frequency.setValueAtTime(f,time);
-    if(k===1) o.detune.setValueAtTime(3,time);
-    const g=audioCtx.createGain();
-    const a=(1/Math.pow(k,1.15))*(k>2?(0.35+v*0.65*(0.5+hard)):1);
-    g.gain.setValueAtTime(a,time); g.gain.setTargetAtTime(0.0001,time+0.01,T/(1+0.9*(k-1)));
+  // Tiefe Töne klingen länger, hohe kürzer (Saitenlänge/Dämpfung)
+  const T=arpDecaySeconds(tr.decay!=null?tr.decay:0.5)*Math.max(0.4,Math.min(1.8,Math.pow(220/freq,0.45)))*2.4;
+  const peak=Math.max(0.0001,Math.min(0.2,v*tr.vol*0.11));
+  const lp=audioCtx.createBiquadFilter(); lp.type='lowpass'; lp.Q.value=0.4;
+  // Helligkeit: Hammer trifft hell, Ton wird in ~0.5 s weicher (mehr Anschlag = länger hell)
+  const open=Math.min(16000,(900+tone*8000)*(0.45+v*(0.5+hard*1.1))+freq*3), floor=Math.max(freq*1.5,Math.min(open,500+tone*1800));
+  lp.frequency.setValueAtTime(open,time); lp.frequency.setTargetAtTime(floor,time+0.02,0.35+T*0.08);
+  const amp=audioCtx.createGain(); amp.gain.setValueAtTime(0.0001,time); amp.gain.linearRampToValueAtTime(peak,time+0.003);
+  const pan=audioCtx.createStereoPanner(); pan.pan.value=Math.max(-0.45,Math.min(0.45,(n-20)/45)); // tiefe Töne links, hohe rechts
+  const oscs=[], K=Math.max(3,Math.min(8,Math.floor(7500/freq)));
+  const part=(f,a,tau1,det)=>{
+    const o=audioCtx.createOscillator(); o.type='sine'; o.frequency.setValueAtTime(f,time); if(det) o.detune.setValueAtTime(det,time);
+    const g=audioCtx.createGain(); g.gain.setValueAtTime(a,time);
+    // Zweistufiges Ausklingen: schneller Anfangsabfall, dann lange Schwebung
+    g.gain.setTargetAtTime(a*0.3,time+0.005,tau1); g.gain.setTargetAtTime(0.0001,time+0.1+tau1*2,tau1*6+T*0.35);
     o.connect(g).connect(lp); oscs.push(o);
+  };
+  for(let k=1;k<=K;k++){
+    const f=freq*k*Math.sqrt(1+0.0004*k*k); if(f>11000) break;
+    const a=(1/Math.pow(k,1.2))*(k>2?(0.3+v*0.7*(0.45+hard)):1)*(k===2?0.8:1);
+    const tau1=T*0.07/(1+0.5*(k-1));
+    part(f,a,tau1,0);
+    if(k<=3 && freq>130) part(f,a*0.55,tau1*1.1,k===1?-3.5:3.5); // Doppel-/Dreichörigkeit
   }
-  // zweite, leicht verstimmte Grundschwingung = Chorus der Doppelsaite
-  const o2=audioCtx.createOscillator(); o2.type='sine'; o2.frequency.setValueAtTime(freq,time); o2.detune.setValueAtTime(-4,time);
-  const g2=audioCtx.createGain(); g2.gain.setValueAtTime(0.5,time); g2.gain.setTargetAtTime(0.0001,time+0.01,T*1.15); o2.connect(g2).connect(lp); oscs.push(o2);
-  lp.connect(amp).connect(tr.bus);
+  lp.connect(amp).connect(pan).connect(tr.bus);
+  // Hammer: kurzer Rauschimpuls + tiefer Klopfton
+  const nz=audioCtx.createBufferSource(); nz.buffer=pianoNoise();
+  const nb=audioCtx.createBiquadFilter(); nb.type='bandpass'; nb.frequency.value=Math.min(6000,1200+freq*2.5); nb.Q.value=0.8;
+  const ng=audioCtx.createGain(); ng.gain.value=0.05+0.3*v*(0.4+hard)*peak/0.1; nz.connect(nb).connect(ng).connect(amp); nz.start(time);
   oscs.forEach(o=>o.start(time));
   const voice={amp,oscs,t0:time,
-    rel(at){ const now=Math.max(time,at!=null?at:audioCtx.currentTime); try{ amp.gain.cancelScheduledValues(now); amp.gain.setValueAtTime(Math.max(0.0001,amp.gain.value||peak),now); amp.gain.setTargetAtTime(0.0001,now,0.09); oscs.forEach(o=>{ try{o.stop(now+0.7);}catch(e){} }); }catch(e){} }};
+    rel(at){ const now=Math.max(time,at!=null?at:audioCtx.currentTime); try{ amp.gain.cancelScheduledValues(now); amp.gain.setValueAtTime(Math.max(0.0001,amp.gain.value||peak),now); amp.gain.setTargetAtTime(0.0001,now,0.11); oscs.forEach(o=>{ try{o.stop(now+0.8);}catch(e){} }); }catch(e){} }};
   oscs[0].onended=()=>{ try{ amp.disconnect(); }catch(e){} if(tr._cosVoices){ const i=tr._cosVoices.indexOf(voice); if(i>=0) tr._cosVoices.splice(i,1); } };
   const isLive=!(typeof OfflineAudioContext!=='undefined' && audioCtx instanceof OfflineAudioContext);
   if(isLive){ (tr._cosVoices=tr._cosVoices||[]).push(voice);
     while(tr._cosVoices.length>10){ const old=tr._cosVoices.shift(); try{ old.amp.gain.cancelScheduledValues(time); old.amp.gain.setTargetAtTime(0.0001,time,0.03); old.oscs.forEach(x=>{ try{x.stop(time+0.15);}catch(e){} }); }catch(e){} } }
   if(holdSec!=null) voice.rel(time+holdSec);
-  else oscs.forEach(o=>{ try{o.stop(time+T*5);}catch(e){} });
+  else oscs.forEach(o=>{ try{o.stop(time+T*6);}catch(e){} });
   return voice;
 }
 function triggerPianoStep(time,tr,n,vel,lenSteps){

@@ -17,3 +17,6 @@ Klaviatur (1,5 Oktaven), Balken-Anzeige, Rec, Halten, Anschlag nach Tastenhöhe.
 
 ## v58
 - Footer: Impressum/Datenschutz unter dem Drumstar-Logo. Fill-Button: Icon Sticks + Toms statt Balken.
+
+## v59
+- Piano-Klang: Hammer-Rauschimpuls, zweistufiges Ausklingen, Filter wird nach dem Anschlag weicher, Doppelsaiten, Stereo nach Tonhöhe, tiefe Töne länger. Pegel -2 dB. Nur gemessen, nicht gehört.
