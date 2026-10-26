@@ -833,38 +833,6 @@
   .ssr-rep button:active, .ssr-move:active, .ssr-del:active{ transform:scale(.9); }
 
 
-  /* ---------- TONHÖHEN-EDITOR (Acid Bass): ersetzt für die 303-Spur das 4x4-bigGrid.
-     13 Notenzeilen (1 Oktave + Oktavton) x 16 Steps der aktuellen Seite, darunter Accent-/Slide-Zeile.
-     Blaue Akzente (Design-Regel: kein Orange). ---------- */
-  #pitchEditor{ background:var(--panel-inset); border-radius:8px; padding:10px 8px 12px; box-shadow:inset 0 2px 6px rgba(0,0,0,.5); }
-  #pitchCtl{ display:flex; align-items:center; gap:8px; margin:0 2px 10px; flex-wrap:wrap; }
-  .pe-btn{ min-height:36px; padding:0 12px; border-radius:8px; border:1px solid rgba(255,255,255,.12); background:var(--panel);
-    color:var(--dim); font-family:inherit; font-weight:700; font-size:12px; cursor:pointer; }
-  .pe-btn:active{ transform:scale(.95); }
-  .pe-btn.on{ border-color:rgba(63,169,255,.55); background:rgba(63,169,255,.16); color:var(--blue-2); }
-  #peOctLabel{ font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--blue-2); min-width:72px; text-align:center; }
-  #pitchGrid{ display:grid; grid-template-columns:26px repeat(16,1fr); gap:3px 2px; }
-  .pe-rl{ font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--dim); display:flex; align-items:center; justify-content:flex-end; padding-right:3px; }
-  .pe-rl.in{ color:var(--metal); } .pe-rl.rt{ color:var(--blue-2); }
-  .pe-hn{ font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--dim); text-align:center; height:14px; }
-  .pe-c{ height:22px; border-radius:3px; background:#0b0c0f; cursor:pointer; display:flex; align-items:center; justify-content:center;
-    font-size:11px; line-height:1; color:#04121e; }
-  .pe-c.in{ background:#12141a; } .pe-c.rt{ background:#101a26; }
-  .pe-c.off{ opacity:.3; cursor:default; }
-  .pe-c.act{ background:var(--tc,var(--blue)); box-shadow:0 0 8px var(--tc,rgba(63,169,255,.7)); }
-  .pe-c.act.gh{ opacity:.45; box-shadow:none; }
-  .pe-c:not(.act){ color:var(--blue-2); }
-  .pe-c.beat, .pe-hn.beat{ margin-left:1px; }
-  .pe-c.playcol, .pe-hn.playcol{ outline:1px solid rgba(255,255,255,.6); outline-offset:-1px; }
-  .pe-ab{ height:28px; padding:0; border-radius:5px; border:1px solid rgba(255,255,255,.12); background:var(--panel);
-    color:var(--dim); font-family:inherit; font-weight:700; font-size:11px; cursor:pointer; }
-  .pe-ab:active{ transform:scale(.92); }
-  .pe-ab.a.on{ background:var(--white); color:#0b0c0f; border-color:var(--white); }
-  .pe-ab.s.on{ background:var(--blue-2); color:#042c53; border-color:var(--blue-2); }
-  .pe-ab.dis{ opacity:.3; }
-  #peReadout{ font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--blue-2); margin:10px 2px 0; min-height:14px; }
-  #peLegend{ font-size:10px; color:var(--dim); margin:6px 2px 0; letter-spacing:.02em; }
-
   /* ---------- ACID MOD: AUTO (einklappbar) ---------- */
   #arpModPanel{ display:none; flex-direction:column; gap:8px; margin-top:8px; }
   .am-card{ background:var(--panel); border-radius:8px; padding:6px 12px 10px; }
@@ -919,7 +887,7 @@
   .xy-col.rt span{ color:var(--blue-2); }
   #xyReadN{ min-width:60px; }
   #xyOpts{ display:flex; gap:10px; align-items:center; flex-shrink:0; }
-  #xyScaleSel, #peScaleSel{ color-scheme:dark; background:var(--panel); color:var(--blue-2); border:1px solid rgba(255,255,255,.12); border-radius:8px; font-family:inherit; font-weight:700; font-size:12px; }
+  #xyScaleSel{ color-scheme:dark; background:var(--panel); color:var(--blue-2); border:1px solid rgba(255,255,255,.12); border-radius:8px; font-family:inherit; font-weight:700; font-size:12px; }
   #xyScaleSel{ min-height:40px; padding:0 10px; }
   .xy-reso{ flex:1; display:flex; align-items:center; gap:6px; font-size:11px; color:var(--dim); }
   .xy-reso input{ flex:1; accent-color:var(--blue); min-width:0; } .xy-reso b{ font:600 11px 'JetBrains Mono',monospace; color:var(--blue-2); min-width:30px; text-align:right; }
@@ -1492,18 +1460,6 @@ html,body{min-height:100%;height:100%;}
 
         <div id="bigGrid"></div>
 
-        <div id="pitchEditor" style="display:none;">
-          <div id="pitchCtl">
-            <button class="pe-btn" id="peOctDown" aria-label="Oktave tiefer">Okt −</button>
-            <span id="peOctLabel"></span>
-            <button class="pe-btn" id="peOctUp" aria-label="Oktave höher">Okt +</button>
-            <button class="pe-btn on" id="peScaleBtn">Nur Skala</button>
-            <select class="pe-btn" id="peScaleSel" aria-label="Skala"></select>
-          </div>
-          <div id="pitchGrid"></div>
-          <div id="peReadout">Zelle antippen: Ton setzen · nochmal antippen: Step aus</div>
-          <div id="peLegend">A = Accent · S = Slide zum nächsten Ton · ▲▼ = Ton außerhalb des Fensters</div>
-        </div>
         <div id="prPreview"><div id="prPv" role="button" aria-label="Piano Roll öffnen"></div><div id="prPvCap">Antippen zum Bearbeiten</div></div>
         <div class="footer-logo"><img src="./icons/logo-drumstar.png" alt="Drumstar"></div>
         <footer class="legal-footer">
@@ -2231,7 +2187,7 @@ function autoLfo(absStep){
   const w=(a,b)=>Math.sin(2*Math.PI*(t*a+b));
   return Math.max(-1, Math.min(1, .55*w(1,.2)+.3*w(2,1.1)+.2*w(5,2.7)));
 }
-// Skalen (Halbtöne relativ zum Grundton rootNote) — gelten für die ganze Acid-Spur: Spielfläche, Tonhöhen-Editor, Random
+// Skalen (Halbtöne relativ zum Grundton rootNote) — gelten für die ganze Acid-Spur: Spielfläche, Piano Roll, Random
 const SCALES={
   minor:{label:'Moll', semis:[0,2,3,5,7,8,10]},
   major:{label:'Dur', semis:[0,2,4,5,7,9,11]},
@@ -2315,14 +2271,7 @@ function evLoad(sv,tr){
   }
   return out;
 }
-// Lesende Altsicht (steps/notes/slides je Step) — für den Tonhöheneditor; im Bearbeiten-Block die Arbeitskopie
-function legacyView(tr){
-  if(tr._scratch) return {steps:tr.steps, notes:tr.notes, slides:tr.slides};
-  const N=PATTERN_LENGTH, steps=new Array(N).fill(VEL_OFF), notes=new Array(N).fill(0), slides=new Array(N).fill(false), seen={};
-  tr.events.forEach(e=>{ if(e.s<N && !seen[e.s]){ seen[e.s]=1; steps[e.s]=evStepVal(e); notes[e.s]=e.n; slides[e.s]=!!e.sl; } });
-  return {steps,notes,slides};
-}
-// Übergang: bestehende Editoren (Tonhöheneditor, Generatoren) arbeiten in einem Block mit Step-Arrays; danach werden daraus Events.
+// Übergang: Generatoren arbeiten in einem Block mit Step-Arrays; danach werden daraus Events.
 function legacyEdit(tr,fn,keepLen){
   const N=PATTERN_LENGTH, orig=new Map();
   const steps=new Array(N).fill(VEL_OFF), notes=new Array(N).fill(0), slides=new Array(N).fill(false);
@@ -2341,7 +2290,7 @@ function legacyEdit(tr,fn,keepLen){
     tr.events=ev; delete tr.notes; delete tr.slides; evTouch(tr);
   }
 }
-function evPost(tr){ pitchFit=true; refreshTrackStepVisuals(tr); if(tr===TRACKS[activeTrackIdx]) renderPitchEditor(tr); }
+function evPost(tr){ refreshTrackStepVisuals(tr); if(tr===TRACKS[activeTrackIdx]) renderEditorArea(tr); }
 function generateAcidBassline(tr,from,to){ legacyEdit(tr,()=>generateAcidBasslineCore(tr,from===undefined?0:from,to===undefined?PATTERN_LENGTH:to),false); }
 function arpBassBuild(tr,mode,style){ legacyEdit(tr,()=>arpBassBuildCore(tr,mode,style),mode!=='generate'); evPost(tr); }
 function arpGenBuild(tr,mode){ legacyEdit(tr,()=>arpGenBuildCore(tr,mode||'generate'),mode!=='generate'); evPost(tr); }
@@ -3583,7 +3532,6 @@ taRandBtn.addEventListener('click', ()=>{
   const tr=TRACKS[activeTrackIdx], [from,to]=taRange();
   taSnapshot(tr);
   randomizeTrackPattern(tr, from, to);
-  if(tr.type==='arp') pitchFit=true;
   refreshTrackStepVisuals(tr);
   taSay('Random · '+tr.name);
 });
@@ -3675,9 +3623,8 @@ function arpBassBuildCore(tr,mode,style){
     else if(style==='roll'){ put(s, rb+(st%4===3&&Math.random()<.65?12:0), st===0||(st%4===0&&Math.random()<.35)); }
     else if(style==='pulse'){ if(st%4===0) put(s, rb+(st===12&&Math.random()<.3?7:0), st===0); }
   }
-  pitchFit=true;
   refreshTrackStepVisuals(tr);
-  if(tr===TRACKS[activeTrackIdx]) renderPitchEditor(tr);
+  if(tr===TRACKS[activeTrackIdx]) renderEditorArea(tr);
   const bars=(to-from)/16;
   const names=prog ? ' · Verlauf '+prog.steps.slice(0,4).map(st=>arpChordName(tr,st)).join(' · ') : '';
   if(arpGenStatus) arpGenStatus.textContent='Bass · '+AG_BASS_NAMES[style]+names+' — '+(mode==='fill'?'Fill ergänzt':active+' aktive Steps')+' · '+bars+(bars===1?' Takt':' Takte');
@@ -3708,7 +3655,7 @@ function arpGenBuildCore(tr, mode='generate'){
   const octaves=Math.max(1,+document.getElementById('agRange').value||2);
   const density=(+document.getElementById('agDensity').value||75)/100;
   const [from,to]=taRange(); // wie Zufall/Leeren: nur sichtbare Seite oder alle Seiten
-  // Notenbereich = das, was der Tonhöhen-Editor per Okt −/+ erreicht (0..36); Überhang wird oktavweise zurückgefaltet
+  // Notenbereich 0..36 (3 Oktaven); Überhang wird oktavweise zurückgefaltet
   const MAXN=Math.min(36, octaves*12+14);
   const fold=n=>{ while(n>MAXN) n-=12; while(n<0) n+=12; return n; };
   const scale=(SCALES[tr.scale]||SCALES.minor).semis;
@@ -3791,9 +3738,8 @@ function arpGenBuildCore(tr, mode='generate'){
       active++;
     }
   }
-  pitchFit=true;
   refreshTrackStepVisuals(tr);
-  if(tr===TRACKS[activeTrackIdx]) renderPitchEditor(tr);
+  if(tr===TRACKS[activeTrackIdx]) renderEditorArea(tr);
   const bars=(to-from)/16;
   if(arpGenStatus) arpGenStatus.textContent=(prog?'Verlauf '+prog.steps.slice(0,4).map(st=>arpChordName(tr,st)).join(' · ')+' — ':'')+(mode==='variation'?'Variation':mode==='fill'?'Fill ergänzt':'Arpeggio erzeugt')+' · '+active+' aktive Steps · '+bars+(bars===1?' Takt':' Takte');
 }
@@ -3929,78 +3875,27 @@ function renderBigGrid(){
     bigCellNums[s].textContent = currentPage*16+s+1; // absolute Step-Nummer im Pattern
     updateStepVisual(bigCells[s], tr.steps[currentPage*16+s]);
   }
-  renderPitchEditor(tr);
+  renderEditorArea(tr);
 }
 
 // =========================================================================
-// TONHÖHEN-EDITOR (Acid Bass) — Raster statt Piano Roll: die 303 ist monophon (ein Ton pro Step),
-// daher reicht pro Spalte genau eine aktive Zeile. Datenmodell unverändert: tr.steps (Velocity),
-// tr.notes (Halbtöne relativ zu tr.rootNote), tr.slides. Fenster = 13 Halbtöne ab pitchLo.
+// EDITORBEREICH + NOTEN-HELFER — Melodiespuren (arp) zeigen statt bigGrid die Piano-Roll-Vorschau;
+// Bearbeiten im Piano-Roll-Fenster. Helfer werden von Piano Roll und Acid-Spielfläche genutzt.
 // Notenname: noteFreq() basiert auf A1 (55 Hz) -> Halbton 0 bei rootNote 0 ist ein A.
 // =========================================================================
-const pitchEditor=document.getElementById('pitchEditor');
-const pitchGrid=document.getElementById('pitchGrid');
-const peOctLabel=document.getElementById('peOctLabel');
-const peReadout=document.getElementById('peReadout');
-const peScaleBtn=document.getElementById('peScaleBtn');
-let pitchLo=0, pitchScaleOnly=true, pitchFit=false, pitchCols=[];
-const PITCH_MINOR=[0,2,3,5,7,8,10];
+function renderEditorArea(tr){
+  const isArp=tr.type==='arp';
+  bigGrid.style.display=isArp?'none':''; document.getElementById('brushRow').style.display=isArp?'none':'';
+  if(!isArp){ $id('prPreview').style.display='none'; $id('taRoll').style.display='none'; return; }
+  agRefreshChordOptions(tr);
+  agSyncStyleUI(tr);
+  $id('prPreview').style.display='flex'; $id('taRoll').style.display=''; prDrawPreview(tr);
+}
 function pitchNoteName(tr,v){
   const t=9+tr.rootNote+v+trOct(tr); // Cosmic klingt 2 Oktaven höher -> Namen passen zum Klang
   return NOTE_NAMES[((t%12)+12)%12]+(Math.floor(t/12)+1);
 }
 function pitchInScale(v,tr){ return (SCALES[(tr&&tr.scale)||'minor']||SCALES.minor).semis.indexOf(((v%12)+12)%12)>=0; }
-// Fenster wählen, in dem die meisten vorhandenen Töne sichtbar sind (Fenster liegen auf Oktavgrenzen, -24..+12)
-function pitchDoFit(tr){
-  let best=0, bestCount=-1;
-  [0,-12,12,-24,24].forEach(lo=>{ // bei Gleichstand gewinnt das frühere (näher an Grundton)
-    let cnt=0;
-    tr.events.forEach(e=>{ if(e.s<PATTERN_LENGTH && e.n>=lo && e.n<=lo+12) cnt++; });
-    if(cnt>bestCount){ bestCount=cnt; best=lo; }
-  });
-  pitchLo=best;
-}
-function renderPitchEditor(tr){
-  const isArp=tr.type==='arp';
-  pitchEditor.style.display='none';
-  bigGrid.style.display=isArp?'none':''; document.getElementById('brushRow').style.display=isArp?'none':'';
-  if(!isArp){ pitchCols=[]; $id('prPreview').style.display='none'; $id('taRoll').style.display='none'; return; }
-  agRefreshChordOptions(tr);
-  agSyncStyleUI(tr);
-  $id('prPreview').style.display='flex'; $id('taRoll').style.display=''; prDrawPreview(tr); pitchCols=[]; return; // Piano-Roll-Fenster ersetzt den Tonhöheneditor (Rest unten ist toter Code)
-  pitchEditor.style.setProperty('--tc', tr.color); // Tonzellen in der Spurfarbe (Acid orange, Cosmic lila)
-  if(pitchFit){ pitchDoFit(tr); pitchFit=false; }
-  peScaleSel.value=tr.scale||'minor';
-  peOctLabel.textContent=pitchNoteName(tr,pitchLo)+' – '+pitchNoteName(tr,pitchLo+12);
-  document.getElementById('peLegend').textContent = isPoly(tr) ? 'A = Accent · ▲▼ = Ton außerhalb des Fensters (Okt −/+)' : 'A = Accent · S = Slide zum nächsten Ton · ▲▼ = Ton außerhalb des Fensters';
-  const lv=legacyView(tr), base=currentPage*16;
-  let h='<div></div>';
-  for(let c=0;c<16;c++) h+='<div class="pe-hn'+(c%4===0?' beat':'')+'" data-col="'+c+'">'+(base+c+1)+'</div>';
-  for(let r=12;r>=0;r--){
-    const v=pitchLo+r, inS=pitchInScale(v,tr), rt=((v%12)+12)%12===0;
-    h+='<div class="pe-rl'+(inS?' in':'')+(rt?' rt':'')+'">'+pitchNoteName(tr,v)+'</div>';
-    for(let c=0;c<16;c++){
-      const i=base+c, vel=lv.steps[i], on=vel>0, n=lv.notes[i]||0, hit=on && n===v;
-      let cls='pe-c'+(inS?' in':'')+(rt?' rt':'')+(c%4===0?' beat':''), txt='';
-      if(pitchScaleOnly && !inS && !hit) cls+=' off';
-      if(hit){ cls+=' act'+(vel<=VEL_GHOST?' gh':''); if(lv.slides[i]) txt='~'; }
-      else if(on && r===12 && n>pitchLo+12) txt='▲';
-      else if(on && r===0 && n<pitchLo) txt='▼';
-      h+='<div class="'+cls+'" data-col="'+c+'" data-v="'+v+'">'+txt+'</div>';
-    }
-  }
-  h+='<div class="pe-rl">A</div>';
-  for(let c=0;c<16;c++){ const i=base+c;
-    h+='<button class="pe-ab a'+(lv.steps[i]===VEL_ACCENT?' on':'')+(lv.steps[i]>0?'':' dis')+'" data-a="'+c+'" aria-label="Accent Step '+(i+1)+'">A</button>'; }
-  if(!isPoly(tr)){ // Poly-Spuren haben keine Slides
-    h+='<div class="pe-rl">S</div>';
-    for(let c=0;c<16;c++){ const i=base+c;
-      h+='<button class="pe-ab s'+(lv.slides[i]?' on':'')+(lv.steps[i]>0?'':' dis')+'" data-s="'+c+'" aria-label="Slide Step '+(i+1)+'">S</button>'; }
-  }
-  pitchGrid.innerHTML=h;
-  pitchCols=Array.from({length:16},()=>[]);
-  pitchGrid.querySelectorAll('[data-col]').forEach(el=>pitchCols[+el.dataset.col].push(el));
-}
 // Anspielen nur im Stillstand: triggerArpStep() nutzt die eine dauerhafte Stimme der Spur und
 // würde sonst bereits eingeplante Sequencer-Events (cancelScheduledValues) abräumen.
 function pitchPreview(tr, semis, vel){
@@ -4010,43 +3905,6 @@ function pitchPreview(tr, semis, vel){
     triggerArpStep(audioCtx.currentTime+0.01, tr, semis, vel, false);
   });
 }
-function pitchClickRaw(e){
-  const t=e.target.closest('[data-a],[data-s],[data-v]');
-  const tr=TRACKS[activeTrackIdx];
-  if(!t || tr.type!=='arp') return;
-  const base=currentPage*16;
-  if(t.dataset.a!==undefined){
-    const c=+t.dataset.a, i=base+c;
-    if(tr.steps[i]>0){ tr.steps[i]= tr.steps[i]===VEL_ACCENT ? VEL_NORMAL : VEL_ACCENT; updateStepVisual(tr._ovCells[c], tr.steps[i]); renderPitchEditor(tr); }
-    return;
-  }
-  if(t.dataset.s!==undefined){
-    const c=+t.dataset.s, i=base+c;
-    if(tr.steps[i]>0){ tr.slides[i]=!tr.slides[i]; renderPitchEditor(tr); }
-    return;
-  }
-  if(t.classList.contains('off')) return;
-  const c=+t.dataset.col, v=+t.dataset.v, i=base+c;
-  if(tr.steps[i]>0 && tr.notes[i]===v){
-    tr.steps[i]=VEL_OFF;
-    peReadout.textContent='Step '+(i+1)+' aus';
-  } else {
-    if(tr.steps[i]<=0) tr.steps[i]=VEL_NORMAL;
-    tr.notes[i]=v;
-    peReadout.textContent='Step '+(i+1)+' → '+pitchNoteName(tr,v)+(tr.steps[i]===VEL_ACCENT?' · Accent':'')+(tr.slides[i]?' · Slide':'');
-    pitchPreview(tr, v, tr.steps[i]);
-  }
-  updateStepVisual(tr._ovCells[c], tr.steps[i]);
-  renderPitchEditor(tr);
-}
-pitchGrid.addEventListener('click',(e)=>{ const tr=TRACKS[activeTrackIdx]; if(!tr || tr.type!=='arp') return; legacyEdit(tr,()=>pitchClickRaw(e),true); renderPitchEditor(tr); });
-document.getElementById('peOctDown').addEventListener('click', ()=>{ pitchLo=Math.max(-24,pitchLo-12); renderPitchEditor(TRACKS[activeTrackIdx]); });
-document.getElementById('peOctUp').addEventListener('click', ()=>{ pitchLo=Math.min(24,pitchLo+12); renderPitchEditor(TRACKS[activeTrackIdx]); });
-peScaleBtn.addEventListener('click', ()=>{
-  pitchScaleOnly=!pitchScaleOnly;
-  peScaleBtn.classList.toggle('on', pitchScaleOnly);
-  renderPitchEditor(TRACKS[activeTrackIdx]);
-});
 
 // =========================================================================
 // ACID MOD UI — AUTO (einklappbar). Logik/Engine: siehe triggerArpStep().
@@ -4105,7 +3963,7 @@ syncAutoUI();
 // =========================================================================
 const xyOverlay=document.getElementById('xyOverlay'), xyPad=document.getElementById('xyPad'), xyPuck=document.getElementById('xyPuck');
 const xyReadN=document.getElementById('xyReadN'), xyReadC=document.getElementById('xyReadC');
-const xyScaleSel=document.getElementById('xyScaleSel'), peScaleSel=document.getElementById('peScaleSel');
+const xyScaleSel=document.getElementById('xyScaleSel');
 const xyReso=document.getElementById('xyReso'), xyResoVal=document.getElementById('xyResoVal');
 const xyGlideBtn=document.getElementById('xyGlideBtn');
 let xyLo=0, xyGlide=true, xyDown=false, xyAudio=false, xyCur=-1, xyLast={i:0,y:0.5}, xyCols=[];
@@ -4113,7 +3971,7 @@ function xyTrack(){ return TRACKS.find(t=>t.type==='arp'); }
 function acidScale(tr){ return SCALES[tr.scale] || SCALES.minor; }
 function xySemi(tr,i){ const sc=acidScale(tr).semis, n=sc.length; return sc[i%n]+12*Math.floor(i/n)+xyLo; }
 const scaleOptionsHtml=Object.keys(SCALES).map(k=>'<option value="'+k+'">'+SCALES[k].label+'</option>').join('');
-xyScaleSel.innerHTML=scaleOptionsHtml; peScaleSel.innerHTML=scaleOptionsHtml;
+xyScaleSel.innerHTML=scaleOptionsHtml;
 function xyBuild(){
   const tr=xyTrack(); if(!tr) return;
   xyPad.querySelectorAll('.xy-col').forEach(c=>c.remove()); xyCols=[];
@@ -4126,16 +3984,15 @@ function xyBuild(){
   xyScaleSel.value=tr.scale||'minor';
   xyReso.value=Math.round((tr.resonance!=null?tr.resonance:0.35)*100); xyResoVal.textContent=xyReso.value+'%';
 }
-// Skala wechseln: gilt für die ganze Acid-Spur (Spielfläche, Tonhöhen-Editor "Nur Skala", Random)
+// Skala wechseln: gilt für die ganze Acid-Spur (Spielfläche, Piano Roll, Random)
 function setAcidScale(id, tr){
   tr=tr||xyTrack(); if(!tr || !SCALES[id]) return;
   tr.scale=id;
   if(tr===xyTrack()) xyScaleSel.value=id;
-  if(tr===TRACKS[activeTrackIdx]){ peScaleSel.value=id; renderPitchEditor(tr); }
+  if(tr===TRACKS[activeTrackIdx]) renderEditorArea(tr);
   if(tr===xyTrack() && xyOverlay.classList.contains('open')) xyBuild();
 }
 xyScaleSel.addEventListener('change', ()=>setAcidScale(xyScaleSel.value));
-peScaleSel.addEventListener('change', ()=>setAcidScale(peScaleSel.value, TRACKS[activeTrackIdx]));
 
 function xyEnsureVoice(tr){
   if(tr._live) return tr._live;
@@ -4339,7 +4196,7 @@ function openSoundSheet(){
   const tr=TRACKS[activeTrackIdx], box=$id('sndRows'); box.innerHTML='';
   $id('sndT').textContent='Klang · '+tr.name;
   box.appendChild(soundRow('Laut',0,100,tr.vol*100,80,v=>v,v=>setTrackVol(tr,v/100)));
-  if(tr.type==='arp') box.appendChild(soundRow('Grundton',0,11,tr.rootNote,0,v=>NOTE_NAMES[(v+9)%12],v=>{ if(v!==tr.rootNote){ tr.rootNote=v; renderPitchEditor(tr); } }));
+  if(tr.type==='arp') box.appendChild(soundRow('Grundton',0,11,tr.rootNote,0,v=>NOTE_NAMES[(v+9)%12],v=>{ if(v!==tr.rootNote){ tr.rootNote=v; renderEditorArea(tr); } }));
   else box.appendChild(soundRow('Tune',0,100,tr.tune*100,50,v=>tr.isSample?Math.round(Math.pow(2,(v/100-0.5)*2)*100)+'%':v,v=>tr.tune=v/100));
   box.appendChild(soundRow('Hall',0,100,(tr.reverbAmount||0)*100,0,v=>v+'%',v=>{ tr.reverbAmount=v/100; if(tr.sendGain) tr.sendGain.gain.value=tr.reverbAmount; }));
   box.appendChild(soundRow('Delay',0,100,(tr.delaySend||0)*100,0,v=>v+'%',v=>{ tr.delaySend=v/100; if(tr.delaySendGain) tr.delaySendGain.gain.value=tr.delaySend; }));
@@ -4355,7 +4212,6 @@ function selectTrack(idx){
   
   activeTrackIdx=idx;
   { const g0=groupOfTrack(TRACKS[idx]); if(g0!==patternGroup) setPatternGroup(g0,false); }
-  pitchFit=true; // beim Spurwechsel/Laden: Tonfenster auf vorhandene Töne zentrieren
   TRACKS.forEach((tr,i)=> tr._ovRow.classList.toggle('active', i===idx));
   renderTrackBar();
   renderBigGrid();
@@ -6417,7 +6273,7 @@ async function beatApply(d, withSound){
   });
   if(withSound && d.acidAuto){ autoShape=d.acidAuto.shape||'off'; autoBars=d.acidAuto.bars||4; autoDepth=d.acidAuto.depth!=null?d.acidAuto.depth:0.6; syncAutoUI(); }
   if(withSound && d.sampleId){ try{ const e=await loadSampleLibraryEntry(d.sampleId); if(e) await applySampleToTrack(e); }catch(err){ console.warn('Sample zum Beat nicht gefunden', err); } }
-  pitchFit=true; selectTrack(activeTrackIdx); renderAllForPage(); ovRender();
+  selectTrack(activeTrackIdx); renderAllForPage(); ovRender();
 }
 async function beatSaveGroup(typed){
   const names=new Set((await beatAll()).filter(b=>b.group===beatTab).map(b=>b.name)), name=uniqueName(typed,names);
@@ -6857,8 +6713,7 @@ function visualLoop(){
       }
       document.querySelectorAll('.playcol').forEach(el=>el.classList.remove('playcol'));
       if(page===currentPage){ TRACKS.forEach(tr=> tr._ovCells[rel].classList.add('playcol'));
-      bigCells[rel].classList.add('playcol');
-      if(pitchCols[rel]) pitchCols[rel].forEach(el=>el.classList.add('playcol')); }
+      bigCells[rel].classList.add('playcol'); }
       if(page===currentPage && TRACKS[activeTrackIdx].steps[dstep]){
         bigCells[rel].classList.add('flash');
         setTimeout(()=>bigCells[rel].classList.remove('flash'),90);
@@ -6967,7 +6822,7 @@ async function restoreLastOpenedOrSeed(){
 })();
 
 // =========================================================================
-// PIANO-ROLL-FENSTER (v52) — Vollbild-Editor für Acid + Cosmic auf den Noten-Events (ersetzt den Tonhöheneditor).
+// PIANO-ROLL-FENSTER (v52) — Vollbild-Editor für Acid + Cosmic auf den Noten-Events (ersetzt den früheren Tonhöhen-Editor).
 // Antippen leer = Note setzen, Note antippen = auswählen, ziehen = verschieben, Griff = Länge. Werkzeuge oben rechts (A/S nur Acid, Duplizieren, Löschen).
 // Velocity-Spur unten (pro Step, bei Akkorden für alle Noten des Steps). Skala "Nur Skala" sperrt Zeilen außerhalb der Skala.
 // =========================================================================
