@@ -307,27 +307,82 @@
   #arpFilterRandBtn:active{ transform:scale(.94); }
 
 
-  /* ---------- COSMIC ARPEGGIO GENERATOR ---------- */
-  #arpGenPanel{display:none;flex-direction:column;gap:9px;margin-top:8px;padding:11px;background:linear-gradient(145deg,rgba(124,77,204,.13),var(--panel));border:1px solid rgba(184,140,255,.24);border-radius:10px}
-  #arpGenPanel.show{display:flex}
-  #arpGenHead{display:flex;align-items:center;gap:8px;width:100%;min-height:36px;background:none;border:0;padding:0;font-family:inherit;cursor:pointer;text-align:left}
-  #arpGenHead .am-chev{width:14px;height:14px;flex-shrink:0;color:#cdb0ff;transition:transform .15s}
-  #arpGenHead[aria-expanded="true"] .am-chev{transform:rotate(180deg)}
-  #arpGenHint{margin-left:auto}
-  #arpGenBody{display:none;flex-direction:column;gap:9px}
-  #arpGenBody.open{display:flex}
-  #arpGenTitle{font-size:11px;font-weight:800;letter-spacing:.12em;color:#cdb0ff}
-  #arpGenHint{font-size:10px;color:var(--dim)}
-  .ag-controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
-  .ag-field{display:flex;flex-direction:column;gap:4px;min-width:0}
-  .ag-field label{font-size:9px;color:var(--dim);letter-spacing:.07em;text-transform:uppercase}
-  .ag-field select{width:100%;min-width:0;height:34px;border:1px solid rgba(255,255,255,.12);border-radius:6px;background:var(--panel-inset);color:var(--white);padding:0 6px;font-family:inherit;font-size:11px;font-weight:600;}
-  #arpGenActions{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:7px}
-  #arpGenActions button{min-height:38px;border-radius:7px;border:1px solid rgba(184,140,255,.32);background:rgba(124,77,204,.12);color:#d6c0ff;font-family:inherit;font-size:11px;font-weight:700;cursor:pointer}
-  #arpGenActions #arpGenGo{background:#7c4dcc;color:#fff;border-color:#a982ef}
-  #arpGenActions button:active{transform:scale(.97)}
-  #arpGenStatus{font-size:10px;color:var(--dim);min-height:12px}
-  @media(max-width:380px){.ag-controls{grid-template-columns:repeat(2,minmax(0,1fr))}#arpGenActions{grid-template-columns:1fr 1fr 1fr}}
+  /* ---------- HARMONIE (v62, ersetzt den Arpeggio-Generator) ---------- */
+  #hmPanel{display:none;margin-top:8px}
+  #hmPanel.show{display:block}
+  #hmTog{width:100%;min-height:40px;display:flex;align-items:center;gap:8px;background:none;border:0;padding:0;color:var(--blue-2);font-family:inherit;font-weight:700;font-size:11px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
+  #hmTog .am-sum{margin-left:auto;font-size:11px;letter-spacing:.02em;text-transform:none;color:var(--dim);font-family:'JetBrains Mono',monospace;font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:62%}
+  #hmTog .am-sum b{color:var(--blue-2);font-weight:600}
+  #hmTog .am-chev{width:14px;height:14px;flex-shrink:0;transition:transform .15s}
+  #hmTog[aria-expanded="true"] .am-chev{transform:rotate(180deg)}
+  #hmBody{display:none;padding:4px 0 2px}
+  #hmBody.open{display:block}
+  #hmIntro{display:flex;gap:8px;align-items:flex-start;border:1px solid rgba(63,169,255,.3);background:rgba(63,169,255,.07);border-radius:8px;padding:8px 10px;margin:2px 0 10px;font-size:12px;color:var(--blue-2);line-height:1.35}
+  #hmIntro button{margin-left:auto;background:none;border:0;color:var(--dim);font-size:15px;cursor:pointer;padding:0 2px}
+  .hm-labrow{display:flex;align-items:center;justify-content:space-between;margin:2px 0 6px;gap:8px}
+  .hm-key{display:flex;align-items:center;gap:6px;background:none;border:0;padding:6px 0;color:var(--dim);font:600 10px 'Rajdhani',sans-serif;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
+  .hm-key b{color:var(--blue-2);font-weight:700}
+  .hm-key .am-chev{width:12px;height:12px}
+  .hm-chip{min-height:38px;padding:0 14px;font:700 11px 'Rajdhani',sans-serif;letter-spacing:.06em;text-transform:uppercase;border:1px solid rgba(63,169,255,.45);border-radius:7px;background:rgba(63,169,255,.12);color:var(--blue-2);cursor:pointer}
+  #hmLane{display:flex;gap:3px;height:46px}
+  .hm-cell{min-width:0;border-radius:6px;border:1px solid rgba(63,169,255,.35);background:rgba(63,169,255,.12);color:var(--lcd-fg);font:24px 'VT323',monospace;cursor:pointer;padding:0;overflow:hidden;white-space:nowrap}
+  .hm-cell.empty{background:var(--panel-inset);border:1px dashed rgba(255,255,255,.12);color:var(--dim);font:20px 'Rajdhani',sans-serif}
+  .hm-cell.sel{outline:2px solid var(--blue);outline-offset:1px}
+  #hmBars{display:flex;gap:3px;margin-top:4px}
+  #hmBars span{flex:1;font:10px 'JetBrains Mono',monospace;color:var(--dim);padding-left:3px}
+  #hmFoll{font:11px 'JetBrains Mono',monospace;color:var(--blue);margin:6px 0 0}
+  .hm-lab{font:600 10px 'Rajdhani',sans-serif;letter-spacing:.08em;color:var(--dim);text-transform:uppercase;margin:12px 0 6px}
+  #hmModes{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
+  #hmModes button{min-height:38px;border-radius:7px;border:1px solid rgba(255,255,255,.12);background:var(--panel-inset);color:var(--dim);font:700 12px 'Rajdhani',sans-serif;cursor:pointer}
+  #hmModes button.on{background:rgba(63,169,255,.2);color:var(--blue-2);border-color:rgba(63,169,255,.5)}
+  .hm-sub{border-top:1px solid rgba(255,255,255,.06);margin-top:12px}
+  .hm-two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  #hmPanel .am-seg{margin-bottom:0}
+  #hmPanel .am-seg button+button,#hmKScale button+button{border-left:1px solid rgba(255,255,255,.06)}
+  #hmMore{width:100%;margin-top:12px;min-height:38px;border-radius:7px;border:1px dashed rgba(255,255,255,.14);background:none;color:var(--blue-2);font:700 12px 'Rajdhani',sans-serif;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+  #hmMore .am-chev{width:14px;height:14px;transition:transform .15s}
+  #hmMore[aria-expanded="true"] .am-chev{transform:rotate(180deg)}
+  #hmMoreBody{display:none}
+  #hmMoreBody.open{display:block}
+  #hmActs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:12px}
+  #hmActs button{min-height:40px;border-radius:8px;border:1px solid rgba(63,169,255,.35);background:rgba(63,169,255,.08);color:var(--blue-2);font:700 13px 'Rajdhani',sans-serif;cursor:pointer}
+  #hmActs button.on{background:rgba(63,169,255,.25);border-color:var(--blue)}
+  #hmFillSt{color:var(--dim);margin-left:4px}
+  #hmActs button.on #hmFillSt{color:var(--blue-2)}
+  #hmHint{font:11px/1.5 'JetBrains Mono',monospace;color:var(--dim);margin:10px 0 0}
+  .hm-kg{display:grid;gap:4px}
+  .hm-kg.g6{grid-template-columns:repeat(6,1fr)}
+  .hm-kg.g3{grid-template-columns:repeat(3,1fr)}
+  .hm-k{min-height:42px;border-radius:7px;border:1px solid rgba(255,255,255,.12);background:var(--panel-inset);color:var(--white);font:700 14px 'Rajdhani',sans-serif;cursor:pointer;padding:0}
+  .hm-k.sharp{color:var(--dim)}
+  .hm-k.on{background:rgba(63,169,255,.2);border-color:rgba(63,169,255,.6);color:var(--blue-2)}
+  .hm-aff{font:11px 'JetBrains Mono',monospace;color:#ffb36b;border:1px solid rgba(255,160,80,.35);background:rgba(255,160,80,.08);border-radius:7px;padding:7px 9px}
+  .sheet .act.hm-del{border-color:rgba(255,120,80,.45);background:rgba(255,120,80,.08);color:#ff9a76}
+  #hmTplSheet{max-height:88dvh;overflow:auto}
+  #hmTplSheet>*,#hmChordSheet>*{flex-shrink:0}
+  .hm-prog{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--panel-inset);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:8px 12px;margin-bottom:4px;cursor:pointer;color:var(--white);text-align:left}
+  .hm-prog b{font:400 22px 'VT323',monospace;color:var(--lcd-fg)}
+  .hm-prog span{font:11px 'JetBrains Mono',monospace;color:var(--dim)}
+  .hm-prog.on{border-color:var(--blue);background:rgba(63,169,255,.14)}
+  #hmToast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:80;display:flex;align-items:center;gap:12px;background:#0b0d12;border:1px solid rgba(63,169,255,.4);color:var(--blue-2);font:11px 'JetBrains Mono',monospace;padding:8px 12px;border-radius:8px;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap;max-width:calc(100vw - 24px)}
+  #hmToast.on{opacity:1;pointer-events:auto}
+  #hmToast button{background:none;border:0;color:var(--blue);font:700 12px 'Rajdhani',sans-serif;text-transform:uppercase;letter-spacing:.06em;cursor:pointer;padding:0}
+  /* Erzeugte Noten: Vorschau gedämpft, Piano Roll gestrichelt; Vorschau dockt unten an, solange die Harmonie-Karte offen ist */
+  #prPv .pb.gen{opacity:.45}
+  #prPv .pb.gen.acc{opacity:.65}
+  #prPv .hmb{position:absolute;left:8px;top:8px;z-index:2;font:10px 'JetBrains Mono',monospace;color:var(--blue-2);background:rgba(4,7,10,.85);border:1px solid rgba(63,169,255,.35);border-radius:6px;padding:3px 7px;pointer-events:none}
+  #prPreview.hmdock{position:sticky;bottom:calc(64px + env(safe-area-inset-bottom,0px));z-index:5;flex:none;min-height:0}
+  #panelMain:has(#bottomTabBar.hidden) #prPreview.hmdock{bottom:calc(6px + env(safe-area-inset-bottom,0px))}
+  #prPreview.hmdock{transition:bottom .2s ease}
+  #prPreview.hmdock #prPv{flex:none;min-height:0;height:76px;border:1px solid rgba(63,169,255,.3);box-shadow:0 -10px 24px rgba(0,0,0,.6),inset 0 2px 6px rgba(0,0,0,.6)}
+  #prPreview.hmdock #prPvCap{display:none}
+  #prPreview.hmdock .hmb{top:4px;left:6px;font-size:9px;padding:2px 6px}
+  #prHmBar{display:none;flex:none;flex-direction:column;gap:2px;border:1px solid rgba(63,169,255,.35);background:rgba(63,169,255,.08);border-radius:10px;padding:7px 10px}
+  #prHmBar.show{display:flex}
+  #prHmBar b{font:700 12px 'Rajdhani',sans-serif;letter-spacing:.08em;color:var(--blue-2)}
+  #prHmBar span{font:11px 'JetBrains Mono',monospace;color:var(--dim)}
+  .prn.gen{background:transparent;border:1.5px dashed var(--c);opacity:.9}
+  .prn.gen::after{content:"";position:absolute;inset:0;background:var(--c);opacity:.18}
 
   /* ---------- SPUR-AKTIONEN (Random / Leeren / Bereich) über dem Step-Grid ---------- */
   #trackActions{ display:flex; gap:6px; align-items:center; background:var(--panel-inset); border-radius:8px; padding:6px; margin:4px 0 2px; }
@@ -1400,24 +1455,43 @@ html,body{min-height:100%;height:100%;}
         </div>
 
 
-        <div id="arpGenPanel" aria-label="Arpeggio-Generator">
-          <button id="arpGenHead" type="button" aria-expanded="false" aria-controls="arpGenBody"><span id="arpGenTitle">✦ ARPEGGIO GENERATOR</span><span id="arpGenHint">Cosmic · Minor</span><svg class="am-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
-          <div id="arpGenBody">
-          <div class="ag-controls">
-            <div class="ag-field"><label for="agStyle">Style</label><select id="agStyle"><optgroup label="Arpeggio"><option value="cosmic">Cosmic</option><option value="classic">Classic</option><option value="flow">Flow</option></optgroup><optgroup label="Bass (nur Acid)"><option value="off">Off-Beat</option><option value="roll">Rolling</option><option value="pulse">Pulse</option></optgroup></select></div>
-            <div class="ag-field"><label for="agChord">Chord</label><select id="agChord"><option value="minor">Minor</option><option value="major">Major</option><option value="min7">Minor 7</option><option value="maj7">Major 7</option><option value="sus2">Sus 2</option><option value="sus4">Sus 4</option><option value="add9">Minor add9</option></select></div>
-            <div class="ag-field"><label for="agDir">Direction</label><select id="agDir"><option value="up">Up</option><option value="down">Down</option><option value="updown">Up / Down</option><option value="random">Random</option></select></div>
-            <div class="ag-field"><label for="agRate">Rate</label><select id="agRate"><option value="2">1/8</option><option value="1" selected>1/16</option></select></div>
-            <div class="ag-field"><label for="agRange">Octaves</label><select id="agRange"><option value="1">1 octave</option><option value="2" selected>2 octaves</option><option value="3">3 octaves</option></select></div>
-            <div class="ag-field" id="agLageF" style="display:none"><label for="agLage">Lage</label><select id="agLage"><option value="0">Tief</option><option value="12">Hoch</option></select></div>
-            <div class="ag-field"><label for="agDensity">Density</label><select id="agDensity"><option value="55">Sparse</option><option value="75" selected>Groovy</option><option value="92">Busy</option><option value="100">Every step</option></select></div>
-          </div>
-          <div id="arpGenActions"><button id="arpGenGo">✦ Generate</button><button id="arpGenVar">↻ Variation</button><button id="arpGenFill">⚡ Fill</button></div>
-          <div id="arpGenStatus" role="status" aria-live="polite">Erzeugt Noten aus Akkordtönen; Steps bleiben im Pattern editierbar.</div>
+        <div id="hmPanel" class="am-card" aria-label="Harmonie">
+          <button id="hmTog" type="button" aria-expanded="false" aria-controls="hmBody"><span>✦ Harmonie</span><span class="am-sum" id="hmSum"></span><svg class="am-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+          <div id="hmBody">
+            <div id="hmIntro">Änderungen wirken sofort, kein Generieren nötig. Bearbeitest du in der Piano Roll eine erzeugte Note, spielt die Spur ab dann eigene Noten.<button id="hmIntroX" type="button" aria-label="Hinweis schließen">✕</button></div>
+            <div class="hm-labrow"><button id="hmKey" class="hm-key" type="button"></button><button id="hmTplBtn" class="hm-chip" type="button">Vorlage</button></div>
+            <div id="hmLane"></div>
+            <div id="hmBars"></div>
+            <div id="hmFoll"></div>
+            <div class="hm-lab" id="hmModeLab">Spielweise</div>
+            <div id="hmModes"></div>
+            <div id="hmArp" class="hm-sub">
+              <div class="hm-lab">Style</div>
+              <div class="am-seg" data-hk="style"><button data-v="cosmic">Cosmic</button><button data-v="classic">Classic</button><button data-v="flow">Flow</button></div>
+              <div class="hm-lab">Dichte</div>
+              <div class="am-seg" data-hk="dens" data-num="1"><button data-v="55">Sparse</button><button data-v="75">Groovy</button><button data-v="92">Busy</button><button data-v="100">Jeder</button></div>
+              <button id="hmMore" type="button" aria-expanded="false"><span id="hmMoreT"></span><svg class="am-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+              <div id="hmMoreBody">
+                <div class="hm-lab">Richtung</div>
+                <div class="am-seg" data-hk="dir"><button data-v="up">↑</button><button data-v="down">↓</button><button data-v="updown">↑↓</button><button data-v="rand">Zufall</button></div>
+                <div class="hm-two">
+                  <div><div class="hm-lab">Tempo</div><div class="am-seg" data-hk="rate" data-num="1"><button data-v="2">1/8</button><button data-v="1">1/16</button></div></div>
+                  <div><div class="hm-lab">Oktaven</div><div class="am-seg" data-hk="oct" data-num="1"><button data-v="1">1</button><button data-v="2">2</button><button data-v="3">3</button></div></div>
+                </div>
+              </div>
+            </div>
+            <div id="hmBass" class="hm-sub">
+              <div class="hm-lab">Bass-Stil</div>
+              <div class="am-seg" data-hk="bstyle"><button data-v="hold">Halten</button><button data-v="off">Off-Beat</button><button data-v="roll">Rolling</button><button data-v="pulse">Pulse</button></div>
+              <div class="hm-lab">Lage</div>
+              <div class="am-seg" data-hk="lage" data-num="1"><button data-v="0">Tief</button><button data-v="12">Hoch</button></div>
+            </div>
+            <div id="hmActs"><button id="hmVar" type="button">↻ Variation</button><button id="hmFill" type="button">⚡ Fill<span id="hmFillSt"></span></button></div>
+            <div id="hmHint"></div>
           </div>
         </div>
 
-        <div id="arpModPanel">
+<div id="arpModPanel">
           <div class="am-card">
             <button id="autoToggle" aria-expanded="false" aria-controls="autoBody">
               <span>Auto</span><span class="am-sum" id="autoSummary">Aus</span>
@@ -1568,10 +1642,28 @@ html,body{min-height:100%;height:100%;}
    <button class="ib" id="prSolo" aria-label="Solo">S</button>
   </div>
  </div>
+ <div id="prHmBar"><b id="prHmT"></b><span>Note antippen oder ziehen → eigene Noten</span></div>
  <div id="prKb"></div>
  <div id="prGw"><div id="prLbl"></div><div id="prGrid"><div id="prNotes"></div><div id="prPh"></div><div id="prTools"></div></div></div>
  <div id="prVelRow"><div id="prVel"></div></div>
 </div>
+<div class="sheet" id="hmChordSheet"><div class="sh"><span id="hmChT"></span><button class="shx" id="hmChX" aria-label="Schließen">✕</button></div>
+  <div class="hm-aff" id="hmAff"></div>
+  <div class="grp">Grundton</div><div class="hm-kg g6" id="hmRoots"></div>
+  <div class="grp">Akkordtyp</div><div class="hm-kg g3" id="hmTypes"></div>
+  <div class="grp">Länge</div><div class="hm-kg g3" id="hmLens"></div>
+  <div class="acts" style="margin-top:10px"><button class="act hm-del" id="hmDel">Löschen</button><button class="act on" id="hmDone">Fertig</button></div>
+</div>
+<div class="sheet" id="hmTplSheet"><div class="sh"><span>Vorlage · <span id="hmTplT"></span></span><button class="shx" id="hmTplX" aria-label="Schließen">✕</button></div>
+  <div class="grp">Tonart</div><div class="hm-kg g6" id="hmKRoots"></div>
+  <div class="am-seg" id="hmKScale" style="margin-top:6px"><button data-v="minor">Moll</button><button data-v="major">Dur</button></div>
+  <div class="grp">Verlauf · pro Takt ein Akkord</div><div id="hmProgs"></div>
+</div>
+<div class="sheet" id="hmConfSheet"><div class="sh"><span id="hmCfT"></span><button class="shx" id="hmCfX" aria-label="Schließen">✕</button></div>
+  <div class="hl" id="hmCfD" style="text-align:left;font-size:13px;margin-bottom:8px"></div>
+  <div class="acts"><button class="act" id="hmCfNo">Abbrechen</button><button class="act hm-del" id="hmCfYes">Harmonie aus</button></div>
+</div>
+<div id="hmToast" role="status" aria-live="polite"><span></span><button type="button">Rückgängig</button></div>
 <div class="sheet" id="prSheet"><div class="sh"><span id="prShT"></span><button class="shx" id="prShX" aria-label="Schließen">✕</button></div><div id="prShRows"></div></div>
 <div class="sheet" id="fillSheet"><div class="sh"><span>Fill · Drums</span><button class="shx" id="fillX" aria-label="Schließen">✕</button></div>
       <div id="fillOverlay">
@@ -2292,8 +2384,6 @@ function legacyEdit(tr,fn,keepLen){
 }
 function evPost(tr){ refreshTrackStepVisuals(tr); if(tr===TRACKS[activeTrackIdx]) renderEditorArea(tr); }
 function generateAcidBassline(tr,from,to){ legacyEdit(tr,()=>generateAcidBasslineCore(tr,from===undefined?0:from,to===undefined?PATTERN_LENGTH:to),false); }
-function arpBassBuild(tr,mode,style){ legacyEdit(tr,()=>arpBassBuildCore(tr,mode,style),mode!=='generate'); evPost(tr); }
-function arpGenBuild(tr,mode){ legacyEdit(tr,()=>arpGenBuildCore(tr,mode||'generate'),mode!=='generate'); evPost(tr); }
 function stepInfo(tr, s){
   const L=seqLength(); s=((s%L)+L)%L;
   if(!arrOn()) return {v:tr.steps[s], note:tr.notes[s]||0, slide:!!tr.slides[s]};
@@ -3116,10 +3206,15 @@ function setPatternLength(newLen){
   if(newLen===PATTERN_LENGTH) return;
   if(typeof taSnapshot==='function') taSnapshot();
   if(isPlaying) stop();
+  const PATTERN_LENGTH_PREV=PATTERN_LENGTH;
   PATTERN_LENGTH=newLen;
   currentLoopIsFill=false; fillOverride=null; loopCount=0; // Sicherheit: alte Fill-Daten passen sonst nicht mehr zur neuen Länge
   TRACKS.forEach(tr=>{
-    if(tr.type==='arp'){ tr.events=tr.events.filter(e=>e.s<newLen).map(e=>e.s+e.l>newLen?Object.assign({},e,{l:newLen-e.s}):e); evTouch(tr); return; }
+    if(tr.type==='arp'){
+      const cut=list=>list.filter(e=>e.s<newLen).map(e=>e.s+e.l>newLen?Object.assign({},e,{l:newLen-e.s}):e);
+      if(tr.harmOwn) tr.harmOwn=cut(tr.harmOwn);
+      tr.events=cut(tr.events); evTouch(tr); return;
+    }
     const old=tr.steps, oldNotes=tr.notes, oldSlides=tr.slides;
     const resized=new Array(newLen).fill(VEL_OFF);
     const resizedNotes=new Array(newLen).fill(0);
@@ -3129,6 +3224,10 @@ function setPatternLength(newLen){
     }
     tr.steps=resized; tr.notes=resizedNotes; tr.slides=resizedSlides;
   });
+  { const oldLen=PATTERN_LENGTH_PREV, base=harmony.chords.filter(c=>c.step<oldLen); // Akkordfolge: beim Verlängern wiederholen, beim Kürzen abschneiden
+    if(newLen>oldLen && base.length) for(let k=1;k*oldLen<newLen;k++) base.forEach(c=>{ if(c.step+k*oldLen<newLen) harmony.chords.push(Object.assign({},c,{step:c.step+k*oldLen})); });
+    harmony.chords=harmony.chords.filter(c=>c.step<newLen).map(c=>c.step+c.len>newLen?Object.assign({},c,{len:newLen-c.step}):c); }
+  TRACKS.forEach(tr=>hmRegen(tr));
   currentPage=0;
   renderLengthChips();
   renderPageNav();
@@ -3522,7 +3621,8 @@ let taToastTimer=null;
 function taSay(){}
 function taResetUndo(){ taUndo=null; taUndoBtn.disabled=true; }
 function taSnapshot(){
-  taUndo={ len:PATTERN_LENGTH, tracks:TRACKS.map(t=>({steps:t.steps.slice(), notes:t.notes?t.notes.slice():null, slides:t.slides?t.slides.slice():null, events:t.events?JSON.parse(JSON.stringify(t.events)):null, cutoff:t.cutoff, resonance:t.resonance, envMod:t.envMod, decay:t.decay, cosmicWidth:t.cosmicWidth, cosmicMotion:t.cosmicMotion, cosmicWarmth:t.cosmicWarmth, cosmicAir:t.cosmicAir})) };
+  taUndo={ len:PATTERN_LENGTH, tracks:TRACKS.map(t=>({steps:t.steps.slice(), notes:t.notes?t.notes.slice():null, slides:t.slides?t.slides.slice():null, events:t.events?JSON.parse(JSON.stringify(t.events)):null, cutoff:t.cutoff, resonance:t.resonance, envMod:t.envMod, decay:t.decay, cosmicWidth:t.cosmicWidth, cosmicMotion:t.cosmicMotion, cosmicWarmth:t.cosmicWarmth, cosmicAir:t.cosmicAir, harm:t.harm?JSON.parse(JSON.stringify(t.harm)):null, harmOwn:t.harmOwn?JSON.parse(JSON.stringify(t.harmOwn)):null})),
+    harmony:JSON.parse(JSON.stringify(harmony)), hmTpl };
   taUndoBtn.disabled=false;
 }
 function taRange(){
@@ -3530,6 +3630,7 @@ function taRange(){
 }
 taRandBtn.addEventListener('click', ()=>{
   const tr=TRACKS[activeTrackIdx], [from,to]=taRange();
+  if(hmOn(tr)){ taSnapshot(); tr.harm.seed=1+Math.floor(Math.random()*1e6); hmRegen(tr); refreshTrackStepVisuals(tr); hmAfterChange(); hmToast('Harmonie aktiv · Variation gewürfelt',true); return; }
   taSnapshot(tr);
   randomizeTrackPattern(tr, from, to);
   refreshTrackStepVisuals(tr);
@@ -3537,6 +3638,7 @@ taRandBtn.addEventListener('click', ()=>{
 });
 taClearBtn.addEventListener('click', ()=>{
   const tr=TRACKS[activeTrackIdx], [from,to]=taRange();
+  if(hmOn(tr)){ hmAskClear(tr); return; }
   taSnapshot(tr);
   if(tr.type==='arp'){ tr.events=tr.events.filter(e=>e.s<from||e.s>=to).map(e=>(e.s<from&&e.s+e.l>from)?Object.assign({},e,{l:from-e.s}):e); evTouch(tr); }
   else for(let s=from;s<to;s++) tr.steps[s]=VEL_OFF;
@@ -3549,8 +3651,10 @@ taUndoBtn.addEventListener('click', ()=>{
   if(isPlaying && u.len!==PATTERN_LENGTH) stop();
   PATTERN_LENGTH=u.len; currentPage=Math.min(currentPage,totalPages()-1);
   TRACKS.forEach((tr,i)=>{ const d=u.tracks[i]; tr.steps=d.steps; if(d.events){ tr.events=d.events; delete tr.notes; delete tr.slides; tr._idx=null; } else { tr.notes=d.notes; tr.slides=d.slides; }
+    if(tr.type==='arp'){ tr.harm=d.harm; if(d.harmOwn) tr.harmOwn=d.harmOwn; else delete tr.harmOwn; }
     if(tr.type==='arp' && d.cutoff!=null){ tr.cutoff=d.cutoff; tr.resonance=d.resonance; tr.envMod=d.envMod; tr.decay=d.decay; tr.cosmicWidth=d.cosmicWidth; tr.cosmicMotion=d.cosmicMotion; tr.cosmicWarmth=d.cosmicWarmth; tr.cosmicAir=d.cosmicAir; renderArpControls(tr); } });
-  renderLengthChips(); renderPageNav(); renderAllForPage();
+  if(u.harmony){ harmony=u.harmony; hmTpl=u.hmTpl||0; }
+  renderLengthChips(); renderPageNav(); renderAllForPage(); if(prIsOpen()) prRender();
 });
 taScopeEl.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{
   taScope=b.dataset.s;
@@ -3566,194 +3670,291 @@ const recDur=document.getElementById('recDur');
 const arpControls=document.getElementById('arpControls');
 const NOTE_NAMES=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 
-// Musical arpeggio generator: chord tones first, optional scale passing notes.
-// Notes are semitone offsets relative to the track root, matching the pitch editor.
-const arpGenStatus=document.getElementById('arpGenStatus');
-const arpGenChordTones={minor:[0,3,7],major:[0,4,7],min7:[0,3,7,10],maj7:[0,4,7,11],sus2:[0,2,7],sus4:[0,5,7],add9:[0,3,7,14]};
-// Akkordverläufe: [Halbtöne ab Grundton, 'm'=Moll/'M'=Dur]. Pro Takt ein Akkord (bei 16 Steps alle 8 Steps).
-const ARP_PROGS={
+// =========================================================================
+// HARMONIE (v62) — gemeinsame Akkordfolge pro Pattern + Spielweise pro melodischer Spur. Ersetzt den Arpeggio-Generator.
+//   harmony = {key:{root,scale}, chords:[{step,len,root,type}]}   root = Tonklasse 0..11 (C=0), step/len in Steps
+//   tr.harm  = {mode:'off'|'chord'|'chordbass'|'root'|'arp', seed, fill, arp:{style,dir,rate,oct,dens}, bass:{bstyle,lage}}
+// Folgt eine Spur (mode≠'off'), liegen ihre eigenen Noten in tr.harmOwn und tr.events enthält die ERZEUGTEN Noten (e.h=1).
+// Dadurch laufen Wiedergabe, Vorschau, Übersicht, Export und Clips ohne Sonderfall. Gespeichert werden die eigenen Noten (trOwnEvents).
+// Bearbeiten einer erzeugten Note (Piano Roll, Velocity, Rec) wandelt die Spur um: erzeugte Noten werden eigene, mode='off' (hmConvert).
+// Zufall ist deterministisch (Seed pro Spur): das Pattern bleibt gleich, bis "Variation" den Seed neu würfelt.
+// =========================================================================
+const HM_TYPES=[{id:'',n:'Dur',iv:[0,4,7]},{id:'m',n:'Moll',iv:[0,3,7]},{id:'7',n:'7',iv:[0,4,7,10]},{id:'maj7',n:'maj7',iv:[0,4,7,11]},
+  {id:'m7',n:'m7',iv:[0,3,7,10]},{id:'madd9',n:'m add9',iv:[0,3,7,14]},{id:'sus2',n:'sus2',iv:[0,2,7]},{id:'sus4',n:'sus4',iv:[0,5,7]},{id:'dim',n:'dim',iv:[0,3,6]}];
+const HM_MODES=[{id:'off',n:'Aus'},{id:'chord',n:'Akkord'},{id:'chordbass',n:'Akkord + Bass'},{id:'root',n:'Grundton'},{id:'arp',n:'Arpeggio'}];
+const HM_SCALES={minor:[0,2,3,5,7,8,10],major:[0,2,4,5,7,9,11]};
+// Verläufe wie im früheren Arpeggio-Generator: [Halbtöne ab Grundton der Tonart, 'm'=Moll/''=Dur]
+const HM_PROGS={
   minor:[
-    {id:'m1',rn:'i–VI–III–VII',steps:[[0,'m'],[8,'M'],[3,'M'],[10,'M']]},
-    {id:'m2',rn:'i–VII–VI–VII',steps:[[0,'m'],[10,'M'],[8,'M'],[10,'M']]},
-    {id:'m3',rn:'i–iv–VII–III',steps:[[0,'m'],[5,'m'],[10,'M'],[3,'M']]},
-    {id:'m4',rn:'i–VI–VII–i',steps:[[0,'m'],[8,'M'],[10,'M'],[0,'m']]},
-    {id:'m5',rn:'i–III–VII–VI',steps:[[0,'m'],[3,'M'],[10,'M'],[8,'M']]},
-    {id:'m6',rn:'i–v–VI–iv',steps:[[0,'m'],[7,'m'],[8,'M'],[5,'m']]},
-    {id:'m7',rn:'VI–VII–i–i',steps:[[8,'M'],[10,'M'],[0,'m'],[0,'m']]},
-    {id:'m8',rn:'i–VII',steps:[[0,'m'],[10,'M']]},
-    {id:'m9',rn:'i–iv–v–i',steps:[[0,'m'],[5,'m'],[7,'m'],[0,'m']]}
+    {rn:'i–VI–III–VII',steps:[[0,'m'],[8,''],[3,''],[10,'']]},
+    {rn:'i–VII–VI–VII',steps:[[0,'m'],[10,''],[8,''],[10,'']]},
+    {rn:'i–iv–VII–III',steps:[[0,'m'],[5,'m'],[10,''],[3,'']]},
+    {rn:'i–VI–VII–i',steps:[[0,'m'],[8,''],[10,''],[0,'m']]},
+    {rn:'i–III–VII–VI',steps:[[0,'m'],[3,''],[10,''],[8,'']]},
+    {rn:'i–v–VI–iv',steps:[[0,'m'],[7,'m'],[8,''],[5,'m']]},
+    {rn:'VI–VII–i–i',steps:[[8,''],[10,''],[0,'m'],[0,'m']]},
+    {rn:'i–VII',steps:[[0,'m'],[10,'']]},
+    {rn:'i–iv–v–i',steps:[[0,'m'],[5,'m'],[7,'m'],[0,'m']]}
   ],
   major:[
-    {id:'M1',rn:'I–V–vi–IV',steps:[[0,'M'],[7,'M'],[9,'m'],[5,'M']]},
-    {id:'M2',rn:'vi–IV–I–V',steps:[[9,'m'],[5,'M'],[0,'M'],[7,'M']]},
-    {id:'M3',rn:'I–IV–V–IV',steps:[[0,'M'],[5,'M'],[7,'M'],[5,'M']]}
+    {rn:'I–V–vi–IV',steps:[[0,''],[7,''],[9,'m'],[5,'']]},
+    {rn:'vi–IV–I–V',steps:[[9,'m'],[5,''],[0,''],[7,'']]},
+    {rn:'I–IV–V–IV',steps:[[0,''],[5,''],[7,''],[5,'']]}
   ]
 };
-const ARP_PROGS_ALL={}; Object.keys(ARP_PROGS).forEach(g=>ARP_PROGS[g].forEach(p=>ARP_PROGS_ALL['prog:'+p.id]=p));
-function arpChordName(tr,st){ return NOTE_NAMES[(((9+tr.rootNote+st[0])%12)+12)%12]+(st[1]==='m'?'m':''); }
-const AG_SINGLE='<optgroup label="Einzelner Akkord"><option value="minor">Minor</option><option value="major">Major</option><option value="min7">Minor 7</option><option value="maj7">Major 7</option><option value="sus2">Sus 2</option><option value="sus4">Sus 4</option><option value="add9">Minor add9</option></optgroup>';
-let agOptKey='';
-// Dropdown "Chord": Einzelakkorde + Verläufe (Liste je nach Skala der Spur, Namen je nach Grundton)
-function agRefreshChordOptions(tr){
-  const sel=document.getElementById('agChord'); if(!sel) return;
-  const key=(tr.scale||'minor')+'|'+tr.rootNote; if(key===agOptKey) return; agOptKey=key;
-  const cur=sel.value, list=tr.scale==='major' ? ARP_PROGS.major : ARP_PROGS.minor;
-  let h=AG_SINGLE+'<optgroup label="Verlauf · pro Takt ein Akkord">';
-  list.forEach(p=>{ h+='<option value="prog:'+p.id+'">'+p.steps.slice(0,4).map(st=>arpChordName(tr,st)).join(' ')+' · '+p.rn+'</option>'; });
-  sel.innerHTML=h+'</optgroup>';
-  sel.value=Array.prototype.some.call(sel.options,o=>o.value===cur) ? cur : 'minor';
+const hmMod=(a,n)=>((a%n)+n)%n;
+const hmType=id=>HM_TYPES.find(t=>t.id===id)||HM_TYPES[0];
+const hmChordName=c=>NOTE_NAMES[c.root]+(c.type==='madd9'?'m(add9)':c.type);
+const hmTrName=tr=>{ const n=prName(tr); return n[0]+n.slice(1).toLowerCase(); };
+function hmPcOf(tr){ return hmMod(9+(tr.rootNote||0),12); } // Tonklasse von n=0 dieser Spur
+let harmony={key:{root:9,scale:'minor'},chords:[]}, hmTpl=0, hmOpen=false, hmMoreOpen=false, hmSelIdx=-1, hmSheetSnap=false;
+function hmDefaultTrack(tr){ return {mode:'off', seed:1+Math.floor(Math.random()*1e6), fill:false,
+  arp:{style:tr.id==='cosmic'?'cosmic':'classic', dir:'up', rate:1, oct:2, dens:75}, bass:{bstyle:tr.id==='arp'?'roll':'hold', lage:0}}; }
+function hmEnsure(tr){ if(!tr.harm) tr.harm=hmDefaultTrack(tr); return tr.harm; }
+function hmOn(tr){ return !!(tr && tr.type==='arp' && tr.harm && tr.harm.mode!=='off'); }
+function trOwnEvents(tr){ return hmOn(tr) ? (tr.harmOwn||[]) : tr.events; }
+function hmModesFor(tr){ return isPoly(tr) ? HM_MODES : HM_MODES.filter(m=>m.id!=='chord' && m.id!=='chordbass'); } // Acid ist einstimmig
+function hmSanTrack(tr,h){
+  const d=hmDefaultTrack(tr); if(!h || typeof h!=='object') return d;
+  const ok=(v,list,def)=>list.indexOf(v)>=0?v:def, a=h.arp||{}, b=h.bass||{};
+  return {mode:ok(h.mode,hmModesFor(tr).map(m=>m.id),'off'), seed:Number.isFinite(h.seed)?h.seed:d.seed, fill:!!h.fill,
+    arp:{style:ok(a.style,['cosmic','classic','flow'],d.arp.style), dir:ok(a.dir,['up','down','updown','rand'],'up'), rate:ok(a.rate,[1,2],1), oct:ok(a.oct,[1,2,3],2), dens:ok(a.dens,[55,75,92,100],75)},
+    bass:{bstyle:ok(b.bstyle,['hold','off','roll','pulse'],d.bass.bstyle), lage:ok(b.lage,[0,12],0)}};
 }
-// ---- Bass-Modus (Acid): Grundton des aktuellen Akkords/Verlaufs als Bass-Muster ----
-const AG_BASS_NAMES={off:'Off-Beat',roll:'Rolling',pulse:'Pulse'};
-function agIsBass(v){ return v==='off'||v==='roll'||v==='pulse'; }
-function arpBassBuildCore(tr,mode,style){
-  const chord=document.getElementById('agChord').value, prog=ARP_PROGS_ALL[chord]||null;
-  const lage=+document.getElementById('agLage').value||0;
-  const [from,to]=taRange(); const segLen=PATTERN_LENGTH===16 ? 8 : 16;
-  // Grundton je Takt; hohe Akkorde (VI, VII) eine Oktave nach unten, damit die Bass-Lage gleich bleibt
-  const rootAt=s=>{ if(!prog) return 0; const r=prog.steps[Math.floor(s/segLen)%prog.steps.length][0]; return r>6 ? r-12 : r; };
-  let active=0;
-  const put=(s,note,acc)=>{ tr.steps[s]=acc?VEL_ACCENT:VEL_NORMAL; tr.notes[s]=note; tr.slides[s]=false; active++; };
-  const clr=s=>{ tr.steps[s]=VEL_OFF; tr.notes[s]=0; tr.slides[s]=false; };
-  for(let s=from;s<to;s++){
-    const st=s%16, rb=rootAt(s)+lage;
-    if(mode==='fill'){ if(st>=12) put(s, rb+(st===15?12:0), st===12); continue; } // letzter Schlag: Lauf auf dem Grundton
-    clr(s); // Generate und Variation würfeln Oktaven/Akzente neu, der Rhythmus des Stils bleibt
-    if(style==='off'){ if(st===2||st===6||st===10||st===14) put(s, rb+(st===14&&Math.random()<.5?12:0), st===2&&Math.random()<.4); }
-    else if(style==='roll'){ put(s, rb+(st%4===3&&Math.random()<.65?12:0), st===0||(st%4===0&&Math.random()<.35)); }
-    else if(style==='pulse'){ if(st%4===0) put(s, rb+(st===12&&Math.random()<.3?7:0), st===0); }
+function hmSanHarmony(h){
+  if(!h || !h.key || !Array.isArray(h.chords)) return null;
+  const key={root:hmMod(Math.round(+h.key.root||0),12), scale:h.key.scale==='major'?'major':'minor'};
+  const chords=h.chords.filter(c=>c && Number.isFinite(c.step) && Number.isFinite(c.len) && Number.isFinite(c.root))
+    .map(c=>({step:Math.max(0,Math.round(c.step)), len:Math.max(1,Math.round(c.len)), root:hmMod(Math.round(c.root),12), type:hmType(c.type).id}));
+  return {key, chords};
+}
+function hmSeg(){ return PATTERN_LENGTH>=32 ? 16 : 8; } // bei nur einem Takt Akkordwechsel alle 8 Steps (wie bisher)
+function hmApplyTpl(i){
+  const list=HM_PROGS[harmony.key.scale]; i=Math.max(0,Math.min(list.length-1,i));
+  const p=list[i], seg=hmSeg(); harmony.chords=[];
+  for(let s=0,k=0;s<PATTERN_LENGTH;s+=seg,k++){ const st=p.steps[k%p.steps.length]; harmony.chords.push({step:s,len:Math.min(seg,PATTERN_LENGTH-s),root:hmMod(harmony.key.root+st[0],12),type:st[1]}); }
+  hmTpl=i;
+}
+function hmDefault(){
+  const a=TRACKS.find(t=>t.id==='arp');
+  harmony={key:{root:a?hmPcOf(a):9, scale:a&&a.scale==='major'?'major':'minor'}, chords:[]}; hmApplyTpl(0);
+}
+const hmSorted=()=>harmony.chords.filter(c=>c.step<PATTERN_LENGTH).slice().sort((a,b)=>a.step-b.step);
+// Voicing im n-Raum der Spur (n=0 = Grundton der Spur, Lage 0..24): Umkehrung mit kürzestem Weg zum vorherigen Akkord
+function hmVoicings(tr,c){
+  const pc0=hmPcOf(tr), rel=hmType(c.type).iv.map(i=>hmMod(c.root+i-pc0,12)+(i>=12?12:0)), out=[];
+  for(let r=0;r<rel.length;r++){
+    const rot=rel.slice(r).concat(rel.slice(0,r)); let v=[], last=-1;
+    rot.forEach(x=>{ let m=hmMod(x,12); while(m<=last) m+=12; v.push(m); last=m; });
+    out.push(v, v.map(x=>x+12));
   }
-  refreshTrackStepVisuals(tr);
-  if(tr===TRACKS[activeTrackIdx]) renderEditorArea(tr);
-  const bars=(to-from)/16;
-  const names=prog ? ' · Verlauf '+prog.steps.slice(0,4).map(st=>arpChordName(tr,st)).join(' · ') : '';
-  if(arpGenStatus) arpGenStatus.textContent='Bass · '+AG_BASS_NAMES[style]+names+' — '+(mode==='fill'?'Fill ergänzt':active+' aktive Steps')+' · '+bars+(bars===1?' Takt':' Takte');
+  const ok=out.filter(v=>v[v.length-1]<=24); return ok.length?ok:[out[0]];
 }
-// Style-Liste je Spur (Bass-Stile nur bei Acid) und passende Felder
-let agStyleKey='';
-function agSyncStyleUI(tr){
-  const sel=document.getElementById('agStyle'); if(!sel) return;
-  const cos=isPoly(tr), key=cos?'c':'a';
-  if(key!==agStyleKey){
-    agStyleKey=key; const cur=sel.value;
-    sel.innerHTML='<optgroup label="Arpeggio"><option value="cosmic">Cosmic</option><option value="classic">Classic</option><option value="flow">Flow</option></optgroup>'
-      +(cos?'':'<optgroup label="Bass (nur Acid)"><option value="off">Off-Beat</option><option value="roll">Rolling</option><option value="pulse">Pulse</option></optgroup>');
-    sel.value=Array.prototype.some.call(sel.options,o=>o.value===cur) ? cur : 'cosmic';
+function hmVoiced(tr){
+  let prev=null; const pc0=hmPcOf(tr);
+  return hmSorted().map(c=>{
+    const vs=hmVoicings(tr,c); let best=vs[0], bd=1e9;
+    if(prev) vs.forEach(v=>{ const d=v.reduce((s,m)=>s+Math.min.apply(null,prev.map(p=>Math.abs(p-m))),0); if(d<bd){ bd=d; best=v; } });
+    prev=best; const r=hmMod(c.root-pc0,12);
+    return {c, notes:best, root:r>6?r-12:r};
+  });
+}
+function hmRng(seed){ let s=(seed*2654435761)>>>0||1; return ()=>{ s^=s<<13; s>>>=0; s^=s>>17; s^=s<<5; s>>>=0; return s/4294967296; }; }
+// Eigene Noten taktweise zu "Akkorden" bündeln (Arpeggio ohne Akkordfolge)
+function hmOwnSegs(tr){
+  const own=tr.harmOwn||[], seg=[];
+  for(let b=0;b<PATTERN_LENGTH;b+=16){ const ns=[...new Set(own.filter(n=>n.s<b+16 && n.s+n.l>b).map(n=>n.n))].sort((x,y)=>x-y); if(ns.length) seg.push({step:b,len:Math.min(16,PATTERN_LENGTH-b),notes:ns}); }
+  return seg;
+}
+function hmGen(tr){
+  const h=hmEnsure(tr), L=PATTERN_LENGTH, out=[], R=hmRng(h.seed*7919+1), has=hmSorted().length>0;
+  const put=(s,n,l,kind)=>{ if(s<0||s>=L) return; out.push({s, n, l:Math.max(1,Math.min(l,L-s)), v:kind==='g'?.35:.85, a:kind==='a', sl:false, h:1}); };
+  const fold=n=>{ while(n>36) n-=12; while(n<-12) n+=12; return n; };
+  if(h.mode==='arp'){
+    const a=h.arp, d=a.dens/100, pc0=hmPcOf(tr), scale=HM_SCALES[harmony.key.scale].map(x=>hmMod(x+harmony.key.root,12));
+    const segs=has ? hmVoiced(tr).map(v=>({step:v.c.step,len:Math.min(v.c.len,L-v.c.step),notes:v.notes})) : hmOwnSegs(tr);
+    segs.forEach(sg=>{
+      let seq=[]; for(let o=0;o<a.oct;o++) sg.notes.forEach(n=>seq.push(n+12*o));
+      if(a.dir==='down') seq.reverse(); else if(a.dir==='updown' && seq.length>2) seq=seq.concat(seq.slice(1,-1).reverse());
+      let cur=-1;
+      for(let s=sg.step;s<sg.step+sg.len;s++){
+        const si=s%16, r1=R(), r2=R(), r3=R(), r4=R(), r5=R();
+        if(h.fill && si>=12){ const p=si-12; put(s,fold(seq[p%seq.length]),1,(p===0||p===3)?'a':'n'); continue; } // Lauf auf dem letzten Schlag
+        if((s-sg.step)%a.rate!==0) continue;
+        let ch=d; if(a.style==='cosmic' && si%4!==0) ch=Math.max(.35,d-.12); if(a.style==='flow' && si%8===6) ch=Math.min(1,d+.18);
+        if(r1>ch) continue;
+        if(a.dir==='rand') cur=Math.floor(r2*seq.length);
+        else if(a.style==='flow' && r2<.17) cur=(cur+2+Math.floor(r3*2))%seq.length;
+        else cur=(cur+1)%seq.length;
+        let n=seq[cur];
+        if(a.style==='cosmic' && r3<.18) n+=r4<.5?12:-12;
+        if(a.style==='flow' && r4<.16){ const near=[]; for(let x=n-3;x<=n+3;x++) if(x!==n && scale.indexOf(hmMod(pc0+x,12))>=0) near.push(x); if(near.length) n=near[Math.floor(r5*near.length)]; }
+        put(s,fold(n),1,(si%4===0 || (a.style==='cosmic' && r5<.12))?'a':(r5>.8?'g':'n'));
+      }
+    });
+    return out;
   }
-  const bass=agIsBass(sel.value);
-  ['agDir','agRate','agRange','agDensity'].forEach(id=>{ const f=document.getElementById(id).closest('.ag-field'); if(f) f.style.display=bass?'none':''; });
-  document.getElementById('agLageF').style.display=bass?'':'none';
-  if(window.agSum) window.agSum();
-}
-document.getElementById('agStyle').addEventListener('change',()=>agSyncStyleUI(TRACKS[activeTrackIdx]));
-function arpGenBuildCore(tr, mode='generate'){
-  const style=document.getElementById('agStyle').value;
-  if(agIsBass(style) && tr.id==='arp'){ arpBassBuildCore(tr,mode,style); return; }
-  const chord=document.getElementById('agChord').value;
-  const dir=document.getElementById('agDir').value;
-  const rate=Math.max(1,+document.getElementById('agRate').value||1);
-  const octaves=Math.max(1,+document.getElementById('agRange').value||2);
-  const density=(+document.getElementById('agDensity').value||75)/100;
-  const [from,to]=taRange(); // wie Zufall/Leeren: nur sichtbare Seite oder alle Seiten
-  // Notenbereich 0..36 (3 Oktaven); Überhang wird oktavweise zurückgefaltet
-  const MAXN=Math.min(36, octaves*12+14);
-  const fold=n=>{ while(n>MAXN) n-=12; while(n<0) n+=12; return n; };
-  const scale=(SCALES[tr.scale]||SCALES.minor).semis;
-  const prog=ARP_PROGS_ALL[chord]||null;
-  const segLen=PATTERN_LENGTH===16 ? 8 : 16; // Akkordwechsel: pro Takt (bei nur einem Takt alle 8 Steps)
-  const segIdx=s=>Math.floor(s/segLen);
-  const seqCache={};
-  const seqFor=tones=>{
-    const seq=[];
-    for(let o=0;o<octaves;o++) tones.forEach(n=>seq.push(n+o*12));
-    if(dir==='down') seq.reverse();
-    else if(dir==='updown' && seq.length>2) seq.push(...seq.slice(1,-1).reverse());
-    return seq.length?seq:[0,3,7];
-  };
-  const seqAt=s=>{
-    const k=prog ? segIdx(s)%prog.steps.length : 0;
-    if(!seqCache[k]){
-      const tones=prog ? (prog.steps[k][1]==='m'?[0,3,7]:[0,4,7]).map(i=>i+prog.steps[k][0]) : (arpGenChordTones[chord]||arpGenChordTones.minor).slice();
-      seqCache[k]=seqFor(tones);
-    }
-    return seqCache[k];
-  };
-  let cursor=-1, active=0, lastSeg=-1;
-  const oldSteps=tr.steps.slice(), oldNotes=tr.notes.slice();
-  if(mode==='generate'){
-    for(let s=from;s<to;s++){
-      const av=seqAt(s);
-      const stepInBar=s%16;
-      if(prog && segIdx(s)!==lastSeg) cursor=-1; // neuer Akkord beginnt auf dem Grundton
-      lastSeg=segIdx(s);
-      if(stepInBar%rate!==0){tr.steps[s]=VEL_OFF;tr.notes[s]=0;tr.slides[s]=false;continue;}
-      let chance=density;
-      if(style==='cosmic' && stepInBar%4!==0) chance=Math.max(.35,density-.12);
-      if(style==='flow' && stepInBar%8===6) chance=Math.min(1,density+.18);
-      if(Math.random()>chance){tr.steps[s]=VEL_OFF;tr.notes[s]=0;tr.slides[s]=false;continue;}
-      if(dir==='random') cursor=Math.floor(Math.random()*av.length);
-      else if(style==='flow' && Math.random()<.17) cursor=(cursor+2+Math.floor(Math.random()*2))%av.length;
-      else cursor=(cursor+1)%av.length;
-      let note=av[cursor];
-      if(style==='cosmic' && Math.random()<.18) note+=12*(Math.random()<.5?1:-1);
-      if(style==='flow' && Math.random()<.16){
-        // Durchgangston = Nachbar-Skalenton (max. kleine Terz entfernt), nie skalenfremd
-        const pool=[]; for(let o=-1;o<=octaves+1;o++) scale.forEach(sv=>pool.push(sv+o*12));
-        const near=pool.filter(n=>n!==note && n>=0 && Math.abs(n-note)<=3);
-        if(near.length) note=near[Math.floor(Math.random()*near.length)];
+  if(!has) return out;
+  hmVoiced(tr).forEach(v=>{
+    const c=v.c, len=Math.min(c.len,L-c.step);
+    if(h.mode==='chord' || h.mode==='chordbass') v.notes.forEach(n=>put(c.step,n,len,'n'));
+    if(h.mode==='chordbass') put(c.step,v.root-12,len,'n');
+    if(h.mode==='root'){
+      const b=h.bass, rb=v.root+b.lage;
+      if(b.bstyle==='hold'){ put(c.step,rb,len,'n'); return; }
+      for(let s=c.step;s<c.step+len;s++){
+        const st=s%16, r1=R(), r2=R();
+        if(h.fill && st>=12){ put(s,rb+(st===15?12:0),1,st===12?'a':'n'); continue; }
+        if(b.bstyle==='off'){ if(st%4===2) put(s,rb+(st===14&&r1<.5?12:0),1,(st===2&&r2<.4)?'a':'n'); }
+        else if(b.bstyle==='roll') put(s,rb+(st%4===3&&r1<.65?12:0),1,(st===0||(st%4===0&&r2<.35))?'a':'n');
+        else if(b.bstyle==='pulse'){ if(st%4===0) put(s,rb+(st===12&&r1<.3?7:0),1,st===0?'a':'n'); }
       }
-      tr.notes[s]=fold(note);
-      const accent=(stepInBar%4===0) || (style==='cosmic' && Math.random()<.12);
-      tr.steps[s]=accent?VEL_ACCENT:(Math.random()<.2?VEL_GHOST:VEL_NORMAL);
-      tr.slides[s]=false;
-      active++;
     }
-    if(active===0){ tr.steps[from]=VEL_ACCENT; tr.notes[from]=0; active=1; }
-  } else if(mode==='variation'){
-    for(let s=from;s<to;s++){
-      const av=seqAt(s);
-      if(oldSteps[s]===VEL_OFF){
-        if(Math.random()<.18 && s%rate===0){ tr.steps[s]=VEL_GHOST; tr.notes[s]=av[Math.floor(Math.random()*av.length)]; tr.slides[s]=false; active++; }
-        continue;
-      }
-      if(Math.random()<.28){
-        let note=oldNotes[s]||0;
-        const candidates=av.filter(n=>Math.abs(n-note)<=7);
-        note=candidates.length?candidates[Math.floor(Math.random()*candidates.length)]:av[Math.floor(Math.random()*av.length)];
-        if(style==='cosmic' && Math.random()<.2) note+=12;
-        tr.notes[s]=fold(note);
-      }
-      if(Math.random()<.12) tr.steps[s]=tr.steps[s]===VEL_ACCENT?VEL_NORMAL:VEL_ACCENT;
-      active++;
-    }
-  } else if(mode==='fill'){
-    // letzter Beat jedes Takts als kompakter Lauf
-    for(let s=from;s<to;s++){
-      const av=seqAt(s);
-      const pos=s%16;
-      if(pos<12) continue;
-      tr.notes[s]=fold(av[(pos-12)%av.length]);
-      tr.steps[s]=(pos===12||pos===15)?VEL_ACCENT:VEL_NORMAL;
-      tr.slides[s]=false;
-      active++;
-    }
-  }
-  refreshTrackStepVisuals(tr);
-  if(tr===TRACKS[activeTrackIdx]) renderEditorArea(tr);
-  const bars=(to-from)/16;
-  if(arpGenStatus) arpGenStatus.textContent=(prog?'Verlauf '+prog.steps.slice(0,4).map(st=>arpChordName(tr,st)).join(' · ')+' — ':'')+(mode==='variation'?'Variation':mode==='fill'?'Fill ergänzt':'Arpeggio erzeugt')+' · '+active+' aktive Steps · '+bars+(bars===1?' Takt':' Takte');
+  });
+  return out;
 }
-function arpGenRun(mode){
-  const tr=TRACKS[activeTrackIdx];
-  if(!tr || tr.type!=='arp') return;
-  taSnapshot();
-  arpGenBuild(tr,mode);
-  taSay('Arpeggio '+(mode==='variation'?'variiert':mode==='fill'?'Fill ergänzt':'generiert')+' — ↶ zum Zurückholen');
+function hmRegen(tr){ if(!hmOn(tr)) return; tr.events=hmGen(tr); evTouch(tr); }
+function hmRegenAll(){ TRACKS.forEach(tr=>{ if(hmOn(tr)){ hmRegen(tr); refreshTrackStepVisuals(tr); } }); }
+function hmAfterChange(){ hmRegenAll(); const tr=TRACKS[activeTrackIdx]; if(tr && tr.type==='arp') renderEditorArea(tr); else hmRender(); if(prIsOpen()) prRender(); }
+function hmSetMode(tr,m){
+  const h=hmEnsure(tr), was=hmOn(tr); if(h.mode===m) return;
+  taSnapshot(); h.mode=m;
+  if(!was && m!=='off'){ tr.harmOwn=tr.events; hmRegen(tr); }
+  else if(was && m==='off'){ tr.events=tr.harmOwn||[]; delete tr.harmOwn; evTouch(tr); }
+  else hmRegen(tr);
+  refreshTrackStepVisuals(tr); hmAfterChange();
 }
-['arpGenGo','arpGenVar','arpGenFill'].forEach((id,i)=>{
-  const el=document.getElementById(id);
-  if(el) el.addEventListener('click',()=>arpGenRun(['generate','variation','fill'][i]));
+// Spur hört auf zu folgen: die erzeugten Noten werden zu eigenen (für direkte Bearbeitung)
+function hmConvert(tr){
+  if(!hmOn(tr)) return false;
+  taSnapshot(); tr.events.forEach(e=>{ delete e.h; }); delete tr.harmOwn; tr.harm.mode='off'; evTouch(tr);
+  refreshTrackStepVisuals(tr); $id('prHmBar').classList.remove('show'); hmToast('Harmonie für '+hmTrName(tr)+' aus · eigene Noten',true); hmRender();
+  return true;
+}
+// Ohne Rückfrage zurücksetzen, wenn eine Spur von außen komplett neue Noten bekommt (Beat laden, Clip bearbeiten, Alles leeren)
+function hmReset(tr){ if(tr.harm) tr.harm.mode='off'; delete tr.harmOwn; }
+let hmToastT=null;
+function hmToast(msg,undo){
+  const t=$id('hmToast'); t.querySelector('span').textContent=msg; t.querySelector('button').style.display=undo?'':'none';
+  t.classList.add('on'); clearTimeout(hmToastT); hmToastT=setTimeout(()=>t.classList.remove('on'),undo?4000:1800);
+}
+$id('hmToast').querySelector('button').addEventListener('click',()=>{ $id('hmToast').classList.remove('on'); taUndoBtn.click(); });
+// ---- UI: Harmonie-Karte (Pattern-Seite, statt Arpeggio-Generator) ----
+const HM_CHEV='<svg class="am-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+function hmIntroSeen(){ try{ return localStorage.getItem('mrm44-hm-intro')==='1'; }catch(e){ return false; } }
+function hmRender(){
+  const tr=TRACKS[activeTrackIdx], panel=$id('hmPanel');
+  const show=!!tr && tr.type==='arp'; panel.classList.toggle('show',show);
+  $id('prPreview').classList.toggle('hmdock',show && hmOpen);
+  if(!show) return;
+  const h=hmEnsure(tr), list=hmSorted(), mode=HM_MODES.find(m=>m.id===h.mode).n;
+  $id('hmTog').setAttribute('aria-expanded',hmOpen?'true':'false'); $id('hmBody').classList.toggle('open',hmOpen);
+  $id('hmSum').innerHTML=(list.length?list.slice(0,4).map(hmChordName).join(' ')+(list.length>4?' …':''):'keine Akkorde')+' · '+(h.mode==='off'?'Aus':'<b>'+mode+'</b>');
+  if(!hmOpen) return;
+  $id('hmIntro').style.display=hmIntroSeen()?'none':'';
+  $id('hmKey').innerHTML='Akkordfolge · <b>'+NOTE_NAMES[harmony.key.root]+(harmony.key.scale==='minor'?'-Moll':'-Dur')+'</b>'+HM_CHEV;
+  const fol=TRACKS.filter(hmOn).map(hmTrName);
+  $id('hmFoll').textContent=fol.length?'Gilt für '+fol.join(', '):'Noch folgt keine Spur der Akkordfolge.';
+  $id('hmModeLab').textContent='Spielweise · '+hmTrName(tr);
+  const mb=$id('hmModes'); mb.innerHTML='';
+  hmModesFor(tr).forEach(m=>{ const b=document.createElement('button'); b.type='button'; b.textContent=m.n; if(h.mode===m.id) b.className='on'; b.onclick=()=>hmSetMode(tr,m.id); mb.appendChild(b); });
+  $id('hmArp').style.display=h.mode==='arp'?'':'none';
+  $id('hmBass').style.display=h.mode==='root'?'':'none';
+  $id('hmActs').style.display=(h.mode==='arp' || (h.mode==='root' && h.bass.bstyle!=='hold'))?'':'none';
+  $id('hmFill').classList.toggle('on',h.fill); $id('hmFillSt').textContent=h.fill?'an':'aus';
+  document.querySelectorAll('#hmPanel .am-seg[data-hk]').forEach(sg=>{ const k=sg.dataset.hk, src=(k==='bstyle'||k==='lage')?h.bass:h.arp;
+    sg.querySelectorAll('button').forEach(b=>b.classList.toggle('on',String(src[k])===b.dataset.v)); });
+  $id('hmMoreBody').classList.toggle('open',hmMoreOpen); $id('hmMore').setAttribute('aria-expanded',hmMoreOpen?'true':'false');
+  $id('hmMoreT').textContent=hmMoreOpen?'Weniger':'Mehr · '+({up:'↑',down:'↓',updown:'↑↓',rand:'Zufall'})[h.arp.dir]+' · '+(h.arp.rate===2?'1/8':'1/16')+' · '+h.arp.oct+' Okt';
+  const hint={off:'Spur spielt nur ihre eigenen Noten.', chord:'Akkorde mit kurzen Wegen zwischen den Umkehrungen.', chordbass:'Akkord plus Grundton eine Oktave tiefer.',
+    root:h.bass.bstyle==='hold'?'Hält den Grundton jedes Akkords.':'Bass-Muster auf dem Grundton des jeweiligen Akkords.',
+    arp:list.length?'Arpeggio aus den Akkordtönen. Bleibt gleich, bis du Variation drückst.':'Keine Akkordfolge: Arpeggio aus den eigenen Noten der Spur.'};
+  $id('hmHint').textContent=hint[h.mode];
+  hmRenderLane();
+}
+function hmRenderLane(){
+  const lane=$id('hmLane'), L=PATTERN_LENGTH; lane.innerHTML='';
+  const add=(st,len,c)=>{ const d=document.createElement('button'); d.type='button'; d.className='hm-cell'+(c?'':' empty'); d.style.flex=len+' 1 0';
+    d.textContent=c?hmChordName(c):'+'; if(c && harmony.chords.indexOf(c)===hmSelIdx) d.classList.add('sel');
+    d.onclick=()=>c?hmOpenChord(harmony.chords.indexOf(c)):hmNewChord(st,len); lane.appendChild(d); };
+  const fill=(a,b)=>{ let x=a; while(x<b){ const nb=Math.min(b,(Math.floor(x/16)+1)*16); add(x,nb-x,null); x=nb; } };
+  let s=0; hmSorted().forEach(c=>{ if(c.step>s) fill(s,c.step); const len=Math.min(c.len,L-c.step); add(c.step,len,c); s=c.step+len; }); if(s<L) fill(s,L);
+  const bars=$id('hmBars'); bars.innerHTML=''; for(let b=0;b<L/16;b++){ const sp=document.createElement('span'); sp.textContent='T'+(b+1); bars.appendChild(sp); }
+}
+$id('hmTog').addEventListener('click',()=>{ hmOpen=!hmOpen; hmRender(); });
+$id('hmIntroX').addEventListener('click',()=>{ try{ localStorage.setItem('mrm44-hm-intro','1'); }catch(e){} hmRender(); });
+$id('hmMore').addEventListener('click',()=>{ hmMoreOpen=!hmMoreOpen; hmRender(); });
+document.querySelectorAll('#hmPanel .am-seg[data-hk]').forEach(sg=>sg.addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b) return; const tr=TRACKS[activeTrackIdx], h=hmEnsure(tr), k=sg.dataset.hk, src=(k==='bstyle'||k==='lage')?h.bass:h.arp;
+  const v=sg.dataset.num?Number(b.dataset.v):b.dataset.v; if(src[k]===v) return;
+  taSnapshot(); src[k]=v; hmRegen(tr); refreshTrackStepVisuals(tr); hmAfterChange();
+}));
+$id('hmVar').addEventListener('click',()=>{ const tr=TRACKS[activeTrackIdx]; taSnapshot(); hmEnsure(tr).seed=1+Math.floor(Math.random()*1e6); hmRegen(tr); refreshTrackStepVisuals(tr); hmAfterChange(); hmToast('Variation gewürfelt',true); });
+$id('hmFill').addEventListener('click',()=>{ const tr=TRACKS[activeTrackIdx], h=hmEnsure(tr); taSnapshot(); h.fill=!h.fill; hmRegen(tr); refreshTrackStepVisuals(tr); hmAfterChange(); });
+// ---- Akkord-Sheet ----
+function hmMkGrid(id,items){ const g=$id(id); g.innerHTML=''; items.forEach(it=>{ const b=document.createElement('button'); b.type='button'; b.className='hm-k'+(it.sharp?' sharp':''); b.textContent=it.n; b.dataset.v=it.v; g.appendChild(b); }); }
+hmMkGrid('hmRoots',NOTE_NAMES.map((n,i)=>({n,v:i,sharp:n.indexOf('#')>=0})));
+hmMkGrid('hmKRoots',NOTE_NAMES.map((n,i)=>({n,v:i,sharp:n.indexOf('#')>=0})));
+hmMkGrid('hmTypes',HM_TYPES.map(t=>({n:t.n,v:t.id})));
+hmMkGrid('hmLens',[{n:'½ Takt',v:8},{n:'1 Takt',v:16},{n:'2 Takte',v:32}]);
+function hmSyncChord(){
+  const c=harmony.chords[hmSelIdx]; if(!c) return; const tr=TRACKS[activeTrackIdx];
+  $id('hmChT').textContent=hmChordName(c)+' · Takt '+(Math.floor(c.step/16)+1)+(c.step%16?' (2. Hälfte)':'');
+  const oth=TRACKS.filter(t=>t!==tr && hmOn(t)).map(hmTrName), aff=$id('hmAff');
+  aff.style.display=oth.length?'':'none'; aff.textContent=(hmOn(tr)?'Ändert auch: ':'Ändert: ')+oth.join(', ');
+  $id('hmRoots').querySelectorAll('button').forEach(b=>b.classList.toggle('on',+b.dataset.v===c.root));
+  $id('hmTypes').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===c.type));
+  $id('hmLens').querySelectorAll('button').forEach(b=>b.classList.toggle('on',+b.dataset.v===c.len));
+}
+function hmChordSnap(){ if(!hmSheetSnap){ taSnapshot(); hmSheetSnap=true; } }
+function hmPreviewChord(c){
+  const tr=TRACKS[activeTrackIdx]; if(!tr || tr.type!=='arp' || isPlaying) return;
+  const v=hmVoiced(tr).find(x=>x.c===c); if(!v) return;
+  (isPoly(tr)?v.notes:[v.root]).forEach((n,i)=>setTimeout(()=>pitchPreview(tr,n,.8),i*18));
+}
+function hmOpenChord(i){ hmSelIdx=i; hmSheetSnap=false; hmSyncChord(); openSheet('hmChordSheet'); hmRenderLane(); }
+function hmNewChord(step,len){
+  hmChordSnap(); const c={step,len:Math.min(16,len),root:harmony.key.root,type:harmony.key.scale==='minor'?'m':''};
+  harmony.chords.push(c); hmSelIdx=harmony.chords.length-1; hmSheetSnap=true; hmSyncChord(); openSheet('hmChordSheet'); hmAfterChange(); hmPreviewChord(c);
+}
+function hmCloseChord(){ hmSelIdx=-1; closeSheets(); hmRender(); }
+$id('hmChX').addEventListener('click',hmCloseChord); $id('hmDone').addEventListener('click',hmCloseChord);
+$id('hmDel').addEventListener('click',()=>{ hmChordSnap(); harmony.chords.splice(hmSelIdx,1); hmCloseChord(); hmAfterChange(); });
+$id('hmRoots').addEventListener('click',e=>{ const b=e.target.closest('button'), c=harmony.chords[hmSelIdx]; if(!b||!c) return; hmChordSnap(); c.root=+b.dataset.v; hmSyncChord(); hmAfterChange(); hmPreviewChord(c); });
+$id('hmTypes').addEventListener('click',e=>{ const b=e.target.closest('button'), c=harmony.chords[hmSelIdx]; if(!b||!c) return; hmChordSnap(); c.type=b.dataset.v; hmSyncChord(); hmAfterChange(); hmPreviewChord(c); });
+$id('hmLens').addEventListener('click',e=>{
+  const b=e.target.closest('button'), c=harmony.chords[hmSelIdx]; if(!b||!c) return; hmChordSnap();
+  const len=Math.max(1,Math.min(+b.dataset.v,PATTERN_LENGTH-c.step));
+  harmony.chords=harmony.chords.filter(o=>o===c || o.step+o.len<=c.step || o.step>=c.step+len); hmSelIdx=harmony.chords.indexOf(c); c.len=len;
+  hmSyncChord(); hmAfterChange();
 });
+// ---- Vorlage-Sheet (Tonart + Verläufe) ----
+function hmRenderTpl(){
+  $id('hmTplT').textContent=NOTE_NAMES[harmony.key.root]+(harmony.key.scale==='minor'?'-Moll':'-Dur');
+  $id('hmKRoots').querySelectorAll('button').forEach(b=>b.classList.toggle('on',+b.dataset.v===harmony.key.root));
+  $id('hmKScale').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===harmony.key.scale));
+  const box=$id('hmProgs'); box.innerHTML='';
+  HM_PROGS[harmony.key.scale].forEach((p,i)=>{
+    const b=document.createElement('button'); b.type='button'; b.className='hm-prog'+(i===hmTpl?' on':'');
+    b.innerHTML='<b>'+p.steps.slice(0,4).map(st=>hmChordName({root:hmMod(harmony.key.root+st[0],12),type:st[1]})).join(' ')+'</b><span>'+p.rn+'</span>';
+    b.onclick=()=>{ taSnapshot(); hmApplyTpl(i); hmRenderTpl(); hmAfterChange(); hmPreviewChord(hmSorted()[0]); hmToast('Vorlage übernommen',true); };
+    box.appendChild(b);
+  });
+}
+function hmOpenTpl(){ hmRenderTpl(); openSheet('hmTplSheet'); }
+$id('hmTplBtn').addEventListener('click',hmOpenTpl); $id('hmKey').addEventListener('click',hmOpenTpl);
+$id('hmTplX').addEventListener('click',()=>{ closeSheets(); hmRender(); });
+$id('hmKRoots').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; taSnapshot(); harmony.key.root=+b.dataset.v; hmApplyTpl(hmTpl); hmRenderTpl(); hmAfterChange(); });
+$id('hmKScale').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b || b.dataset.v===harmony.key.scale) return; taSnapshot(); harmony.key.scale=b.dataset.v; hmApplyTpl(0); hmRenderTpl(); hmAfterChange(); });
+// ---- Rückfrage bei "Leeren", während die Spur folgt ----
+function hmAskClear(tr){
+  $id('hmCfT').textContent='Harmonie für '+hmTrName(tr)+' ausschalten?';
+  $id('hmCfD').textContent='Die Spur folgt gerade der Akkordfolge. Leeren würde nur ihre eigenen, momentan stummen Noten löschen.';
+  openSheet('hmConfSheet');
+}
+$id('hmCfX').addEventListener('click',closeSheets); $id('hmCfNo').addEventListener('click',closeSheets);
+$id('hmCfYes').addEventListener('click',()=>{ const tr=TRACKS[activeTrackIdx]; closeSheets(); hmSetMode(tr,'off'); hmToast('Harmonie aus · eigene Noten spielen',true); });
+hmDefault();
 
 function renderTrackBar(){
   const tr=TRACKS[activeTrackIdx];
@@ -3765,8 +3966,6 @@ function renderTrackBar(){
   sampleControls.style.display='none';
   arpControls.style.display='none';
   arpModPanel.style.display='none';
-  const arpGenPanel=document.getElementById('arpGenPanel');
-  if(arpGenPanel) arpGenPanel.classList.toggle('show', tr.type==='arp');
   tbPreview.style.display='';
   if(tr.isSample){
     sampleControls.style.display='flex';
@@ -3886,9 +4085,8 @@ function renderBigGrid(){
 function renderEditorArea(tr){
   const isArp=tr.type==='arp';
   bigGrid.style.display=isArp?'none':''; document.getElementById('brushRow').style.display=isArp?'none':'';
+  hmRender();
   if(!isArp){ $id('prPreview').style.display='none'; $id('taRoll').style.display='none'; return; }
-  agRefreshChordOptions(tr);
-  agSyncStyleUI(tr);
   $id('prPreview').style.display='flex'; $id('taRoll').style.display=''; prDrawPreview(tr);
 }
 function pitchNoteName(tr,v){
@@ -3938,13 +4136,6 @@ function updateAutoVisual(){
   const per=autoBars*16, x=(((modVisAbs%per)+per)%per)/per*340;
   autoCurvePh.setAttribute('x1',x); autoCurvePh.setAttribute('x2',x);
 }
-// Arpeggio-Generator: einklappbar (Standard zu), Kurzinfo = Style · Akkord
-(function(){
-  const head=document.getElementById('arpGenHead'), body=document.getElementById('arpGenBody'), hint=document.getElementById('arpGenHint');
-  const sum=window.agSum=()=>{ const st=document.getElementById('agStyle'), ch=document.getElementById('agChord'); hint.textContent=(st.options[st.selectedIndex]||{}).text+' · '+(ch.options[ch.selectedIndex]||{}).text; };
-  head.addEventListener('click',()=>{ const o=!body.classList.contains('open'); body.classList.toggle('open',o); head.setAttribute('aria-expanded',o?'true':'false'); });
-  ['agStyle','agChord'].forEach(id=>document.getElementById(id).addEventListener('change',sum)); sum();
-})();
 autoToggle.addEventListener('click', ()=>{
   const open=!autoBody.classList.contains('open');
   autoBody.classList.toggle('open', open);
@@ -4133,7 +4324,7 @@ $id('tbS').addEventListener('click', ()=>toggleTrackSolo(TRACKS[activeTrackIdx])
 $id('tbSound').addEventListener('click', openSoundSheet);
 $id('tbSynth').addEventListener('click', ()=>{ const tr=TRACKS[activeTrackIdx]; if(tr.type==='arp'){ buildSynthSheet(tr); openSheet('synthSheet'); } });
 
-function closeSheets(){ $id('sheetVeil').style.display='none'; ['setSheet','soundSheet','synthSheet','fillSheet','prSheet'].forEach(i=>$id(i).classList.remove('open')); }
+function closeSheets(){ $id('sheetVeil').style.display='none'; ['setSheet','soundSheet','synthSheet','fillSheet','prSheet','hmChordSheet','hmTplSheet','hmConfSheet'].forEach(i=>$id(i).classList.remove('open')); }
 function openSheet(id){ closeMenus(); $id('sheetVeil').style.display='block'; $id(id).classList.add('open'); }
 $id('sheetVeil').addEventListener('click', closeSheets); $id('setX').addEventListener('click', closeSheets); $id('sndX').addEventListener('click', closeSheets); $id('synX').addEventListener('click', closeSheets); $id('fillX').addEventListener('click', closeSheets);
 document.querySelectorAll('.sheet').forEach(sh=>sh.addEventListener('dblclick', e=>{ const i=e.target; if(i.type==='range' && i.dataset.def!=null){ i.value=i.dataset.def; i.dispatchEvent(new Event('input')); } }));
@@ -4196,7 +4387,7 @@ function openSoundSheet(){
   const tr=TRACKS[activeTrackIdx], box=$id('sndRows'); box.innerHTML='';
   $id('sndT').textContent='Klang · '+tr.name;
   box.appendChild(soundRow('Laut',0,100,tr.vol*100,80,v=>v,v=>setTrackVol(tr,v/100)));
-  if(tr.type==='arp') box.appendChild(soundRow('Grundton',0,11,tr.rootNote,0,v=>NOTE_NAMES[(v+9)%12],v=>{ if(v!==tr.rootNote){ tr.rootNote=v; renderEditorArea(tr); } }));
+  if(tr.type==='arp') box.appendChild(soundRow('Grundton',0,11,tr.rootNote,0,v=>NOTE_NAMES[(v+9)%12],v=>{ if(v!==tr.rootNote){ tr.rootNote=v; if(hmOn(tr)){ hmRegen(tr); refreshTrackStepVisuals(tr); } renderEditorArea(tr); } }));
   else box.appendChild(soundRow('Tune',0,100,tr.tune*100,50,v=>tr.isSample?Math.round(Math.pow(2,(v/100-0.5)*2)*100)+'%':v,v=>tr.tune=v/100));
   box.appendChild(soundRow('Hall',0,100,(tr.reverbAmount||0)*100,0,v=>v+'%',v=>{ tr.reverbAmount=v/100; if(tr.sendGain) tr.sendGain.gain.value=tr.reverbAmount; }));
   box.appendChild(soundRow('Delay',0,100,(tr.delaySend||0)*100,0,v=>v+'%',v=>{ tr.delaySend=v/100; if(tr.delaySendGain) tr.delaySendGain.gain.value=tr.delaySend; }));
@@ -4235,7 +4426,7 @@ function randomizeTrackPattern(tr, from=0, to=PATTERN_LENGTH){
   }
 }
 document.getElementById('clearBtn').addEventListener('click', ()=>{
-  TRACKS.forEach(tr=>{ if(tr.type==='arp'){ tr.events=[]; evTouch(tr); } else tr.steps.fill(VEL_OFF); });
+  TRACKS.forEach(tr=>{ if(tr.type==='arp'){ hmReset(tr); tr.events=[]; evTouch(tr); } else tr.steps.fill(VEL_OFF); });
   renderAllForPage();
 });
 document.getElementById('randomBtn').addEventListener('click', ()=>{
@@ -5449,7 +5640,7 @@ function collectPatternData(name, id){
     id: id || genId(),
     name,
     savedAt: Date.now(),
-    schemaVersion: 7, // v6 = Humanize (global) + Feel (pro Spur); pan/EQ/muted/solo/fill (v6.1, rückwärtskompatibel) neu dazu
+    schemaVersion: 7, // v62: optionale Felder harmony + tracks[].harm (rückwärtskompatibel) // v6 = Humanize (global) + Feel (pro Spur); pan/EQ/muted/solo/fill (v6.1, rückwärtskompatibel) neu dazu
     bpm, swing, humanize,
     kitId: currentKitId,
     drumSet: { voices: JSON.parse(JSON.stringify(drumSet.voices)), setId: currentSet.id, setName: currentSet.name },
@@ -5457,7 +5648,8 @@ function collectPatternData(name, id){
     tracks: TRACKS.map(tr=>({
       id: tr.id,
       steps: tr.steps.slice(),
-      events: tr.events ? JSON.parse(JSON.stringify(tr.events)) : undefined,
+      events: tr.events ? JSON.parse(JSON.stringify(trOwnEvents(tr))) : undefined, // folgt die Spur der Harmonie: eigene Noten, nicht die erzeugten
+      harm: tr.harm ? JSON.parse(JSON.stringify(tr.harm)) : undefined,
       notes: tr.notes ? tr.notes.slice() : undefined,
       slides: tr.slides ? tr.slides.slice() : undefined,
       vol: tr.vol,
@@ -5473,6 +5665,7 @@ function collectPatternData(name, id){
       delaySend: tr.delaySend || 0,
       accentAmt: tr.accentAmt, rootNote: tr.rootNote, cutoff: tr.cutoff, resonance: tr.resonance, envMod: tr.envMod, decay: tr.decay, scale: tr.scale, cosmicWidth:tr.cosmicWidth, cosmicMotion:tr.cosmicMotion, cosmicWarmth:tr.cosmicWarmth, cosmicAir:tr.cosmicAir, sound:tr.sound, tremolo:tr.tremolo // neue Cosmic-Parameter sind optional für ältere Pattern
     })),
+    harmony: JSON.parse(JSON.stringify(harmony)), // v62: Akkordfolge + Tonart (optional, ältere Pattern: Standard-Vorlage)
     acidAuto: { shape: autoShape, bars: autoBars, depth: autoDepth },
     fill: {
       lengthSteps: fillLengthSteps,
@@ -5536,6 +5729,7 @@ function applyTrackAndFillData(data){
       applyTrackSound(pn,{vol:0.8,tune:0.5,rootNote:0,cutoff:0.55,resonance:0.2,envMod:0.5,decay:0.5,scale:'minor',reverbAmount:0.18,delaySend:0});
     }
   }
+  TRACKS.forEach(tr=>{ if(tr.type==='arp'){ tr.harm=hmDefaultTrack(tr); delete tr.harmOwn; } });
   data.tracks.forEach(saved=>{
     const tr=TRACKS.find(t=>t.id===saved.id);
     if(!tr) return;
@@ -5579,8 +5773,11 @@ function applyTrackAndFillData(data){
       if(tr.id==='piano'){ tr.sound=KEY_SOUNDS[saved.sound]?saved.sound:'piano'; tr.tremolo=saved.tremolo!=null?saved.tremolo:0; }
       tr.scale = SCALES[saved.scale] ? saved.scale : 'minor';
       tr.accentAmt = saved.accentAmt!=null ? saved.accentAmt : 0.5;
+      tr.harm = hmSanTrack(tr, saved.harm);
     }
   });
+  { const h=hmSanHarmony(data.harmony); if(h){ harmony=h; hmTpl=0; } else hmDefault(); }
+  TRACKS.forEach(tr=>{ if(hmOn(tr)){ tr.harmOwn=tr.events; hmRegen(tr); } });
   refreshSoloVisuals(); // Mute/Solo mehrerer Spuren gerade geändert -> Solo-Dimming einmal gesamt neu berechnen
 
   // Fill-Einstellungen: ältere Patterns haben kein data.fill -> aktuelle Werte bleiben unangetastet
@@ -6115,7 +6312,7 @@ function clipEditStart(){
   if(n>PATTERN_LENGTH) setPatternLength(n); // erweitert nur, andere Spuren werden mit "aus" aufgefüllt
   trs.forEach(tr=>{
     const c=(arr.clips[tr.id]||[]).find(x=>x.start===c0.start)||{steps:[],notes:[],slides:[]};
-    if(tr.type==='arp'){ tr.events=(c.events||[]).filter(e=>e.s<n).map(e=>Object.assign({},e,{l:Math.max(1,Math.min(e.l,n-e.s))})); evTouch(tr); return; }
+    if(tr.type==='arp'){ hmReset(tr); tr.events=(c.events||[]).filter(e=>e.s<n).map(e=>Object.assign({},e,{l:Math.max(1,Math.min(e.l,n-e.s))})); evTouch(tr); return; }
     for(let i=0;i<PATTERN_LENGTH;i++){
       tr.steps[i]= i<n ? (c.steps[i]||0) : VEL_OFF;
       if(tr.notes) tr.notes[i]= i<n ? ((c.notes&&c.notes[i])||0) : 0;
@@ -6266,6 +6463,7 @@ async function beatApply(d, withSound){
     const tr=TRACKS.find(t=>t.id===sv.id); if(!tr) return;
     tr.steps=migrateStepsToVelocity(sv.steps, tr.id, undefined, PATTERN_LENGTH);
     if(tr.type==='arp'){
+      hmReset(tr);
       tr.events=evLoad(sv,tr); delete tr.notes; delete tr.slides; evTouch(tr);
       tr.rootNote=sv.rootNote!=null?sv.rootNote:tr.rootNote; tr.scale=SCALES[sv.scale]?sv.scale:(tr.scale||'minor'); // Noten sind relativ zu Grundton/Skala -> immer mit
     }
@@ -6872,6 +7070,7 @@ function prRender(){
   $id('prName').textContent=prName(tr); $id('prDot').style.background=tr.color;
   $id('prSolo').classList.toggle('on',!!tr.solo);
   $id('prPg').classList.toggle('show',totalPages()>1 && prMode==='edit'); $id('prPl').textContent=(currentPage+1)+'/'+totalPages();
+  $id('prHmBar').classList.toggle('show',hmOn(tr)); if(hmOn(tr)) $id('prHmT').textContent='FOLGT HARMONIE · '+HM_MODES.find(m=>m.id===tr.harm.mode).n.toUpperCase();
   prLbl.innerHTML=''; prGrid.querySelectorAll('.prr').forEach(x=>x.remove());
   for(let r=12;r>=0;r--){
     const n=prLo+r, inS=pitchInScale(n,tr), row=document.createElement('div');
@@ -6887,7 +7086,7 @@ function prDraw(){
   tr.events.forEach(e=>{
     if(e.n<prLo || e.n>prLo+12) return;
     const s0=Math.max(e.s,base), e0=Math.min(e.s+e.l,base+16); if(e0<=s0) return;
-    const d=document.createElement('div'); d.className='prn'+(e===prSel?' sel':'')+(e.a?' acc':'');
+    const d=document.createElement('div'); d.className='prn'+(e===prSel?' sel':'')+(e.a?' acc':'')+(e.h?' gen':'');
     d.style.left=(s0-base)/16*100+'%'; d.style.width='calc('+(e0-s0)/16*100+'% - 2px)';
     d.style.top=(prLo+12-e.n)/13*100+'%'; d.style.height='calc('+100/13+'% - 2px)'; d.style.marginTop='1px';
     d.textContent=e.sl?'~':'';
@@ -6928,6 +7127,7 @@ function prCell(e){
 function prDeny(n){ const rs=prGrid.querySelectorAll('.prr'), i=12-(n-prLo); if(rs[i]){ rs[i].classList.add('deny'); setTimeout(()=>rs[i].classList.remove('deny'),280); } }
 prGrid.addEventListener('pointerdown',e=>{
   if(!prTr) return;
+  const conv=hmConvert(prTr); // erzeugte Noten anfassen = Spur bekommt eigene Noten (Undo-Snapshot liegt dann schon)
   const tr=prTr, c=prCell(e), r=prGrid.getBoundingClientRect(), cw=r.width/16, rh=r.height/13, base=prBase();
   prGrid.setPointerCapture(e.pointerId);
   if(prSel && tr.events.indexOf(prSel)>=0 && prSel.s+prSel.l<=base+16){
@@ -6935,9 +7135,9 @@ prGrid.addEventListener('pointerdown',e=>{
     if(Math.hypot(e.clientX-kx,e.clientY-ky)<=18){ prDrag={mode:'size',n:prSel,x0:e.clientX,l0:prSel.l}; return; } // Griff: 12 px Radius + 6 px Toleranz, damit kurze Noten (ca. 20 px) greifbar bleiben
   }
   const hit=tr.events.find(n=>n.n===c.n && c.s>=n.s && c.s<n.s+n.l);
-  if(hit){ prDrag={mode:'move',n:hit,ds:c.s-hit.s,moved:false,was:prSel===hit}; prSel=hit; pitchPreview(tr,hit.n,hit.v); prDraw(); return; }
-  if(prScaleOnly && !pitchInScale(c.n,tr)){ prDeny(c.n); prDrag=null; return; }
-  taSnapshot();
+  if(hit){ prDrag={mode:'move',n:hit,ds:c.s-hit.s,moved:false,was:prSel===hit,snapped:conv}; prSel=hit; pitchPreview(tr,hit.n,hit.v); prDraw(); return; }
+  if(prScaleOnly && !pitchInScale(c.n,tr)){ prDeny(c.n); prDrag=null; if(conv) prDraw(); return; }
+  if(!conv) taSnapshot();
   if(!isPoly(tr)) tr.events=tr.events.filter(n=>!(n.s<=c.s && c.s<n.s+n.l));
   const n={s:c.s,n:c.n,l:1,v:.85,a:false,sl:false}; tr.events.push(n); prSel=n; prDrag={mode:'size',n,snapped:true};
   pitchPreview(tr,c.n,.85); prCommit();
@@ -6962,7 +7162,7 @@ function prEndDrag(){
 ['pointerup','pointercancel'].forEach(t=>prGrid.addEventListener(t,prEndDrag));
 function prVelAt(e){ const r=prVel.getBoundingClientRect(); return { s:prBase()+Math.max(0,Math.min(15,Math.floor((e.clientX-r.left)/r.width*16))), v:Math.max(.1,Math.min(1,1-(e.clientY-r.top)/r.height)) }; }
 function prSetVel(e){ const c=prVelAt(e), ns=prTr.events.filter(n=>n.s===c.s); if(!ns.length) return; if(!prVD.snapped){ taSnapshot(); prVD.snapped=true; } ns.forEach(n=>n.v=c.v); prDraw(); }
-prVel.addEventListener('pointerdown',e=>{ prVD={snapped:false}; prVel.setPointerCapture(e.pointerId); prSetVel(e); });
+prVel.addEventListener('pointerdown',e=>{ prVD={snapped:hmConvert(prTr)}; prVel.setPointerCapture(e.pointerId); prSetVel(e); });
 prVel.addEventListener('pointermove',e=>{ if(prVD) prSetVel(e); });
 ['pointerup','pointercancel'].forEach(t=>prVel.addEventListener(t,()=>{ prVD=null; refreshTrackStepVisuals(prTr); }));
 function prHold(el,fn){
@@ -7008,10 +7208,11 @@ function prDrawPreview(tr){
   if(ev.length){
     const ns=ev.map(e=>e.n), hi=Math.max.apply(null,ns)+1, lo=Math.min.apply(null,ns)-1, rows=Math.max(7,hi-lo+1);
     ev.forEach(e=>{
-      const s0=Math.max(e.s,base), e0=Math.min(e.s+e.l,base+16), d=document.createElement('div'); d.className='pb';
+      const s0=Math.max(e.s,base), e0=Math.min(e.s+e.l,base+16), d=document.createElement('div'); d.className='pb'+(e.h?' gen'+(e.a?' acc':''):'');
       d.style.left=(s0-base)/16*100+'%'; d.style.width='calc('+(e0-s0)/16*100+'% - 2px)'; d.style.top=(hi-e.n)/rows*100+'%'; d.style.height='calc('+100/rows+'% - 2px)'; pv.appendChild(d);
     });
   } else { const t=document.createElement('div'); t.className='pvempty'; t.textContent='Noch keine Noten'; pv.appendChild(t); }
+  if(hmOn(tr)){ const b=document.createElement('div'); b.className='hmb'; b.textContent='Harmonie · '+HM_MODES.find(m=>m.id===tr.harm.mode).n; pv.appendChild(b); }
   const ph=document.createElement('div'); ph.className='pph'; pv.appendChild(ph);
 }
 // ---- Spielen-Modus: Klaviatur (1,5 Oktaven), Balken-Modus, Rec auf das Raster (v54) ----
@@ -7088,6 +7289,7 @@ function prKbReleaseAll(){ Array.from(prLive.keys()).forEach(id=>prRelease(id));
 function prStepPos(){ const L=seqLength(); const p=currentStep-(nextNoteTime-audioCtx.currentTime)/stepDuration(); return ((p%L)+L)%L; }
 function prRecStart(tr,n,vel){
   if(!prRec || !isPlaying || arrOn()) return null;
+  if(hmConvert(tr)) prRecSnap=true;
   if(!prRecSnap){ taSnapshot(); prRecSnap=true; }
   const s=Math.round(prStepPos())%PATTERN_LENGTH;
   tr.events = isPoly(tr) ? tr.events.filter(e=>!(e.s===s && e.n===n)) : tr.events.filter(e=>!(e.s<=s && s<e.s+e.l));
