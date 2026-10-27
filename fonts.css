@@ -1,9 +1,10 @@
 /* Lokal gehostete Schriften (alle SIL Open Font License 1.1) - keine Verbindung zu Google.
-   Dateien liegen in ./fonts/ (siehe fonts/README.txt). Fehlt eine Datei, greift die Ersatzschrift. */
-@font-face{font-family:'Rajdhani';font-weight:500;font-style:normal;font-display:swap;src:local('Rajdhani Medium'),local('Rajdhani-Medium'),url('./fonts/Rajdhani-Medium.woff2') format('woff2'),url('./fonts/Rajdhani-Medium.ttf') format('truetype');}
-@font-face{font-family:'Rajdhani';font-weight:600;font-style:normal;font-display:swap;src:local('Rajdhani SemiBold'),local('Rajdhani-SemiBold'),url('./fonts/Rajdhani-SemiBold.woff2') format('woff2'),url('./fonts/Rajdhani-SemiBold.ttf') format('truetype');}
-@font-face{font-family:'Rajdhani';font-weight:700;font-style:normal;font-display:swap;src:local('Rajdhani Bold'),local('Rajdhani-Bold'),url('./fonts/Rajdhani-Bold.woff2') format('woff2'),url('./fonts/Rajdhani-Bold.ttf') format('truetype');}
-@font-face{font-family:'VT323';font-weight:400;font-style:normal;font-display:swap;src:local('VT323'),local('VT323-Regular'),url('./fonts/VT323-Regular.woff2') format('woff2'),url('./fonts/VT323-Regular.ttf') format('truetype');}
+   Dateien liegen in ./fonts/ als WOFF, auf Latein + Satz-/Pfeilzeichen reduziert (pyftsubset, ~110 KB statt 1,3 MB).
+   Fehlt ein Zeichen, greift die Ersatzschrift. */
+@font-face{font-family:'Rajdhani';font-weight:500;font-style:normal;font-display:swap;src:local('Rajdhani Medium'),local('Rajdhani-Medium'),url('./fonts/Rajdhani-Medium.woff') format('woff');}
+@font-face{font-family:'Rajdhani';font-weight:600;font-style:normal;font-display:swap;src:local('Rajdhani SemiBold'),local('Rajdhani-SemiBold'),url('./fonts/Rajdhani-SemiBold.woff') format('woff');}
+@font-face{font-family:'Rajdhani';font-weight:700;font-style:normal;font-display:swap;src:local('Rajdhani Bold'),local('Rajdhani-Bold'),url('./fonts/Rajdhani-Bold.woff') format('woff');}
+@font-face{font-family:'VT323';font-weight:400;font-style:normal;font-display:swap;src:local('VT323'),local('VT323-Regular'),url('./fonts/VT323-Regular.woff') format('woff');}
 @font-face{font-family:'JetBrains Mono';font-weight:400;font-style:normal;font-display:swap;src:url('./fonts/JetBrainsMono-Regular.woff') format('woff');}
 @font-face{font-family:'JetBrains Mono';font-weight:600;font-style:normal;font-display:swap;src:url('./fonts/JetBrainsMono-Bold.woff') format('woff');}
 @font-face{font-family:'JetBrains Mono';font-weight:700;font-style:normal;font-display:swap;src:url('./fonts/JetBrainsMono-Bold.woff') format('woff');}

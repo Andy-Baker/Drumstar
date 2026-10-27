@@ -3,12 +3,11 @@
 //   auch wenn die Cache-Nummer einmal vergessen wird. Cache-Nummer trotzdem bei größeren Änderungen hochzählen.
 // - Schriften/Bilder: Cache zuerst.
 // - Offline-Fallback nur für Seitenaufrufe (und dann für die richtige Seite, nicht immer die App).
-const CACHE='mrm44-v62';
+const CACHE='mrm44-v63';
 const CORE=['./','./index.html','./manifest.webmanifest'];            // Pflicht: fehlt eine Datei, schlägt die Installation fehl
 const OPTIONAL=['./impressum.html','./datenschutz.html','./fonts.css',
   './icons/icon-192.png','./icons/icon-512.png','./icons/logo-drumstar.png',
-  './fonts/Rajdhani-Medium.woff2','./fonts/Rajdhani-SemiBold.woff2','./fonts/Rajdhani-Bold.woff2','./fonts/VT323-Regular.woff2',
-  './fonts/Rajdhani-Medium.ttf','./fonts/Rajdhani-SemiBold.ttf','./fonts/Rajdhani-Bold.ttf','./fonts/VT323-Regular.ttf',
+  './fonts/Rajdhani-Medium.woff','./fonts/Rajdhani-SemiBold.woff','./fonts/Rajdhani-Bold.woff','./fonts/VT323-Regular.woff',
   './fonts/JetBrainsMono-Regular.woff','./fonts/JetBrainsMono-Bold.woff'];  // Optional: fehlende Dateien werden übersprungen
 
 self.addEventListener('install',event=>{
