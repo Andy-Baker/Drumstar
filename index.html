@@ -885,12 +885,10 @@
   #xyScaleSel{ min-height:40px; padding:0 10px; }
   .xy-reso{ flex:1; display:flex; align-items:center; gap:6px; font-size:11px; color:var(--dim); }
   .xy-reso input{ flex:1; accent-color:var(--blue); min-width:0; } .xy-reso b{ font:600 11px 'JetBrains Mono',monospace; color:var(--blue-2); min-width:30px; text-align:right; }
-  #xyBtns button:disabled{ opacity:.35; cursor:default; }
 
   /* ---------- SAMPLE-PAD (live, 9 Pads) ---------- */
   #padOverlay{ flex-direction:column; gap:10px; }
   #padHeader{ display:flex; align-items:center; justify-content:space-between; gap:8px; flex-shrink:0; }
-  #padDelayKnobWrap{ display:flex; align-items:center; }
   #padQuantizeBtn{ font-size:10px; letter-spacing:.04em; text-transform:uppercase; border:1px solid rgba(63,169,255,.35);
     border-radius:6px; padding:6px 10px; cursor:pointer; background:var(--panel); color:var(--dim); }
   #padQuantizeBtn.on{ background:var(--blue); color:#04121e; border-color:var(--blue); box-shadow:0 0 12px rgba(63,169,255,.5); }
@@ -1176,6 +1174,92 @@ html,body{min-height:100%;height:100%;}
 .pr-orow .am-seg{width:112px;margin:0;flex:none}
 .pr-orow .am-seg button{min-height:36px}
 .sheet .act.on{background:rgba(63,169,255,.28);border-color:var(--blue)}
+
+/* ===== v65: Design-Ausreißer (Mockup ausreisser-mockup.html) ===== */
+.uic{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none;vertical-align:middle}
+.ovt{margin:0;flex:1;font:700 19px 'Rajdhani',sans-serif;letter-spacing:.02em;color:var(--white);text-transform:none}
+.ovt small{font:600 13px 'Rajdhani',sans-serif;color:var(--dim);margin-left:8px;letter-spacing:.06em}
+#kitPickerHead,#soundPickerHead,#tempoOverlayHead,#patternsOverlayHead,#sampleEditorHead,#dsHead,#xyHead{min-height:52px;gap:10px}
+#kitPickerCloseBtn,#soundPickerCloseBtn,#tempoOverlayCloseBtn,#patternsOverlayCloseBtn,#sampleEditorCloseBtn,#dsCloseBtn,#xyCloseBtn{width:44px;height:44px;border-radius:9px;border:1px solid rgba(255,255,255,.12);background:var(--panel);color:var(--blue-2);font-size:15px;flex:none;display:flex;align-items:center;justify-content:center;cursor:pointer}
+/* Beats */
+#patternIORow button{display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;font-size:12px;border-radius:9px}
+#patternIORow #exportWavBtn{border:1px solid rgba(63,169,255,.45);background:rgba(63,169,255,.12);color:var(--blue-2);font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+#patternUpdateBtn{align-items:center;justify-content:center}
+#patternUpdateBtn .uic{width:16px;height:16px}
+.pattern-row{gap:0;padding:0;overflow:hidden;border-radius:10px;flex-shrink:0}
+.pattern-row.renaming{padding:8px}
+.prow-top{display:flex;align-items:center;gap:8px;padding:8px 8px 8px 14px;min-height:56px}
+.prow-top .prow-meta{flex:1;min-width:0;flex-direction:column;align-items:flex-start;gap:1px}
+.pattern-row .pname{font-size:16px;font-weight:700;max-width:100%}
+.pattern-row .pdate{font-size:11px}
+.prow-top .prow-btn{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;padding:0;flex:none;border:1px solid rgba(63,169,255,.4);background:rgba(63,169,255,.1);color:var(--blue-2)}
+.prow-top .prow-btn.on{background:rgba(63,169,255,.3);border-color:var(--blue);color:#fff}
+.prow-top .prow-btn .uic{width:20px;height:20px}
+.prow-more{display:none;flex-wrap:wrap;gap:6px;padding:0 8px 10px}
+.pattern-row.open .prow-more{display:flex}
+.prow-more .act{flex:1 1 30%;min-height:40px;border-radius:9px;display:flex;align-items:center;justify-content:center;gap:7px;font:700 12px 'Rajdhani',sans-serif;cursor:pointer;padding:0 8px}
+.prow-more .act.sec{border:1px solid rgba(255,255,255,.12);background:var(--panel-inset);color:var(--metal)}
+.prow-more .act.prow-del{color:#ff9d7a;border-color:rgba(255,157,122,.4);background:rgba(255,157,122,.08)}
+/* Pads */
+#padOverlay.open{flex:1;min-height:0}
+#padHeader{gap:10px}
+#padDelayRow{flex:1;display:flex;align-items:center;gap:10px;background:var(--panel);border-radius:10px;padding:0 12px;min-height:48px}
+#padDelayRow label{font:700 11px 'Rajdhani',sans-serif;letter-spacing:.12em;color:var(--dim)}
+#padDelayRow input{flex:1;accent-color:var(--blue);min-width:0}
+#padDelayRow b{font:400 20px 'VT323',monospace;color:var(--lcd-fg);min-width:40px;text-align:right}
+#padQuantizeBtn.ib{width:48px;height:48px;font-size:0;letter-spacing:0;text-transform:none;padding:0;box-shadow:none}
+#padQuantizeBtn.ib .uic{width:22px;height:22px}
+#padQuantizeBtn.ib.on{background:rgba(63,169,255,.3);border-color:var(--blue);color:#fff}
+#padHint{font:11px 'JetBrains Mono',monospace}
+#padGrid{flex:1;min-height:300px;grid-template-rows:repeat(3,1fr);gap:10px}
+.pad{aspect-ratio:auto;border-radius:14px;min-height:90px}
+.pad .plabel{font-size:14px;letter-spacing:.1em}
+.pad .pstat{font-size:11px}
+.pad.filled{border-color:rgba(124,255,178,.35);background:linear-gradient(180deg,#14261d,#0e1813);box-shadow:none}
+.pad.filled .plabel{color:#7cffb2}
+.pad-trim-btn{width:30px;height:30px;border-radius:8px;top:8px;right:8px}
+.pad-trim-btn .uic{width:16px;height:16px}
+/* Mixer */
+#mixerOverlay.open{flex:1;min-height:0}
+#mixerWrap{display:flex;flex:1;min-height:0;margin-top:10px}
+#mixerChannels{margin-top:0;padding-right:8px;min-width:0}
+#mixerMaster{flex:none;display:flex;align-items:flex-start;padding-left:8px;border-left:1px solid rgba(63,169,255,.25);box-shadow:-10px 0 14px -10px rgba(0,0,0,.9)}
+.mix-strip.master-strip{position:static}
+.mix-meter,.mix-fader-wrap{height:var(--fh,220px)}
+.mix-fader{width:var(--fh,220px)}
+.mix-strip .mix-name{font-size:12px;letter-spacing:.06em;padding:7px 0 3px}
+.mix-pan-wrap .knob-val{font-size:9px}
+.mix-eq-row .knob-label,.mix-eq-row .knob-val{font-size:8px}
+.mix-db-readout{font-size:11px}
+.mix-mute,.mix-solo{width:28px;height:26px;border-radius:6px;font-size:11px}
+/* Song */
+.arr-head{gap:8px;font-size:12px}
+.arr-head #ovTitle{flex:1}
+#arrHelpBtn{width:36px;height:36px;border-radius:10px}
+#arrHelpBtn .uic{width:18px;height:18px}
+#arrToggle.am-seg{width:120px;margin:0;min-width:0;min-height:0;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:none;padding:0}
+#arrToggle.am-seg button{min-height:36px}
+.arr-help{display:none;font-size:13px;color:var(--metal);background:rgba(63,169,255,.08);border:1px solid rgba(63,169,255,.3);border-radius:9px;padding:8px 12px;line-height:1.4}
+.arr-help.open{display:block}
+.arr-help ul{margin:0;padding-left:18px}.arr-help li{margin:3px 0}
+.ar-ms button.r{display:flex;align-items:center;justify-content:center}
+.ar-ms button.r .uic{width:13px;height:13px}
+#songUpdateBtn{align-items:center;justify-content:center}
+/* XY */
+#xyBtns{gap:0;border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,.12)}
+#xyBtns button{border:0;border-radius:0;background:var(--panel-inset);color:var(--dim);display:flex;align-items:center;justify-content:center;gap:6px}
+#xyBtns button+button{border-left:1px solid rgba(255,255,255,.06)}
+#xyBtns button.on{background:rgba(63,169,255,.2);color:var(--blue-2);border-color:rgba(255,255,255,.06)}
+/* Kit */
+#kitPickerList .kit-chip .kn,#soundPickerList .kit-chip .kn,#kitOwnList .kit-chip .kn{font-size:15px}
+#kitPickerList .kit-chip .kd,#soundPickerList .kit-chip .kd,#kitOwnList .kit-chip .kd{font-size:12px}
+/* Tempo, Rest */
+#tempoClickToggle{display:flex;align-items:center;justify-content:center;gap:8px}
+#pageCopyBtn{display:flex;align-items:center;justify-content:center}
+#hmActs button{display:flex;align-items:center;justify-content:center;gap:7px}
+.se-assign-chip{display:inline-flex;align-items:center;gap:7px}
+.kib{display:inline-flex;align-items:center;justify-content:center}
+.kib .uic{width:16px;height:16px}
 </style>
 </head>
 <body>
@@ -1202,7 +1286,7 @@ html,body{min-height:100%;height:100%;}
 
       <div id="kitPickerOverlay">
         <div id="kitPickerHead">
-          <span class="lcd l2" style="color:var(--dim); letter-spacing:.15em; text-transform:uppercase;">Kit wählen</span>
+          <h2 class="ovt">Kit wählen</h2>
           <button id="kitPickerCloseBtn" aria-label="Schließen">✕</button>
         </div>
         <div class="kp-sec">Standard</div>
@@ -1213,7 +1297,7 @@ html,body{min-height:100%;height:100%;}
 
       <div id="soundPickerOverlay">
         <div id="soundPickerHead">
-          <span class="lcd l2" style="color:var(--dim); letter-spacing:.15em; text-transform:uppercase;">Sound wählen</span>
+          <h2 class="ovt">Sound wählen</h2>
           <button id="soundPickerCloseBtn" aria-label="Schließen">✕</button>
         </div>
         <div class="kp-sec">Keys</div>
@@ -1222,7 +1306,7 @@ html,body{min-height:100%;height:100%;}
 
       <div id="tempoOverlay">
         <div id="tempoOverlayHead">
-          <span class="lcd l2" style="color:var(--dim); letter-spacing:.15em; text-transform:uppercase;">Tempo</span>
+          <h2 class="ovt">Tempo</h2>
           <button id="tempoOverlayCloseBtn" aria-label="Schließen">✕</button>
         </div>
         <div id="tempoOverlayScreen">
@@ -1239,27 +1323,27 @@ html,body{min-height:100%;height:100%;}
         <input id="tempoOverlaySlider" type="range" min="60" max="200" value="128">
         <div id="tempoOverlaySliderRange"><span>60</span><span>200</span></div>
         <div id="tempoOverlayHint">Zahl antippen zum direkten Eingeben</div>
-        <button id="tempoClickToggle">🔊 Klick (betont die 1)</button>
+        <button id="tempoClickToggle"><svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l3 18H6z"/><path d="M12 17l5-11"/></svg>Klick · betont die 1</button>
       </div>
 
       <div id="patternsOverlay">
         <div id="patternsOverlayHead">
-          <span class="lcd l2" style="color:var(--dim); letter-spacing:.15em; text-transform:uppercase;">Beats</span>
+          <h2 class="ovt">Beats</h2>
           <button id="patternsOverlayCloseBtn" aria-label="Schließen">✕</button>
         </div>
-        <div class="kp-sec" style="margin:2px 2px 0">Länge (Steps)</div>
+        <div class="kp-sec" style="margin:2px 2px 0">Länge</div>
         <div id="lengthRow"></div>
         <div class="len-hint">Kürzer wählen schneidet den Rest ab – die Rückgängig-Taste holt ihn zurück.</div>
         <div id="beatTabs"><button data-t="all" class="on">Gesamt</button><button data-t="drums">Drums</button><button data-t="perc">Perc</button><button data-t="acid">Acid</button><button data-t="sample">Sample</button><button data-t="cosmic">Cosmic</button><button data-t="piano">Keys</button></div>
         <div id="patternSaveRow">
           <input type="text" id="patternNameInput" placeholder="Name für aktuellen Beat…" maxlength="40">
-          <button id="patternUpdateBtn" title="Aktuell geladenen Beat mit diesem Zustand überschreiben">↻</button>
+          <button id="patternUpdateBtn" title="Aktuell geladenen Beat mit diesem Zustand überschreiben" aria-label="Überschreiben"><svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 5v6h-6"/></svg></button>
           <button id="patternSaveBtn">Speichern</button>
         </div>
-        <button id="exportWavBtn">⬇ Als WAV exportieren</button>
         <div id="patternIORow">
-          <button id="patternExportAllBtn">⬇ Alle exportieren</button>
-          <button id="patternImportBtn">⬆ Import</button>
+          <button id="exportWavBtn"><svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>WAV</button>
+          <button id="patternExportAllBtn" title="Alle Beats als JSON-Datei sichern"><svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h12M4 11h12M4 16h7"/><path d="M18 13v7M15 17l3 3 3-3"/></svg>Alle</button>
+          <button id="patternImportBtn" title="Beats aus JSON-Datei laden"><svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V9M7 14l5-5 5 5M5 4h14"/></svg>Import</button>
           <input type="file" id="patternImportInput" accept="application/json,.json" style="display:none;">
         </div>
         <div id="patternIOStatus"></div>
@@ -1268,7 +1352,7 @@ html,body{min-height:100%;height:100%;}
 
       <div id="sampleEditorOverlay">
         <div id="sampleEditorHead">
-          <span class="lcd l2" style="color:var(--dim); letter-spacing:.15em; text-transform:uppercase;">Sample-Editor</span>
+          <h2 class="ovt">Sample-Editor</h2>
           <div id="seHeadBtns"><button class="se-hbtn" id="seUndoBtn" aria-label="Rückgängig" title="Rückgängig" disabled><svg class="se-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg></button><button class="se-hbtn" id="seRedoBtn" aria-label="Wiederholen" title="Wiederholen" disabled><svg class="se-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 14l5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></svg></button><button id="sampleEditorCloseBtn" aria-label="Schließen">✕</button></div>
         </div>
 
@@ -1345,7 +1429,7 @@ html,body{min-height:100%;height:100%;}
 
         <div id="seAssignLabel">5 · Verwenden als</div>
         <div id="seAssignRow">
-          <div class="se-assign-chip" id="seAssignTrackChip">🎚 Sample-Spur</div>
+          <div class="se-assign-chip" id="seAssignTrackChip"><svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h2M7 8v8M11 5v14M15 9v6M19 11v2"/></svg>Sample-Spur</div>
         </div>
         <div id="sePadGrid"></div>
 
@@ -1356,7 +1440,7 @@ html,body{min-height:100%;height:100%;}
       </div>
 
       <div id="drumSetOverlay">
-        <div id="dsHead"><span class="lcd l2" style="color:var(--dim); letter-spacing:.15em; text-transform:uppercase;">Set bearbeiten</span><button id="dsCloseBtn" aria-label="Schließen">✕</button></div>
+        <div id="dsHead"><h2 class="ovt">Set bearbeiten</h2><button id="dsCloseBtn" aria-label="Schließen">✕</button></div>
         <div class="ds-bar"><input type="text" id="dsName" placeholder="Name des Sets…" maxlength="40"><button id="dsSave">Speichern</button></div>
         <div id="dsDirty"></div>
         <div id="dsRows"></div>
@@ -1372,13 +1456,13 @@ html,body{min-height:100%;height:100%;}
       <div id="kitConfirm"><div class="kc-box"><div id="kcText"></div><div class="kc-row"><button id="kcSave">Speichern</button><button id="kcDiscard">Verwerfen</button><button id="kcCancel">Abbrechen</button></div></div></div>
 
       <div id="xyOverlay">
-        <div id="xyHead"><span class="lcd l2" style="color:var(--dim); letter-spacing:.15em; text-transform:uppercase;">Acid Spielfläche</span><button id="xyCloseBtn" aria-label="Schließen">✕</button></div>
+        <div id="xyHead"><h2 class="ovt">Spielfläche<small>ACID</small></h2><button id="xyCloseBtn" aria-label="Schließen">✕</button></div>
         <div id="xyRead"><span id="xyReadN">—</span><span id="xyReadC">CUT 50%</span></div>
         <div id="xyPad"><div id="xyPuck"></div>
           <span class="xy-ax" style="left:8px;top:6px">Cutoff ↑ auf</span><span class="xy-ax" style="right:8px;top:6px">Ton höher →</span></div>
         <div id="xyOpts"><select id="xyScaleSel" aria-label="Skala"></select>
           <label class="xy-reso">RESO <input type="range" id="xyReso" min="0" max="85" value="35"><b id="xyResoVal">35%</b></label></div>
-        <div id="xyBtns"><button id="xyOctDown">Okt −</button><button id="xyOctUp">Okt +</button><button id="xyGlideBtn" class="on">Gleiten</button><button id="xyRecBtn" disabled>● Rec</button></div>
+        <div id="xyBtns"><button id="xyOctDown">OKT −</button><button id="xyOctUp">OKT +</button><button id="xyGlideBtn" class="on"><svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17c5 0 6-10 18-10"/></svg>GLEITEN</button></div>
       </div>
 
       <div id="tabContent">
@@ -1462,7 +1546,7 @@ html,body{min-height:100%;height:100%;}
               <div class="hm-lab">Lage</div>
               <div class="am-seg" data-hk="lage" data-num="1"><button data-v="0">Tief</button><button data-v="12">Hoch</button></div>
             </div>
-            <div id="hmActs"><button id="hmVar" type="button">↻ Variation</button><button id="hmFill" type="button">⚡ Fill<span id="hmFillSt"></span></button></div>
+            <div id="hmActs"><button id="hmVar" type="button"><svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 5v6h-6"/></svg>Variation</button><button id="hmFill" type="button"><svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 3L5 14h6l-1 7 8-11h-6z"/></svg>Fill<span id="hmFillSt"></span></button></div>
             <div id="hmHint"></div>
           </div>
         </div>
@@ -1486,7 +1570,7 @@ html,body{min-height:100%;height:100%;}
           <button id="pagePrevBtn">◀</button>
           <span id="pageLabel" class="lcd l2 mono">Seite 1/1</span>
           <button id="pageNextBtn">▶</button>
-          <button id="pageCopyBtn" title="Diese Seite in die nächste kopieren">⧉</button>
+          <button id="pageCopyBtn" title="Diese Seite in die nächste kopieren" aria-label="Seite kopieren"><svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg></button>
         </div>
 
         <button id="pinBtn">Seite fixiert · tippen zum Mitlaufen</button>
@@ -1519,26 +1603,27 @@ html,body{min-height:100%;height:100%;}
 
       <div id="padOverlay" class="tab-panel">
         <div id="padHeader">
-          <div id="padDelayKnobWrap"></div>
-          <button id="padQuantizeBtn" class="on">🎯 Quantize</button>
+          <div id="padDelayRow"><label for="padDelayIn">DELAY</label><input type="range" id="padDelayIn" min="0" max="100" step="1" value="0"><b id="padDelayV">0%</b></div>
+          <button id="padQuantizeBtn" class="ib on" title="Quantize" aria-label="Quantize"><svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4v16M10 4v16M16 4v16M22 4v16" opacity=".35"/><circle cx="10" cy="12" r="3.2" fill="currentColor" stroke="none"/></svg></button>
         </div>
-        <div id="padHint">Tippen = abspielen (leer = Sample-Editor öffnen) · ✂ am Pad = Sample bearbeiten</div>
+        <div id="padHint">Tippen = spielen · leeres Pad = Sample aufnehmen</div>
         <div id="padGrid"></div>
       </div>
 
       <div id="mixerOverlay" class="tab-panel">
-        <div id="mixerChannels"></div>
+        <div id="mixerWrap"><div id="mixerChannels"></div><div id="mixerMaster"></div></div>
       </div>
 
       <div id="songOverlay" class="tab-panel">
         <div id="arrCard">
-          <div class="arr-head"><span id="ovTitle">SONG · ÜBERSICHT</span><button id="arrToggle">Aus</button></div>
+          <div class="arr-head"><span id="ovTitle">SONG</span><button class="ib" id="arrHelpBtn" aria-label="Hilfe"><svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg></button><div class="am-seg" id="arrToggle"><button data-v="0">AUS</button><button data-v="1">AN</button></div></div>
+          <div class="arr-help" id="arrHelp"><ul><li><b>Leerer Takt</b> antippen: aktuelles Pattern einsetzen</li><li><b>Clip</b> antippen: bearbeiten, duplizieren, löschen</li><li><b>M · S · Würfel</b> gelten für die ganze Gruppe; Würfel erzeugt das Arbeits-Pattern neu</li><li>Fill ist im Song aus. Ein Song speichert alles außer den Audiodaten der Samples.</li></ul></div>
           <div class="arr-seg" id="arrBars"><button data-b="4">4 Takte</button><button data-b="8" class="on">8 Takte</button><button data-b="16">16 Takte</button></div>
-          <div class="ar-save"><input type="text" id="songNameInput" placeholder="Name für den Song…" maxlength="40"><button id="songUpdateBtn" title="Geladenen Song überschreiben" style="display:none">↻</button><button id="songSaveBtn">Speichern</button></div>
+          <div class="ar-save"><input type="text" id="songNameInput" placeholder="Name für den Song…" maxlength="40"><button id="songUpdateBtn" title="Geladenen Song überschreiben" aria-label="Überschreiben" style="display:none"><svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 5v6h-6"/></svg></button><button id="songSaveBtn">Speichern</button></div>
           <div id="ovRows"></div>
           <div id="ovActions" style="display:none"><span id="ovActName"></span><button id="ovEdit">Bearbeiten</button><button id="ovDup">Duplizieren</button><button id="ovDel">Löschen</button></div>
           <div id="ovToast"></div>
-          <div class="arr-hint">Leeren Takt antippen = aktuelles Pattern aus dem Pattern-Tab dort einsetzen. Belegten Clip antippen = auswählen (Bearbeiten, Duplizieren, Löschen). M / S wirken auf die ganze Gruppe, 🎲 würfelt das Arbeits-Pattern der Gruppe neu (danach Takte neu einsetzen). Fill ist im Arrangement aus. Ein Song speichert alles außer den Audiodaten der Samples (nur der Verweis).</div>
+          
           <div class="arr-head" style="margin-top:4px"><span>GESPEICHERTE SONGS</span></div>
           <div id="songList"></div>
         </div>
@@ -1666,6 +1751,8 @@ html,body{min-height:100%;height:100%;}
 <script>
 (function(){
 "use strict";
+// v65: gemeinsame SVG-Icons für Listen, Pads, Song
+const UI_IC={ play:'<svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5l11 7-11 7z" fill="currentColor" stroke="none"/></svg>', more:'<svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="19" cy="12" r="1.6" fill="currentColor"/></svg>', dup:'<svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg>', split:'<svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h10M4 18h6"/><path d="M17 15l3 3-3 3"/></svg>', ren:'<svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1-4L16 5l3 3L8 19z"/><path d="M14 7l3 3"/></svg>', dl:'<svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>', del:'<svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>', snd:'<svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 9a4 4 0 0 1 0 6"/></svg>', dice:'<svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9" r="1.2" fill="currentColor"/><circle cx="15" cy="15" r="1.2" fill="currentColor"/></svg>', trim:'<svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4L8.1 15.9M14.5 14.5L20 20M8.1 8.1L12 12"/></svg>' };
 
 // =========================================================================
 // AUDIO ENGINE — AudioWorklet-basierter Multi-Operator-FM-Synth
@@ -4913,11 +5000,18 @@ function buildMixerChannel(tr, isMaster){
   }
   strip.appendChild(btns);
 
-  mixerChannels.appendChild(strip);
+  (isMaster?document.getElementById('mixerMaster'):mixerChannels).appendChild(strip);
   const result={ meterMask, meterPeak, dbReadout, fader, peakHoldVal:0, smoothVal:0 };
   if(isMaster){ mixerMasterFaderEl=fader; window._masterMeter=result; }
   else{ tr._mixFaderEl=fader; tr._mixMeter=result; }
 }
+// Fader/Meter nutzen die verfügbare Höhe (v65): --fh am Mixer-Tab
+function mixerFit(){ requestAnimationFrame(()=>{ const mo=document.getElementById('mixerOverlay'); if(!mo.classList.contains('open')) return;
+  const avail=window.innerHeight-mo.getBoundingClientRect().top-(document.getElementById('bottomTabBar').offsetHeight||64)-24;
+  const strip=document.querySelector('#mixerChannels .mix-strip'), fw=document.querySelector('#mixerChannels .mix-fader-wrap');
+  const other=strip&&fw ? strip.offsetHeight-fw.offsetHeight : 190;
+  mo.style.setProperty('--fh', Math.round(Math.max(160,Math.min(460,avail-other)))+'px'); }); }
+window.addEventListener('resize', ()=>{ if(document.getElementById('mixerOverlay').classList.contains('open')) mixerFit(); });
 function buildMixerChannels(){
   TRACKS.forEach(tr=>buildMixerChannel(tr, false));
   buildMixerChannel(null, true);
@@ -4982,17 +5076,16 @@ function mixerMeterLoop(){
 
 // Gemeinsamer Delay-Send für alle 9 Live-Pads (kein Sinn, jedes Pad einzeln zu
 // regeln — anders als Spuren werden Pads meist spontan/live gespielt).
-const padDelayKnobWrap=document.getElementById('padDelayKnobWrap');
-const padDelayKnobObj=makeKnob({label:'DELAY', size:'22px', min:0, max:1, value:padDelayAmount, fmt:v=>Math.round(v*100)+'%',
-  onChange:v=>{ padDelayAmount=v; if(padDelaySendGain) padDelaySendGain.gain.value=v; }});
-padDelayKnobWrap.appendChild(padDelayKnobObj.el);
+const padDelayIn=document.getElementById('padDelayIn');
+padDelayIn.value=Math.round(padDelayAmount*100); document.getElementById('padDelayV').textContent=padDelayIn.value+'%';
+padDelayIn.addEventListener('input', ()=>{ const v=padDelayIn.value/100; padDelayAmount=v; if(padDelaySendGain) padDelaySendGain.gain.value=v; document.getElementById('padDelayV').textContent=padDelayIn.value+'%'; });
 
 const padEls=[];
 for(let i=0;i<PAD_COUNT;i++){
   const el=document.createElement('div'); el.className='pad';
   const label=document.createElement('div'); label.className='plabel'; label.textContent='PAD '+(i+1);
   const stat=document.createElement('div'); stat.className='pstat'; stat.textContent='leer';
-  const trimBtnEl=document.createElement('button'); trimBtnEl.className='pad-trim-btn'; trimBtnEl.textContent='✂';
+  const trimBtnEl=document.createElement('button'); trimBtnEl.className='pad-trim-btn'; trimBtnEl.innerHTML=UI_IC.trim; trimBtnEl.setAttribute('aria-label','Sample bearbeiten');
   trimBtnEl.title='Sample bearbeiten';
   el.appendChild(label); el.appendChild(stat); el.appendChild(trimBtnEl);
   trimBtnEl.addEventListener('click', (e)=>{ e.stopPropagation(); openSampleEditor({sampleId:padSampleId[i], forPad:i}); });
@@ -5904,6 +5997,17 @@ let currentLoadedPatternId=null; // id des zuletzt geladenen/gespeicherten/dupli
 let currentLoadedPatternName=null; // Name dazu — für die Bestätigungsmeldung von patternUpdateBtn
 const patternList=document.getElementById('patternList');
 
+// Beat-Zeile (v65): oben Name/Datum + Laden + Weitere; Weitere klappt die übrigen Aktionen mit Namen auf
+function prowFinish(row, loadBtn, more){
+  const meta=row.querySelector('.prow-meta'); const top=document.createElement('div'); top.className='prow-top';
+  row.insertBefore(top, meta); top.appendChild(meta);
+  const mb=document.createElement('button'); mb.className='prow-btn'; mb.innerHTML=UI_IC.more; mb.title='Weitere Aktionen'; mb.setAttribute('aria-label','Weitere Aktionen');
+  top.appendChild(loadBtn); top.appendChild(mb);
+  const box=document.createElement('div'); box.className='prow-more'; more.forEach(b=>box.appendChild(b)); row.appendChild(box);
+  mb.addEventListener('click', e=>{ e.stopPropagation(); const open=!row.classList.contains('open');
+    patternList.querySelectorAll('.pattern-row.open').forEach(r=>{ r.classList.remove('open'); const x=r.querySelector('.prow-top .prow-btn:last-child'); if(x) x.classList.remove('on'); });
+    row.classList.toggle('open',open); mb.classList.toggle('on',open); });
+}
 async function refreshPatternList(){
   if(beatTab!=='all'){ return beatRenderGroupList(); }
   const items=await listPatternsFromIndexedDB();
@@ -5922,9 +6026,9 @@ async function refreshPatternList(){
     meta.appendChild(nameEl); meta.appendChild(dateEl);
     row.appendChild(meta);
 
-    const actions=document.createElement('div'); actions.className='prow-actions';
+    
 
-    const loadBtn=document.createElement('button'); loadBtn.className='prow-btn pload'; loadBtn.innerHTML='▶'; loadBtn.title='Laden';
+    const loadBtn=document.createElement('button'); loadBtn.className='prow-btn pload'; loadBtn.innerHTML=UI_IC.play; loadBtn.title='Laden'; loadBtn.setAttribute('aria-label','Laden');
     loadBtn.addEventListener('click', async ()=>{
       const data=await loadPatternFromIndexedDB(item.id);
       if(data){ applyPatternData(data); setCurrentLoadedPattern(item.id, item.name); rememberLastPattern(item.id); }
@@ -5932,7 +6036,7 @@ async function refreshPatternList(){
       syncBottomBarVisibility();
     });
 
-    const copyBtn=document.createElement('button'); copyBtn.className='prow-btn'; copyBtn.innerHTML='⧉'; copyBtn.title='Duplizieren';
+    const copyBtn=document.createElement('button'); copyBtn.className='act sec'; copyBtn.innerHTML=UI_IC.dup+'Duplizieren'; copyBtn.title='Duplizieren';
     copyBtn.addEventListener('click', async (e)=>{
       e.stopPropagation();
       const existingNames=new Set((await listPatternsFromIndexedDB()).map(p=>p.name));
@@ -5946,27 +6050,26 @@ async function refreshPatternList(){
       showPatternIOStatus('„'+item.name+'“ dupliziert als „'+newName+'“ und geladen');
     });
 
-    const splitBtn=document.createElement('button'); splitBtn.className='prow-btn'; splitBtn.innerHTML='⛓'; splitBtn.title='In Beats pro Spurtyp aufteilen';
+    const splitBtn=document.createElement('button'); splitBtn.className='act sec'; splitBtn.innerHTML=UI_IC.split+'Aufteilen'; splitBtn.title='In Beats pro Spurtyp aufteilen';
     splitBtn.addEventListener('click', (e)=>{ e.stopPropagation(); beatSplitLegacy(item); });
 
-    const renameBtn=document.createElement('button'); renameBtn.className='prow-btn'; renameBtn.innerHTML='✎'; renameBtn.title='Umbenennen';
+    const renameBtn=document.createElement('button'); renameBtn.className='act sec'; renameBtn.innerHTML=UI_IC.ren+'Umbenennen'; renameBtn.title='Umbenennen';
     renameBtn.addEventListener('click', (e)=>{ e.stopPropagation(); startRenamePattern(row, item); });
 
-    const songBtn=document.createElement('button'); songBtn.className='prow-btn'; songBtn.innerHTML='🎼+'; songBtn.title='Zum Song hinzufügen';
+    const songBtn=document.createElement('button'); songBtn.className='act sec'; songBtn.innerHTML='Zum Song'; songBtn.title='Zum Song hinzufügen';
     songBtn.addEventListener('click', (e)=>{ e.stopPropagation(); addPatternToSong(item); });
 
-    const exportBtn=document.createElement('button'); exportBtn.className='prow-btn'; exportBtn.innerHTML='⬇'; exportBtn.title='Als JSON exportieren';
+    const exportBtn=document.createElement('button'); exportBtn.className='act sec'; exportBtn.innerHTML=UI_IC.dl+'Exportieren'; exportBtn.title='Als JSON exportieren';
     exportBtn.addEventListener('click', (e)=>{ e.stopPropagation(); exportSinglePattern(item); });
 
-    const delBtn=document.createElement('button'); delBtn.className='prow-btn prow-del'; delBtn.innerHTML='✕'; delBtn.title='Löschen';
+    const delBtn=document.createElement('button'); delBtn.className='act sec prow-del'; delBtn.innerHTML=UI_IC.del+'Löschen'; delBtn.title='Löschen';
     delBtn.addEventListener('click', async (e)=>{
       e.stopPropagation();
       await deletePatternFromIndexedDB(item.id);
       refreshPatternList();
     });
 
-    [loadBtn, copyBtn, splitBtn, renameBtn, exportBtn, delBtn].forEach(b=>actions.appendChild(b));
-    row.appendChild(actions);
+    prowFinish(row, loadBtn, [copyBtn, renameBtn, splitBtn, exportBtn, delBtn]);
     patternList.appendChild(row);
   });
 }
@@ -6213,6 +6316,7 @@ function switchTab(name){
   Object.keys(TAB_PANELS).forEach(k=> TAB_PANELS[k].classList.toggle('open', k===name));
   document.querySelectorAll('.tab-item[data-tab]').forEach(b=> b.classList.toggle('current', b.dataset.tab===name));
   if(name==='mixer'){
+    mixerFit();
     Promise.resolve(initAudio()).then(()=>{ if(!mixerMeterRAF) mixerMeterRAF=requestAnimationFrame(mixerMeterLoop); });
   }
   if(name==='song'){
@@ -6247,7 +6351,7 @@ function ovPreview(g, b){
   return svg+'</svg>';
 }
 function ovRender(){
-  arrToggle.classList.toggle('on', arr.enabled); arrToggle.textContent=arr.enabled?'An':'Aus';
+  arrToggle.querySelectorAll('button').forEach(b=>b.classList.toggle('on', (b.dataset.v==='1')===!!arr.enabled));
   document.querySelectorAll('#arrBars button').forEach(b=>b.classList.toggle('on', +b.dataset.b===arr.bars));
   ovRows.innerHTML='';
   const rl=document.createElement('div'); rl.className='ar-rl'; rl.style.gridTemplateColumns='repeat('+arr.bars+',1fr)';
@@ -6256,7 +6360,7 @@ function ovRender(){
   ARR_GROUPS.forEach(g=>{
     const trs=arrGroupTracks(g.id), row=document.createElement('div'); row.className='ar-row';
     const lab=document.createElement('div'); lab.className='ar-lab';
-    lab.innerHTML='<span>'+g.label+'</span><span class="ar-ms"><button class="m'+(trs.every(t=>t.muted)?' on':'')+'">M</button><button class="s'+(trs.every(t=>t.solo)?' on':'')+'">S</button><button class="r">🎲</button></span>';
+    lab.innerHTML='<span>'+g.label+'</span><span class="ar-ms"><button class="m'+(trs.every(t=>t.muted)?' on':'')+'">M</button><button class="s'+(trs.every(t=>t.solo)?' on':'')+'">S</button><button class="r" aria-label="Würfeln">'+UI_IC.dice+'</button></span>';
     const [bm,bs,br]=lab.querySelectorAll('button');
     bm.onclick=()=>{ const all=trs.every(t=>t.muted); trs.forEach(t=>{ if(!!t.muted===all) toggleTrackMute(t); }); ovRender(); };
     bs.onclick=()=>{ const all=trs.every(t=>t.solo); trs.forEach(t=>{ if(!!t.solo===all) toggleTrackSolo(t); }); ovRender(); };
@@ -6329,7 +6433,9 @@ document.getElementById('cbSave').addEventListener('click', ()=>{
 });
 document.getElementById('cbCancel').addEventListener('click', ()=>{ clipEditEnd(); switchTab('song'); });
 function ovPlayhead(bar){ ovRows.querySelectorAll('.ar-cell').forEach(c=>c.classList.toggle('ph', +c.dataset.bar===bar)); }
-arrToggle.addEventListener('click', ()=>{
+document.getElementById('arrHelpBtn').addEventListener('click', ()=>{ const h=document.getElementById('arrHelp'); h.classList.toggle('open'); document.getElementById('arrHelpBtn').classList.toggle('on', h.classList.contains('open')); });
+arrToggle.addEventListener('click', (e)=>{
+  const tb=e.target.closest('button'); if(!tb || (tb.dataset.v==='1')===!!arr.enabled) return;
   if(isPlaying) stop();
   arr.enabled=!arr.enabled;
   if(arr.enabled && !arrHasClips()) arrFillAll(); // Startzustand: aktuelles Pattern über alle Takte und Gruppen
@@ -6477,12 +6583,12 @@ async function beatRenderGroupList(){
     const n=document.createElement('div'); n.className='pname'; n.textContent=it.name;
     const dt=document.createElement('div'); dt.className='pdate'; dt.textContent=(it.length||16)+' Steps · '+new Date(it.savedAt).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'});
     meta.appendChild(n); meta.appendChild(dt); row.appendChild(meta);
-    const act=document.createElement('div'); act.className='prow-actions';
-    const mk=(txt,title,cls,fn)=>{ const b=document.createElement('button'); b.className='prow-btn '+cls; b.innerHTML=txt; b.title=title; b.addEventListener('click',fn); act.appendChild(b); };
-    mk('▶','Muster laden','pload', async()=>{ await beatApply(it,false); patternsOverlay.classList.remove('open'); syncBottomBarVisibility(); });
-    mk('🔊','Muster + Klang laden','', async()=>{ await beatApply(it,true); patternsOverlay.classList.remove('open'); syncBottomBarVisibility(); });
-    mk('✕','Löschen','prow-del', async()=>{ await beatDelete(it.id); beatRenderGroupList(); });
-    row.appendChild(act); patternList.appendChild(row);
+    const mk=(html,title,cls,fn)=>{ const b=document.createElement('button'); b.className=cls; b.innerHTML=html; b.title=title; b.addEventListener('click',fn); return b; };
+    const ld=mk(UI_IC.play,'Muster laden','prow-btn pload', async()=>{ await beatApply(it,false); patternsOverlay.classList.remove('open'); syncBottomBarVisibility(); });
+    prowFinish(row, ld, [
+      mk(UI_IC.snd+'Mit Klang laden','Muster + Klang laden','act sec', async()=>{ await beatApply(it,true); patternsOverlay.classList.remove('open'); syncBottomBarVisibility(); }),
+      mk(UI_IC.del+'Löschen','Löschen','act sec prow-del', async()=>{ await beatDelete(it.id); beatRenderGroupList(); }) ]);
+    patternList.appendChild(row);
   });
 }
 // Alte Gesamt-Beats in Beats pro Spurtyp zerlegen (nur Gruppen mit mindestens einem aktiven Step)
@@ -6588,7 +6694,7 @@ async function kitPickerRefresh(){
   (await dsAll()).forEach(s=>{
     const n=Object.keys(s.voices||{}).filter(i=>s.voices[i].t==='smp').length;
     const row=document.createElement('div'); row.className='kit-chip'+(currentSet.id===s.id?' active':'');
-    row.innerHTML='<div class="grow"><div class="kn"></div><div class="kd"></div></div><button class="kib" title="Bearbeiten">✎</button><button class="kib d" title="Löschen">✕</button>';
+    row.innerHTML='<div class="grow"><div class="kn"></div><div class="kd"></div></div><button class="kib" title="Bearbeiten" aria-label="Bearbeiten">'+UI_IC.ren+'</button><button class="kib d" title="Löschen" aria-label="Löschen">'+UI_IC.del+'</button>';
     row.querySelector('.kn').textContent=s.name; row.querySelector('.kd').textContent=(n?n+' Sample'+(n>1?'s':'')+' · ':'')+'Basis '+KITS[s.baseKitId||'rock'].name;
     row.onclick=()=>kitChooseGuarded(async()=>{ await applyOwnSet(s); closeKitPicker(); });
     row.querySelector('.kib').onclick=e=>{ e.stopPropagation(); kitChooseGuarded(async()=>{ await applyOwnSet(s); openSetEditor(); }); };
@@ -6946,7 +7052,7 @@ function rememberLastPattern(id){
 // Bewusst so eingeschränkt: bei jedem Start neu zu importieren würde bei
 // eigenen Änderungen an gleichnamigen Beats laufend Namenskonflikte /
 // umbenannte Duplikate erzeugen. Wer die Datei später aktualisiert, nutzt
-// weiterhin den bestehenden "⬆ Import"-Button im Beats-Fenster.
+// weiterhin den bestehenden Import-Button im Beats-Fenster.
 async function importDefaultBeatsIfEmpty(){
   try{
     const existing=await listPatternsFromIndexedDB();
