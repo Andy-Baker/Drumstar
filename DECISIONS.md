@@ -26,7 +26,11 @@ Zusammengeführt am 28.10.2026 aus DECISIONS-2/-3, ARCHITECTURE-11/-12 und ROADM
 - Pro Spur eigener Grundton und eigene Skala.
 - Cosmic klingt gut und bleibt so; Performance auf dem Handy spürbar, läuft aber.
 - Realistische Drums über Samples statt Synthese: Studio Kit (SM Drums, Public Domain), mindestens 4 Lautstärke-Layer je Stimme (= 4 Velocity-Stufen), Round Robin. Nur frei lizenzierte Bibliotheken (Public Domain/CC0; CC-BY mit Nennung), kein CC-BY-SA. Weitere Kits (Big Rusty, Besen, Lo-Fi) laden erst bei Auswahl.
-- Nächster Schritt: Kits mit variabler Stimmenzahl (Ride, Pedal-Hat …), erst nach Entscheidung zum Mockup `kit-stimmen-mockup.html` (Zeilen vs. Artikulation).
+- Kits mit variabler Stimmenzahl (Mockup `kit-stimmen-mockup.html`, entschieden 28.10.):
+  - Mischform: eine Zeile pro Instrument; nur Hi-Hat (zu, locker, offen, Pedal) und Ride (Fläche, Bell) bekommen Spielweisen pro Step. Snare-Rimshot/Sidestick und Becken bleiben eigene Zeilen. Hi-Hat würgt sich dadurch automatisch selbst ab.
+  - Jede Stimme hat eine Rolle (Kick, Snare, Hi-Hat, Tom, Becken, Perc); Fill, Würfeln und Kit-Wechsel arbeiten über die Rolle statt über feste IDs.
+  - Kit-Wechsel: Noten ohne passende Stimme im neuen Kit werden gemerkt (nicht gelöscht) und kommen beim Zurückwechseln wieder; gespeichert wird nur, was hörbar ist.
+  - Höchstens 16 Stimmen pro Kit.
 
 **Technik**
 - Schriften lokal (`fonts/`, `fonts.css`), kein Google.
