@@ -218,6 +218,20 @@
   .kit-chip .kd{ font-size:clamp(8px,2vw,9px); color:var(--dim); opacity:.75; letter-spacing:.02em; }
   .kit-chip.active{ border-color:var(--blue); background:rgba(63,169,255,.12); box-shadow:0 0 12px rgba(63,169,255,.25); }
   .kit-chip.active .kn{ color:var(--blue-2); }
+  /* Sample-Kits: „Klang“-Knopf nur am gewählten Kit, Regler aufklappbar */
+  .kit-chip .kt{ display:flex; align-items:center; gap:10px; }
+  .kit-chip .kt .grow{ flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+  .kit-kl{ display:none; align-items:center; gap:4px; height:34px; padding:0 8px 0 11px; border-radius:8px; border:1px solid rgba(63,169,255,.4); background:rgba(63,169,255,.1); color:var(--blue-2); font:700 11px 'Rajdhani',sans-serif; letter-spacing:.08em; cursor:pointer; flex:none; }
+  .kit-kl .uic{ width:16px; height:16px; transition:transform .15s; }
+  .kit-kl[aria-expanded="true"] .uic{ transform:rotate(180deg); }
+  .kit-chip.active .kit-kl{ display:flex; }
+  .kit-chip:not(.active) .kit-opts, .kit-opts[hidden]{ display:none; }
+  .kit-opts{ margin-top:10px; padding-top:8px; border-top:1px solid rgba(255,255,255,.06); display:flex; flex-direction:column; gap:6px; cursor:default; }
+  .kit-opts .ko-l{ font-size:12px; font-weight:700; letter-spacing:.06em; color:var(--metal); margin-top:2px; }
+  .kit-opts .ko-h{ font-size:12px; color:var(--dim); line-height:1.3; margin-top:-2px; }
+  .kit-opts .am-seg{ margin-bottom:0; }
+  .kit-opts .srow{ grid-template-columns:72px 1fr 50px; }
+  .ko-reset{ align-self:flex-start; height:34px; padding:0 12px; border-radius:8px; border:1px solid rgba(255,255,255,.12); background:var(--panel); color:var(--metal); font:700 12px 'Rajdhani',sans-serif; cursor:pointer; margin-top:2px; }
 
   .knob{display:flex; flex-direction:column; align-items:center; gap:2px; touch-action:none;}
   .knob-dial{ width:var(--ks,36px); height:var(--ks,36px); border-radius:50%;
@@ -3014,8 +3028,10 @@ const STUDIO_OUT=1.75;  // Gesamtpegel, abgeglichen mit dem Rock Kit (tests/test
 const STUDIO_ROOM=0.22; // Anteil Raum
 const smp={};            // smp[kitId]={state:'loading'|'ready'|'error', buf:{stimme:[layer][rr]={b,off,dur}}, promise}
 const smpRR={}, smpRooms=new WeakMap();
-// Klang-Optionen der Sample-Kits (UI folgt nach Mockup): 4 Layer, Round Robin, Variation, Raumanteil
-const smpOpt={layers:true, rr:true, vari:true, room:STUDIO_ROOM};
+// Klang-Optionen der Sample-Kits (Kit-Auswahl → „Klang“, gespeichert mit dem Pattern):
+// layers = 4 Lautstärke-Aufnahmen statt einer, rr = 3 Aufnahmen abwechseln, vari 0–100 (50 = ±8 Cent/±1,5 dB), room 0–0,6
+const SMP_OPT_DEF={layers:true, rr:true, vari:50, room:STUDIO_ROOM};
+const smpOpt=Object.assign({},SMP_OPT_DEF);
 function smpKitsInUse(){ // Sample-Kits, die gerade klingen (Basis-Kit + Set-Stimmen) samt Ersatz-Kit
   const s=new Set(); const add=id=>{ const k=KITS[id]; if(k && k.samples){ s.add(id); if(k.samples.fallback) s.add(k.samples.fallback); } };
   add(currentKitId); Object.values(drumSet.voices).forEach(v=>{ if(v && v.t==='syn') add(v.kitId); });
@@ -3082,7 +3098,7 @@ function smpPlay(kid, tr, time, velocity, choked){
   const arr=set[l], key=kid+tr.id+l, last=smpRR[key]; let r=0;
   if(smpOpt.rr){ do{ r=Math.floor(Math.random()*arr.length); }while(arr.length>1 && r===last); }
   smpRR[key]=r; const s=arr[r];
-  const vr=smpOpt.vari?1:0;
+  const vr=(+smpOpt.vari||0)/50;
   const src=audioCtx.createBufferSource(); src.buffer=s.b;
   src.playbackRate.value=Math.pow(2,(tr.tune-0.5)*2+vr*(Math.random()*16-8)/1200);
   const g=audioCtx.createGain();
@@ -3094,6 +3110,30 @@ function smpPlay(kid, tr, time, velocity, choked){
   if(tr.id==='oh') lastOpenSample={src,g};
   return true;
 }
+// Regler „Klang“ in der Kit-Auswahl (Mockup kit-klang-mockup.html, Variante B, eingeklappt)
+function smpOptHTML(){
+  const seg=(k,a,b)=>'<div class="am-seg" data-k="'+k+'"><button data-v="1" class="'+(smpOpt[k]?'on':'')+'">'+a+'</button><button data-v="0" class="'+(smpOpt[k]?'':'on')+'">'+b+'</button></div>';
+  return '<div class="ko-l">Lautstärken</div>'+seg('layers','4 STUFEN','1 STUFE')
+    +'<div class="ko-h">4 Stufen: leise Schläge sind eigene Aufnahmen. 1 Stufe: nur leiser gedreht.</div>'
+    +'<div class="ko-l">Abwechseln</div>'+seg('rr','3 AUFNAHMEN','IMMER GLEICH')
+    +'<div class="srow"><label>Variation</label><input type="range" min="0" max="100" step="1" data-k="vari" value="'+smpOpt.vari+'" aria-label="Variation"><b>'+Math.round(smpOpt.vari)+'%</b></div>'
+    +'<div class="ko-h">Pro Schlag minimal andere Tonhöhe und Lautstärke. 0 % = maschinengenau.</div>'
+    +'<div class="srow"><label>Raum</label><input type="range" min="0" max="60" step="1" data-k="room" value="'+Math.round(smpOpt.room*100)+'" aria-label="Raum"><b>'+Math.round(smpOpt.room*100)+'%</b></div>'
+    +'<button class="ko-reset">Zurück auf Standard</button>';
+}
+function smpOptFill(box){
+  box.innerHTML=smpOptHTML();
+  box.querySelectorAll('.am-seg[data-k] button').forEach(b=>b.onclick=()=>{ smpOpt[b.parentNode.dataset.k]=b.dataset.v==='1'; smpOptRender(); });
+  box.querySelectorAll('input[data-k]').forEach(inp=>inp.oninput=()=>{ const k=inp.dataset.k, v=+inp.value; smpOpt[k]=k==='room'?v/100:v; inp.nextElementSibling.textContent=v+'%'; });
+  box.querySelector('.ko-reset').onclick=()=>{ Object.assign(smpOpt,SMP_OPT_DEF); smpOptRender(); };
+}
+function smpOptToggle(chip){
+  const box=chip.querySelector('.kit-opts'), btn=chip.querySelector('.kit-kl'), open=box.hidden;
+  document.querySelectorAll('#kitPickerList .kit-opts').forEach(b=>{ b.hidden=true; const k=b.parentNode.querySelector('.kit-kl'); if(k) k.setAttribute('aria-expanded','false'); });
+  if(open){ smpOptFill(box); box.hidden=false; btn.setAttribute('aria-expanded','true'); }
+}
+function smpOptRender(){ document.querySelectorAll('#kitPickerList .kit-opts').forEach(b=>{ if(!b.hidden) smpOptFill(b); }); }
+function smpOptCollapse(){ document.querySelectorAll('#kitPickerList .kit-opts').forEach(b=>{ b.hidden=true; const k=b.parentNode.querySelector('.kit-kl'); if(k) k.setAttribute('aria-expanded','false'); }); }
 function triggerTrack(tr, time, velocity){
   currentTrackBus = tr.bus || master;
   if(tr.id==='ch') chokeOpenSample(time); // Closed Hat kappt ein klingendes Open-Hat-Sample
@@ -3694,13 +3734,20 @@ Object.keys(KITS).forEach(kitId=>{
   const chip=document.createElement('div');
   chip.className='kit-chip'+(kitId===currentKitId?' active':'');
   chip.innerHTML='<div class="kn">'+kit.name+'</div><div class="kd">'+kit.desc+'</div>';
+  if(kit.samples){
+    chip.classList.add('smp');
+    chip.innerHTML='<div class="kt"><div class="grow"><div class="kn">'+kit.name+'</div><div class="kd">'+kit.desc+'</div></div>'
+      +'<button class="kit-kl" aria-expanded="false" aria-label="Klang dieses Kits">KLANG<svg class="uic" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button></div><div class="kit-opts" hidden></div>';
+    chip.querySelector('.kit-kl').addEventListener('click', e=>{ e.stopPropagation(); smpOptToggle(chip); });
+    chip.querySelector('.kit-opts').addEventListener('click', e=>e.stopPropagation());
+  }
   chip.addEventListener('click', ()=>kitChooseGuarded(()=>applyStandardKit(kitId)));
   kit._chip=chip;
   kitPickerList.appendChild(chip);
 });
 const lcdKitBtn=document.getElementById('lcdKitBtn');
 const kitPickerCloseBtn=document.getElementById('kitPickerCloseBtn');
-lcdKitBtn.addEventListener('click', ()=>{ closeAllOverlays(); if(patternGroup==='piano'){ soundPickerOverlay.classList.add('open'); syncBottomBarVisibility(); soundPickerRefresh(); return; } kitPickerOverlay.classList.add('open'); syncBottomBarVisibility(); kitPickerRefresh(); });
+lcdKitBtn.addEventListener('click', ()=>{ closeAllOverlays(); if(patternGroup==='piano'){ soundPickerOverlay.classList.add('open'); syncBottomBarVisibility(); soundPickerRefresh(); return; } kitPickerOverlay.classList.add('open'); syncBottomBarVisibility(); smpOptCollapse(); kitPickerRefresh(); });
 kitPickerCloseBtn.addEventListener('click', ()=>{ kitPickerOverlay.classList.remove('open'); syncBottomBarVisibility(); });
 const lcdPatternBtn=document.getElementById('lcdPatternBtn');
 const lcdPatternName=document.getElementById('lcdPatternName');
@@ -5857,6 +5904,7 @@ function collectPatternData(name, id){
     schemaVersion: 7, // v62: optionale Felder harmony + tracks[].harm (rückwärtskompatibel) // v6 = Humanize (global) + Feel (pro Spur); pan/EQ/muted/solo/fill (v6.1, rückwärtskompatibel) neu dazu
     bpm, swing, humanize,
     kitId: currentKitId,
+    smpOpt: Object.assign({},smpOpt),
     drumSet: { voices: JSON.parse(JSON.stringify(drumSet.voices)), setId: currentSet.id, setName: currentSet.name },
     patternLength: PATTERN_LENGTH,
     tracks: TRACKS.map(tr=>({
@@ -5918,6 +5966,7 @@ function applyTrackAndFillData(data){
     updateKitLabel();
   }
 
+  Object.assign(smpOpt, SMP_OPT_DEF, data.smpOpt||{}); smpOptRender(); // ohne Angabe: Standard
   drumSetApply(data.drumSet); // ältere Patterns/Beats ohne Set: alle Stimmen aus dem Basis-Kit
   PATTERN_LENGTH = data.patternLength || 16; // ältere Patterns hatten keine gespeicherte Länge → 16
   currentPage=0;

@@ -81,3 +81,10 @@ window.__audio.exportPattern=async function(kit,pat,bpmv,vol){
   let pc=0; for(let i=0;i<x.length;i++){ x[i]=L[i]+R[i]; pc=Math.max(pc,Math.abs(L[i]),Math.abs(R[i])); }
   return {x:Array.from(x), sr:b.sampleRate, peakCh:pc};
 };
+// Klang-Optionen: mit dem Pattern speichern und wieder laden (ältere Daten ohne smpOpt → Standard)
+window.__audio.smpOptRoundTrip=function(o){
+  Object.assign(smpOpt,o); const d=JSON.parse(JSON.stringify(collectPatternData('t','t')));
+  Object.assign(smpOpt,{layers:true,rr:true,vari:50,room:0.22}); applyTrackAndFillData(d); const a=Object.assign({},smpOpt);
+  delete d.smpOpt; Object.assign(smpOpt,o); applyTrackAndFillData(d); const b=Object.assign({},smpOpt);
+  return {saved:a, old:b};
+};

@@ -1,4 +1,4 @@
-# v61 → v70 (26.–28.10.2026)
+# v61 → v71 (26.–28.10.2026)
 
 ## v61
 - Alter Tonhöhen-Editor entfernt (toter Code). `renderPitchEditor` → `renderEditorArea`.
@@ -56,8 +56,14 @@
 - Audiotests je Sample-Kit (Laden, 4 Stufen, Lautheit Groove ±3 dB / Fill ±5 dB, Clipping, Optionen, Ersatz-Stimmen).
 - Besen-Kit (Swirly Drums) verworfen: Kick klingt nach Snare.
 
+## v71 – Klang-Optionen der Sample-Kits (28.10.)
+- Kit-Auswahl: am gewählten Sample-Kit Knopf „KLANG“, klappt die Regler auf (beim Öffnen der Auswahl immer eingeklappt, Mockup `kit-klang-mockup.html` Variante B).
+- Regler: Lautstärken 4 Stufen / 1 Stufe, Abwechseln 3 Aufnahmen / immer gleich, Variation 0–100 % (50 = bisher), Raum 0–60 %, „Zurück auf Standard“.
+- Gespeichert mit dem Pattern (`smpOpt`); ältere Patterns ohne Angabe laden den Standard. Beats tragen kein Kit und daher auch keine Optionen.
+- Tests: Auf-/Zuklappen, Wirkung, Zurücksetzen (ui), Speichern/Laden (audio).
+
 ## Offen
-- Am Handy prüfen: Sample-Kits (Ladezeit, Timing in Safari, Klang). Noteneditor (Zoom/Scroll), Klaviatur, Piano/Rhodes-Klang, Drum-Ausklang (v63).
+- Am Handy prüfen: Sample-Kits (Ladezeit, Timing in Safari, Klang, Klang-Optionen). Noteneditor (Zoom/Scroll), Klaviatur, Piano/Rhodes-Klang, Drum-Ausklang (v63).
 - Unsichtbaren alten Song-Modus (`songEnableBtn`, `songSlotsList`, `addPatternToSong`) entfernen.
 - Versteckte Übersichts-Buttons M/S/🎲 pro Spur und `#groupBar` ausbauen (Mute/Solo-Refs beachten).
 - Samples in der Bibliothek löschen (Funktion `deleteSampleLibraryEntry` da, Button fehlt).

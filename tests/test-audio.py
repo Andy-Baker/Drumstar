@@ -72,7 +72,7 @@ async def main():
     G={'bd':{0:4,7:2,8:3,10:3},'sd':{4:4,12:4,6:1,15:2},'ch':{0:4,2:3,4:4,6:3,8:4,10:3,12:4,14:3}}
     F={'cy':{0:4},'bd':{0:4,4:3,8:3,14:3},'sd':{4:4,8:3,9:2,10:3},'ch':{2:3,4:3,6:3},'ht':{11:3,12:4},'lt':{13:3,14:4,15:3},'rs':{2:3},'oh':{6:3}}
     xr,_=await exp('rock',G); xrf,_=await exp('rock',F)
-    await pg.evaluate("__audio.smpOpt({vari:false,rr:false})")  # reproduzierbar messen
+    await pg.evaluate("__audio.smpOpt({vari:0,rr:false})")  # reproduzierbar messen
     for k in await pg.evaluate("__audio.smpKits()"):
       kid=k['id']; st=await pg.evaluate("k=>__audio.smpLoad(k)",kid)
       ok(f'{kid}: Samples geladen', st['state']=='ready' and st['n']==12*len(k['voices']), f"{st['n']} Slots")
@@ -91,7 +91,11 @@ async def main():
     await pg.evaluate("__audio.smpOpt({layers:false})"); a1,_=await exp('studio',{'sd':{0:2}}); a2,_=await exp('studio',{'sd':{0:4}})
     await pg.evaluate("__audio.smpOpt({layers:true})"); b1,_=await exp('studio',{'sd':{0:2}})
     ok('Option Layer aus: leise Stufe = gleiche Aufnahme, nur leiser', abs(db(np.abs(a1).max())-db(np.abs(a2).max())+12)<4 and np.abs(a1).max()>0, f'{db(np.abs(a1).max())-db(np.abs(a2).max()):+.0f} dB')
-    await pg.evaluate("__audio.smpOpt({vari:true,rr:true})")
+    await pg.evaluate("__audio.smpOpt({vari:50,rr:true})")
+    rt=await pg.evaluate("__audio.smpOptRoundTrip({layers:false,rr:false,vari:10,room:0.4})")
+    ok('Klang-Optionen mit Pattern gespeichert', rt['saved']=={'layers':False,'rr':False,'vari':10,'room':0.4}, rt['saved'])
+    ok('Pattern ohne Optionen → Standard', rt['old']['layers'] is True and rt['old']['vari']==50, rt['old'])
+    await pg.evaluate("__audio.smpOpt({layers:true,rr:true,vari:50,room:0.22})")
     v1,_=await exp('studio',{'sd':{0:3}}); v2,_=await exp('studio',{'sd':{0:3}})
     ok('Option Variation/Round Robin an: zwei gleiche Schläge klingen verschieden', float(np.abs(v1-v2).max())>1e-3)
     x,_=await exp('studio',{'hc':{0:3},'cb':{4:3}})
