@@ -25,6 +25,8 @@ Zusammengeführt am 28.10.2026 aus DECISIONS-2/-3, ARCHITECTURE-11/-12 und ROADM
 - Samples bleiben in den Drums erlaubt (Drum-Rack-Prinzip: Pad = Container für Synth oder Sample). Ein ausgebauter Sampler ist ein zweites Werkzeug.
 - Pro Spur eigener Grundton und eigene Skala.
 - Cosmic klingt gut und bleibt so; Performance auf dem Handy spürbar, läuft aber.
+- Realistische Drums über Samples statt Synthese: Studio Kit (SM Drums, Public Domain), mindestens 4 Lautstärke-Layer je Stimme (= 4 Velocity-Stufen), Round Robin. Nur frei lizenzierte Bibliotheken (Public Domain/CC0; CC-BY mit Nennung), kein CC-BY-SA. Weitere Kits (Big Rusty, Besen, Lo-Fi) laden erst bei Auswahl.
+- Nächster Schritt: Kits mit variabler Stimmenzahl (Ride, Pedal-Hat …), erst nach Entscheidung zum Mockup `kit-stimmen-mockup.html` (Zeilen vs. Artikulation).
 
 **Technik**
 - Schriften lokal (`fonts/`, `fonts.css`), kein Google.

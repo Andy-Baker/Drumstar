@@ -2,7 +2,7 @@
 // (innerhalb der App-IIFE, hat also Zugriff auf deren Variablen). Nie in die echte index.html übernehmen.
 window.__T=TRACKS; window.__sel=()=>activeTrackIdx; window.__pv=pianoVoice; window.__setCtx=c=>{audioCtx=c};
 window.__audio={
-  kits:()=>Object.keys(KITS),
+  kits:()=>Object.keys(KITS).filter(k=>!KITS[k].studio), // Studio Kit nutzt Samples, eigener Test unten
   drumIds:()=>TRACKS.filter(t=>t.type!=='arp' && !t.isSample && VOICE_FNS[t.id]).map(t=>t.id),
   // Eine Drum-Stimme offline rendern (worklet=true: FM-Worklet wie live, false: nativer Fallback wie WAV-Export)
   async drum(id,kit,worklet,dur){
@@ -58,4 +58,23 @@ window.__audio.exportDrum=async function(id,kit){
   const b=await renderPatternToWav(), L=b.getChannelData(0), R=b.getChannelData(1), x=new Float32Array(L.length);
   for(let i=0;i<x.length;i++) x[i]=L[i]+R[i];
   return {x:Array.from(x), sr:b.sampleRate};
+};
+
+// Studio Kit: Samples laden und prüfen
+window.__audio.studioLoad=async function(){
+  await studioLoad(); let n=0, mo=0;
+  STUDIO_VOICES.forEach(id=>studio.buf[id].forEach(l=>l.forEach(s=>{ n++; mo=Math.max(mo,s.off); })));
+  return {state:studio.state, n, maxOff:mo};
+};
+// Ganzes Drum-Pattern über den echten WAV-Export (nur Drums/Perc, ohne Hall/Delay). pat={bd:{0:4,...}} mit Stufen 1..4
+window.__audio.exportPattern=async function(kit,pat,bpmv){
+  currentKitId=kit; drumSet.voices={}; drumSet.buffers={}; bpm=bpmv||100; swing=0; humanize=0; PATTERN_LENGTH=16;
+  const V=[0,VEL_GHOST_SOFT,VEL_GHOST,VEL_NORMAL,VEL_ACCENT];
+  TRACKS.forEach(t=>{ t.solo=false; t.muted=(t.type==='arp'||t.isSample||!VOICE_FNS[t.id]);
+    if(!t.muted) t.steps=t.steps.map(()=>0); t.feel=0; t.reverbAmount=0; t.delaySend=0;
+    if(t.sendGain) t.sendGain.gain.value=0; if(t.delaySendGain) t.delaySendGain.gain.value=0; });
+  for(const id in pat){ const t=TRACKS.find(x=>x.id===id); for(const s in pat[id]) t.steps[+s]=V[pat[id][s]]; }
+  const b=await renderPatternToWav(), L=b.getChannelData(0), R=b.getChannelData(1), x=new Float32Array(L.length);
+  let pc=0; for(let i=0;i<x.length;i++){ x[i]=L[i]+R[i]; pc=Math.max(pc,Math.abs(L[i]),Math.abs(R[i])); }
+  return {x:Array.from(x), sr:b.sampleRate, peakCh:pc};
 };

@@ -64,6 +64,26 @@ async def main():
       lv=await pg.evaluate("([i,k,w])=>__audio.drum(i,k,w,4)",['bd',kit,True]); ex=await pg.evaluate("([i,k])=>__audio.exportDrum(i,k)",['bd',kit])
       (tl,dl),(te,de)=tail_db(lv['x'],lv['sr']),tail_db(ex['x'],ex['sr'])
       ok(f'{kit} bd: WAV-Export endet wie live (Worklet)', abs(tl-te)<6 and abs(dl-de)<0.05, f'live {tl:.0f} dB @{dl:.2f}s, Export {te:.0f} dB @{de:.2f}s')
+    # ---------- Studio Kit (Samples, über den WAV-Export) ----------
+    S=lambda d:{k:{str(a):b for a,b in v.items()} for k,v in d.items()}
+    st=await pg.evaluate("__audio.studioLoad()")
+    ok('Studio: alle Samples geladen', st['state']=='ready' and st['n']==96, f"{st['n']} Dateien")
+    ok('Studio: MP3-Vorlauf erkannt (< 30 ms)', st['maxOff']<0.03, f"{st['maxOff']*1000:.1f} ms")
+    async def exp(kit,pat):
+      r=await pg.evaluate("([k,p])=>__audio.exportPattern(k,p,100)",[kit,S(pat)]); return np.array(r['x']), r['peakCh']
+    db=lambda v:20*math.log10(v+1e-12)
+    for vid in ['bd','sd','rs','ch','oh','lt','ht','cy']:
+      pk=[]
+      for v in [1,2,3,4]:
+        x,_=await exp('studio',{vid:{0:v}}); pk.append(db(np.abs(x).max()))
+      ok(f'Studio {vid}: 4 Stufen werden lauter (je ≥ +1,5 dB)', all(pk[i+1]-pk[i]>=1.5 for i in range(3)), ' / '.join(f'{p:.0f}' for p in pk))
+    G={'bd':{0:4,7:2,8:3,10:3},'sd':{4:4,12:4,6:1,15:2},'ch':{0:4,2:3,4:4,6:3,8:4,10:3,12:4,14:3}}
+    xr,_=await exp('rock',G); xs,pcs=await exp('studio',G)
+    d=db(np.sqrt((xs**2).mean()))-db(np.sqrt((xr**2).mean()))
+    ok('Studio: so laut wie Rock Kit (±3 dB)', abs(d)<3, f'{d:+.1f} dB')
+    ok('Studio: kein NaN/Clipping', np.isfinite(xs).all() and pcs<0.99, round(pcs,3))
+    x,_=await exp('studio',{'hc':{0:3},'cb':{4:3}})
+    ok('Studio: Clap/Cowbell ohne Aufnahme spielen den Rock-Synth', db(np.abs(x).max())>-30, f'{db(np.abs(x).max()):.0f} dB')
     # ---------- Acid (über den WAV-Export) ----------
     def cent(x,sr):
       X=np.abs(np.fft.rfft(x*np.hanning(len(x)))); f=np.fft.rfftfreq(len(x),1/sr); return float((X*f).sum()/X.sum())

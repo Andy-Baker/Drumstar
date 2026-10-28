@@ -1,4 +1,4 @@
-# v61 → v68 (26.–28.10.2026)
+# v61 → v69 (26.–28.10.2026)
 
 ## v61
 - Alter Tonhöhen-Editor entfernt (toter Code). `renderPitchEditor` → `renderEditorArea`.
@@ -40,8 +40,15 @@
 - FM-Worklet-Stimmen klingen bis −45 dB aus und blenden 20 ms weich aus (vorher fest nach `ampDecay`+60 ms bei −10…−30 dB abgeschnitten, 32 von 66 Stimmen betroffen). Live und Export gleich. Mehrlast Drums ≈ +19 % (dichtes Pattern, gemessen mit `tests/test-bench.py`). Am Handy prüfen: Klang (vor allem Kick/Toms) und ob dichte Patterns flüssig laufen.
 - Audiotest: Ausklang jetzt auch für den Worklet-Pfad harter Check (185 Prüfungen).
 
+## v69 – Studio Kit (28.10.)
+- Neues Kit **STUDIO KIT** mit echten Aufnahmen (SM Drums, Public Domain). Stimmen BD, SD, CH, OH, LT, HT, CY und RS (Sidestick) mit je 4 Lautstärke-Layern (passend zu Ghost leise / Ghost / Normal / Akzent) × 3 Round-Robins. Pro Schlag ±8 Cent und ±1,5 dB Variation, kurzer Raum (22 %) nur für die Samples.
+- Samples in `samples/studio/` (96 MP3, mono, 1,4 MB). Laden erst, wenn das Kit gewählt ist oder ein Set es nutzt (Fortschritt in der Kit-Liste), bis dahin spielt der Rock-Synth. Clap, Cowbell, Claves, Maracas haben keine Aufnahme und spielen ebenfalls den Rock-Synth.
+- MP3-Vorlauf wird pro Datei erkannt (Safari entfernt das Encoder-Padding nicht). Service Worker cacht `.mp3` wie Schriften (Cache zuerst).
+- Pegel auf das Rock Kit abgeglichen (`STUDIO_OUT`). Neue Audiotests: Laden, 4 Stufen je lauter, Lautheit wie Rock Kit, kein Clipping, Synth-Ersatz.
+- Ride und Pedal-Hat folgen mit Kits mit variabler Stimmenzahl (Mockup `kit-stimmen-mockup.html` im Claude-Projekt). Hörvergleich: A/B-Testseite als Artifact.
+
 ## Offen
-- Am Handy prüfen: Noteneditor (Zoom/Scroll), Klaviatur, Piano/Rhodes-Klang, Drum-Ausklang (v63).
+- Am Handy prüfen: Studio Kit (Ladezeit, Timing in Safari, Klang). Noteneditor (Zoom/Scroll), Klaviatur, Piano/Rhodes-Klang, Drum-Ausklang (v63).
 - Unsichtbaren alten Song-Modus (`songEnableBtn`, `songSlotsList`, `addPatternToSong`) entfernen.
 - Versteckte Übersichts-Buttons M/S/🎲 pro Spur und `#groupBar` ausbauen (Mute/Solo-Refs beachten).
 - Samples in der Bibliothek löschen (Funktion `deleteSampleLibraryEntry` da, Button fehlt).

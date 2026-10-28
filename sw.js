@@ -3,7 +3,7 @@
 //   auch wenn die Cache-Nummer einmal vergessen wird. Cache-Nummer trotzdem bei größeren Änderungen hochzählen.
 // - Schriften/Bilder: Cache zuerst.
 // - Offline-Fallback nur für Seitenaufrufe (und dann für die richtige Seite, nicht immer die App).
-const CACHE='mrm44-v68';
+const CACHE='mrm44-v69';
 const CORE=['./','./index.html','./manifest.webmanifest'];            // Pflicht: fehlt eine Datei, schlägt die Installation fehl
 const OPTIONAL=['./impressum.html','./datenschutz.html','./fonts.css',
   './icons/icon-192.png','./icons/icon-512.png','./icons/logo-drumstar.png',
@@ -30,7 +30,7 @@ self.addEventListener('fetch',event=>{
   const url=new URL(req.url);
   if(url.origin!==location.origin) return;           // Fremd-Anfragen nicht anfassen
   if(req.cache==='no-store') return;                 // z. B. default-beats.json: immer frisch vom Netz
-  const isFile=/\.(?:woff2?|ttf|png|jpg|jpeg|svg|ico)$/i.test(url.pathname);
+  const isFile=/\.(?:woff2?|ttf|png|jpg|jpeg|svg|ico|mp3)$/i.test(url.pathname);
   if(isFile){
     event.respondWith(caches.match(req).then(c=>c||fetch(req).then(r=>store(req,r))));
     return;
