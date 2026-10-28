@@ -1989,8 +1989,11 @@ function fmTrigger(time, cfg){
       node.connect(f); tail = f;
     }
     tail.connect(getBus());
-    const lifeMs = Math.max(50, (cfg.ampDecay+0.15)*1000 + (time-audioCtx.currentTime)*1000);
-    setTimeout(()=>{ try{ node.disconnect(); if(tail!==node) tail.disconnect(); }catch(e){} }, lifeMs);
+    // Aufräumen nur live; offline (Export) beendet sich der Prozessor selbst, ein Echtzeit-Timer wäre dort falsch
+    if(!(typeof OfflineAudioContext!=='undefined' && audioCtx instanceof OfflineAudioContext)){
+      const lifeMs = Math.max(50, (cfg.ampDecay+0.15)*1000 + (time-audioCtx.currentTime)*1000);
+      setTimeout(()=>{ try{ node.disconnect(); if(tail!==node) tail.disconnect(); }catch(e){} }, lifeMs);
+    }
   } else {
     nativeFmTrigger(time, cfg);
   }
@@ -4638,11 +4641,8 @@ function audioBufferToWavBlob(buffer){
 // umzubiegen, alle Steps "trocken" (ohne Echtzeit-Lookahead) durchzuplanen,
 // zu rendern und danach den Live-Zustand wiederherzustellen.
 //
-// Bewusste Vereinfachung: Der Export läuft immer über den nativen Fallback-
-// Synthesepfad (kein AudioWorklet), auch wenn die Live-Wiedergabe gerade den
-// Worklet-Pfad nutzt. Klanglich sehr nah dran, nur Hi-Hats/Crash verlieren
-// das Feedback-Rauschen der Worklet-Variante minimal. Vorteil: funktioniert
-// garantiert überall, auch dort wo AudioWorklet gar nicht verfügbar ist.
+// Seit v67 nutzt der Export dasselbe FM-Worklet wie die Live-Wiedergabe (klingt identisch).
+// Nur wenn live kein Worklet verfügbar ist, läuft auch der Export über den nativen Ersatzpfad.
 // Humanize wird beim Export bewusst NICHT angewendet, damit das Ergebnis
 // reproduzierbar bleibt (Feel-Werte pro Spur wirken weiterhin).
 async function renderPatternToWav(){
@@ -4673,7 +4673,12 @@ async function renderPatternToWav(){
 
   // ---- Engine auf den Offline-Kontext umbiegen ----
   audioCtx=offlineCtx;
-  useWorklet=false; // robuster nativer Pfad fürs Rendern, siehe Kommentar oben
+  // v67: Export über dasselbe FM-Worklet wie live (klingt identisch); nativer Pfad nur, wenn es live auch keins gibt
+  useWorklet=false;
+  if(liveUseWorklet && offlineCtx.audioWorklet){
+    try{ await offlineCtx.audioWorklet.addModule(URL.createObjectURL(new Blob([FM_WORKLET_SRC],{type:'application/javascript'}))); useWorklet=true; }
+    catch(e){ console.warn('Export: Worklet nicht ladbar, nutze nativen Pfad', e); useWorklet=false; }
+  }
   comp=offlineCtx.createDynamicsCompressor();
   master=offlineCtx.createGain(); master.gain.value=masterVol;
   master.connect(comp); comp.connect(offlineCtx.destination);

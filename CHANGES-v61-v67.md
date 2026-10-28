@@ -1,4 +1,4 @@
-# v61 → v66 (26.–28.10.2026)
+# v61 → v67 (26.–28.10.2026)
 
 ## v61
 - Alter Tonhöhen-Editor entfernt (toter Code). `renderPitchEditor` → `renderEditorArea`.
@@ -32,8 +32,12 @@
 - Neuer Test `tests/test-audio.py` (Offline-Render: Release-Sprung, Wumms, Hammer, Clipping).
 - Audiotest erweitert (ohne App-Änderung): alle Drum-Stimmen aller Kits über Worklet und nativen Pfad, Acid über den WAV-Export (Cutoff, Resonanz, Accent, Clipping). Test-Hook liegt jetzt in `tests/hook.js`.
 
+## v67 – Export = Live (28.10.)
+- WAV-Export rendert die FM-Drums jetzt über dasselbe AudioWorklet wie die Live-Wiedergabe (vorher nativer Ersatzpfad mit anderer Hüllkurve). Ersatzpfad nur noch ohne Worklet. Offline kein Echtzeit-Timer zum Aufräumen der Stimmen.
+- Test: Kick über den WAV-Export endet wie live. Neues Werkzeug `tests/test-bench.py` (Lastmessung, `python3 tests/run.py bench`).
+
 ## Offen
-- **Drum-Ausklang live ≠ WAV-Export:** FM-Worklet-Stimmen (live) enden nach `ampDecay`+60 ms bei ca. −10…−30 dB und werden in 4 ms ausgeblendet = Ausklang abgeschnitten (32 von 66 Stimmen). Der native Pfad (WAV-Export) nutzt eine andere Hüllkurve (−60 dB nach `ampDecay`) und klingt sauber aus. Entscheiden: Worklet-Hüllkurve angleichen oder Ende länger/weicher ausblenden (Performance beachten). `test-audio.py` meldet das als WARN.
+- **Drum-Ausklang abgeschnitten (live und seit v67 auch im Export):** FM-Worklet-Stimmen enden nach `ampDecay`+60 ms bei ca. −10…−30 dB und werden in 4 ms ausgeblendet = Ausklang abgeschnitten (32 von 66 Stimmen). Gemessen (dichtes Pattern, Worklet): Ausklingen bis −45 dB ≈ +19 % Rechenlast, bis −60 dB ≈ +26 %. Entscheidung beim Nutzer. `test-audio.py` meldet das als WARN.
 - Am Handy prüfen: Noteneditor (Zoom/Scroll), Klaviatur, Piano/Rhodes-Klang, Drum-Ausklang (v63).
 - Unsichtbaren alten Song-Modus (`songEnableBtn`, `songSlotsList`, `addPatternToSong`) entfernen.
 - Versteckte Übersichts-Buttons M/S/🎲 pro Spur und `#groupBar` ausbauen (Mute/Solo-Refs beachten).

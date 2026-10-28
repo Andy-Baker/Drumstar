@@ -60,6 +60,14 @@ async def main():
           else:
             ok(f'{tag}: klingt sauber aus (letzte 4 ms < -35 dB)', tail<-35, f'{tail:.1f} dB')
     ok('Drums: alle Stimmen gerendert', True, f'{len(kits)} Kits × {len(ids)} Stimmen × 2 Pfade')
+    # Live = Export: Ausklang-Ende der Kick über den WAV-Export muss dem Worklet-Render entsprechen (seit v67 gleicher Pfad)
+    def tail_db(x,sr):
+      x=np.array(x); pk=np.abs(x).max(); end=np.where(np.abs(x)>pk*1e-3)[0][-1]
+      return 20*math.log10(np.abs(x[max(0,end-int(0.004*sr)):end+1]).max()/pk), end/sr
+    for kit in ['rock','fm909']:
+      lv=await pg.evaluate("([i,k,w])=>__audio.drum(i,k,w,4)",['bd',kit,True]); ex=await pg.evaluate("([i,k])=>__audio.exportDrum(i,k)",['bd',kit])
+      (tl,dl),(te,de)=tail_db(lv['x'],lv['sr']),tail_db(ex['x'],ex['sr'])
+      ok(f'{kit} bd: WAV-Export endet wie live (Worklet)', abs(tl-te)<6 and abs(dl-de)<0.05, f'live {tl:.0f} dB @{dl:.2f}s, Export {te:.0f} dB @{de:.2f}s')
     if warn: print(f'WARN Worklet-Ausklang abgeschnitten (bekannt, Entscheidung offen): {len(warn)} Stimmen, z. B. '+', '.join(warn[:6]),flush=True)
     # ---------- Acid (über den WAV-Export) ----------
     def cent(x,sr):
