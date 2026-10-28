@@ -3,7 +3,7 @@
 # Keys:  kein Pegelsprung beim Notenende, Hammer nicht hell/laut ("Hi-Hat"), kein Grundton-Wumms, kein Clipping/NaN.
 # Drums: jede Stimme jedes Kits, FM-Worklet (live) und nativer Pfad (WAV-Export): klingt, kein NaN, sauberes Ausklingen.
 # Acid:  über den echten WAV-Export: Cutoff/Resonanz wirken, Accent lauter, max. Resonanz ohne Clipping/NaN.
-import asyncio, sys, math
+import asyncio, sys, math, os
 import numpy as np
 from playwright.async_api import async_playwright
 URL=sys.argv[1]; res=[]
@@ -28,7 +28,7 @@ JS="""async ([sound,n,vel,hold])=>{
          fund:[gz(0.055),gz(0.15)], hf:10*Math.log10((eh+1e-12)/(et+1e-12))};}"""
 async def main():
   async with async_playwright() as p:
-    b=await p.chromium.launch(args=['--autoplay-policy=no-user-gesture-required']); pg=await b.new_page(); errs=[]
+    b=await p.chromium.launch(args=['--autoplay-policy=no-user-gesture-required','--js-flags=--expose-gc']); pg=await b.new_page(); errs=[]
     pg.on('pageerror',lambda e:errs.append(str(e)[:200]))
     await pg.goto(URL,wait_until='domcontentloaded'); await pg.wait_for_timeout(1500)
     for sound in ['piano','rhodes']:
@@ -73,7 +73,12 @@ async def main():
     F={'cy':{0:4},'bd':{0:4,4:3,8:3,14:3},'sd':{4:4,8:3,9:2,10:3},'ch':{2:3,4:3,6:3},'ht':{11:3,12:4},'lt':{13:3,14:4,15:3},'rs':{2:3},'oh':{6:3}}
     xr,_=await exp('rock',G); xrf,_=await exp('rock',F)
     await pg.evaluate("__audio.smpOpt({vari:0,rr:false})")  # reproduzierbar messen
+    pg0=pg
     for k in await pg.evaluate("__audio.smpKits()"):
+      if os.environ.get('KITS') and k['id'] not in os.environ['KITS'].split(','): continue
+      if pg is not pg0: await pg.close()
+      pg=await b.new_page(); pg.on('pageerror',lambda e:errs.append(str(e)[:200])); await pg.goto(URL,wait_until='domcontentloaded'); await pg.wait_for_timeout(800)  # je Kit frische Seite: Audio-Speicher
+      await pg.evaluate("__audio.smpOpt({vari:0,rr:false})")
       kid=k['id']; st=await pg.evaluate("k=>__audio.smpLoad(k)",kid)
       ok(f'{kid}: Samples geladen', st['state']=='ready' and st['n']==12*len(k['voices']), f"{st['n']} Slots")
       for vid in k['voices']:
@@ -87,6 +92,8 @@ async def main():
         tol=3 if name=='Groove' else 5  # Fill: gedämpfte Kits klingen kürzer aus
         ok(f'{kid} {name}: so laut wie Rock Kit (±{tol} dB)', abs(d)<tol, f'{d:+.1f} dB')
         ok(f'{kid} {name}: kein NaN/Clipping', np.isfinite(xs).all() and pcs<0.99, round(pcs,3))
+    if pg is not pg0: await pg.close()
+    pg=pg0; await pg.evaluate("__audio.smpLoad('studio')")  # Export wartet nicht aufs Laden
     # Optionen: Layer aus = Stufen nur über Lautstärke, Variation an = Schläge unterscheiden sich
     await pg.evaluate("__audio.smpOpt({layers:false})"); a1,_=await exp('studio',{'sd':{0:2}}); a2,_=await exp('studio',{'sd':{0:4}})
     await pg.evaluate("__audio.smpOpt({layers:true})"); b1,_=await exp('studio',{'sd':{0:2}})
@@ -100,8 +107,26 @@ async def main():
     ok('Option Variation/Round Robin an: zwei gleiche Schläge klingen verschieden', float(np.abs(v1-v2).max())>1e-3)
     x,_=await exp('studio',{'hc':{0:3},'cb':{4:3}})
     ok('Sample-Kits: Clap/Cowbell ohne Aufnahme spielen den Rock-Synth', db(np.abs(x).max())>-30, f'{db(np.abs(x).max()):.0f} dB')
-    x,_=await exp('vintage',{'cy':{0:4}})
+    await pg.evaluate("__audio.smpLoad('vintage')"); x,_=await exp('vintage',{'cy':{0:4}})
     ok('Vintage: Crash ohne eigene Aufnahme kommt aus Studio', db(np.abs(x).max())>-20, f'{db(np.abs(x).max()):.0f} dB')
+    # ---------- Ride + Spielweisen (v72) ----------
+    def tail(x,sr,t0,t1): o=int(np.argmax(np.abs(x)>np.abs(x).max()*0.05)); return db(np.sqrt((x[o+int(t0*sr):o+int(t1*sr)]**2).mean()))
+    sr=44100; await pg.evaluate("__audio.smpOpt({room:0})")  # ohne Raum: Ausklang der Aufnahme selbst
+    for kit in ['rock','fm909','studio']:
+      xr_,_=await exp(kit,{'rd':{0:3}}); xb_,_=await exp(kit,{'rb':{0:3}})
+      ok(f'{kit}: Ride Fläche und Bell klingen', db(np.abs(xr_).max())>-30 and db(np.abs(xb_).max())>-30 and np.isfinite(xr_).all(), f'{db(np.abs(xr_).max()):.0f} / {db(np.abs(xb_).max()):.0f} dB')
+      ok(f'{kit}: Bell ≠ Fläche', float(np.abs(xr_[:sr]-xb_[:sr]).max())>1e-2)
+      xc,_=await exp(kit,{'ch':{0:3}}); xl,_=await exp(kit,{'hl':{0:3}}); xp,_=await exp(kit,{'hf':{0:3}})
+      ok(f'{kit}: Hi-Hat locker klingt länger als zu', tail(xl,sr,0.15,0.4)>tail(xc,sr,0.15,0.4)+4, f'{tail(xc,sr,0.15,0.4):.0f} → {tail(xl,sr,0.15,0.4):.0f} dB')
+      ok(f'{kit}: Hi-Hat Pedal leiser als zu', db(np.abs(xp).max())<db(np.abs(xc).max()), f'{db(np.abs(xc).max()):.0f} → {db(np.abs(xp).max()):.0f} dB')
+    await pg.evaluate("__audio.smpLoad('rusty')")
+    x,_=await exp('rusty',{'hl':{0:3},'ch':{1:3}}); y,_=await exp('rusty',{'hl':{0:3}}); z,_=await exp('rusty',{'ch':{1:3},'bd':{0:1}})  # 1 Step bei 100 BPM = 0,15 s
+    await pg.evaluate("__audio.smpOpt({room:0.22})")
+    w=lambda q:float((q[int(0.3*sr):int(0.55*sr)]**2).mean())
+    ok('Hi-Hat locker wird vom nächsten Hi-Hat-Schlag abgewürgt', w(x)<0.5*(w(y)+w(z)) and w(y)>w(z), f'locker allein {db(np.sqrt(w(y))):.0f}, zu allein {db(np.sqrt(w(z))):.0f}, beide {db(np.sqrt(w(x))):.0f} dB')
+    rt=await pg.evaluate("__audio.artRoundTrip()")
+    ok('Spielweisen mit Pattern gespeichert/geladen', rt['ch']==[0,1,2,0] and rt['rd']==[1,0,0,0], rt)
+    ok('Altes Pattern ohne Ride: Ride-Spur leer', rt['oldRide']==0, rt['oldRide'])
     # ---------- Acid (über den WAV-Export) ----------
     def cent(x,sr):
       X=np.abs(np.fft.rfft(x*np.hanning(len(x)))); f=np.fft.rfftfreq(len(x),1/sr); return float((X*f).sum()/X.sum())

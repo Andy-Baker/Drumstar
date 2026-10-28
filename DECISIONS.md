@@ -31,6 +31,8 @@ Zusammengeführt am 28.10.2026 aus DECISIONS-2/-3, ARCHITECTURE-11/-12 und ROADM
   - Jede Stimme hat eine Rolle (Kick, Snare, Hi-Hat, Tom, Becken, Perc); Fill, Würfeln und Kit-Wechsel arbeiten über die Rolle statt über feste IDs.
   - Kit-Wechsel: Noten ohne passende Stimme im neuen Kit werden gemerkt (nicht gelöscht) und kommen beim Zurückwechseln wieder; gespeichert wird nur, was hörbar ist.
   - Höchstens 16 Stimmen pro Kit.
+  - Umgesetzt in v72 (Schritt 1): Ride als neue Drum-Zeile (Fläche/Bell), Hi-Hat mit Zu/Locker/Pedal. Spielweise liegt im sonst leeren `tr.notes[s]` der Drum-Spuren (zieht überall mit). Offene Hi-Hat bleibt vorerst eigene Zeile (Synth-Kits, Fill, Mixer, eigene Sets hängen an `oh`). Noch offen (Schritt 2): Rollen, Stimmen hinzufügen/tauschen, Kit-Wechsel merkt Noten.
+  - „Locker“ = halb offen. Studio hat keine halb offene Aufnahme → offene Hi-Hat abgedämpft.
 
 **Technik**
 - Schriften lokal (`fonts/`, `fonts.css`), kein Google.
@@ -45,6 +47,7 @@ Zusammengeführt am 28.10.2026 aus DECISIONS-2/-3, ARCHITECTURE-11/-12 und ROADM
 - Sample-Quellen aus den Drums streichen (höchstens Aufräumschritt, nachdem der Sampler steht).
 
 ## Lektionen
+- Dekodierte Sample-Kits sind groß (Studio ≈ 45 MB als Float). Nicht benutzte Kits freigeben (`smpFree`); Tests mit vielen WAV-Exporten brauchen frische Seiten bzw. `gc()`, sonst stürzt Chromium ab.
 - Geteilter Zustand ist Fehlerquelle Nr. 1 (früher `xyTrack()`, ein Generator-Panel für zwei Spuren, der `type:'arp'`-Mischzustand): Spur-Bezug immer explizit übergeben.
 - Generator-/Harmonie-Ausgaben müssen im Editor erreichbar sein (Notenbereich ↔ sichtbares Fenster).
 - `exponentialRampToValueAtTime` nie auf 0.

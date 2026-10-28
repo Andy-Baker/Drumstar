@@ -3,15 +3,16 @@
 # Erwartet in $SAMPLE_WORK/dl/ blobless Klone (git clone --filter=blob:none --no-checkout) von sfzinstruments/SMDrums,
 # karoryfer.big-rusty-drums, karoryfer.swirly-drums, karoryfer.gogodze-phu-vol-ii und je eine Dateiliste <repo>.list
 # (git ls-tree -r --name-only HEAD | grep -E '\.(wav|flac)$'). Ausgabe: $SAMPLE_WORK/kits2/<kit>/<stimme>.mp3 (lofi → samples/vintage).
+# Einzelne Stimmen: VOICES=hl,rd python3 tools/build-samples.py rusty
 # Braucht ffmpeg (libmp3lame) und numpy.
 import re, os, sys, json, subprocess, numpy as np
 B=os.environ.get('SAMPLE_WORK','.'); DL=B+'/dl'; SR=44100
 S='Samples/SMDrum Stereo (Samples)/'; C='Samples/SMD Cymbals Stereo (Samples)/'
-LEN={'bd':0.9,'sd':0.7,'rs':0.6,'ch':0.5,'oh':2.5,'hf':0.6,'ht':1.8,'lt':2.0,'cy':4.0,'rd':3.5,'rb':3.5}
+LEN={'bd':0.9,'sd':0.7,'rs':0.6,'ch':0.5,'oh':2.5,'hf':0.6,'hl':0.9,'ht':1.8,'lt':2.0,'cy':4.0,'rd':3.5,'rb':3.5}
 # SM: (Ordner ohne /RRk) ; mehrere Ordner = jeweils eine Round-Robin-Quelle
 SM={
  'studio':{'bd':[S+'Kik_Stereo'],'sd':[S+'Snare65_Reg_Stereo'],'rs':[S+'SideStick_Stereo'],'ch':[C+'Hi-Hat (Samples)/01 Hat Tight 1'],
-   'oh':[C+'Hi-Hat (Samples)/03 Hat, Open'],'hf':[C+'Hi-Hat (Samples)/05 Hat, Foot'],'ht':[S+'Toms_Stereo/Tom1'],'lt':[S+'Toms_Stereo/Tom4'],
+   'oh':[C+'Hi-Hat (Samples)/03 Hat, Open'],'hl':[C+'Hi-Hat (Samples)/03 Hat, Open'],'hf':[C+'Hi-Hat (Samples)/05 Hat, Foot'],'ht':[S+'Toms_Stereo/Tom1'],'lt':[S+'Toms_Stereo/Tom4'],
    'cy':[C+'Crash (Samples)/Crash 16 (Samples)'],'rd':[C+'Ride (Samples)/Ride 17 (Samples)'],'rb':[C+'Ride (Samples)/Ride 17 Bell (Samples)']},
  's67':{'sd':[S+'Snare67_NR_Stereo'],'ch':[C+'Hi-Hat (Samples)/02 Hat, Loose'],'ht':[S+'Toms_Stereo/Tom2'],'lt':[S+'Toms_Stereo/Tom3'],'cy':[C+'Crash (Samples)/Crash 17 (Samples)']},
  'hyb':{'sd':[S+'SMD_Snr_Str_HyB1 (Samples)',S+'SMD_Snr_Str_HyB2 (Samples)',S+'SMD_Snr_Str_HyB3 (Samples)'],'rs':[S+'SMD RimShot_Str_HyB1 (Samples)'],'cy':[C+'Crash (Samples)/Crash 15 (Samples)']},
@@ -25,6 +26,7 @@ KARO={
    'ch':[('Samples/hihat_14/tc/cl','ht_tc',1.0,''),('Samples/hihat_14/tc/oh','ht_tc',0.5,'')],
    'oh':[('Samples/hihat_14/open/cl','ht_open',1.0,''),('Samples/hihat_14/open/oh','ht_open',0.5,'')],
    'hf':[('Samples/hihat_14/chik/cl','ht_chik',1.0,''),('Samples/hihat_14/chik/oh','ht_chik',0.5,'')],
+   'hl':[('Samples/hihat_14/lc/cl','ht_lc',1.0,''),('Samples/hihat_14/lc/oh','ht_lc',0.5,'')],
    'ht':[('Samples/tom_14/center/cl','t14',1.0,''),('Samples/tom_14/center/oh','t14',0.5,'')],
    'lt':[('Samples/tom_18/center/cl','t18',1.0,''),('Samples/tom_18/center/oh','t18',0.5,'')],
    'cy':[('Samples/crash_17/cr/oh','cr',1.0,''),('Samples/crash_17/cr/cl','cr',0.6,'')],
@@ -43,9 +45,14 @@ KARO={
    'rs':[('Samples/snare_mic','ss',1.0,''),('Samples/front_mic','ss',0.6,''),('Samples/oh_mic','ss',0.4,'')],
    'ch':[('Samples/front_mic','hc',1.0,''),('Samples/oh_mic','hc',0.5,'')],'oh':[('Samples/front_mic','ho',1.0,''),('Samples/oh_mic','ho',0.5,'')],
    'hf':[('Samples/front_mic','hf',1.0,''),('Samples/oh_mic','hf',0.5,'')],
+   'hl':[('Samples/front_mic','hl',1.0,''),('Samples/oh_mic','hl',0.5,'')],
    'ht':[('Samples/front_mic','th',1.0,''),('Samples/oh_mic','th',0.5,'')],'lt':[('Samples/front_mic','tl',1.0,''),('Samples/oh_mic','tl',0.5,'')]})
 }
 TARGET=[-19,-12,-5,0]
+# Hüllkurve nachträglich: (Kit, Stimme) -> (Beginn, Ende) des Ausblendens in s ab Anschlag.
+# Studio „locker“ (halb offen): SM Drums hat keine halb offene Hi-Hat ("02 Hat, Loose" klingt fast wie zu),
+# daher die offene Aufnahme, nach 0,18 s abgedämpft wie eine leicht geöffnete Maschine.
+SHAPE={('studio','hl'):(0.18,0.45)}
 def run(cmd,**k): return subprocess.run(cmd,capture_output=True,**k)
 def load(path):
     raw=run(['ffmpeg','-v','error','-i',path,'-ac','1','-f','f32le','-ar',str(SR),'-']).stdout
@@ -94,6 +101,7 @@ def build(kit):
     out=f'{B}/kits2/{kit}'; os.makedirs(out,exist_ok=True); report={}
     ref=json.load(open(f'{B}/kits2/ref.json')) if kit!='studio' and os.path.exists(f'{B}/kits2/ref.json') else {}
     voices=SM[kit] if kit in SM else KARO[kit][1]
+    if os.environ.get('VOICES'): voices=[v for v in voices if v in os.environ['VOICES'].split(',')]  # nur diese Stimmen neu bauen
     for vid in voices:
         n=int(LEN[vid]*SR)
         if kit in SM:
@@ -136,6 +144,11 @@ def build(kit):
                         y,ms,pol=align(base,y); x+=y*m[2]
                         if li==3 and r==rrs[0]: info.append(f'{m[0].split("/")[-1]}{m[3]}: {ms:+.1f} ms{" umgepolt" if pol<0 else ""}')
                     xs.append(x[:n])
+            if (kit,vid) in SHAPE:
+                a0,a1=SHAPE[(kit,vid)]
+                for x in xs:
+                    o=onset(x); i0,i1=o+int(a0*SR),o+int(a1*SR)
+                    if i0<len(x): x[i0:i1]*=np.linspace(1,0,len(x[i0:i1]))**2; x[i1:]=0
             for x in xs: slots.append((li,np.pad(x,(0,max(0,n-len(x))))[:n]*att[li]))
         acc=[x for li,x in slots if li==3]
         g=1.0/max(np.abs(x).max() for x in acc)*10**(-1/20)  # erst auf Spitze −1 dB

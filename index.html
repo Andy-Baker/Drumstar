@@ -1005,6 +1005,13 @@ html,body{min-height:100%;height:100%;}
 #brushRow button{min-height:48px;border-radius:9px;border:1px solid rgba(255,255,255,.12);background:var(--panel);color:var(--dim);font-family:inherit;font-weight:700;font-size:13px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:0;cursor:pointer}
 #brushRow button.on{border-color:var(--blue);background:rgba(63,169,255,.16);color:var(--blue-2)}
 #brushRow .sw{width:22px;height:10px;border-radius:3px;background:var(--blue);display:block;position:relative}
+#artRow{display:flex;gap:6px;align-items:center}
+#artRow .al{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);flex:none;width:72px}
+#artRow button{flex:1;min-width:0;min-height:44px;border-radius:9px;border:1px solid rgba(255,255,255,.12);background:var(--panel);color:var(--dim);font-family:inherit;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px;padding:0 4px;cursor:pointer}
+#artRow button b{font:700 11px 'JetBrains Mono',monospace;width:18px;height:18px;border-radius:4px;background:var(--blue-dim,#1c4666);color:var(--blue-2);display:flex;align-items:center;justify-content:center;flex:none}
+#artRow button.on{border-color:var(--blue);background:rgba(63,169,255,.16);color:var(--blue-2)}
+#artRow button.on b{background:var(--blue);color:#042c53}
+.bstep[data-a]:not([data-a=""])::before{content:attr(data-a);position:absolute;top:5px;right:7px;font:700 13px 'JetBrains Mono',monospace;color:rgba(0,0,0,.6)}
 #brushRow .sw.a::after{content:"";position:absolute;right:-3px;top:-3px;width:7px;height:7px;border-radius:50%;background:#fff}
 #bigGrid{flex:1;min-height:260px;grid-template-rows:repeat(4,1fr);gap:8px}
 .bstep{aspect-ratio:auto}
@@ -1606,6 +1613,7 @@ html,body{min-height:100%;height:100%;}
           <button data-v="1.3"><i class="sw a"></i>Akzent</button>
         </div>
 
+        <div id="artRow" role="group" aria-label="Spielweise beim Setzen" style="display:none"></div>
         <div id="bigGrid"></div>
 
         <div id="prPreview"><div id="prPv" role="button" aria-label="Piano Roll öffnen"></div><div id="prPvCap">Antippen zum Bearbeiten</div></div>
@@ -2384,7 +2392,7 @@ let editClip=null; // Clip im Editor: dann spielen/exportieren Wiedergabe und Ex
 function arrOn(){ return arr.enabled && !editClip; }
 // Übersichts-Gruppen: jede Gruppe ist eine Zeile in der Song-Übersicht; Clips liegen weiterhin pro Stimme/Spur.
 const ARR_GROUPS=[
-  {id:'drums', label:'DRUMS', ids:['bd','sd','ch','oh','lt','ht','cy']},
+  {id:'drums', label:'DRUMS', ids:['bd','sd','ch','oh','lt','ht','cy','rd']},
   {id:'perc',  label:'PERC',  ids:['rs','hc','cb','cl','mr']},
   {id:'acid',  label:'ACID',  ids:['arp']},
   {id:'cosmic',label:'COSMIC',ids:['cosmic']},
@@ -2834,15 +2842,15 @@ const KITS={
   // solange die Samples laden, und für Stimmen ohne Aufnahme (Clap, Cowbell, Claves, Maracas).
   // samples.fallback: Kit, das Stimmen ohne eigene Aufnahme spielt.
   studio:{ name:'STUDIO KIT', desc:'Echte Aufnahmen · modern, trocken', voices:null,
-    samples:{dir:'studio', voices:['bd','sd','rs','ch','oh','lt','ht','cy']} },
+    samples:{dir:'studio', voices:['bd','sd','rs','ch','hl','hf','oh','lt','ht','cy','rd','rb']} },
   s67:{ name:'STUDIO 67', desc:'Echte Aufnahmen · 1967er Snare, lockere Hi-Hat', voices:null,
     samples:{dir:'s67', voices:['sd','ch','lt','ht','cy'], fallback:'studio'} },
   hyb:{ name:'HYBRID', desc:'Echte Aufnahmen · bearbeitete Pop-Snare', voices:null,
     samples:{dir:'hyb', voices:['sd','rs','cy'], fallback:'studio'} },
   rusty:{ name:'RUSTY KIT', desc:'Echte Aufnahmen · großes 80er-Rockkit', voices:null,
-    samples:{dir:'rusty', voices:['bd','sd','rs','ch','oh','lt','ht','cy']} },
+    samples:{dir:'rusty', voices:['bd','sd','rs','ch','hl','hf','oh','lt','ht','cy','rd','rb']} },
   vintage:{ name:'VINTAGE 73', desc:'Echte Aufnahmen · 70er, gedämpft', voices:null,
-    samples:{dir:'vintage', voices:['bd','sd','rs','ch','oh','lt','ht'], fallback:'studio'} },
+    samples:{dir:'vintage', voices:['bd','sd','rs','ch','hl','hf','oh','lt','ht'], fallback:'studio'} },
   fm909:{ name:'FM-909', desc:'Klassisch · punchy', voices:{
     bd:{baseFreq:58, startMult:1.8, pitchEndMult:0.36, pitchDecay:0.08, clickLevel:0.25, ampDecay:0.32,
         ops:[{ratio:1,level:1,decay:0.32,feedback:0.3},{ratio:1.4,level:6,decay:0.05}]},
@@ -2973,7 +2981,34 @@ const KITS={
   }},
 
 };
+// Ride (v72) für die Synth-Kits: aus dem Crash des Kits abgeleitet (heller, kürzer, weniger Rauschen); .bell = Glocke
+function rideFromCy(cy){
+  if(cy.engine==='sixosc'){
+    const r=Object.assign({},cy,{baseFreq:cy.baseFreq*1.5, bpFreq:(cy.bpFreq||7500)+1500, bpQ:(cy.bpQ||0.55)*1.2, ampDecay:1.8, fmLevel:cy.fmLevel*0.7, noiseLevel:(cy.noiseLevel||0)*0.3, noiseDecay:1.0});
+    r.bell=Object.assign({},r,{ratios:[1,1.48,2.76], baseFreq:cy.baseFreq*5, bpFreq:3200, bpQ:1.2, hpFreq:1400, ampDecay:1.3, fmLevel:cy.fmLevel*0.6, noiseLevel:0});
+    return r;
+  }
+  const r=Object.assign({},cy,{baseFreq:cy.baseFreq*1.4, ampDecay:cy.ampDecay*0.8, fmLevel:cy.fmLevel*0.85, noiseLevel:cy.noiseLevel*0.35, noiseDecay:cy.noiseDecay*0.6});
+  r.bell=Object.assign({},r,{baseFreq:cy.baseFreq*2.2, filterFreq:cy.filterFreq*1.5, ampDecay:cy.ampDecay*0.6, noiseLevel:cy.noiseLevel*0.1});
+  return r;
+}
+Object.values(KITS).forEach(k=>{ if(k.voices && k.voices.cy && !k.voices.rd) k.voices.rd=rideFromCy(k.voices.cy); });
 Object.values(KITS).forEach(k=>{ if(k.samples) k.voices=KITS.rock.voices; });
+// Spielweisen pro Step (v72, Mockup kit-stimmen-mockup.html Variante B): Drum-Spuren nutzen das sonst leere
+// tr.notes[s] als Spielweise (0 = Standard). v = Sample-Stimme im Sample-Kit. Zieht automatisch mit beim
+// Kopieren, Undo, Song-Clips, Länge ändern, Speichern und Beats.
+const ART={ ch:[{k:'Z',n:'Zu',v:'ch'},{k:'L',n:'Locker',v:'hl'},{k:'P',n:'Pedal',v:'hf'}],
+            rd:[{k:'F',n:'Fläche',v:'rd'},{k:'B',n:'Bell',v:'rb'}] };
+function artOf(tr,a){ const L=ART[tr.id]; return L ? (L[a|0]||L[0]) : null; }
+function artLetter(tr,abs){ const L=ART[tr.id]; if(!L || !(tr.steps[abs]>0)) return ''; const a=tr.notes?tr.notes[abs]|0:0; return a>0&&L[a]?L[a].k:''; }
+function artSynth(tr,a,kp){ // Synth-Kits: Spielweise über die Parameter des Kits
+  if(tr.id==='rd' && a===1) return kp.bell||kp;
+  if(tr.id!=='ch' || !a) return kp;
+  const f=a===1?4:0.7, o=Object.assign({},kp,{decayClosed:kp.decayClosed*f, decayClosedAccent:kp.decayClosedAccent*f});
+  if(kp.ops) o.ops=kp.ops.map(x=>Object.assign({},x,{decay:x.decay*f}));
+  if(a===2) o.fmLevel=kp.fmLevel*0.6; // Pedal: leiser, kurz
+  return o;
+}
 let currentKitId='rock';
 
 const VOICE_FNS={
@@ -2984,6 +3019,7 @@ const VOICE_FNS={
   ch:(t,v,tu,a,kp)=> kp.engine==='sixosc' ? playMetallicSix(t,v,tu,a,kp,'closed') : playHat(t,v,tu,a,kp,false),
   oh:(t,v,tu,a,kp)=> kp.engine==='sixosc' ? playMetallicSix(t,v,tu,a,kp,'open') : playHat(t,v,tu,a,kp,true),
   cy:(t,v,tu,a,kp)=> kp.engine==='sixosc' ? playMetallicSix(t,v,tu,a,kp,'cymbal') : playCrash(t,v,tu,a,kp),
+  rd:(t,v,tu,a,kp)=> kp.engine==='sixosc' ? playMetallicSix(t,v,tu,a,kp,'cymbal') : playCrash(t,v,tu,a,kp),
   // Cowbell: dieselbe Oszillatorbank/Filterkette wie Hi-Hat/Crash (playMetallicSix,
   // Modus 'cymbal'), aber mit nur 2 statt 6 Ratios (klassisches zwei-Ton-808-Cowbell-
   // Verhältnis) — kein neuer Code nötig, nur ein anderes Preset auf derselben Engine.
@@ -3021,9 +3057,9 @@ function playDrumSample(tr, time, velocity){
 // Datei samples/<kit>/<stimme>.mp3: Sync-Klick bei 0 s, ab 0,1 s zwölf Slots
 // (Layer 1–4 × Round Robin 1–3) zu je SMP_LEN[stimme] Sekunden.
 // =========================================================================
-const SMP_LEN={bd:0.9, sd:0.7, rs:0.6, ch:0.5, oh:2.5, lt:2.0, ht:1.8, cy:4.0};
+const SMP_LEN={bd:0.9, sd:0.7, rs:0.6, ch:0.5, hl:0.9, hf:0.6, oh:2.5, lt:2.0, ht:1.8, cy:4.0, rd:3.5, rb:3.5};
 const STUDIO_LAYER_VEL=[0.15,0.35,0.85,1.3]; // = VEL_GHOST_SOFT, VEL_GHOST, VEL_NORMAL, VEL_ACCENT
-const STUDIO_GAIN={bd:1.0, sd:0.9, rs:0.8, ch:0.55, oh:0.5, lt:0.85, ht:0.8, cy:0.55};
+const STUDIO_GAIN={bd:1.0, sd:0.9, rs:0.8, ch:0.55, hl:0.55, hf:0.22, oh:0.5, lt:0.85, ht:0.8, cy:0.55, rd:0.6, rb:0.55};
 const STUDIO_OUT=1.75;  // Gesamtpegel, abgeglichen mit dem Rock Kit (tests/test-audio.py)
 const STUDIO_ROOM=0.22; // Anteil Raum
 const smp={};            // smp[kitId]={state:'loading'|'ready'|'error', buf:{stimme:[layer][rr]={b,off,dur}}, promise}
@@ -3064,6 +3100,9 @@ function smpLoad(kid){
     .catch(e=>{ st.state='error'; st.promise=null; smpChipText(kid,'Laden fehlgeschlagen · antippen = erneut'); });
   return st.promise;
 }
+function smpFree(keep){ // Speicher: dekodierte Kits, die gerade nicht klingen, wieder freigeben (lädt bei Bedarf neu)
+  Object.keys(smp).forEach(k=>{ if(keep.indexOf(k)<0 && smp[k].state!=='loading'){ delete smp[k]; smpChipText(k,KITS[k].desc); } });
+}
 function smpSet(kid,id){ // Aufnahme des Kits, sonst des Ersatz-Kits; null = noch nicht da
   const k=KITS[kid]; if(!k || !k.samples) return null;
   const st=smp[kid];
@@ -3089,25 +3128,25 @@ function smpRoom(){ // ein Raum je AudioContext (Live und WAV-Export getrennt)
   return r.input;
 }
 // Spielt einen Sample-Schlag. false = (noch) keine Aufnahme → Aufrufer nimmt den Synth.
-function smpPlay(kid, tr, time, velocity, choked){
-  const set=smpSet(kid,tr.id); if(!set || !audioCtx) return false;
+function smpPlay(kid, tr, time, velocity, choked, vid){
+  vid=vid||tr.id; const set=smpSet(kid,vid); if(!set || !audioCtx) return false;
   let l=2, fine;
   if(smpOpt.layers){ l=0; for(let i=1;i<4;i++) if(Math.abs(STUDIO_LAYER_VEL[i]-velocity)<Math.abs(STUDIO_LAYER_VEL[l]-velocity)) l=i;
     fine=Math.pow(Math.max(0.05,velocity)/STUDIO_LAYER_VEL[l],0.7); } // Zwischenwerte (Humanize, Pads)
   else fine=Math.pow(Math.max(0.05,velocity)/STUDIO_LAYER_VEL[2],1.1); // nur eine Aufnahme, Stärke nur über Lautstärke
-  const arr=set[l], key=kid+tr.id+l, last=smpRR[key]; let r=0;
+  const arr=set[l], key=kid+vid+l, last=smpRR[key]; let r=0;
   if(smpOpt.rr){ do{ r=Math.floor(Math.random()*arr.length); }while(arr.length>1 && r===last); }
   smpRR[key]=r; const s=arr[r];
   const vr=(+smpOpt.vari||0)/50;
   const src=audioCtx.createBufferSource(); src.buffer=s.b;
   src.playbackRate.value=Math.pow(2,(tr.tune-0.5)*2+vr*(Math.random()*16-8)/1200);
   const g=audioCtx.createGain();
-  const gv=Math.max(0.0001, tr.vol*STUDIO_GAIN[tr.id]*STUDIO_OUT*fine*Math.pow(10,vr*(Math.random()*3-1.5)/20));
+  const gv=Math.max(0.0001, tr.vol*(STUDIO_GAIN[vid]||0.6)*STUDIO_OUT*fine*Math.pow(10,vr*(Math.random()*3-1.5)/20));
   g.gain.value=gv;
   src.connect(g); g.connect(getBus()); g.connect(smpRoom());
   src.start(time, s.off, s.dur);
   if(choked){ g.gain.setValueAtTime(gv,time+0.06); g.gain.linearRampToValueAtTime(0.0001,time+0.1); src.stop(time+0.11); }
-  if(tr.id==='oh') lastOpenSample={src,g};
+  if(vid==='oh' || vid==='hl') lastOpenSample={src,g}; // offene/lockere Hi-Hat: nächster Hi-Hat-Schlag würgt ab
   return true;
 }
 // Regler „Klang“ in der Kit-Auswahl (Mockup kit-klang-mockup.html, Variante B, eingeklappt)
@@ -3134,16 +3173,16 @@ function smpOptToggle(chip){
 }
 function smpOptRender(){ document.querySelectorAll('#kitPickerList .kit-opts').forEach(b=>{ if(!b.hidden) smpOptFill(b); }); }
 function smpOptCollapse(){ document.querySelectorAll('#kitPickerList .kit-opts').forEach(b=>{ b.hidden=true; const k=b.parentNode.querySelector('.kit-kl'); if(k) k.setAttribute('aria-expanded','false'); }); }
-function triggerTrack(tr, time, velocity){
+function triggerTrack(tr, time, velocity, art){
   currentTrackBus = tr.bus || master;
   if(tr.id==='ch') chokeOpenSample(time); // Closed Hat kappt ein klingendes Open-Hat-Sample
   if(tr.type==='arp'){ triggerArpStep(time, tr, 0, velocity, false); return; } // Preview: Grundton
   if(tr.isSample){ playSample(time, tr.vol, tr.tune, velocity); return; }
   const ov=drumSet.voices[tr.id];
   if(ov && ov.t==='smp' && playDrumSample(tr, time, velocity)) return;
-  const kid=voiceKitId(tr.id);
-  if(KITS[kid].samples && smpPlay(kid, tr, time, velocity, false)) return;
-  const kp=KITS[kid].voices[tr.id];
+  const kid=voiceKitId(tr.id), A=artOf(tr,art);
+  if(KITS[kid].samples && smpPlay(kid, tr, time, velocity, false, A?A.v:tr.id)) return;
+  const kp=artSynth(tr, art|0, KITS[kid].voices[tr.id]);
   VOICE_FNS[tr.id](time, tr.vol, tr.tune, velocity, kp);
 }
 // "Choked" Crash: nutzt exakt dieselben Klang-Parameter des aktuellen Kits,
@@ -3189,13 +3228,14 @@ function triggerChokedCrash(time, tr, velocity){
 const TRACKS=[
   {id:'bd', name:'BASS DRUM', color:'#3fa9ff', tune:0.5, vol:0.9},
   {id:'sd', name:'SNARE',     color:'#8fd4ff', tune:0.5, vol:0.85},
-  {id:'ch', name:'CL HIHAT',  color:'#e8f4ff', tune:0.5, vol:0.75},
+  {id:'ch', name:'HI-HAT',    color:'#e8f4ff', tune:0.5, vol:0.75},
   {id:'lt', name:'LOW TOM',   color:'#2f7fd4', tune:0.5, vol:0.8},
   {id:'ht', name:'HI TOM',    color:'#2f7fd4', tune:0.5, vol:0.8},
   {id:'rs', name:'RIM SHOT',  color:'#5eead4', tune:0.5, vol:0.8},
   {id:'hc', name:'HAND CLAP', color:'#2dd4bf', tune:0.5, vol:0.85},
   {id:'oh', name:'OP HIHAT',  color:'#c7e6ff', tune:0.5, vol:0.7},
   {id:'cy', name:'CRASH',     color:'#a3d8ff', tune:0.5, vol:0.7},
+  {id:'rd', name:'RIDE',      color:'#b9dcff', tune:0.5, vol:0.7},
   {id:'cb', name:'COWBELL',  color:'#14b8a6', tune:0.5, vol:0.75},
   {id:'cl', name:'CLAVES',   color:'#99f6e4', tune:0.5, vol:0.7},
   {id:'mr', name:'MARACAS',  color:'#7ff0dc', tune:0.5, vol:0.65},
@@ -3421,7 +3461,7 @@ function generateFillOverride(len){
 
   set('lt',lt); set('ht',ht); set('sd',sd); set('bd',bd);
   override.cy={vel:cy, chokeSteps};
-  set('ch', new Array(len).fill(VEL_OFF)); set('oh', new Array(len).fill(VEL_OFF)); // Hi-Hats pausieren immer
+  set('ch', new Array(len).fill(VEL_OFF)); set('oh', new Array(len).fill(VEL_OFF)); set('rd', new Array(len).fill(VEL_OFF)); // Hi-Hats + Ride pausieren immer
   return override;
 }
 // Passt alle Track-Step-Arrays auf eine neue Länge an (behält vorhandene Steps,
@@ -4264,6 +4304,7 @@ tbPreview.addEventListener('click', ()=>{
 // UI: GROSSES EDIT-GRID (4x4 = 16 Steps des aktiven Tracks)
 // =========================================================================
 let stepBrush=VEL_NORMAL;
+const stepArt={ch:0, rd:0}; // gewählte Spielweise beim Setzen, pro Spur
 const bigGrid=document.getElementById('bigGrid');
 const bigCells=[];
 const bigCellNums=[];
@@ -4279,8 +4320,10 @@ for(let s=0;s<16;s++){
   c.addEventListener('click', ()=>{
     const tr=TRACKS[activeTrackIdx];
     const abs=currentPage*16+s;
-    tr.steps[abs]= tr.steps[abs]===stepBrush ? VEL_OFF : stepBrush;
-    updateStepVisual(c, tr.steps[abs]);
+    const sa=ART[tr.id] ? stepArt[tr.id]|0 : 0;
+    if(tr.steps[abs]===stepBrush && (!ART[tr.id] || (tr.notes[abs]|0)===sa)) tr.steps[abs]=VEL_OFF;
+    else { tr.steps[abs]=stepBrush; if(tr.notes) tr.notes[abs]=sa; }
+    updateStepVisual(c, tr.steps[abs]); c.dataset.a=artLetter(tr,abs);
     if(tr._ovCells) updateStepVisual(tr._ovCells[s], tr.steps[abs]);
   });
   bigGrid.appendChild(c); bigCells.push(c);
@@ -4297,6 +4340,7 @@ function renderBigGrid(){
     bigCells[s].style.setProperty('--tc', tr.color);
     bigCellNums[s].textContent = currentPage*16+s+1; // absolute Step-Nummer im Pattern
     updateStepVisual(bigCells[s], tr.steps[currentPage*16+s]);
+    bigCells[s].dataset.a=artLetter(tr,currentPage*16+s);
   }
   renderEditorArea(tr);
 }
@@ -4309,9 +4353,17 @@ function renderBigGrid(){
 function renderEditorArea(tr){
   const isArp=tr.type==='arp';
   bigGrid.style.display=isArp?'none':''; document.getElementById('brushRow').style.display=isArp?'none':'';
+  artRender(tr);
   hmRender();
   if(!isArp){ $id('prPreview').style.display='none'; $id('taRoll').style.display='none'; return; }
   $id('prPreview').style.display='flex'; $id('taRoll').style.display=''; prDrawPreview(tr);
+}
+// Leiste „Spielweise“ unter der Stärke — nur für Spuren mit Spielweisen (Hi-Hat, Ride)
+function artRender(tr){
+  const row=$id('artRow'), L=ART[tr.id];
+  if(!L){ row.style.display='none'; row.innerHTML=''; return; }
+  row.style.display=''; const cur=stepArt[tr.id]|0;
+  row.innerHTML='<span class="al">Spielweise</span>'+L.map((x,i)=>'<button data-a="'+i+'" class="'+(i===cur?'on':'')+'" aria-pressed="'+(i===cur)+'"><b>'+x.k+'</b>'+x.n+'</button>').join('');
 }
 function pitchNoteName(tr,v){
   const t=9+tr.rootNote+v+trOct(tr); // Cosmic klingt 2 Oktaven höher -> Namen passen zum Klang
@@ -4647,6 +4699,11 @@ function renderKlang(){
 function keysOrPreview(tr){ if(isPlaying) return; pitchPreview(tr,isPoly(tr)?12:0,.8); }
 $id('klTabs').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; klTab=b.dataset.t; renderKlang(); });
 $id('klX').addEventListener('click',closeSheets);
+$id('artRow').addEventListener('click', e=>{
+  const b=e.target.closest('button[data-a]'); if(!b) return; const tr=TRACKS[activeTrackIdx]; if(!ART[tr.id]) return;
+  stepArt[tr.id]=+b.dataset.a; artRender(tr);
+  if(!isPlaying) Promise.resolve(initAudio()).then(()=>{ if(audioCtx.state!=='running') audioCtx.resume(); triggerTrack(tr, audioCtx.currentTime+0.01, VEL_NORMAL, stepArt[tr.id]); }); // anhören
+});
 document.querySelectorAll('#brushRow button').forEach(b=>b.addEventListener('click', ()=>{
   stepBrush=parseFloat(b.dataset.v);
   document.querySelectorAll('#brushRow button').forEach(x=>x.classList.toggle('on',x===b));
@@ -4672,10 +4729,12 @@ function randomizeTrackPattern(tr, from=0, to=PATTERN_LENGTH){
     const beatPos = s%16; // Rhythmus-Gewichtung bleibt pro Takt (16 Steps) gleich
     const p = tr.id==='bd'? (beatPos%4===0?0.85:0.12) :
               tr.id==='sd'? (beatPos%8===4?0.9:0.05) :
-              tr.id==='ch'? 0.55 : 0.12;
+              tr.id==='ch'? 0.55 :
+              tr.id==='rd'? (beatPos%2===0?0.8:0.15) : 0.12;
     const hit=Math.random()<p;
     // gelegentlich ein Ghost-Note statt vollem Hit für lebendigere Zufalls-Patterns
     tr.steps[s]= hit ? (Math.random()<0.15 ? VEL_GHOST : VEL_NORMAL) : VEL_OFF;
+    if(tr.notes) tr.notes[s]= (tr.id==='rd' && hit && beatPos%4===0 && Math.random()<0.25) ? 1 : 0; // Ride: ab und zu Bell auf der Zählzeit
   }
 }
 document.getElementById('clearBtn').addEventListener('click', ()=>{
@@ -4685,6 +4744,7 @@ document.getElementById('clearBtn').addEventListener('click', ()=>{
 document.getElementById('randomBtn').addEventListener('click', ()=>{
   TRACKS.forEach(tr=>{
     if(tr.type==='arp') return; // hat eigenen 🎲 Bassline-Button (braucht auch neue Tonhöhen, nicht nur an/aus)
+    if(tr.id==='rd'){ tr.steps.fill(VEL_OFF); return; } // Ride nur über den eigenen Würfel (sonst doppelt zur Hi-Hat)
     randomizeTrackPattern(tr);
   });
   renderAllForPage();
@@ -4877,7 +4937,7 @@ async function renderPatternToWav(){
     let dur=secondsPerStep;
     if(step%2===1) dur += secondsPerStep*swing;
     TRACKS.forEach(tr=>{
-      const v=tr.type==='arp' ? (evStarts(tr,step).length?1:0) : stepInfo(tr,step).v;
+      const si=tr.type==='arp' ? null : stepInfo(tr,step), v=si ? si.v : (evStarts(tr,step).length?1:0);
       if(v<=0) return;
       if(anySolo && !tr.solo) return;
       if(!anySolo && tr.muted) return;
@@ -4885,7 +4945,7 @@ async function renderPatternToWav(){
       if(tr.type==='arp'){
         evPlay(tr, step, hitTime, 1, step);
       } else {
-        triggerTrack(tr, hitTime, v);
+        triggerTrack(tr, hitTime, v, si.note|0);
       }
     });
     t+=dur;
@@ -5942,6 +6002,12 @@ function collectPatternData(name, id){
 // in das neue Velocity-Format um, damit vorhandene gespeicherte Beats weiter laden.
 // targetLen sorgt zusätzlich dafür, dass ältere (immer 16 Steps lange) Patterns
 // korrekt auf die aktuelle Pattern-Länge aufgefüllt bzw. gekürzt werden.
+// Spielweisen der Drum-Spuren laden (tr.notes): nur gültige Werte, sonst 0 = Standard
+function artLoad(tr, saved){
+  const n=(ART[tr.id]||[]).length, out=new Array(PATTERN_LENGTH).fill(0);
+  if(n && saved) for(let i=0;i<Math.min(saved.length,PATTERN_LENGTH);i++){ const a=saved[i]|0; out[i]= a>0&&a<n ? a : 0; }
+  return out;
+}
 function migrateStepsToVelocity(savedSteps, trackId, oldAccentSteps, targetLen){
   const out=new Array(targetLen).fill(VEL_OFF);
   for(let s=0;s<Math.min(savedSteps.length, targetLen); s++){
@@ -5993,10 +6059,15 @@ function applyTrackAndFillData(data){
     }
   }
   TRACKS.forEach(tr=>{ if(tr.type==='arp'){ tr.harm=hmDefaultTrack(tr); delete tr.harmOwn; } });
+  TRACKS.forEach(tr=>{ // Drum-Spuren, die es im gespeicherten Pattern noch nicht gab (z. B. Ride vor v72): leer
+    if(tr.type==='arp' || (data.tracks||[]).some(s=>s.id===tr.id)) return;
+    tr.steps=new Array(PATTERN_LENGTH).fill(VEL_OFF); tr.notes=new Array(PATTERN_LENGTH).fill(0); tr.slides=new Array(PATTERN_LENGTH).fill(false);
+  });
   data.tracks.forEach(saved=>{
     const tr=TRACKS.find(t=>t.id===saved.id);
     if(!tr) return;
     tr.steps=migrateStepsToVelocity(saved.steps, tr.id, data.accentSteps, PATTERN_LENGTH);
+    if(tr.type!=='arp') tr.notes=artLoad(tr, saved.notes);
     tr.vol=saved.vol; tr.tune=saved.tune; tr.reverbAmount=saved.reverbAmount||0;
     tr.pan=saved.pan||0; // ältere Patterns ohne pan-Feld -> zentriert (Standard)
     tr.eqLowGain=saved.eqLowGain||0; tr.eqMidGain=saved.eqMidGain||0; tr.eqHighGain=saved.eqHighGain||0;
@@ -6735,9 +6806,13 @@ function applyTrackSound(tr, sv){
 async function beatApply(d, withSound){
   if(isPlaying) stop();
   if(d.length>PATTERN_LENGTH) setPatternLength(d.length); // nur erweitern, nie kürzen
+  arrGroupTracks(d.group).forEach(tr=>{ // Spuren der Gruppe, die der Beat noch nicht kannte (z. B. Ride vor v72): leer
+    if(tr.type!=='arp' && !d.tracks.some(sv=>sv.id===tr.id)){ tr.steps.fill(VEL_OFF); if(tr.notes) tr.notes.fill(0); }
+  });
   d.tracks.forEach(sv=>{
     const tr=TRACKS.find(t=>t.id===sv.id); if(!tr) return;
     tr.steps=migrateStepsToVelocity(sv.steps, tr.id, undefined, PATTERN_LENGTH);
+    if(tr.type!=='arp') tr.notes=artLoad(tr, sv.notes);
     if(tr.type==='arp'){
       hmReset(tr);
       tr.events=evLoad(sv,tr); delete tr.notes; delete tr.slides; evTouch(tr);
@@ -6805,14 +6880,14 @@ const drumSetOverlay=document.getElementById('drumSetOverlay'), dsRows=document.
 const dsList=document.getElementById('dsList'), dsSeg=document.getElementById('dsSeg'), dsShT=document.getElementById('dsShT'), dsStatus=document.getElementById('dsStatus');
 const dsName=document.getElementById('dsName'), dsDirty=document.getElementById('dsDirty');
 const kitConfirm=document.getElementById('kitConfirm'), kcText=document.getElementById('kcText');
-const DS_IDS=['bd','sd','ch','oh','lt','ht','rs','hc','cy','cb','cl','mr'];
+const DS_IDS=['bd','sd','ch','oh','lt','ht','rs','hc','cy','rd','cb','cl','mr'];
 let dsCur=null, dsMode='syn', dsMsgTimer=null, kitPending=null;
 function dsSay(m){ dsStatus.textContent=m; clearTimeout(dsMsgTimer); dsMsgTimer=setTimeout(()=>{ dsStatus.textContent=''; },3000); }
 function updateKitLabel(){
   if(typeof patternGroup!=='undefined' && patternGroup==='piano'){ const k=TRACKS.find(t=>t.id==='piano'); lcdKit.textContent=(KEY_SOUNDS[k&&k.sound]||KEY_SOUNDS.piano).name; return; }
   const custom=!currentSet.name && Object.keys(drumSet.voices).length>0;
   const KIT_SHORT={rock:'ROCK',studio:'STUDIO',s67:'ST 67',hyb:'HYBRID',rusty:'RUSTY',vintage:'VINT 73',fm909:'909',fm808:'808',real808:'808 A',acid:'ACID',lofi:'LO-FI'};
-  smpKitsInUse().forEach(k=>{ if(!smp[k] || smp[k].state==='error') smpLoad(k); }); // Fehler: erneuter Versuch beim nächsten Kit-Tipp
+  { const use=smpKitsInUse(); smpFree(use); use.forEach(k=>{ if(!smp[k] || smp[k].state==='error') smpLoad(k); }); } // Fehler: erneuter Versuch beim nächsten Kit-Tipp
   lcdKit.textContent=(currentSet.name || KIT_SHORT[currentKitId] || KITS[currentKitId].name)+(currentSet.dirty?' *':(custom?' +':''));
 }
 async function drumSetLoadBuffers(){
@@ -7084,13 +7159,13 @@ function scheduleStep(step,time){
   const inFillWindow = currentLoopIsFill && fillOverride && step>=fillWindowStart;
   scheduledSteps.push({step,time,isFill:inFillWindow,abs:curAbsStep});
   TRACKS.forEach(tr=>{
-    let v;
+    let v, art=0;
     if(inFillWindow && fillOverride[tr.id]){
       v = fillOverride[tr.id].vel[step-fillWindowStart];
     } else if(tr.type==='arp'){
       v = evStarts(tr,step).length ? 1 : 0;
     } else {
-      v = stepInfo(tr,step).v;
+      const si=stepInfo(tr,step); v=si.v; art=si.note|0;
     }
     if(v<=0) return;
     if(anySolo && !tr.solo) return;          // andere Spuren stumm, solange irgendwo soliert wird
@@ -7114,7 +7189,7 @@ function scheduleStep(step,time){
     } else if(tr.id==='cy' && inFillWindow && fillOverride.cy && fillOverride.cy.chokeSteps && fillOverride.cy.chokeSteps[step-fillWindowStart]){
       triggerChokedCrash(hitTime, tr, playVel); // kurz abgeschnittener statt lang ausklingender Crash
     } else {
-      triggerTrack(tr, hitTime, playVel);
+      triggerTrack(tr, hitTime, playVel, art);
     }
   });
 }

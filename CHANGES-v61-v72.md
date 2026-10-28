@@ -1,4 +1,4 @@
-# v61 → v71 (26.–28.10.2026)
+# v61 → v72 (26.–28.10.2026)
 
 ## v61
 - Alter Tonhöhen-Editor entfernt (toter Code). `renderPitchEditor` → `renderEditorArea`.
@@ -62,8 +62,18 @@
 - Gespeichert mit dem Pattern (`smpOpt`); ältere Patterns ohne Angabe laden den Standard. Beats tragen kein Kit und daher auch keine Optionen.
 - Tests: Auf-/Zuklappen, Wirkung, Zurücksetzen (ui), Speichern/Laden (audio).
 
+## v72 – Ride + Spielweisen Hi-Hat (28.10.)
+- Neue Drum-Zeile **RIDE** mit Spielweisen Fläche/Bell. Studio und Rusty mit eigenen Aufnahmen, Studio 67/Hybrid/Vintage aus Studio, Synth-Kits mit einem aus ihrem Crash abgeleiteten Ride.
+- **Hi-Hat** (vorher CL HIHAT) mit Spielweisen Zu/Locker/Pedal. Locker klingt halb offen und wird vom nächsten Hi-Hat-Schlag abgewürgt.
+- Leiste „Spielweise“ unter der Stärke, nur bei Hi-Hat und Ride; der Step zeigt den Buchstaben (L, P, B). Antippen der Spielweise spielt sie an.
+- Gespeichert in `tr.notes` der Drum-Spuren (Patterns, Beats, Song-Clips, Undo, Länge). Ältere Patterns/Beats ohne Ride laden mit leerer Ride-Spur.
+- Fill pausiert auch den Ride; globales Würfeln lässt den Ride leer, eigener Würfel = Viertel/Achtel mit gelegentlicher Bell.
+- Nicht benutzte Sample-Kits werden aus dem Speicher freigegeben.
+- Tests: Ride/Spielweisen je Kit, Abwürgen, Speichern/Laden, Leiste (ui).
+
 ## Offen
-- Am Handy prüfen: Sample-Kits (Ladezeit, Timing in Safari, Klang, Klang-Optionen). Noteneditor (Zoom/Scroll), Klaviatur, Piano/Rhodes-Klang, Drum-Ausklang (v63).
+- Am Handy prüfen: Sample-Kits (Ladezeit, Timing in Safari, Klang, Klang-Optionen), Ride und Hi-Hat-Spielweisen (Pegel Pedal/Ride, Synth-Ride).
+- Variable Kit-Stimmen Schritt 2: Rollen, Stimmen hinzufügen/tauschen, Kit-Wechsel merkt Noten (DECISIONS.md). Noteneditor (Zoom/Scroll), Klaviatur, Piano/Rhodes-Klang, Drum-Ausklang (v63).
 - Unsichtbaren alten Song-Modus (`songEnableBtn`, `songSlotsList`, `addPatternToSong`) entfernen.
 - Versteckte Übersichts-Buttons M/S/🎲 pro Spur und `#groupBar` ausbauen (Mute/Solo-Refs beachten).
 - Samples in der Bibliothek löschen (Funktion `deleteSampleLibraryEntry` da, Button fehlt).

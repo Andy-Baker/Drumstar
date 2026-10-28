@@ -64,7 +64,7 @@ window.__audio.exportDrum=async function(id,kit){
 window.__audio.smpKits=()=>Object.keys(KITS).filter(k=>KITS[k].samples).map(k=>({id:k, voices:KITS[k].samples.voices}));
 window.__audio.smpOpt=o=>Object.assign(smpOpt,o);
 window.__audio.smpLoad=async function(kid){
-  await smpLoad(kid); const st=smp[kid]; let n=0, mo=0;
+  smpFree([kid,'studio']); await smpLoad(kid); const st=smp[kid]; let n=0, mo=0;
   Object.values(st.buf).forEach(set=>set.forEach((ly,l)=>ly.forEach((s,r)=>{ n++; })));
   return {state:st.state, n};
 };
@@ -73,10 +73,12 @@ window.__audio.exportPattern=async function(kit,pat,bpmv,vol){
   currentKitId=kit; drumSet.voices={}; drumSet.buffers={}; bpm=bpmv||100; swing=0; humanize=0; PATTERN_LENGTH=16;
   const V=[0,VEL_GHOST_SOFT,VEL_GHOST,VEL_NORMAL,VEL_ACCENT];
   TRACKS.forEach(t=>{ t.solo=false; t.muted=(t.type==='arp'||t.isSample||!VOICE_FNS[t.id]);
-    if(!t.muted) t.steps=t.steps.map(()=>0); t.feel=0; t.reverbAmount=0; t.delaySend=0;
+    if(!t.muted){ t.steps=t.steps.map(()=>0); if(t.notes) t.notes=t.notes.map(()=>0); } t.feel=0; t.reverbAmount=0; t.delaySend=0;
     if(t.sendGain) t.sendGain.gain.value=0; if(t.delaySendGain) t.delaySendGain.gain.value=0; });
-  const sv=[]; for(const id in pat){ const t=TRACKS.find(x=>x.id===id); for(const s in pat[id]) t.steps[+s]=V[pat[id][s]]; if(vol!=null){ sv.push([t,t.vol]); t.vol=vol; } }
-  const b=await renderPatternToWav(); sv.forEach(([t,v])=>t.vol=v);
+  // Schlüssel = Spur oder Sample-Stimme einer Spielweise (hl/hf → Hi-Hat, rb → Ride)
+  const sv=[]; for(const id in pat){ let tid=id, a=0; for(const k in ART){ const i=ART[k].findIndex(x=>x.v===id); if(i>0){ tid=k; a=i; } }
+    const t=TRACKS.find(x=>x.id===tid); for(const s in pat[id]){ t.steps[+s]=V[pat[id][s]]; t.notes[+s]=a; } if(vol!=null){ sv.push([t,t.vol]); t.vol=vol; } }
+  const b=await renderPatternToWav(); sv.forEach(([t,v])=>t.vol=v); if(window.gc) gc(); // Offline-Kontexte sofort freigeben (sonst läuft der Testbrowser voll)
   const L=b.getChannelData(0), R=b.getChannelData(1), x=new Float32Array(L.length);
   let pc=0; for(let i=0;i<x.length;i++){ x[i]=L[i]+R[i]; pc=Math.max(pc,Math.abs(L[i]),Math.abs(R[i])); }
   return {x:Array.from(x), sr:b.sampleRate, peakCh:pc};
@@ -87,4 +89,15 @@ window.__audio.smpOptRoundTrip=function(o){
   Object.assign(smpOpt,{layers:true,rr:true,vari:50,room:0.22}); applyTrackAndFillData(d); const a=Object.assign({},smpOpt);
   delete d.smpOpt; Object.assign(smpOpt,o); applyTrackAndFillData(d); const b=Object.assign({},smpOpt);
   return {saved:a, old:b};
+};
+// Spielweisen (tr.notes der Drum-Spuren) mit dem Pattern speichern/laden; altes Pattern ohne Ride → Ride leer
+window.__audio.artRoundTrip=function(){
+  const ch=TRACKS.find(t=>t.id==='ch'), rd=TRACKS.find(t=>t.id==='rd');
+  ch.steps.fill(0); ch.notes.fill(0); rd.steps.fill(0); rd.notes.fill(0);
+  [0,1,2].forEach(i=>{ ch.steps[i]=VEL_NORMAL; ch.notes[i]=i; }); ch.steps[3]=VEL_NORMAL; rd.steps[0]=VEL_NORMAL; rd.notes[0]=1;
+  const d=JSON.parse(JSON.stringify(collectPatternData('t','t')));
+  ch.notes.fill(0); rd.notes.fill(0); applyTrackAndFillData(JSON.parse(JSON.stringify(d)));
+  const r={ch:ch.notes.slice(0,4), rd:rd.notes.slice(0,4)};
+  rd.steps.fill(VEL_NORMAL); d.tracks=d.tracks.filter(t=>t.id!=='rd'); applyTrackAndFillData(d);
+  r.oldRide=rd.steps.filter(v=>v>0).length; return r;
 };
