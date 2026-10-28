@@ -20,7 +20,7 @@ Browser-Drum-Machine/Sequencer, Vanilla JS + Web Audio, eine `index.html` + `sw.
 - Siehe `CHANGES-v61-v71.md` (neuester Stand, offene Punkte), `DECISIONS.md` (gültige Entscheidungen, Verworfenes, Lektionen, Aufräum-Liste) und `docs/history/` (ältere Changelogs v41–v60). Tests (Playwright, headless) in `tests/`: vor jedem Push `python3 tests/run.py` (setzt Test-Hook in einer Temp-Kopie, startet Server, Screenshots in `tests/out/`). Neue Features bekommen Checks im passenden `test-*.py`.
 
 ## Offen
-Piano/Rhodes-Klang hören/verbessern, Orgel + Sample-Tasten im Roll-Fenster, Mixer-Solo-Link.
+Nächster Schritt: variable Kit-Stimmen (Ride, Pedal-Hi-Hat; Entscheidungen in DECISIONS.md, Mockup `kit-stimmen-mockup.html` im Claude-Projekt). Handytest Sample-Kits + Klang-Optionen ausstehend (Nutzer sah den KLANG-Knopf am 28.10. noch nicht: erscheint nur am gewählten Sample-Kit; evtl. alter SW-Cache – prüfen). Piano/Rhodes-Klang hören/verbessern, Orgel + Sample-Tasten im Roll-Fenster, Mixer-Solo-Link.
 
 ## Langfristig
 Spuren frei hinzufügen (Schichten, mehrere Keys-Spuren; Sound pro Spur über `tr.sound`). Zurückgestellt, erst Keys-Klang fine-tunen. Mockup: add-track-mockup.html (Chat). Größter Aufwand: Spuren sind fest in TRACKS/ARR_GROUPS verdrahtet.
