@@ -1,0 +1,72 @@
+# Entscheidungen & Lektionen — MRM-44 / Drumstar
+
+Zusammengeführt am 28.10.2026 aus DECISIONS-2/-3, ARCHITECTURE-11/-12 und ROADMAP-15 (Stand v41–v50, früher im Claude-Projekt), bereinigt auf den Stand v65. Was durch spätere Versionen überholt ist, steht nicht mehr hier. Änderungshistorie: `CHANGES-v61-v65.md` (neu) und `docs/history/`.
+
+## Gilt weiter
+
+**Arbeitsweise**
+- Mockups immer als interaktive HTML-Seiten (klickbar, bei Musik-Funktionen mit Ton), nicht als Bilder/Artboards. Erst Mockup, dann Umbau.
+- Klang und Performance vor neuen Funktionen. Kostet ein Feature eines davon, vorher Bescheid geben.
+- Fremdänderungen (andere KI, eigene Edits) prüfen: Diff, Syntaxcheck, Nebenwirkungen auf geteilten Zustand.
+- Dient es Qualität und Sound, keine Rücksicht auf alte Patterns (keine Migrationspflicht).
+- Kein Autosave des Arbeitsstands (nicht erneut vorschlagen).
+
+**Bedienung & Layout**
+- Eine Transportleiste, immer bündig oben (Play, BPM, Pattern-Taste, Zahnrad). Kein Logo im Header; Logo mittig ganz unten, darunter Impressum/Datenschutz.
+- Master/Swing/Humanize im Einstellungs-Sheet (Zahnrad), nicht in der Transportleiste.
+- Keine Pop-up-/Toast-Meldungen außer Undo-Toasts (z. B. `hmConvert`). Rückgängig ist global.
+- Länge gehört zum Pattern (Beats-Ansicht). Kein „Folgen“-Schalter: Ansicht blättert mit, manuelles Blättern fixiert bis Stopp/Tippen.
+- Step-Stärke über Pinsel (Ghost leise, Ghost, Normal, Akzent), nicht Tipp-Zyklus.
+- Kit nur bei Drums/Perc; Fill nur bei Drums (Icon-Taste + Sheet), steuert nur BD/SD/Toms/Becken/Hats. Perc-Fill evtl. später als eigene Version.
+- Design braucht Raum; Sticky-Elemente am Rand dürfen keinen Spalt zum Chassis lassen (Safe-Area im Element selbst auffangen).
+- Querformat nur für Spielflächen (Step-Raster, Pads, Noteneditor); Mixer, Song und Vollbild-Overlays bleiben Hochformat und scrollen.
+
+**Klang & Instrumente**
+- Samples bleiben in den Drums erlaubt (Drum-Rack-Prinzip: Pad = Container für Synth oder Sample). Ein ausgebauter Sampler ist ein zweites Werkzeug.
+- Pro Spur eigener Grundton und eigene Skala.
+- Cosmic klingt gut und bleibt so; Performance auf dem Handy spürbar, läuft aber.
+
+**Technik**
+- Schriften lokal (`fonts/`, `fonts.css`), kein Google.
+- Service Worker: stale-while-revalidate für App-Dateien, Cache zuerst für Schriften/Bilder; `CACHE` trotzdem bei jedem Deploy erhöhen.
+- Pinch-Zoom erlaubt (kein `user-scalable=no`).
+
+## Verworfen / bewusst nicht gebaut
+- Gemeinsamer Grundton/gemeinsame Skala für Acid und Cosmic; „Wie Cosmic“-Taste; Schalter „Cosmic sparsam“.
+- Logo im Header (alle Varianten), Logo-Startbild.
+- Master-Regler in der Transportleiste; dauerhafter „Folgen“-Schalter; gestrichelter Rand der Random-Leiste.
+- Eigenes Pattern-Sheet für Name + Länge.
+- Sample-Quellen aus den Drums streichen (höchstens Aufräumschritt, nachdem der Sampler steht).
+
+## Lektionen
+- Geteilter Zustand ist Fehlerquelle Nr. 1 (früher `xyTrack()`, ein Generator-Panel für zwei Spuren, der `type:'arp'`-Mischzustand): Spur-Bezug immer explizit übergeben.
+- Generator-/Harmonie-Ausgaben müssen im Editor erreichbar sein (Notenbereich ↔ sichtbares Fenster).
+- `exponentialRampToValueAtTime` nie auf 0.
+- Patches per Script mit `assert count==1`, danach Playwright (390×844).
+- Playwright findet echte Fehler (Solo ohne Muting, NaN im Fill, FM-Operator-Pegel, Choke vom Hall verdeckt, Swing-Timing). Klang und Last sind headless nicht beurteilbar.
+- Playwright: Service Worker nur über `http://localhost` testbar; „offline“ blockiert Anfragen des Service Workers nicht (Server abschalten); emulierter Doppeltipp erzeugt kein `dblclick`.
+- Messung Cosmic: eine Note ≈ 1,4× ein Kick-Schlag (≈ 12 neue Knoten pro Note). Wirksam wäre nur Stimmen-Wiederverwendung (Klang könnte sich ändern) → vorerst nicht gewünscht.
+- CSS: Flex-Items in scrollenden Containern mit `min-height` brauchen `flex-shrink:0`; gleiche Spezifität → spätere Regel gewinnt; Fixed-Elemente in einem Element mit `z-index` kommen nicht über Geschwister außerhalb (Sheets deshalb außerhalb von `#panelContent`).
+- JS: Funktionsdeklarationen sind hoisted, `const`-Hilfen nicht.
+- Native `<select>` mit `<optgroup>` funktioniert auf Android.
+- Manifest-Änderungen (z. B. `orientation`) greifen in der installierten App oft erst nach Neu-Hinzufügen zum Homescreen.
+
+## Bekannte Einschränkungen
+- iOS-Stummschalter kann Web Audio stumm halten; Gerätetasten regeln nur die Systemausgabe.
+- Sample-Quellen in Drums und Sample-Spur einstimmig (eine Note pro Step).
+- Schriftgrößen < 11 px an vielen Stellen (Anheben braucht eigenes Mockup).
+- Rechtstexte (Impressum/Datenschutz) nicht anwaltlich geprüft.
+
+## Offene Aufräum- und Strukturpunkte
+Stand 28.10.2026 per Code-Suche geprüft (Treffer in `index.html` vorhanden):
+- Reste: alter Song-Modus (`songSlots`, `songEnableBtn`, `addPatternToSong`), `#groupBar`, `tbKnobs`, `.btn-cluster`, `#taToast`, `#ctxRow`, `lenBtn`.
+- Versteckte Übersichts-Buttons M/S/🎲 pro Spur ausbauen (Mute/Solo-Refs beachten).
+- Versteckte Doppeltipp-Zurücksetzen-Funktion (`dblclick` + `data-def`): entfernen oder durch sichtbaren Zurücksetzen-Knopf ersetzen.
+- Instrument-Abstraktion: `type:'arp'` mischt Acid/Cosmic/Keys (~30 Abfragen, ~20 `'cosmic'`-Sonderfälle); gemeinsames Schema statt Sonderfälle. Voraussetzung für „Spuren frei hinzufügen“.
+- `index.html` in ES-Module aufteilen (kein Build).
+- Samples in der Bibliothek löschen: Funktion `deleteSampleLibraryEntry` da, Button fehlt.
+
+## Später (aus der alten Roadmap, weiterhin offen)
+- Sampler ausbauen: Modi Pads und Tasten, Grundton pro Sample, mehrstimmig; Übergänge Pads ↔ Sampler (Slices → Pads).
+- Sample-Editor überarbeiten (siehe Trim-Handle-Problem), Song-Export mit Samples, WAV-Export mit Sample-Stimmen prüfen.
+- Cosmic-Performance (Stimmen-Wiederverwendung) nur mit Gegenhören.
