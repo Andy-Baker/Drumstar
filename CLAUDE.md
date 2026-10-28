@@ -6,6 +6,7 @@ Browser-Drum-Machine/Sequencer, Vanilla JS + Web Audio, eine `index.html` + `sw.
 - Bei jedem Deploy `CACHE` in `sw.js` erhöhen (aktuell `mrm44-v65`).
 - UI: erst interaktives Mockup (HTML), dann Umbau. Design braucht Platz; dunkles Chassis, blaue Controls, Instrumentfarben (Acid orange, Cosmic lila, Piano gelb, Sample grün, Drums blau, Perc türkis).
 - Versionen über Git-Commits/Tags, nicht über Datei-Suffixe.
+- Tests gehören ins Repo (`tests/`), nie nur ins Claude-Projekt. Neue oder geänderte Tests immer mit committen und pushen.
 
 ## Architektur-Kurzfassung
 - Melodische Spuren (`type:'arp'`: arp=Acid, cosmic, piano) nutzen `tr.events=[{s,n,l,v,a,sl}]`; `tr.steps` ist abgeleitet (`evTouch`). `isPoly(tr)` = Cosmic/Piano (Akkorde, keine Slides), `trOct(tr)` = Oktavlage.
