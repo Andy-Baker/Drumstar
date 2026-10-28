@@ -1,4 +1,4 @@
-# v61 → v65 (26.–27.10.2026)
+# v61 → v66 (26.–28.10.2026)
 
 ## v61
 - Alter Tonhöhen-Editor entfernt (toter Code). `renderPitchEditor` → `renderEditorArea`.
@@ -23,6 +23,13 @@
 - Einheitliche Overlay-Köpfe, SVG statt Emojis.
 - Beats: ▶ + ⋯ mit benannten Aktionen; WAV/Alle/Import in einer Zeile.
 - Pads füllen die Höhe, Delay-Regler, Quantize-Icon. Mixer: Master in eigener Spalte, Fader nach Höhe. Song: ⓘ-Hilfe, AUS/AN. Spielfläche: Rec-Dummy weg, Segment.
+
+## v66 – Keys-Anschlag (28.10.)
+- Notenende: Pegel sprang beim Release um ~+22 dB (Piano und Rhodes), weil bei vorausgeplanten Noten `amp.gain.value` noch 1 war. Jetzt Hüllkurvenwert berechnet (Piano: `peak`, Rhodes: `rhodesEnvAt`). Bei kurzen Noten klang das wie ein zweiter Schlag kurz nach dem Anschlag.
+- Piano-Grundton fällt nach dem Anschlag kaum noch ab (vorher −6 dB in 100 ms = „Bassdrum“-Wumms); Obertöne klingen weiter schnell ab.
+- Hammer-Rauschen leiser, tiefer (500 Hz–2,5 kHz) und durch den Tonfilter (vorher hell und ungefiltert = „Hi-Hat“). Anteil über 4 kHz im Anschlag −38 → −58 dB.
+- Klang dadurch insgesamt etwas voller/länger (RMS über 1 s ca. +5 dB bei gleichem Spitzenpegel). Am Handy gegenhören.
+- Neuer Test `tests/test-audio.py` (Offline-Render: Release-Sprung, Wumms, Hammer, Clipping).
 
 ## Offen
 - Am Handy prüfen: Noteneditor (Zoom/Scroll), Klaviatur, Piano/Rhodes-Klang, Drum-Ausklang (v63).

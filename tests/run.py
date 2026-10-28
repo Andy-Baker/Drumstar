@@ -2,7 +2,7 @@
 
 Aufruf aus dem Repo-Ordner:
     python3 tests/run.py            # alle Tests
-    python3 tests/run.py editor ui  # nur ausgewählte (ui | editor | walkthrough)
+    python3 tests/run.py editor ui  # nur ausgewählte (audio | ui | editor | walkthrough)
 
 Voraussetzung (einmalig):  pip install playwright && python3 -m playwright install chromium
 
@@ -17,13 +17,13 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 TESTS = pathlib.Path(__file__).resolve().parent
 OUT = TESTS / 'out'
 HOOK_FROM = "let activeTrackIdx=0;"
-HOOK_TO = "let activeTrackIdx=0; window.__T=TRACKS; window.__sel=()=>activeTrackIdx;"
+HOOK_TO = "let activeTrackIdx=0; window.__T=TRACKS; window.__sel=()=>activeTrackIdx; window.__pv=pianoVoice; window.__setCtx=c=>{audioCtx=c};"
 
 def free_port():
     s = socket.socket(); s.bind(('127.0.0.1', 0)); p = s.getsockname()[1]; s.close(); return p
 
 def main():
-    pick = sys.argv[1:] or ['ui', 'editor', 'walkthrough']
+    pick = sys.argv[1:] or ['audio', 'ui', 'editor', 'walkthrough']
     tmp = pathlib.Path(tempfile.mkdtemp(prefix='drumstar-test-'))
     site = tmp / 'site'
     shutil.copytree(ROOT, site, ignore=shutil.ignore_patterns('.git', 'tests'))
@@ -40,7 +40,8 @@ def main():
         for name in pick:
             out = OUT / name; out.mkdir(parents=True, exist_ok=True)
             script = str(TESTS / f'test-{name}.py')
-            args = {'ui': [script, str(out), url],
+            args = {'audio': [script, url],
+                    'ui': [script, str(out), url],
                     'editor': [script, url, str(out)],
                     'walkthrough': [script, 'X', url, str(out)]}[name]
             print(f'\n=== {name} ===', flush=True)

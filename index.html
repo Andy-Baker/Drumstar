@@ -2555,6 +2555,13 @@ const KEY_SOUNDS={
   piano:{name:'PIANO', desc:'Hammer · Saiten · warm', def:{cutoff:0.55, envMod:0.5, decay:0.5, tremolo:0}},
   rhodes:{name:'RHODES', desc:'E-Piano · Glocke · Tremolo', def:{cutoff:0.5, envMod:0.45, decay:0.55, tremolo:0.35}}
 };
+// Wert der Rhodes-Hüllkurve dt Sekunden nach dem Anschlag (für den Release: amp.gain.value taugt bei vorausgeplanten Noten nicht)
+function rhodesEnvAt(dt,peak,T){
+  if(dt<0.003) return Math.max(0.0001,peak*dt/0.003);
+  let v=peak; const t1=Math.min(dt,0.4); if(t1>0.01) v=peak*0.5+(peak-peak*0.5)*Math.exp(-(t1-0.01)/(T*0.22));
+  if(dt>0.4) v=0.0001+(v-0.0001)*Math.exp(-(dt-0.4)/(T*0.55));
+  return Math.max(0.0001,v);
+}
 function rhodesVoice(tr,time,n,vel,holdSec){
   const freq=noteFreq(tr.rootNote+n+12);
   const tone=tr.cutoff!=null?tr.cutoff:0.5, bite=tr.envMod!=null?tr.envMod:0.45, trem=tr.tremolo!=null?tr.tremolo:0.35;
@@ -2575,7 +2582,7 @@ function rhodesVoice(tr,time,n,vel,holdSec){
   car.connect(tm); tm.connect(lp); bell.connect(bg).connect(lp); lp.connect(amp).connect(pan).connect(tr.bus);
   const oscs=[car,mod,bell,lfo]; oscs.forEach(o=>o.start(time));
   const voice={amp,oscs,t0:time,
-    rel(at){ const now=Math.max(time,at!=null?at:audioCtx.currentTime); try{ amp.gain.cancelScheduledValues(now); amp.gain.setValueAtTime(Math.max(0.0001,amp.gain.value||peak),now); amp.gain.setTargetAtTime(0.0001,now,0.12); oscs.forEach(o=>{ try{o.stop(now+0.8);}catch(e){} }); }catch(e){} }};
+    rel(at){ const now=Math.max(time,at!=null?at:audioCtx.currentTime); try{ amp.gain.cancelScheduledValues(now); amp.gain.setValueAtTime(rhodesEnvAt(now-time,peak,T),now); amp.gain.setTargetAtTime(0.0001,now,0.12); oscs.forEach(o=>{ try{o.stop(now+0.8);}catch(e){} }); }catch(e){} }};
   car.onended=()=>{ try{ amp.disconnect(); }catch(e){} if(tr._cosVoices){ const i=tr._cosVoices.indexOf(voice); if(i>=0) tr._cosVoices.splice(i,1); } };
   const isLive=!(typeof OfflineAudioContext!=='undefined' && audioCtx instanceof OfflineAudioContext);
   if(isLive){ (tr._cosVoices=tr._cosVoices||[]).push(voice);
@@ -2598,28 +2605,29 @@ function pianoVoice(tr,time,n,vel,holdSec){
   const amp=audioCtx.createGain(); amp.gain.setValueAtTime(0.0001,time); amp.gain.linearRampToValueAtTime(peak,time+0.003);
   const pan=audioCtx.createStereoPanner(); pan.pan.value=Math.max(-0.45,Math.min(0.45,(n-20)/45)); // tiefe Töne links, hohe rechts
   const oscs=[], K=Math.max(3,Math.min(8,Math.floor(7500/freq)));
-  const part=(f,a,tau1,det)=>{
+  const part=(f,a,tau1,det,drop)=>{
     const o=audioCtx.createOscillator(); o.type='sine'; o.frequency.setValueAtTime(f,time); if(det) o.detune.setValueAtTime(det,time);
     const g=audioCtx.createGain(); g.gain.setValueAtTime(a,time);
     // Zweistufiges Ausklingen: schneller Anfangsabfall, dann lange Schwebung
-    g.gain.setTargetAtTime(a*0.3,time+0.005,tau1); g.gain.setTargetAtTime(0.0001,time+0.1+tau1*2,tau1*6+T*0.35);
+    g.gain.setTargetAtTime(a*drop,time+0.005,tau1); g.gain.setTargetAtTime(0.0001,time+0.1+tau1*2,tau1*6+T*0.35);
     o.connect(g).connect(lp); oscs.push(o);
   };
   for(let k=1;k<=K;k++){
     const f=freq*k*Math.sqrt(1+0.0004*k*k); if(f>11000) break;
     const a=(1/Math.pow(k,1.2))*(k>2?(0.3+v*0.7*(0.45+hard)):1)*(k===2?0.8:1);
     const tau1=T*0.07/(1+0.5*(k-1));
-    part(f,a,tau1,0);
-    if(k<=3 && freq>130) part(f,a*0.55,tau1*1.1,k===1?-3.5:3.5); // Doppel-/Dreichörigkeit
+    const drop=k===1?0.8:k===2?0.6:0.3; // Grundton fällt kaum ab (sonst Wumms wie eine Bassdrum beim Anschlag)
+    part(f,a,tau1,0,drop);
+    if(k<=3 && freq>130) part(f,a*0.55,tau1*1.1,k===1?-3.5:3.5,drop); // Doppel-/Dreichörigkeit
   }
   lp.connect(amp).connect(pan).connect(tr.bus);
-  // Hammer: kurzer Rauschimpuls + tiefer Klopfton
+  // Hammer: kurzer, leiser Rauschimpuls im Mittenbereich, durch den Tonfilter (vorher hell und laut = klang wie eine Hi-Hat)
   const nz=audioCtx.createBufferSource(); nz.buffer=pianoNoise();
-  const nb=audioCtx.createBiquadFilter(); nb.type='bandpass'; nb.frequency.value=Math.min(6000,1200+freq*2.5); nb.Q.value=0.8;
-  const ng=audioCtx.createGain(); ng.gain.value=0.05+0.3*v*(0.4+hard)*peak/0.1; nz.connect(nb).connect(ng).connect(amp); nz.start(time);
+  const nb=audioCtx.createBiquadFilter(); nb.type='bandpass'; nb.frequency.value=Math.min(2500,500+freq*1.5); nb.Q.value=1.2;
+  const ng=audioCtx.createGain(); ng.gain.value=(0.02+0.1*v*(0.4+hard))*peak/0.1; nz.connect(nb).connect(ng).connect(lp); nz.start(time);
   oscs.forEach(o=>o.start(time));
   const voice={amp,oscs,t0:time,
-    rel(at){ const now=Math.max(time,at!=null?at:audioCtx.currentTime); try{ amp.gain.cancelScheduledValues(now); amp.gain.setValueAtTime(Math.max(0.0001,amp.gain.value||peak),now); amp.gain.setTargetAtTime(0.0001,now,0.11); oscs.forEach(o=>{ try{o.stop(now+0.8);}catch(e){} }); }catch(e){} }};
+    rel(at){ const now=Math.max(time,at!=null?at:audioCtx.currentTime); try{ amp.gain.cancelScheduledValues(now); amp.gain.setValueAtTime(Math.max(0.0001,peak*Math.min(1,(now-time)/0.003)),now); amp.gain.setTargetAtTime(0.0001,now,0.11); oscs.forEach(o=>{ try{o.stop(now+0.8);}catch(e){} }); }catch(e){} }};
   oscs[0].onended=()=>{ try{ amp.disconnect(); }catch(e){} if(tr._cosVoices){ const i=tr._cosVoices.indexOf(voice); if(i>=0) tr._cosVoices.splice(i,1); } };
   const isLive=!(typeof OfflineAudioContext!=='undefined' && audioCtx instanceof OfflineAudioContext);
   if(isLive){ (tr._cosVoices=tr._cosVoices||[]).push(voice);
