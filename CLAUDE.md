@@ -3,7 +3,7 @@ Browser-Drum-Machine/Sequencer, Vanilla JS + Web Audio, eine `index.html` + `sw.
 
 ## Regeln
 - Kein Framework, kein Build. Plain HTML/CSS/JS.
-- Bei jedem Deploy `CACHE` in `sw.js` erhöhen (aktuell `mrm44-v67`).
+- Bei jedem Deploy `CACHE` in `sw.js` erhöhen (aktuell `mrm44-v68`).
 - UI: erst interaktives Mockup (HTML), dann Umbau. Design braucht Platz; dunkles Chassis, blaue Controls, Instrumentfarben (Acid orange, Cosmic lila, Piano gelb, Sample grün, Drums blau, Perc türkis).
 - Versionen über Git-Commits/Tags, nicht über Datei-Suffixe.
 - Tests gehören ins Repo (`tests/`), nie nur ins Claude-Projekt. Neue oder geänderte Tests immer mit committen und pushen.
@@ -15,8 +15,8 @@ Browser-Drum-Machine/Sequencer, Vanilla JS + Web Audio, eine `index.html` + `sw.
 - Klang-Sheet `#klSheet` (`openKlang`): ein Einstieg für alle Spuren; Melodiespuren mit Reitern Sound / Mix & FX / Tonart (Grundton + Skala), Drums/Perc/Sample nur Mix + Tune.
 - UI-Einheitlichkeit (v65): Overlays mit Kopf `.ovt` + ✕-Kasten; Icons als SVG (`UI_IC` am Skriptanfang, CSS `.uic`), keine Emojis in Buttons. Beat-Zeilen über `prowFinish` (▶ + ⋯ mit benannten Aktionen). Mixer: Master in eigener Spalte `#mixerMaster`, Fader-Höhe über `--fh` (`mixerFit`).
 - Harmonie (v62, ersetzt den Arpeggio-Generator): einklappbare Karte `#hmPanel` auf der Pattern-Seite. `harmony={key,chords}` gilt pro Pattern für alle Spuren; `tr.harm` = Spielweise pro Spur (`off|chord|chordbass|root|arp`, Acid ohne Akkord-Modi). Folgt eine Spur, liegen die eigenen Noten in `tr.harmOwn` und `tr.events` enthält die erzeugten (`e.h=1`) — Wiedergabe/Export/Vorschau brauchen keinen Sonderfall. Speichern: `trOwnEvents(tr)` + `harm` + `harmony`. Erzeugte Note in der Piano Roll anfassen = `hmConvert` (Spur bekommt eigene Noten, Undo per Toast). Zufall deterministisch über `tr.harm.seed`.
-- FM-Drums: AudioWorklet `fm-voice` (Hüllkurven multiplikativ statt `Math.exp` je Sample, 4 ms Ausblenden am Ende). Schriften: Latein-Subsets als WOFF in `fonts/` (Neu erzeugen mit `pyftsubset`, Zeichenbereich siehe Commit v63).
-- Siehe `CHANGES-v61-v67.md` (neuester Stand, offene Punkte), `DECISIONS.md` (gültige Entscheidungen, Verworfenes, Lektionen, Aufräum-Liste) und `docs/history/` (ältere Changelogs v41–v60). Tests (Playwright, headless) in `tests/`: vor jedem Push `python3 tests/run.py` (setzt Test-Hook in einer Temp-Kopie, startet Server, Screenshots in `tests/out/`). Neue Features bekommen Checks im passenden `test-*.py`.
+- FM-Drums: AudioWorklet `fm-voice` (Hüllkurven multiplikativ statt `Math.exp` je Sample; Stimme endet bei −45 dB mit 20 ms Ausblenden; WAV-Export nutzt dasselbe Worklet). Schriften: Latein-Subsets als WOFF in `fonts/` (Neu erzeugen mit `pyftsubset`, Zeichenbereich siehe Commit v63).
+- Siehe `CHANGES-v61-v68.md` (neuester Stand, offene Punkte), `DECISIONS.md` (gültige Entscheidungen, Verworfenes, Lektionen, Aufräum-Liste) und `docs/history/` (ältere Changelogs v41–v60). Tests (Playwright, headless) in `tests/`: vor jedem Push `python3 tests/run.py` (setzt Test-Hook in einer Temp-Kopie, startet Server, Screenshots in `tests/out/`). Neue Features bekommen Checks im passenden `test-*.py`.
 
 ## Offen
 Piano/Rhodes-Klang hören/verbessern, Orgel + Sample-Tasten im Roll-Fenster, Mixer-Solo-Link.

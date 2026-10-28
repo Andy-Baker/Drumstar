@@ -1831,7 +1831,8 @@ const FM_WORKLET_SRC = `
 class FMVoiceProcessor extends AudioWorkletProcessor {
   // Hüllkurven exp(-t/decay) werden pro Sample multiplikativ fortgeschrieben (env *= k) statt Math.exp je Sample;
   // Phasen bleiben in [0, 2π). Klang identisch, deutlich weniger Rechenlast im Audio-Thread.
-  // Am Ende 4 ms Ausblenden statt hartem Abschneiden (vorher Knackser bei 5–10 % Restpegel).
+  // Ende (v68): sobald die Ausgangs-Hüllkurve (amp * Träger-env) unter -45 dB fällt, 20 ms weich ausblenden.
+  // Vorher fest nach ampDecay+60 ms bei -10…-30 dB abgeschnitten. Sicherheitsgrenze 8 s. -60 dB kostete +26 % Last, -45 dB +19 %.
   constructor(options){
     super();
     const o = options.processorOptions;
@@ -1848,8 +1849,9 @@ class FMVoiceProcessor extends AudioWorkletProcessor {
     this.amp = 1; this.ampK = Math.exp(-dt / o.ampDecay);
     this.pEnv = 1; this.pK = this.pitchDecay > 0 ? Math.exp(-dt / this.pitchDecay) : 1;
     this.vol = o.vol;
-    this.len = Math.floor((o.ampDecay + 0.06) * sampleRate);   // Ende wie bisher
-    this.fade = Math.max(1, Math.min(this.len, Math.round(0.004 * sampleRate)));
+    this.len = Math.floor(8 * sampleRate);
+    this.fade = Math.max(1, Math.round(0.02 * sampleRate));
+    this.fadeLeft = -1;
     this.pos = 0;
     this.done = false;
   }
@@ -1857,11 +1859,11 @@ class FMVoiceProcessor extends AudioWorkletProcessor {
     const out = outputs[0], ch0 = out[0], N = ch0.length;
     const TWO_PI = 6.283185307179586, w = TWO_PI / sampleRate;
     const n = this.n, ratio = this.ratio, level = this.level, fbAmt = this.fbAmt, env = this.env, envK = this.envK, phase = this.phase, fbMem = this.fbMem;
-    const pe = this.pitchEndMult, usePitch = this.pitchDecay > 0, len = this.len, fadeStart = len - this.fade;
+    const pe = this.pitchEndMult, usePitch = this.pitchDecay > 0, len = this.len, fade = this.fade;
     for(let i=0;i<N;i++){
       if(currentFrame + i < this.startFrame || this.done){ ch0[i]=0; continue; }
       const k = this.pos;
-      if(k >= len){ ch0[i]=0; this.done = true; continue; }
+      if(this.fadeLeft === 0){ ch0[i]=0; this.done = true; continue; }
       const f0 = this.baseFreq * (usePitch ? pe + (1 - pe) * this.pEnv : 1);
       let mod = 0;
       for(let idx = n - 1; idx >= 1; idx--){
@@ -1877,7 +1879,8 @@ class FMVoiceProcessor extends AudioWorkletProcessor {
       fbMem[0] = sC;
       let ph0 = phase[0] + w * f0 * ratio[0]; if(ph0 >= TWO_PI) ph0 -= TWO_PI; phase[0] = ph0;
       let y = sC * env[0] * this.amp * this.vol;
-      if(k >= fadeStart) y *= (len - k) / this.fade;
+      if(this.fadeLeft < 0 && (this.amp * env[0] < 0.0056 || k >= len)) this.fadeLeft = fade;
+      if(this.fadeLeft > 0){ y *= this.fadeLeft / fade; this.fadeLeft--; }
       ch0[i] = y;
       env[0] *= envK[0]; this.amp *= this.ampK; if(usePitch) this.pEnv *= this.pK;
       this.pos = k + 1;
@@ -1991,7 +1994,9 @@ function fmTrigger(time, cfg){
     tail.connect(getBus());
     // Aufräumen nur live; offline (Export) beendet sich der Prozessor selbst, ein Echtzeit-Timer wäre dort falsch
     if(!(typeof OfflineAudioContext!=='undefined' && audioCtx instanceof OfflineAudioContext)){
-      const lifeMs = Math.max(50, (cfg.ampDecay+0.15)*1000 + (time-audioCtx.currentTime)*1000);
+      const d0 = cfg.ops && cfg.ops[0] && cfg.ops[0].decay ? cfg.ops[0].decay : 1e9;
+      const voiceSec = Math.min(8, 5.18 / (1/cfg.ampDecay + 1/d0)) + 0.03; // gleiche Regel wie im Prozessor (-45 dB + Ausblenden)
+      const lifeMs = Math.max(50, (voiceSec+0.15)*1000 + (time-audioCtx.currentTime)*1000);
       setTimeout(()=>{ try{ node.disconnect(); if(tail!==node) tail.disconnect(); }catch(e){} }, lifeMs);
     }
   } else {

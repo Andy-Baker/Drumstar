@@ -44,7 +44,7 @@ async def main():
         ok(f'{sound} n={n}: Grundton nach 100 ms > -3 dB (kein Wumms)', drop>-3, f'{drop:+.1f} dB')
         if sound=='piano': ok(f'piano n={n}: Hochton-Anteil Anschlag < -45 dB (kein Hi-Hat)', r['hf']<-45, f"{r['hf']:.1f} dB")
     # ---------- Drums ----------
-    kits=await pg.evaluate("__audio.kits()"); ids=await pg.evaluate("__audio.drumIds()"); warn=[]
+    kits=await pg.evaluate("__audio.kits()"); ids=await pg.evaluate("__audio.drumIds()")
     for kit in kits:
       for wk in [False, True]:
         for vid in ids:
@@ -53,12 +53,8 @@ async def main():
           x=np.array(r['x']); sr=r['sr']; pk=float(np.abs(x).max()); tag=f"{kit} {'Worklet' if wk else 'nativ'} {vid}"
           if not np.isfinite(x).all() or pk<1e-3: ok(f'{tag}: klingt, kein NaN', False, round(pk,4)); continue
           end=np.where(np.abs(x)>pk*1e-3)[0][-1]; tail=20*math.log10(np.abs(x[max(0,end-int(0.004*sr)):end+1]).max()/pk)
-          if wk:
-            # Bekannt (28.10.): Worklet-Stimmen enden nach ampDecay+60 ms bei ca. -10…-25 dB (4 ms ausgeblendet) -> Ausklang wird
-            # abgeschnitten, nativer Pfad/WAV-Export klingt dagegen bis -60 dB aus. Entscheidung offen, daher nur Warnung.
-            if tail>-35: warn.append(f'{tag} {tail:.0f} dB')
-          else:
-            ok(f'{tag}: klingt sauber aus (letzte 4 ms < -35 dB)', tail<-35, f'{tail:.1f} dB')
+          # v68: Worklet-Stimmen klingen bis -45 dB aus und blenden 20 ms weich aus (vorher bei -10…-30 dB abgeschnitten)
+          ok(f'{tag}: klingt sauber aus (letzte 4 ms < -35 dB)', tail<-35, f'{tail:.1f} dB')
     ok('Drums: alle Stimmen gerendert', True, f'{len(kits)} Kits × {len(ids)} Stimmen × 2 Pfade')
     # Live = Export: Ausklang-Ende der Kick über den WAV-Export muss dem Worklet-Render entsprechen (seit v67 gleicher Pfad)
     def tail_db(x,sr):
@@ -68,7 +64,6 @@ async def main():
       lv=await pg.evaluate("([i,k,w])=>__audio.drum(i,k,w,4)",['bd',kit,True]); ex=await pg.evaluate("([i,k])=>__audio.exportDrum(i,k)",['bd',kit])
       (tl,dl),(te,de)=tail_db(lv['x'],lv['sr']),tail_db(ex['x'],ex['sr'])
       ok(f'{kit} bd: WAV-Export endet wie live (Worklet)', abs(tl-te)<6 and abs(dl-de)<0.05, f'live {tl:.0f} dB @{dl:.2f}s, Export {te:.0f} dB @{de:.2f}s')
-    if warn: print(f'WARN Worklet-Ausklang abgeschnitten (bekannt, Entscheidung offen): {len(warn)} Stimmen, z. B. '+', '.join(warn[:6]),flush=True)
     # ---------- Acid (über den WAV-Export) ----------
     def cent(x,sr):
       X=np.abs(np.fft.rfft(x*np.hanning(len(x)))); f=np.fft.rfftfreq(len(x),1/sr); return float((X*f).sum()/X.sum())

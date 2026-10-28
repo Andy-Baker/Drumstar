@@ -1,6 +1,6 @@
 # Entscheidungen & Lektionen — MRM-44 / Drumstar
 
-Zusammengeführt am 28.10.2026 aus DECISIONS-2/-3, ARCHITECTURE-11/-12 und ROADMAP-15 (Stand v41–v50, früher im Claude-Projekt), bereinigt auf den Stand v65. Was durch spätere Versionen überholt ist, steht nicht mehr hier. Änderungshistorie: `CHANGES-v61-v67.md` (neu) und `docs/history/`.
+Zusammengeführt am 28.10.2026 aus DECISIONS-2/-3, ARCHITECTURE-11/-12 und ROADMAP-15 (Stand v41–v50, früher im Claude-Projekt), bereinigt auf den Stand v65. Was durch spätere Versionen überholt ist, steht nicht mehr hier. Änderungshistorie: `CHANGES-v61-v68.md` (neu) und `docs/history/`.
 
 ## Gilt weiter
 
