@@ -30,8 +30,10 @@
 - Hammer-Rauschen leiser, tiefer (500 Hz–2,5 kHz) und durch den Tonfilter (vorher hell und ungefiltert = „Hi-Hat“). Anteil über 4 kHz im Anschlag −38 → −58 dB.
 - Klang dadurch insgesamt etwas voller/länger (RMS über 1 s ca. +5 dB bei gleichem Spitzenpegel). Am Handy gegenhören.
 - Neuer Test `tests/test-audio.py` (Offline-Render: Release-Sprung, Wumms, Hammer, Clipping).
+- Audiotest erweitert (ohne App-Änderung): alle Drum-Stimmen aller Kits über Worklet und nativen Pfad, Acid über den WAV-Export (Cutoff, Resonanz, Accent, Clipping). Test-Hook liegt jetzt in `tests/hook.js`.
 
 ## Offen
+- **Drum-Ausklang live ≠ WAV-Export:** FM-Worklet-Stimmen (live) enden nach `ampDecay`+60 ms bei ca. −10…−30 dB und werden in 4 ms ausgeblendet = Ausklang abgeschnitten (32 von 66 Stimmen). Der native Pfad (WAV-Export) nutzt eine andere Hüllkurve (−60 dB nach `ampDecay`) und klingt sauber aus. Entscheiden: Worklet-Hüllkurve angleichen oder Ende länger/weicher ausblenden (Performance beachten). `test-audio.py` meldet das als WARN.
 - Am Handy prüfen: Noteneditor (Zoom/Scroll), Klaviatur, Piano/Rhodes-Klang, Drum-Ausklang (v63).
 - Unsichtbaren alten Song-Modus (`songEnableBtn`, `songSlotsList`, `addPatternToSong`) entfernen.
 - Versteckte Übersichts-Buttons M/S/🎲 pro Spur und `#groupBar` ausbauen (Mute/Solo-Refs beachten).

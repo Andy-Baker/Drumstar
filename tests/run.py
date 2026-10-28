@@ -7,7 +7,7 @@ Aufruf aus dem Repo-Ordner:
 Voraussetzung (einmalig):  pip install playwright && python3 -m playwright install chromium
 
 Ablauf: Repo wird in einen Temp-Ordner kopiert, dort in index.html der Test-Hook
-(window.__T / window.__sel) eingesetzt und ein lokaler Server gestartet. Die echte
+(tests/hook.js: window.__T, __sel, __pv, __audio …) eingesetzt und ein lokaler Server gestartet. Die echte
 index.html bleibt unverändert. Screenshots landen in tests/out/ (nicht im Git).
 Kein Hörtest: Klang und Last am Gerät beurteilen.
 """
@@ -17,7 +17,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 TESTS = pathlib.Path(__file__).resolve().parent
 OUT = TESTS / 'out'
 HOOK_FROM = "let activeTrackIdx=0;"
-HOOK_TO = "let activeTrackIdx=0; window.__T=TRACKS; window.__sel=()=>activeTrackIdx; window.__pv=pianoVoice; window.__setCtx=c=>{audioCtx=c};"
+HOOK_TO = HOOK_FROM + "\n" + (pathlib.Path(__file__).resolve().parent / "hook.js").read_text(encoding="utf8")
 
 def free_port():
     s = socket.socket(); s.bind(('127.0.0.1', 0)); p = s.getsockname()[1]; s.close(); return p
@@ -40,10 +40,9 @@ def main():
         for name in pick:
             out = OUT / name; out.mkdir(parents=True, exist_ok=True)
             script = str(TESTS / f'test-{name}.py')
-            args = {'audio': [script, url],
-                    'ui': [script, str(out), url],
+            args = {'ui': [script, str(out), url],
                     'editor': [script, url, str(out)],
-                    'walkthrough': [script, 'X', url, str(out)]}[name]
+                    'walkthrough': [script, 'X', url, str(out)]}.get(name, [script, url])
             print(f'\n=== {name} ===', flush=True)
             results[name] = subprocess.call([sys.executable] + args) == 0
     finally:

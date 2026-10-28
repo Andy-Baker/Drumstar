@@ -1,8 +1,10 @@
-# Drumstar-Audiotest (Playwright + OfflineAudioContext): rendert Keys-Stimmen offline und misst den Klang.
-# Start über tests/run.py.  Direkt: python3 test-audio.py URL
-# Prüft: kein Pegelsprung beim Notenende (Release), Hammer nicht hell/laut (kein "Hi-Hat"),
-#        Grundton fällt nach dem Anschlag nicht schnell ab (kein "Bassdrum"-Wumms), kein Clipping/NaN.
+# Drumstar-Audiotest (Playwright + OfflineAudioContext): Signal rein, Signal raus, Kennzahlen prüfen.
+# Start über tests/run.py (setzt tests/hook.js ein).
+# Keys:  kein Pegelsprung beim Notenende, Hammer nicht hell/laut ("Hi-Hat"), kein Grundton-Wumms, kein Clipping/NaN.
+# Drums: jede Stimme jedes Kits, FM-Worklet (live) und nativer Pfad (WAV-Export): klingt, kein NaN, sauberes Ausklingen.
+# Acid:  über den echten WAV-Export: Cutoff/Resonanz wirken, Accent lauter, max. Resonanz ohne Clipping/NaN.
 import asyncio, sys, math
+import numpy as np
 from playwright.async_api import async_playwright
 URL=sys.argv[1]; res=[]
 def ok(n,c,x=''): res.append(('PASS ' if c else 'FAIL ')+n+(' '+str(x) if x else '')); print(res[-1],flush=True)
@@ -26,7 +28,7 @@ JS="""async ([sound,n,vel,hold])=>{
          fund:[gz(0.055),gz(0.15)], hf:10*Math.log10((eh+1e-12)/(et+1e-12))};}"""
 async def main():
   async with async_playwright() as p:
-    b=await p.chromium.launch(); pg=await b.new_page(); errs=[]
+    b=await p.chromium.launch(args=['--autoplay-policy=no-user-gesture-required']); pg=await b.new_page(); errs=[]
     pg.on('pageerror',lambda e:errs.append(str(e)[:200]))
     await pg.goto(URL,wait_until='domcontentloaded'); await pg.wait_for_timeout(1500)
     for sound in ['piano','rhodes']:
@@ -41,6 +43,39 @@ async def main():
         drop=20*math.log10((r['fund'][1]+1e-9)/(r['fund'][0]+1e-9))
         ok(f'{sound} n={n}: Grundton nach 100 ms > -3 dB (kein Wumms)', drop>-3, f'{drop:+.1f} dB')
         if sound=='piano': ok(f'piano n={n}: Hochton-Anteil Anschlag < -45 dB (kein Hi-Hat)', r['hf']<-45, f"{r['hf']:.1f} dB")
+    # ---------- Drums ----------
+    kits=await pg.evaluate("__audio.kits()"); ids=await pg.evaluate("__audio.drumIds()"); warn=[]
+    for kit in kits:
+      for wk in [False, True]:
+        for vid in ids:
+          r=await pg.evaluate("([i,k,w])=>__audio.drum(i,k,w,4)",[vid,kit,wk])
+          if 'skip' in r: continue
+          x=np.array(r['x']); sr=r['sr']; pk=float(np.abs(x).max()); tag=f"{kit} {'Worklet' if wk else 'nativ'} {vid}"
+          if not np.isfinite(x).all() or pk<1e-3: ok(f'{tag}: klingt, kein NaN', False, round(pk,4)); continue
+          end=np.where(np.abs(x)>pk*1e-3)[0][-1]; tail=20*math.log10(np.abs(x[max(0,end-int(0.004*sr)):end+1]).max()/pk)
+          if wk:
+            # Bekannt (28.10.): Worklet-Stimmen enden nach ampDecay+60 ms bei ca. -10…-25 dB (4 ms ausgeblendet) -> Ausklang wird
+            # abgeschnitten, nativer Pfad/WAV-Export klingt dagegen bis -60 dB aus. Entscheidung offen, daher nur Warnung.
+            if tail>-35: warn.append(f'{tag} {tail:.0f} dB')
+          else:
+            ok(f'{tag}: klingt sauber aus (letzte 4 ms < -35 dB)', tail<-35, f'{tail:.1f} dB')
+    ok('Drums: alle Stimmen gerendert', True, f'{len(kits)} Kits × {len(ids)} Stimmen × 2 Pfade')
+    if warn: print(f'WARN Worklet-Ausklang abgeschnitten (bekannt, Entscheidung offen): {len(warn)} Stimmen, z. B. '+', '.join(warn[:6]),flush=True)
+    # ---------- Acid (über den WAV-Export) ----------
+    def cent(x,sr):
+      X=np.abs(np.fft.rfft(x*np.hanning(len(x)))); f=np.fft.rfftfreq(len(x),1/sr); return float((X*f).sum()/X.sum())
+    async def acid(events,cut,res):
+      r=await pg.evaluate("o=>__audio.acid(o)",{'events':events,'cutoff':cut,'reso':res}); x=np.array(r['x'])
+      return x, r['sr'], r['step'], r['peakCh']
+    ev=[{'s':i*4,'n':0} for i in range(4)]; c={}
+    for cut,rz in [(0.1,0.35),(0.9,0.35),(0.5,0.0),(0.5,1.0)]:
+      x,sr,st,pc=await acid(ev,cut,rz); c[(cut,rz)]=cent(x[int(0.05*sr):int((0.05+st)*sr)],sr)
+      ok(f'Acid Cutoff {cut} Reso {rz}: kein NaN/Clipping', np.isfinite(x).all() and pc<0.99, round(pc,3))
+    ok('Acid: Cutoff wirkt (Schwerpunkt hoch > 2× tief)', c[(0.9,0.35)]>2*c[(0.1,0.35)], f'{c[(0.1,0.35)]:.0f} → {c[(0.9,0.35)]:.0f} Hz')
+    ok('Acid: Resonanz hebt Schwerpunkt', c[(0.5,1.0)]>c[(0.5,0.0)]*1.2, f'{c[(0.5,0.0)]:.0f} → {c[(0.5,1.0)]:.0f} Hz')
+    x,sr,st,pc=await acid([{'s':0,'n':0},{'s':4,'n':0,'a':1}],0.5,0.35)
+    a=np.abs(x[int(0.05*sr):int((0.05+st)*sr)]).max(); b2=np.abs(x[int((0.05+4*st)*sr):int((0.05+5*st)*sr)]).max(); acc=20*math.log10(b2/a)
+    ok('Acid: Accent lauter (≥ +2 dB)', acc>=2, f'{acc:+.1f} dB')
     ok('Keine Fehler', not errs, errs)
     await b.close()
   print(sum(r.startswith('PASS') for r in res),'/',len(res))
