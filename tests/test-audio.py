@@ -64,26 +64,40 @@ async def main():
       lv=await pg.evaluate("([i,k,w])=>__audio.drum(i,k,w,4)",['bd',kit,True]); ex=await pg.evaluate("([i,k])=>__audio.exportDrum(i,k)",['bd',kit])
       (tl,dl),(te,de)=tail_db(lv['x'],lv['sr']),tail_db(ex['x'],ex['sr'])
       ok(f'{kit} bd: WAV-Export endet wie live (Worklet)', abs(tl-te)<6 and abs(dl-de)<0.05, f'live {tl:.0f} dB @{dl:.2f}s, Export {te:.0f} dB @{de:.2f}s')
-    # ---------- Studio Kit (Samples, über den WAV-Export) ----------
+    # ---------- Sample-Kits (Studio, Studio 67, Hybrid, Rusty, Vintage) über den WAV-Export ----------
     S=lambda d:{k:{str(a):b for a,b in v.items()} for k,v in d.items()}
-    st=await pg.evaluate("__audio.studioLoad()")
-    ok('Studio: alle Samples geladen', st['state']=='ready' and st['n']==96, f"{st['n']} Dateien")
-    ok('Studio: MP3-Vorlauf erkannt (< 30 ms)', st['maxOff']<0.03, f"{st['maxOff']*1000:.1f} ms")
     async def exp(kit,pat):
       r=await pg.evaluate("([k,p])=>__audio.exportPattern(k,p,100)",[kit,S(pat)]); return np.array(r['x']), r['peakCh']
     db=lambda v:20*math.log10(v+1e-12)
-    for vid in ['bd','sd','rs','ch','oh','lt','ht','cy']:
-      pk=[]
-      for v in [1,2,3,4]:
-        x,_=await exp('studio',{vid:{0:v}}); pk.append(db(np.abs(x).max()))
-      ok(f'Studio {vid}: 4 Stufen werden lauter (je ≥ +1,5 dB)', all(pk[i+1]-pk[i]>=1.5 for i in range(3)), ' / '.join(f'{p:.0f}' for p in pk))
     G={'bd':{0:4,7:2,8:3,10:3},'sd':{4:4,12:4,6:1,15:2},'ch':{0:4,2:3,4:4,6:3,8:4,10:3,12:4,14:3}}
-    xr,_=await exp('rock',G); xs,pcs=await exp('studio',G)
-    d=db(np.sqrt((xs**2).mean()))-db(np.sqrt((xr**2).mean()))
-    ok('Studio: so laut wie Rock Kit (±3 dB)', abs(d)<3, f'{d:+.1f} dB')
-    ok('Studio: kein NaN/Clipping', np.isfinite(xs).all() and pcs<0.99, round(pcs,3))
+    F={'cy':{0:4},'bd':{0:4,4:3,8:3,14:3},'sd':{4:4,8:3,9:2,10:3},'ch':{2:3,4:3,6:3},'ht':{11:3,12:4},'lt':{13:3,14:4,15:3},'rs':{2:3},'oh':{6:3}}
+    xr,_=await exp('rock',G); xrf,_=await exp('rock',F)
+    await pg.evaluate("__audio.smpOpt({vari:false,rr:false})")  # reproduzierbar messen
+    for k in await pg.evaluate("__audio.smpKits()"):
+      kid=k['id']; st=await pg.evaluate("k=>__audio.smpLoad(k)",kid)
+      ok(f'{kid}: Samples geladen', st['state']=='ready' and st['n']==12*len(k['voices']), f"{st['n']} Slots")
+      for vid in k['voices']:
+        pk=[]  # leise gerendert (unter dem Master-Kompressor), Energie der ersten 80 ms ab Anschlag
+        for v in [1,2,3,4]:
+          r=await pg.evaluate("([k,p])=>__audio.exportPattern(k,p,100,0.2)",[kid,S({vid:{0:v}})]); x=np.array(r['x']); sr=r['sr']
+          o=int(np.argmax(np.abs(x)>np.abs(x).max()*0.05)); pk.append(db(np.sqrt((x[o:o+int(0.08*sr)]**2).mean())))
+        ok(f'{kid} {vid}: 4 Stufen werden lauter (je ≥ +1,5 dB)', all(pk[i+1]-pk[i]>=1.5 for i in range(3)), ' / '.join(f'{p:.0f}' for p in pk))
+      for name,pat,ref in [('Groove',G,xr),('Fill',F,xrf)]:
+        xs,pcs=await exp(kid,pat); d=db(np.sqrt((xs**2).mean()))-db(np.sqrt((ref**2).mean()))
+        tol=3 if name=='Groove' else 5  # Fill: gedämpfte Kits klingen kürzer aus
+        ok(f'{kid} {name}: so laut wie Rock Kit (±{tol} dB)', abs(d)<tol, f'{d:+.1f} dB')
+        ok(f'{kid} {name}: kein NaN/Clipping', np.isfinite(xs).all() and pcs<0.99, round(pcs,3))
+    # Optionen: Layer aus = Stufen nur über Lautstärke, Variation an = Schläge unterscheiden sich
+    await pg.evaluate("__audio.smpOpt({layers:false})"); a1,_=await exp('studio',{'sd':{0:2}}); a2,_=await exp('studio',{'sd':{0:4}})
+    await pg.evaluate("__audio.smpOpt({layers:true})"); b1,_=await exp('studio',{'sd':{0:2}})
+    ok('Option Layer aus: leise Stufe = gleiche Aufnahme, nur leiser', abs(db(np.abs(a1).max())-db(np.abs(a2).max())+12)<4 and np.abs(a1).max()>0, f'{db(np.abs(a1).max())-db(np.abs(a2).max()):+.0f} dB')
+    await pg.evaluate("__audio.smpOpt({vari:true,rr:true})")
+    v1,_=await exp('studio',{'sd':{0:3}}); v2,_=await exp('studio',{'sd':{0:3}})
+    ok('Option Variation/Round Robin an: zwei gleiche Schläge klingen verschieden', float(np.abs(v1-v2).max())>1e-3)
     x,_=await exp('studio',{'hc':{0:3},'cb':{4:3}})
-    ok('Studio: Clap/Cowbell ohne Aufnahme spielen den Rock-Synth', db(np.abs(x).max())>-30, f'{db(np.abs(x).max()):.0f} dB')
+    ok('Sample-Kits: Clap/Cowbell ohne Aufnahme spielen den Rock-Synth', db(np.abs(x).max())>-30, f'{db(np.abs(x).max()):.0f} dB')
+    x,_=await exp('vintage',{'cy':{0:4}})
+    ok('Vintage: Crash ohne eigene Aufnahme kommt aus Studio', db(np.abs(x).max())>-20, f'{db(np.abs(x).max()):.0f} dB')
     # ---------- Acid (über den WAV-Export) ----------
     def cent(x,sr):
       X=np.abs(np.fft.rfft(x*np.hanning(len(x)))); f=np.fft.rfftfreq(len(x),1/sr); return float((X*f).sum()/X.sum())

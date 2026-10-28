@@ -2816,9 +2816,19 @@ const KITS={
     // Maracas: reiner gefilterter Rauschausbruch (playMaracas), kein Trägerton.
     mr:{hpFreq:6000, bpFreq:9500, bpQ:1.0, noiseLevel:0.5, noiseDecay:0.07}
   }},
-  // Studio Kit: echte Aufnahmen (siehe STUDIO KIT weiter unten). voices = Rock-Synth als Ersatz,
+  // Sample-Kits: echte Aufnahmen (siehe SAMPLE-KITS weiter unten). voices = Rock-Synth als Ersatz,
   // solange die Samples laden, und für Stimmen ohne Aufnahme (Clap, Cowbell, Claves, Maracas).
-  studio:{ name:'STUDIO KIT', desc:'Echte Aufnahmen · 4 Lautstärken', studio:true, voices:null },
+  // samples.fallback: Kit, das Stimmen ohne eigene Aufnahme spielt.
+  studio:{ name:'STUDIO KIT', desc:'Echte Aufnahmen · modern, trocken', voices:null,
+    samples:{dir:'studio', voices:['bd','sd','rs','ch','oh','lt','ht','cy']} },
+  s67:{ name:'STUDIO 67', desc:'Echte Aufnahmen · 1967er Snare, lockere Hi-Hat', voices:null,
+    samples:{dir:'s67', voices:['sd','ch','lt','ht','cy'], fallback:'studio'} },
+  hyb:{ name:'HYBRID', desc:'Echte Aufnahmen · bearbeitete Pop-Snare', voices:null,
+    samples:{dir:'hyb', voices:['sd','rs','cy'], fallback:'studio'} },
+  rusty:{ name:'RUSTY KIT', desc:'Echte Aufnahmen · großes 80er-Rockkit', voices:null,
+    samples:{dir:'rusty', voices:['bd','sd','rs','ch','oh','lt','ht','cy']} },
+  vintage:{ name:'VINTAGE 73', desc:'Echte Aufnahmen · 70er, gedämpft', voices:null,
+    samples:{dir:'vintage', voices:['bd','sd','rs','ch','oh','lt','ht'], fallback:'studio'} },
   fm909:{ name:'FM-909', desc:'Klassisch · punchy', voices:{
     bd:{baseFreq:58, startMult:1.8, pitchEndMult:0.36, pitchDecay:0.08, clickLevel:0.25, ampDecay:0.32,
         ops:[{ratio:1,level:1,decay:0.32,feedback:0.3},{ratio:1.4,level:6,decay:0.05}]},
@@ -2949,7 +2959,7 @@ const KITS={
   }},
 
 };
-KITS.studio.voices=KITS.rock.voices;
+Object.values(KITS).forEach(k=>{ if(k.samples) k.voices=KITS.rock.voices; });
 let currentKitId='rock';
 
 const VOICE_FNS={
@@ -2989,47 +2999,64 @@ function playDrumSample(tr, time, velocity){
   return true;
 }
 // =========================================================================
-// STUDIO KIT — gesampeltes Akustik-Kit (SM Drums, Public Domain: Scott McLean,
-// Tod Stillwell, Suleiman Ali). Pro Stimme 4 Lautstärke-Layer passend zu den
-// 4 Velocity-Stufen (Ghost leise, Ghost, Normal, Akzent) × 3 Round-Robins.
-// Dazu pro Schlag minimale Variation (±8 Cent, ±1,5 dB) und ein kurzer Raum.
-// Lädt erst, wenn das Kit gebraucht wird (samples/studio/*.mp3, ~1,4 MB).
+// SAMPLE-KITS — echte Aufnahmen (Quellen/Lizenzen: samples/README.md).
+// Pro Stimme 4 Lautstärke-Layer passend zu den 4 Velocity-Stufen (Ghost leise,
+// Ghost, Normal, Akzent) × 3 Round-Robins, pro Schlag minimale Variation
+// (±8 Cent, ±1,5 dB) und ein kurzer Raum. Jede Stimme ist auf die Lautheit der
+// Studio-Stimme abgeglichen. Lädt erst, wenn ein Kit gebraucht wird.
+// Datei samples/<kit>/<stimme>.mp3: Sync-Klick bei 0 s, ab 0,1 s zwölf Slots
+// (Layer 1–4 × Round Robin 1–3) zu je SMP_LEN[stimme] Sekunden.
 // =========================================================================
-const STUDIO_VOICES=['bd','sd','rs','ch','oh','lt','ht','cy'];
+const SMP_LEN={bd:0.9, sd:0.7, rs:0.6, ch:0.5, oh:2.5, lt:2.0, ht:1.8, cy:4.0};
 const STUDIO_LAYER_VEL=[0.15,0.35,0.85,1.3]; // = VEL_GHOST_SOFT, VEL_GHOST, VEL_NORMAL, VEL_ACCENT
 const STUDIO_GAIN={bd:1.0, sd:0.9, rs:0.8, ch:0.55, oh:0.5, lt:0.85, ht:0.8, cy:0.55};
 const STUDIO_OUT=1.75;  // Gesamtpegel, abgeglichen mit dem Rock Kit (tests/test-audio.py)
 const STUDIO_ROOM=0.22; // Anteil Raum
-const studio={state:'idle', buf:{}, rr:{}, promise:null, rooms:new WeakMap()};
-function studioUsed(){
-  if(KITS[currentKitId] && KITS[currentKitId].studio) return true;
-  return Object.values(drumSet.voices).some(v=>v && v.t==='syn' && KITS[v.kitId] && KITS[v.kitId].studio);
+const smp={};            // smp[kitId]={state:'loading'|'ready'|'error', buf:{stimme:[layer][rr]={b,off,dur}}, promise}
+const smpRR={}, smpRooms=new WeakMap();
+// Klang-Optionen der Sample-Kits (UI folgt nach Mockup): 4 Layer, Round Robin, Variation, Raumanteil
+const smpOpt={layers:true, rr:true, vari:true, room:STUDIO_ROOM};
+function smpKitsInUse(){ // Sample-Kits, die gerade klingen (Basis-Kit + Set-Stimmen) samt Ersatz-Kit
+  const s=new Set(); const add=id=>{ const k=KITS[id]; if(k && k.samples){ s.add(id); if(k.samples.fallback) s.add(k.samples.fallback); } };
+  add(currentKitId); Object.values(drumSet.voices).forEach(v=>{ if(v && v.t==='syn') add(v.kitId); });
+  return [...s];
 }
-function studioOnset(b){ // MP3-Vorlauf überspringen (Safari entfernt das Encoder-Padding nicht)
-  const d=b.getChannelData(0); let pk=0; for(let i=0;i<d.length;i++){ const a=Math.abs(d[i]); if(a>pk) pk=a; }
-  const th=pk*0.02; let i=0; while(i<d.length && Math.abs(d[i])<th) i++;
-  return Math.max(0, i/b.sampleRate-0.0015);
-}
-function studioChipText(t){ const c=KITS.studio._chip; if(c){ const d=c.querySelector('.kd'); if(d) d.textContent=t; } }
-function studioLoad(){
-  if(studio.promise) return studio.promise;
-  studio.state='loading';
+function smpChipText(kid,t){ const c=KITS[kid]._chip; if(c){ const d=c.querySelector('.kd'); if(d) d.textContent=t; } }
+function smpLoad(kid){
+  const k=KITS[kid]; if(!k || !k.samples) return Promise.resolve();
+  if(k.samples.fallback) smpLoad(k.samples.fallback);
+  if(smp[kid] && smp[kid].promise) return smp[kid].promise;
+  const st=smp[kid]={state:'loading', buf:{}, promise:null};
   const Ctor=window.OfflineAudioContext||window.webkitOfflineAudioContext;
   const dc=new Ctor(1,1,44100); // nur zum Dekodieren, braucht keinen Tipp zum Starten
   const decode=ab=>new Promise((res,rej)=>{ const r=dc.decodeAudioData(ab,res,rej); if(r && r.then) r.then(res,rej); });
-  let done=0; const total=STUDIO_VOICES.length*12;
-  const jobs=[];
-  STUDIO_VOICES.forEach(id=>{ studio.buf[id]=[[],[],[],[]];
-    for(let l=0;l<4;l++) for(let r=0;r<3;r++) jobs.push(
-      fetch('samples/studio/'+id+'_v'+(l+1)+'_r'+(r+1)+'.mp3').then(x=>{ if(!x.ok) throw new Error(x.status); return x.arrayBuffer(); })
-        .then(decode).then(b=>{ studio.buf[id][l][r]={b,off:studioOnset(b)}; done++; studioChipText('Lädt … '+Math.round(done/total*100)+' %'); }));
-  });
-  studio.promise=Promise.all(jobs).then(()=>{ studio.state='ready'; studioChipText(KITS.studio.desc); })
-    .catch(e=>{ studio.state='error'; studio.promise=null; studioChipText('Laden fehlgeschlagen · antippen = erneut'); });
-  return studio.promise;
+  const ids=k.samples.voices; let done=0;
+  const jobs=ids.map(id=>fetch('samples/'+k.samples.dir+'/'+id+'.mp3').then(x=>{ if(!x.ok) throw new Error(x.status); return x.arrayBuffer(); })
+    .then(decode).then(b=>{
+      const d=b.getChannelData(0), sr=b.sampleRate, L=SMP_LEN[id];
+      let c=0; while(c<d.length && c<sr*0.3 && Math.abs(d[c])<0.4) c++; // Sync-Klick = Dateianfang, MP3-Vorlauf egal
+      const t0=c/sr+0.1, set=[[],[],[],[]];
+      for(let l=0;l<4;l++) for(let r=0;r<3;r++){
+        const s=t0+(l*3+r)*L, a=Math.floor(s*sr), e=Math.min(d.length,Math.floor((s+L)*sr));
+        let pk=0; for(let i=a;i<e;i++){ const v=Math.abs(d[i]); if(v>pk) pk=v; }
+        let i=a; while(i<e && Math.abs(d[i])<pk*0.02) i++;
+        set[l][r]={b, off:Math.max(s,i/sr-0.0015), dur:L-0.02};
+      }
+      st.buf[id]=set; done++; smpChipText(kid,'Lädt … '+Math.round(done/ids.length*100)+' %');
+    }));
+  st.promise=Promise.all(jobs).then(()=>{ st.state='ready'; smpChipText(kid,k.desc); })
+    .catch(e=>{ st.state='error'; st.promise=null; smpChipText(kid,'Laden fehlgeschlagen · antippen = erneut'); });
+  return st.promise;
 }
-function studioRoom(){ // ein Raum je AudioContext (Live und WAV-Export getrennt)
-  let r=studio.rooms.get(audioCtx);
+function smpSet(kid,id){ // Aufnahme des Kits, sonst des Ersatz-Kits; null = noch nicht da
+  const k=KITS[kid]; if(!k || !k.samples) return null;
+  const st=smp[kid];
+  if(!st || st.state!=='ready'){ if(!st) smpLoad(kid); return null; }
+  if(st.buf[id]) return st.buf[id];
+  return k.samples.fallback ? smpSet(k.samples.fallback,id) : null;
+}
+function smpRoom(){ // ein Raum je AudioContext (Live und WAV-Export getrennt)
+  let r=smpRooms.get(audioCtx);
   if(!r || r.master!==master){
     const sr=audioCtx.sampleRate, len=Math.floor(sr*0.9), ir=audioCtx.createBuffer(2,len,sr);
     for(let ch=0;ch<2;ch++){ const d=ir.getChannelData(ch); let seed=ch?7:3;
@@ -3040,26 +3067,29 @@ function studioRoom(){ // ein Raum je AudioContext (Live und WAV-Export getrennt
     const hp=audioCtx.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=180;
     const conv=audioCtx.createConvolver(); conv.buffer=ir;
     input.connect(hp).connect(conv).connect(master);
-    r={input,master}; studio.rooms.set(audioCtx,r);
+    r={input,master}; smpRooms.set(audioCtx,r);
   }
+  if(r.input.gain.value!==smpOpt.room) r.input.gain.value=smpOpt.room;
   return r.input;
 }
-// Spielt einen Studio-Schlag. false = (noch) keine Aufnahme → Aufrufer nimmt den Synth.
-function studioPlay(tr, time, velocity, choked){
-  const set=studio.buf[tr.id];
-  if(studio.state!=='ready' || !set || !audioCtx){ if(studio.state==='idle' && STUDIO_VOICES.includes(tr.id)) studioLoad(); return false; }
-  let l=0; for(let i=1;i<4;i++) if(Math.abs(STUDIO_LAYER_VEL[i]-velocity)<Math.abs(STUDIO_LAYER_VEL[l]-velocity)) l=i;
-  const arr=set[l], key=tr.id+l, last=studio.rr[key]; let r;
-  do{ r=Math.floor(Math.random()*arr.length); }while(arr.length>1 && r===last);
-  studio.rr[key]=r; const s=arr[r];
+// Spielt einen Sample-Schlag. false = (noch) keine Aufnahme → Aufrufer nimmt den Synth.
+function smpPlay(kid, tr, time, velocity, choked){
+  const set=smpSet(kid,tr.id); if(!set || !audioCtx) return false;
+  let l=2, fine;
+  if(smpOpt.layers){ l=0; for(let i=1;i<4;i++) if(Math.abs(STUDIO_LAYER_VEL[i]-velocity)<Math.abs(STUDIO_LAYER_VEL[l]-velocity)) l=i;
+    fine=Math.pow(Math.max(0.05,velocity)/STUDIO_LAYER_VEL[l],0.7); } // Zwischenwerte (Humanize, Pads)
+  else fine=Math.pow(Math.max(0.05,velocity)/STUDIO_LAYER_VEL[2],1.1); // nur eine Aufnahme, Stärke nur über Lautstärke
+  const arr=set[l], key=kid+tr.id+l, last=smpRR[key]; let r=0;
+  if(smpOpt.rr){ do{ r=Math.floor(Math.random()*arr.length); }while(arr.length>1 && r===last); }
+  smpRR[key]=r; const s=arr[r];
+  const vr=smpOpt.vari?1:0;
   const src=audioCtx.createBufferSource(); src.buffer=s.b;
-  src.playbackRate.value=Math.pow(2,(tr.tune-0.5)*2+(Math.random()*16-8)/1200);
+  src.playbackRate.value=Math.pow(2,(tr.tune-0.5)*2+vr*(Math.random()*16-8)/1200);
   const g=audioCtx.createGain();
-  const fine=Math.pow(Math.max(0.05,velocity)/STUDIO_LAYER_VEL[l],0.7); // Zwischenwerte (Humanize, Pads)
-  const gv=Math.max(0.0001, tr.vol*STUDIO_GAIN[tr.id]*STUDIO_OUT*fine*Math.pow(10,(Math.random()*3-1.5)/20));
+  const gv=Math.max(0.0001, tr.vol*STUDIO_GAIN[tr.id]*STUDIO_OUT*fine*Math.pow(10,vr*(Math.random()*3-1.5)/20));
   g.gain.value=gv;
-  src.connect(g); g.connect(getBus()); g.connect(studioRoom());
-  src.start(time, s.off);
+  src.connect(g); g.connect(getBus()); g.connect(smpRoom());
+  src.start(time, s.off, s.dur);
   if(choked){ g.gain.setValueAtTime(gv,time+0.06); g.gain.linearRampToValueAtTime(0.0001,time+0.1); src.stop(time+0.11); }
   if(tr.id==='oh') lastOpenSample={src,g};
   return true;
@@ -3072,7 +3102,7 @@ function triggerTrack(tr, time, velocity){
   const ov=drumSet.voices[tr.id];
   if(ov && ov.t==='smp' && playDrumSample(tr, time, velocity)) return;
   const kid=voiceKitId(tr.id);
-  if(KITS[kid].studio && studioPlay(tr, time, velocity, false)) return;
+  if(KITS[kid].samples && smpPlay(kid, tr, time, velocity, false)) return;
   const kp=KITS[kid].voices[tr.id];
   VOICE_FNS[tr.id](time, tr.vol, tr.tune, velocity, kp);
 }
@@ -3108,7 +3138,7 @@ function triggerChokedCrash(time, tr, velocity){
     g.gain.linearRampToValueAtTime(normalLevel, time+duckHold+duckRelease); // danach normal für folgende Hits
   });
 
-  if(KITS[voiceKitId('cy')].studio && studioPlay(tr, time, velocity, true)) return;
+  { const ck=voiceKitId('cy'); if(KITS[ck].samples && smpPlay(ck, tr, time, velocity, true)) return; }
   if(choked.engine==='sixosc') playMetallicSix(time, tr.vol, tr.tune, velocity, choked, 'cymbal');
   else playCrash(time, tr.vol, tr.tune, velocity, choked);
 }
@@ -6732,8 +6762,8 @@ function dsSay(m){ dsStatus.textContent=m; clearTimeout(dsMsgTimer); dsMsgTimer=
 function updateKitLabel(){
   if(typeof patternGroup!=='undefined' && patternGroup==='piano'){ const k=TRACKS.find(t=>t.id==='piano'); lcdKit.textContent=(KEY_SOUNDS[k&&k.sound]||KEY_SOUNDS.piano).name; return; }
   const custom=!currentSet.name && Object.keys(drumSet.voices).length>0;
-  const KIT_SHORT={rock:'ROCK',studio:'STUDIO',fm909:'909',fm808:'808',real808:'808 A',acid:'ACID',lofi:'LO-FI'};
-  if((studio.state==='idle'||studio.state==='error') && studioUsed()) studioLoad(); // Fehler: erneuter Versuch beim nächsten Kit-Tipp
+  const KIT_SHORT={rock:'ROCK',studio:'STUDIO',s67:'ST 67',hyb:'HYBRID',rusty:'RUSTY',vintage:'VINT 73',fm909:'909',fm808:'808',real808:'808 A',acid:'ACID',lofi:'LO-FI'};
+  smpKitsInUse().forEach(k=>{ if(!smp[k] || smp[k].state==='error') smpLoad(k); }); // Fehler: erneuter Versuch beim nächsten Kit-Tipp
   lcdKit.textContent=(currentSet.name || KIT_SHORT[currentKitId] || KITS[currentKitId].name)+(currentSet.dirty?' *':(custom?' +':''));
 }
 async function drumSetLoadBuffers(){
