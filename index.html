@@ -3027,14 +3027,13 @@ function smpKitsInUse(){ // Sample-Kits, die gerade klingen (Basis-Kit + Set-Sti
   return [...s];
 }
 function smpChipText(kid,t){ const c=KITS[kid]._chip; if(c){ const d=c.querySelector('.kd'); if(d) d.textContent=t; } }
-// Vor dem ersten Laden: Größe am Chip zeigen (mobil sinnvoll). smpCached[kit]=true, sobald alle Dateien im Cache liegen oder einmal geladen wurden.
+// Größe am Chip (mobil sinnvoll), nach dem Laden zusätzlich „gespeichert“. smpCached[kit]=true, sobald alle Dateien im Cache liegen oder einmal geladen wurden.
 const smpCached={};
 function smpMB(kb){ return (kb/1024).toFixed(1).replace('.',',')+' MB'; }
 function smpIdleText(kid){
   const k=KITS[kid]; if(!k || !k.samples) return '';
-  if(smpCached[kid]) return k.desc;
-  const fb=k.samples.fallback, kb=k.samples.kb+(fb && !smpCached[fb] && !(smp[fb] && smp[fb].state==='ready') ? KITS[fb].samples.kb : 0);
-  return k.desc+' · '+smpMB(kb);
+  const fb=k.samples.fallback, kb=k.samples.kb+(fb ? KITS[fb].samples.kb : 0); // feste Zahl: alles, was das Kit braucht
+  return k.desc+' · '+smpMB(kb)+(smpCached[kid] && (!fb || smpCached[fb]) ? ' · gespeichert' : '');
 }
 function smpChipIdle(){ Object.keys(KITS).forEach(kid=>{ if(KITS[kid].samples && (!smp[kid] || smp[kid].state==='ready')) smpChipText(kid,smpIdleText(kid)); }); }
 function smpCheckCache(){

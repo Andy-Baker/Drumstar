@@ -3,7 +3,7 @@
 //   auch wenn die Cache-Nummer einmal vergessen wird. Cache-Nummer trotzdem bei größeren Änderungen hochzählen.
 // - Schriften/Bilder: Cache zuerst.
 // - Offline-Fallback nur für Seitenaufrufe (und dann für die richtige Seite, nicht immer die App).
-const CACHE='mrm44-v74';
+const CACHE='mrm44-v75';
 const CORE=['./','./index.html','./manifest.webmanifest'];            // Pflicht: fehlt eine Datei, schlägt die Installation fehl
 const OPTIONAL=['./impressum.html','./datenschutz.html','./fonts.css',
   './icons/icon-192.png','./icons/icon-512.png','./icons/logo-drumstar.png',

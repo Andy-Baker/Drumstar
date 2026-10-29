@@ -85,3 +85,6 @@ Siehe GitHub Issues (seit 29.10.2026).
 - Offline und noch nicht gespeichert: „Offline · Kit noch nicht gespeichert“ statt „Laden fehlgeschlagen“.
 - Kein Sperren auf Mobil: Kits laden ohnehin erst beim Antippen, der Rock-Synth spielt solange weiter.
 - Tests (ui): Größen passen zu `samples/`, Chip-Text vor dem Laden, Offline-Meldung.
+
+## v75 – Größe bleibt am Kit stehen (29.10.)
+- Handytest v74: Größe war lesbar, verschwand aber nach dem Laden. Jetzt bleibt sie stehen (immer inkl. Ersatz-Kit, feste Zahl) und nach dem Laden kommt „· gespeichert“ dazu (#31).

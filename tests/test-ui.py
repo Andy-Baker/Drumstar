@@ -74,6 +74,10 @@ async def main():
     ok('Offline-Meldung', t.startswith('Offline'), t)
     await pg.context.set_offline(False)
     await pg.evaluate("__audio.smpReset()")
+    await pg.evaluate("__audio.smpLoad('hyb')")
+    hy2=next(k['t'] for k in await pg.evaluate("__audio.smpChips()") if k['id']=='hyb')
+    ok('Nach dem Laden: Größe bleibt + gespeichert', hy2.endswith('2,2 MB · gespeichert'), hy2)
+    await pg.evaluate("__audio.smpReset()")
     # Sample-Kit: „Klang“-Optionen eingeklappt, aufklappbar, Chip-Klick schließt nicht
     await pg.click('#lcdKitBtn'); await pg.wait_for_timeout(200)
     await pg.click('#kitPickerList .kit-chip.smp >> nth=0'); await pg.wait_for_timeout(300)
