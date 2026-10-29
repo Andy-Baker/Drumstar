@@ -20,8 +20,14 @@ Browser-Drum-Machine/Sequencer, Vanilla JS + Web Audio, eine `index.html` + `sw.
 - Spielweisen (v72): `ART={ch:[Zu,Locker,Pedal], rd:[Fläche,Bell]}`, Wert pro Step im sonst leeren `tr.notes[s]` der Drum-Spuren; `triggerTrack(tr,t,vel,art)` → Sample-Stimme `ART[..].v` (ch/hl/hf, rd/rb) bzw. `artSynth`. Leiste `#artRow`, Step-Buchstabe über `data-a`. Ride-Zeile `rd`; Synth-Ride = `rideFromCy`.
 - Siehe `CHANGES-v61-v72.md` (neuester Stand, offene Punkte), `DECISIONS.md` (gültige Entscheidungen, Verworfenes, Lektionen, Aufräum-Liste) und `docs/history/` (ältere Changelogs v41–v60). Tests (Playwright, headless) in `tests/`: vor jedem Push `python3 tests/run.py` (setzt Test-Hook in einer Temp-Kopie, startet Server, Screenshots in `tests/out/`). Neue Features bekommen Checks im passenden `test-*.py`.
 
-## Offen
-Handytest v69–v72 ausstehend (Sample-Kits, Klang-Optionen, Ride + Hi-Hat-Spielweisen). Danach variable Kit-Stimmen Schritt 2 (Rollen, Stimmen hinzufügen/tauschen, Kit-Wechsel merkt Noten; DECISIONS.md, Mockup `kit-stimmen-mockup.html` im Claude-Projekt). Piano/Rhodes-Klang hören/verbessern, Orgel + Sample-Tasten im Roll-Fenster, Mixer-Solo-Link.
+## Aufgaben & Ideen = GitHub Issues
+Einzige Quelle für „was noch“ sind die Issues (Labels: `aufgabe`, `idee`, `bug`, `aufräumen`). Keine Aufgabenlisten in Dateien oder Memory.
+- **Session-Start** („weiter machen“): offene Issues lesen (`gh api "repos/Andy-Baker/drumstar/issues?state=open&per_page=100"`; GraphQL/`gh issue` geht hier nicht).
+- **Während der Session**: Neue Idee, Wunsch oder Fehler vom Nutzer sofort als Issue anlegen (knapp, mit Kontext), nicht erst am Ende.
+- **Commits**: `fixes #n` bzw. `refs #n` in die Commit-Nachricht.
+- **Session-Ende**: Erledigtes geschlossen? Neues angelegt? Rückmeldungen (z. B. Handytest) als Kommentar am Issue.
+- Der Nutzer pflegt nichts selbst, kann aber jederzeit in GitHub nachtragen.
 
-## Langfristig
-Spuren frei hinzufügen (Schichten, mehrere Keys-Spuren; Sound pro Spur über `tr.sound`). Zurückgestellt, erst Keys-Klang fine-tunen. Mockup: add-track-mockup.html (Chat). Größter Aufwand: Spuren sind fest in TRACKS/ARR_GROUPS verdrahtet.
+## Ablage
+- Mockups: `docs/mockups/` (neue Mockups direkt dort). Ältere, schon umgesetzte Mockups liegen nur noch im Claude-Projekt als Archiv.
+- Entscheidungen, Verworfenes, Lektionen: `DECISIONS.md`. Änderungshistorie: Git-Log + `CHANGES-*.md`.

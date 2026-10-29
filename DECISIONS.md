@@ -26,12 +26,12 @@ Zusammengeführt am 28.10.2026 aus DECISIONS-2/-3, ARCHITECTURE-11/-12 und ROADM
 - Pro Spur eigener Grundton und eigene Skala.
 - Cosmic klingt gut und bleibt so; Performance auf dem Handy spürbar, läuft aber.
 - Realistische Drums über Samples statt Synthese: Studio Kit (SM Drums, Public Domain), mindestens 4 Lautstärke-Layer je Stimme (= 4 Velocity-Stufen), Round Robin. Nur frei lizenzierte Bibliotheken (Public Domain/CC0; CC-BY mit Nennung), kein CC-BY-SA. Kits laden erst bei Auswahl. Im Hörtest übernommen: Studio 67, Hybrid, Rusty, Vintage 73; verworfen: Besen (Swirly, Kick klingt nach Snare). Mehrmikrofon-Bibliotheken nur zeitlich ausgerichtet und polaritätskorrigiert mischen.
-- Kits mit variabler Stimmenzahl (Mockup `kit-stimmen-mockup.html`, entschieden 28.10.):
+- Kits mit variabler Stimmenzahl (Mockup `docs/mockups/kit-stimmen-mockup.html`, entschieden 28.10.):
   - Mischform: eine Zeile pro Instrument; nur Hi-Hat (zu, locker, offen, Pedal) und Ride (Fläche, Bell) bekommen Spielweisen pro Step. Snare-Rimshot/Sidestick und Becken bleiben eigene Zeilen. Hi-Hat würgt sich dadurch automatisch selbst ab.
   - Jede Stimme hat eine Rolle (Kick, Snare, Hi-Hat, Tom, Becken, Perc); Fill, Würfeln und Kit-Wechsel arbeiten über die Rolle statt über feste IDs.
   - Kit-Wechsel: Noten ohne passende Stimme im neuen Kit werden gemerkt (nicht gelöscht) und kommen beim Zurückwechseln wieder; gespeichert wird nur, was hörbar ist.
   - Höchstens 16 Stimmen pro Kit.
-  - Umgesetzt in v72 (Schritt 1): Ride als neue Drum-Zeile (Fläche/Bell), Hi-Hat mit Zu/Locker/Pedal. Spielweise liegt im sonst leeren `tr.notes[s]` der Drum-Spuren (zieht überall mit). Offene Hi-Hat bleibt vorerst eigene Zeile (Synth-Kits, Fill, Mixer, eigene Sets hängen an `oh`). Noch offen (Schritt 2): Rollen, Stimmen hinzufügen/tauschen, Kit-Wechsel merkt Noten.
+  - Umgesetzt in v72 (Schritt 1): Ride als neue Drum-Zeile (Fläche/Bell), Hi-Hat mit Zu/Locker/Pedal. Spielweise liegt im sonst leeren `tr.notes[s]` der Drum-Spuren (zieht überall mit). Offene Hi-Hat bleibt vorerst eigene Zeile (Synth-Kits, Fill, Mixer, eigene Sets hängen an `oh`). Noch offen (Schritt 2): Issue #2.
   - „Locker“ = halb offen. Studio hat keine halb offene Aufnahme → offene Hi-Hat abgedämpft.
 
 **Technik**
@@ -66,16 +66,5 @@ Zusammengeführt am 28.10.2026 aus DECISIONS-2/-3, ARCHITECTURE-11/-12 und ROADM
 - Schriftgrößen < 11 px an vielen Stellen (Anheben braucht eigenes Mockup).
 - Rechtstexte (Impressum/Datenschutz) nicht anwaltlich geprüft.
 
-## Offene Aufräum- und Strukturpunkte
-Stand 28.10.2026 per Code-Suche geprüft (Treffer in `index.html` vorhanden):
-- Reste: alter Song-Modus (`songSlots`, `songEnableBtn`, `addPatternToSong`), `#groupBar`, `tbKnobs`, `.btn-cluster`, `#taToast`, `#ctxRow`, `lenBtn`.
-- Versteckte Übersichts-Buttons M/S/🎲 pro Spur ausbauen (Mute/Solo-Refs beachten).
-- Versteckte Doppeltipp-Zurücksetzen-Funktion (`dblclick` + `data-def`): entfernen oder durch sichtbaren Zurücksetzen-Knopf ersetzen.
-- Instrument-Abstraktion: `type:'arp'` mischt Acid/Cosmic/Keys (~30 Abfragen, ~20 `'cosmic'`-Sonderfälle); gemeinsames Schema statt Sonderfälle. Voraussetzung für „Spuren frei hinzufügen“.
-- `index.html` in ES-Module aufteilen (kein Build).
-- Samples in der Bibliothek löschen: Funktion `deleteSampleLibraryEntry` da, Button fehlt.
-
-## Später (aus der alten Roadmap, weiterhin offen)
-- Sampler ausbauen: Modi Pads und Tasten, Grundton pro Sample, mehrstimmig; Übergänge Pads ↔ Sampler (Slices → Pads).
-- Sample-Editor überarbeiten (siehe Trim-Handle-Problem), Song-Export mit Samples, WAV-Export mit Sample-Stimmen prüfen.
-- Cosmic-Performance (Stimmen-Wiederverwendung) nur mit Gegenhören.
+## Offene Punkte
+Aufräumen, Struktur und spätere Vorhaben stehen seit 29.10.2026 als GitHub Issues (Labels `aufräumen`, `aufgabe`, `idee`), nicht mehr hier.

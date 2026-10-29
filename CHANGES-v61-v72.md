@@ -72,9 +72,4 @@
 - Tests: Ride/Spielweisen je Kit, Abwürgen, Speichern/Laden, Leiste (ui).
 
 ## Offen
-- Am Handy prüfen: Sample-Kits (Ladezeit, Timing in Safari, Klang, Klang-Optionen), Ride und Hi-Hat-Spielweisen (Pegel Pedal/Ride, Synth-Ride).
-- Variable Kit-Stimmen Schritt 2: Rollen, Stimmen hinzufügen/tauschen, Kit-Wechsel merkt Noten (DECISIONS.md). Noteneditor (Zoom/Scroll), Klaviatur, Piano/Rhodes-Klang, Drum-Ausklang (v63).
-- Unsichtbaren alten Song-Modus (`songEnableBtn`, `songSlotsList`, `addPatternToSong`) entfernen.
-- Versteckte Übersichts-Buttons M/S/🎲 pro Spur und `#groupBar` ausbauen (Mute/Solo-Refs beachten).
-- Samples in der Bibliothek löschen (Funktion `deleteSampleLibraryEntry` da, Button fehlt).
-- Optional: Tests ins Repo, `index.html` in ES-Module aufteilen.
+Siehe GitHub Issues (seit 29.10.2026).

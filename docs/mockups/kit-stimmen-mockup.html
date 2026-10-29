@@ -1,0 +1,425 @@
+<meta charset="utf-8">
+<title>Kit-Stimmen Mockup</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Rajdhani:wght@500;600;700&family=VT323&display=swap">
+<style>
+/* Layout: Handy-Rahmen wie im Ausreißer-Mockup, oben Mockup-Leiste, rechts (Desktop) Notizen */
+:root{color-scheme:dark;--bg:#050507;--chassis:#0e0e13;--chassis-2:#08080b;--panel:#16161c;--inset:#0a0a0d;--blue:#3fa9ff;--blue-2:#8fd4ff;--blue-dim:#1c4666;--white:#f4f5f7;--dim:#7d818c;--metal:#c7cbd4;--lcd-bg:#04070a;--lcd-fg:#5fc2ff;--line:rgba(255,255,255,.06);--smp:#7cffb2;--perc:#2fe0d0;--warn:#ff9d7a}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{background:var(--bg);color:var(--white);font-family:'Rajdhani',system-ui,sans-serif;user-select:none;-webkit-user-select:none}
+button{font-family:inherit;color:inherit;margin:0}
+button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+svg.i{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+#mbar{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:calc(6px + env(safe-area-inset-top,0px)) max(10px,env(safe-area-inset-right,0px)) 6px max(10px,env(safe-area-inset-left,0px));background:repeating-linear-gradient(135deg,#0b1622 0 8px,#0d1a28 8px 16px);border-bottom:1px dashed rgba(63,169,255,.45);font:700 11px 'JetBrains Mono',monospace;color:var(--blue-2)}
+#mbar .sp{flex:1}
+#mbar button{height:26px;padding:0 9px;border-radius:6px;border:1px solid rgba(63,169,255,.45);background:rgba(63,169,255,.12);font:700 11px 'JetBrains Mono',monospace;color:var(--blue-2);cursor:pointer}
+#mbar button.on{background:var(--blue);color:#042c53}
+#stage{position:fixed;top:calc(70px + env(safe-area-inset-top,0px));left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;gap:32px}
+#dev{position:relative;width:100%;height:100%;overflow:hidden;background:linear-gradient(180deg,var(--chassis),var(--chassis-2))}
+@media (min-width:780px) and (min-height:760px){#dev{width:390px;height:780px;border-radius:30px;border:8px solid #1a1e26;box-shadow:0 30px 80px rgba(0,0,0,.75)} #side{display:block} #stage{top:44px}}
+#side{display:none;width:330px;max-height:780px;overflow:auto;font-size:14px;color:var(--metal);line-height:1.45}
+#side h3,#notes h3{font:700 11px 'Rajdhani';letter-spacing:.14em;text-transform:uppercase;color:var(--blue-2);margin:16px 0 6px}
+#side ul,#notes ul{margin:0;padding-left:18px} #side li,#notes li{margin:4px 0}
+#notes{position:fixed;inset:calc(70px + env(safe-area-inset-top,0px)) 0 0 0;z-index:150;background:rgba(5,5,7,.97);overflow:auto;padding:16px max(20px,env(safe-area-inset-right,0px)) 40px max(20px,env(safe-area-inset-left,0px));display:none;font-size:15px;color:var(--metal);line-height:1.45}
+#notes.on{display:block}
+.scr{position:absolute;inset:0;display:flex;flex-direction:column;overflow:hidden}
+#toast{position:absolute;left:50%;bottom:90px;transform:translateX(-50%);z-index:90;background:#0b1622;border:1px solid rgba(63,169,255,.35);border-radius:8px;padding:6px 12px;font:12px 'JetBrains Mono';color:var(--blue-2);opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap}
+#toast.on{opacity:1}
+
+/* App-Kopf */
+.top{display:flex;gap:8px;align-items:center;padding:10px 12px 0}
+.playc{width:48px;height:48px;border-radius:50%;border:1px solid rgba(63,169,255,.4);background:radial-gradient(circle at 35% 30%,#1a2a3a,#0b1018);color:var(--blue);display:flex;align-items:center;justify-content:center;flex:none}
+.lcd{min-height:44px;display:flex;align-items:center;gap:8px;background:var(--lcd-bg);border:1px solid rgba(63,169,255,.25);border-radius:8px;padding:4px 10px;color:var(--lcd-fg);font:22px 'VT323',monospace}
+.lcd small{font-size:15px;color:var(--dim)}
+.ib{width:44px;height:44px;border-radius:12px;border:1px solid rgba(63,169,255,.4);background:rgba(63,169,255,.1);color:var(--blue-2);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;flex:none}
+.ib.on{background:rgba(63,169,255,.3);border-color:var(--blue);color:#fff}
+.ib.del{color:var(--warn);border-color:rgba(255,157,122,.4);background:rgba(255,157,122,.08)}
+.sel{height:48px;border-radius:9px;border:1px solid rgba(63,169,255,.35);background:var(--inset);color:var(--blue-2);font:700 17px 'Rajdhani';letter-spacing:.06em;padding:0 12px;display:flex;align-items:center;justify-content:space-between;gap:6px;flex:1;min-width:0;cursor:pointer}
+.sel span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sel small{font:600 11px 'JetBrains Mono';color:var(--smp);letter-spacing:0}
+
+/* Raster */
+.grid{margin:10px 12px 0;background:var(--inset);border-radius:10px;padding:6px 6px 6px 4px;display:flex;flex-direction:column;gap:2px;overflow:auto;flex:none}
+.gr{display:grid;grid-template-columns:40px repeat(16,1fr);gap:2px;align-items:center;border-radius:6px;padding:1px 2px;cursor:pointer}
+.gr.sel{background:rgba(63,169,255,.14)}
+.gr .n{font:700 12px 'Rajdhani';letter-spacing:.06em;color:var(--dim);padding-left:4px;white-space:nowrap;overflow:hidden}
+.gr.sel .n{color:var(--blue-2)}
+.gr .c{height:var(--rh,20px);border-radius:3px;background:#14161c;position:relative;display:flex;align-items:center;justify-content:center;font:700 9px 'JetBrains Mono';color:rgba(0,0,0,.65)}
+.gr .c.q{background:#191c24}
+.gr .c.v1,.gr .c.v2,.gr .c.v3,.gr .c.v4{background:var(--tc,var(--blue))}
+.gr .c.v1{opacity:.25}.gr .c.v2{opacity:.5}.gr .c.v3{opacity:.85}.gr .c.v4{box-shadow:0 0 6px var(--tc,var(--blue))}
+.gr.add{grid-template-columns:1fr;padding:4px}
+.gr.add button{height:28px;border-radius:6px;border:1px dashed rgba(63,169,255,.45);background:none;color:var(--blue-2);font:700 12px 'Rajdhani';letter-spacing:.08em;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer}
+.gr.add svg{width:16px;height:16px}
+.cnt{display:flex;justify-content:space-between;margin:4px 16px 0;font:11px 'JetBrains Mono';color:var(--dim)}
+
+/* Spurzeile */
+.trk{margin:8px 12px 0;background:var(--panel);border-radius:10px;padding:6px 6px 6px 12px;display:flex;align-items:center;gap:8px;min-height:56px}
+.trk .dot{width:9px;height:9px;border-radius:50%;background:var(--blue);flex:none}
+.trk .nm{flex:1;min-width:0}
+.trk .nm b{display:block;font:700 15px 'Rajdhani';letter-spacing:.06em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.trk .nm span{display:block;font:11px 'JetBrains Mono';color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.trk .nm span.s{color:var(--smp)}
+.msb{width:40px;height:40px;border-radius:9px;border:1px solid rgba(255,255,255,.12);background:var(--inset);color:var(--dim);font:700 14px 'Rajdhani';cursor:pointer;flex:none}
+
+/* Segmente */
+.seg{display:flex;gap:6px;margin:8px 12px 0}
+.seg button{flex:1;min-height:40px;border-radius:9px;border:1px solid rgba(255,255,255,.1);background:var(--panel);color:var(--metal);font:700 13px 'Rajdhani';cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:2px}
+.seg button i{display:block;width:22px;height:5px;border-radius:2px;background:var(--blue)}
+.seg button.on{border-color:var(--blue);background:rgba(63,169,255,.16);color:#fff}
+.seg.art button{min-height:38px;flex-direction:row;gap:6px}
+.seg.art button b{font:700 11px 'JetBrains Mono';width:18px;height:18px;border-radius:4px;background:var(--blue-dim);color:var(--blue-2);display:flex;align-items:center;justify-content:center}
+.seg.art button.on b{background:var(--blue);color:#042c53}
+.lbl{margin:10px 16px 0;font:700 11px 'Rajdhani';letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+
+/* 4x4 */
+.pads{flex:1;min-height:0;display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:1fr;gap:6px;margin:8px 12px 10px}
+.pd{border-radius:10px;border:1px solid rgba(255,255,255,.07);background:#101116;position:relative;cursor:pointer;display:flex;align-items:flex-end;padding:5px 7px;font:11px 'JetBrains Mono';color:#4a4e58}
+.pd.v1,.pd.v2,.pd.v3,.pd.v4{background:var(--tc,var(--blue));color:rgba(0,0,0,.55)}
+.pd.v1{opacity:.3}.pd.v2{opacity:.55}.pd.v3{opacity:.9}.pd.v4{box-shadow:0 0 14px var(--tc,var(--blue))}
+.pd .ar{position:absolute;top:6px;right:7px;font:700 12px 'JetBrains Mono'}
+.tabbar{display:flex;border-top:1px solid var(--line);background:#0a0a0e;flex:none;padding-bottom:env(safe-area-inset-bottom,0px)}
+.tabbar div{flex:1;text-align:center;padding:11px 0 12px;font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--dim)}
+.tabbar div.on{color:var(--blue-2);box-shadow:inset 0 2px 0 var(--blue)}
+
+/* Overlays / Sheets */
+.ov{position:absolute;inset:0;z-index:60;background:linear-gradient(180deg,var(--chassis),var(--chassis-2));display:none;flex-direction:column}
+.ov.on{display:flex}
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:70;background:#111117;border-top:1px solid rgba(63,169,255,.3);border-radius:18px 18px 0 0;box-shadow:0 -20px 50px rgba(0,0,0,.7);display:none;flex-direction:column;max-height:88%}
+.sheet.on{display:flex}
+.dim{position:absolute;inset:0;z-index:65;background:rgba(0,0,0,.55);display:none}
+.dim.on{display:block}
+.ovh{display:flex;align-items:center;gap:10px;min-height:60px;padding:8px 16px 8px 18px;flex:none;border-bottom:1px solid var(--line)}
+.ovh h2{flex:1;margin:0;font:700 19px 'Rajdhani';letter-spacing:.02em;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ovh h2 small{font:600 13px 'Rajdhani';color:var(--dim);margin-left:6px;letter-spacing:.04em}
+.shx{width:44px;height:44px;border-radius:9px;border:1px solid rgba(255,255,255,.12);background:var(--panel);color:var(--blue-2);cursor:pointer;font-size:15px;flex:none}
+.body{padding:12px 16px 18px;display:flex;flex-direction:column;gap:10px;overflow:auto;min-height:0}
+.grp{font:700 11px 'Rajdhani';letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin:6px 0 -2px}
+.kit{border-radius:10px;border:1px solid rgba(255,255,255,.08);background:var(--panel);padding:11px 14px;cursor:pointer;display:flex;align-items:center;gap:10px}
+.kit .t{flex:1;min-width:0}
+.kit b{display:block;font:700 15px 'Rajdhani';letter-spacing:.06em}.kit span{font-size:12px;color:var(--dim)}
+.kit.on{border-color:var(--blue);background:rgba(63,169,255,.12)}.kit.on b{color:var(--blue-2)}
+.kit .tag{font:700 10px 'JetBrains Mono';padding:3px 6px;border-radius:5px;border:1px solid rgba(124,255,178,.4);color:var(--smp);white-space:nowrap}
+.kit .tag.syn{border-color:rgba(63,169,255,.4);color:var(--blue-2)}
+.kit.add{border:1px dashed rgba(63,169,255,.45);justify-content:center;color:var(--blue-2);font-weight:700}
+.kit .vc{font:11px 'JetBrains Mono';color:var(--dim)}
+.tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;flex:none}
+.tabs button{flex:none;height:36px;padding:0 12px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:var(--inset);color:var(--dim);font:700 13px 'Rajdhani';cursor:pointer}
+.tabs button.on{background:rgba(63,169,255,.2);color:var(--blue-2);border-color:rgba(63,169,255,.5)}
+.tabs button.soon{opacity:.45}
+.snd{display:flex;align-items:center;gap:10px;background:var(--panel);border-radius:10px;padding:6px 6px 6px 12px;min-height:52px;border:1px solid transparent;cursor:pointer}
+.snd.on{border-color:var(--blue);background:rgba(63,169,255,.1)}
+.snd .t{flex:1;min-width:0}
+.snd .t b{display:block;font:700 15px 'Rajdhani';white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.snd .t span{font:11px 'JetBrains Mono';color:var(--dim)}
+.snd .pv{width:40px;height:40px}
+.row{display:flex;gap:8px;align-items:center}
+.act{flex:1;min-height:44px;border-radius:9px;border:1px solid rgba(63,169,255,.4);background:rgba(63,169,255,.1);color:var(--blue-2);font:700 13px 'Rajdhani';display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;padding:0 10px}
+.act.pri{background:var(--blue);border-color:var(--blue);color:#042c53}
+.act.sec{border-color:rgba(255,255,255,.12);background:var(--panel);color:var(--metal)}
+.act.d{color:var(--warn);border-color:rgba(255,157,122,.4);background:rgba(255,157,122,.08)}
+.act svg{width:20px;height:20px}
+input.txt{flex:1;min-width:0;height:44px;border-radius:9px;border:1px solid rgba(255,255,255,.12);background:var(--inset);color:var(--white);padding:0 12px;font:600 16px 'Rajdhani'}
+.rolebox{display:flex;flex-wrap:wrap;gap:6px}
+.rolebox button{height:34px;padding:0 11px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:var(--inset);color:var(--dim);font:700 13px 'Rajdhani';cursor:pointer}
+.rolebox button.on{background:rgba(63,169,255,.2);color:var(--blue-2);border-color:rgba(63,169,255,.5)}
+.hint{font-size:13px;color:var(--dim);line-height:1.35}
+.dl{display:flex;align-items:center;gap:8px;font:11px 'JetBrains Mono';color:var(--smp)}
+.dl i{flex:1;height:4px;border-radius:2px;background:#1a2a22;overflow:hidden}
+.dl i::after{content:"";display:block;height:100%;width:var(--p,0%);background:var(--smp);transition:width .25s}
+@media (prefers-reduced-motion:reduce){.dl i::after,#toast{transition:none}}
+</style>
+
+<div id="mbar">KIT-STIMMEN<span class="sp"></span>
+  <button data-v="A" class="on">A · Zeilen</button><button data-v="B">B · Artikulation</button>
+  <button id="bKit">Kit</button><button id="nBtn">Notizen</button>
+</div>
+<div id="stage">
+<div id="dev">
+  <section class="scr" id="main">
+    <div class="top">
+      <div class="playc"><svg class="i" viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z" fill="currentColor" stroke="none"/></svg></div>
+      <div class="lcd">96 <small>BPM</small></div>
+      <div class="lcd" style="flex:1;font-size:20px">Studio Groove</div>
+    </div>
+    <div class="top">
+      <button class="sel"><span>DRUMS</span><svg class="i" viewBox="0 0 24 24" style="width:16px"><path d="M6 9l6 6 6-6"/></svg></button>
+      <button class="sel" id="kitSel"><span id="kitName">STUDIO</span><small id="kitTag"></small><svg class="i" viewBox="0 0 24 24" style="width:16px"><path d="M6 9l6 6 6-6"/></svg></button>
+      <button class="ib" title="Fill" data-t="Fill-Sheet (unverändert)"><svg class="i" viewBox="0 0 24 24"><path d="M5 19l5-12 4 8 2-4 3 8"/></svg></button>
+    </div>
+    <div class="grid" id="grid"></div>
+    <div class="cnt"><span id="cntL"></span><span id="cntR">Zeile lang drücken = bearbeiten</span></div>
+    <div class="trk">
+      <span class="dot" id="trkDot"></span>
+      <div class="nm"><b id="trkName">BASS DRUM</b><span id="trkSrc" class="s">Studio · Kick</span></div>
+      <button class="msb">M</button><button class="msb">S</button>
+      <button class="ib" id="trkEdit" title="Stimme bearbeiten" style="width:40px;height:40px"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg></button>
+    </div>
+    <div class="seg" id="velSeg"></div>
+    <div id="artWrap"></div>
+    <div class="pads" id="pads"></div>
+    <div class="tabbar"><div class="on">PATTERN</div><div>PADS</div><div>MIXER</div><div>SONG</div></div>
+  </section>
+
+  <div class="dim" id="dim"></div>
+
+  <!-- Kit-Auswahl -->
+  <section class="ov" id="ovKit">
+    <div class="ovh"><h2>Kit wählen<small>DRUMS</small></h2><button class="shx" data-close>✕</button></div>
+    <div class="body" id="kitList"></div>
+  </section>
+
+  <!-- Stimme bearbeiten -->
+  <section class="sheet" id="shVoice">
+    <div class="ovh"><h2 id="svTitle">Stimme</h2><button class="shx" data-close>✕</button></div>
+    <div class="body" id="svBody"></div>
+  </section>
+
+  <!-- Sound-Browser -->
+  <section class="ov" id="ovBrowse">
+    <div class="ovh"><h2 id="brTitle">Sound wählen</h2><button class="shx" data-close>✕</button></div>
+    <div class="body" style="padding-bottom:0;flex:none">
+      <div class="tabs" id="brLib"></div>
+      <div class="tabs" id="brCat"></div>
+    </div>
+    <div class="body" id="brList" style="flex:1"></div>
+    <div class="body" style="flex:none;border-top:1px solid var(--line)"><button class="act pri" id="brOk">Übernehmen</button></div>
+  </section>
+
+  <div id="toast"></div>
+</div>
+<div id="side"><div id="sideNotes"></div></div>
+</div>
+<div id="notes"></div>
+
+<script>
+(function(){
+"use strict";
+const $=id=>document.getElementById(id);
+const IC={
+ play:'<svg class="i" viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z" fill="currentColor" stroke="none"/></svg>',
+ plus:'<svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+ up:'<svg class="i" viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></svg>',
+ down:'<svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M6 13l6 6 6-6"/></svg>',
+ del:'<svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>',
+ swap:'<svg class="i" viewBox="0 0 24 24"><path d="M4 8h13l-3-3M20 16H7l3 3"/></svg>',
+ dl:'<svg class="i" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>'
+};
+function toast(t){ const e=$('toast'); e.textContent=t; e.classList.add('on'); clearTimeout(toast.t); toast.t=setTimeout(()=>e.classList.remove('on'),1400); }
+
+// ---------- Bibliothek ----------
+const ROLES=['Kick','Snare','Hi-Hat','Tom','Becken','Perc'];
+const LIB={
+ studio:{name:'Studio',sub:'SM Drums',color:'var(--smp)',items:[
+  ['Kick','Kick','4 Stufen · 3 RR'],['Snare 6,5"','Snare','4 Stufen · 3 RR'],['Snare 6,5" ohne Teppich','Snare','4 Stufen'],['Snare 7"','Snare','4 Stufen'],['Hybrid-Snare 1','Snare','4 Stufen'],['Rimshot','Snare','1 Stufe · 4 RR'],['Sidestick','Snare','4 Stufen · 3 RR'],
+  ['Hi-Hat zu','Hi-Hat','4 Stufen · 3 RR'],['Hi-Hat locker','Hi-Hat','4 Stufen'],['Hi-Hat offen','Hi-Hat','4 Stufen · 3 RR'],['Hi-Hat Pedal','Hi-Hat','4 Stufen · 3 RR'],['Hi-Hat Fuß-Splash','Hi-Hat','4 Stufen'],
+  ['Tom 1 (hoch)','Tom','4 Stufen · 3 RR'],['Tom 2','Tom','4 Stufen'],['Tom 3','Tom','4 Stufen'],['Tom 4 (Standtom)','Tom','4 Stufen · 3 RR'],
+  ['Crash 13"','Becken','4 Stufen'],['Crash 16"','Becken','4 Stufen · 3 RR'],['Crash 17"','Becken','4 Stufen'],['China','Becken','4 Stufen'],['Ride 17"','Becken','4 Stufen · 3 RR'],['Ride Bell','Becken','4 Stufen · 3 RR']]},
+ synth:{name:'Synth',sub:'eingebaut',color:'var(--blue)',items:[
+  ['Rock · Kick','Kick','FM'],['909 · Kick','Kick','FM'],['808 · Kick','Kick','FM, lang'],['Rock · Snare','Snare','FM + 2 Rauschbänder'],['909 · Snare','Snare','FM'],['808 · Snare','Snare','FM'],['808 · Rim','Snare','FM'],['909 · Clap','Perc','Rausch-Bursts'],
+  ['808 · Hi-Hat zu','Hi-Hat','6-Osc'],['808 · Hi-Hat offen','Hi-Hat','6-Osc'],['Rock · Tom hoch','Tom','FM'],['Rock · Tom tief','Tom','FM'],['808 · Crash','Becken','6-Osc'],['808 · Cowbell','Perc','6-Osc'],['Claves','Perc','FM'],['Maracas','Perc','Rauschen']]},
+ rusty:{name:'Rusty',sub:'Big Rusty Drums · später',soon:true,items:[]},
+ own:{name:'Eigene',sub:'Sample-Bibliothek',color:'var(--smp)',items:[['Vox','Perc','Mikrofon'],['Clap','Perc','Mikrofon']]}
+};
+
+// ---------- Kits ----------
+const KITS={
+ studio:{name:'STUDIO KIT',short:'STUDIO',desc:'Echte Aufnahmen · 4 Lautstärken',type:'smp',size:'1,8 MB',
+  A:[['BD','Kick','studio','Kick'],['SD','Snare','studio','Snare 6,5"'],['RS','Snare','studio','Sidestick'],['CH','Hi-Hat','studio','Hi-Hat zu'],['OH','Hi-Hat','studio','Hi-Hat offen'],['HF','Hi-Hat','studio','Hi-Hat Pedal'],['HT','Tom','studio','Tom 1 (hoch)'],['LT','Tom','studio','Tom 4 (Standtom)'],['CY','Becken','studio','Crash 16"'],['RD','Becken','studio','Ride 17"'],['RB','Becken','studio','Ride Bell']],
+  B:[['BD','Kick','studio','Kick',null],['SD','Snare','studio','Snare 6,5"',[['M','Mitte'],['R','Rimshot'],['S','Sidestick']]],['HH','Hi-Hat','studio','Hi-Hat',[['Z','Zu'],['L','Locker'],['O','Offen'],['P','Pedal']]],['HT','Tom','studio','Tom 1 (hoch)',null],['LT','Tom','studio','Tom 4 (Standtom)',null],['CY','Becken','studio','Crash 16"',[['C','Crash'],['X','Abstoppen']]],['RD','Becken','studio','Ride 17"',[['F','Fläche'],['B','Bell']]]]},
+ rock:{name:'ROCK KIT',short:'ROCK',desc:'Live · akustisch · druckvoll',type:'syn',
+  A:[['BD','Kick','synth','Rock · Kick'],['SD','Snare','synth','Rock · Snare'],['CH','Hi-Hat','synth','808 · Hi-Hat zu'],['LT','Tom','synth','Rock · Tom tief'],['HT','Tom','synth','Rock · Tom hoch'],['OH','Hi-Hat','synth','808 · Hi-Hat offen'],['CY','Becken','synth','808 · Crash']],
+  B:[['BD','Kick','synth','Rock · Kick',null],['SD','Snare','synth','Rock · Snare',null],['HH','Hi-Hat','synth','Hi-Hat',[['Z','Zu'],['O','Offen']]],['LT','Tom','synth','Rock · Tom tief',null],['HT','Tom','synth','Rock · Tom hoch',null],['CY','Becken','synth','808 · Crash',[['C','Crash'],['X','Abstoppen']]]]},
+ fm808:{name:'FM-808',short:'FM-808',desc:'Tief · warm · lang',type:'syn',
+  A:[['BD','Kick','synth','808 · Kick'],['SD','Snare','synth','808 · Snare'],['CP','Perc','synth','909 · Clap'],['CH','Hi-Hat','synth','808 · Hi-Hat zu'],['OH','Hi-Hat','synth','808 · Hi-Hat offen'],['CB','Perc','synth','808 · Cowbell'],['CY','Becken','synth','808 · Crash']],
+  B:[['BD','Kick','synth','808 · Kick',null],['SD','Snare','synth','808 · Snare',[['M','Snare'],['R','Rim']]],['CP','Perc','synth','909 · Clap',null],['HH','Hi-Hat','synth','Hi-Hat',[['Z','Zu'],['O','Offen']]],['CB','Perc','synth','808 · Cowbell',null],['CY','Becken','synth','808 · Crash',null]]}
+};
+const PAT={ // Beispiel-Groove (Rollenbasiert)
+ Kick:{0:4,7:2,8:3,10:3}, Snare:{4:4,12:4,6:1,15:2},
+ 'Hi-Hat':{0:4,2:3,4:4,6:3,8:4,10:3,12:4,14:3}
+};
+let variant='A', kitId='studio', voices=[], sel=0, vel=3, art=0, editIdx=-1, brMode='add', brLib='studio', brCat='Alle', brPick=null;
+const VEL=[['Ghost leise',.25],['Ghost',.5],['Normal',.85],['Akzent',1]];
+
+function loadKit(id){
+  kitId=id; const k=KITS[id];
+  voices=k[variant].map(([s,role,lib,name,arts])=>{
+    const st=new Array(16).fill(0), ar=new Array(16).fill(0);
+    if(variant==='A'){
+      if(s==='BD') Object.assign(st,PAT.Kick);
+      if(s==='SD') Object.assign(st,PAT.Snare);
+      if(s==='CH') Object.assign(st,PAT['Hi-Hat']);
+      if(s==='OH') st[14]=3;
+      if(s==='HF'){ st[4]=3; st[12]=3; }
+      if(s==='RD'){ st[0]=4; st[8]=4; }
+    } else {
+      if(s==='BD') Object.assign(st,PAT.Kick);
+      if(s==='SD'){ Object.assign(st,PAT.Snare); ar[15]=2; }
+      if(s==='HH'){ Object.assign(st,PAT['Hi-Hat']); st[14]=3; ar[14]=arts&&arts.length>2?2:1; if(arts&&arts.length>3){ st[5]=2; ar[5]=3; } }
+      if(s==='RD'){ st[0]=4; ar[0]=1; st[8]=3; }
+    }
+    return {s,role,lib,name,arts:arts||null,st,ar};
+  });
+  sel=0; art=0;
+  $('kitName').textContent=k.short; $('kitTag').textContent='';
+  render();
+}
+function color(v){ return 'var(--blue)'; } // Drums bleiben blau, Quelle steht im Text
+function render(){
+  // Raster
+  const g=$('grid'); const rh=voices.length>9?16:20; g.style.setProperty('--rh',rh+'px');
+  g.innerHTML='';
+  voices.forEach((v,i)=>{
+    const r=document.createElement('div'); r.className='gr'+(i===sel?' sel':''); r.style.setProperty('--tc',color(v));
+    let h=`<span class="n">${v.s}</span>`;
+    for(let s=0;s<16;s++){ const val=v.st[s]; const a=(variant==='B'&&v.arts&&val)?v.arts[v.ar[s]][0]:''; h+=`<span class="c ${s%4===0?'q':''} ${val?'v'+val:''}">${a&&v.ar[s]>0?a:''}</span>`; }
+    r.innerHTML=h;
+    let lp=null;
+    r.addEventListener('pointerdown',()=>{ lp=setTimeout(()=>{ lp='done'; openVoice(i); },450); });
+    r.addEventListener('pointerup',()=>{ if(lp!=='done'){ clearTimeout(lp); sel=i; art=0; render(); } lp=null; });
+    r.addEventListener('pointerleave',()=>{ if(lp&&lp!=='done') clearTimeout(lp); });
+    g.appendChild(r);
+  });
+  const add=document.createElement('div'); add.className='gr add';
+  add.innerHTML=`<button id="addV">${IC.plus}STIMME HINZUFÜGEN</button>`;
+  g.appendChild(add); $('addV').onclick=()=>openBrowse('add');
+  $('cntL').textContent=voices.length+' Stimmen'+(voices.length>=16?' · voll':'');
+  // Spurzeile
+  const v=voices[sel]; if(!v) return;
+  $('trkDot').style.background=color(v);
+  $('trkName').textContent=v.s+' · '+v.name.toUpperCase();
+  $('trkSrc').textContent=LIB[v.lib].name+' · '+v.role+(variant==='B'&&v.arts?' · '+v.arts.length+' Spielweisen':'');
+  $('trkSrc').className=v.lib==='synth'?'':'s';
+  // Velocity
+  $('velSeg').innerHTML=VEL.map((x,i)=>`<button class="${vel===i+1?'on':''}" data-vel="${i+1}"><i style="opacity:${x[1]}"></i>${x[0]}</button>`).join('');
+  // Artikulation (B)
+  if(variant==='B' && v.arts){
+    $('artWrap').innerHTML='<div class="lbl">Spielweise · '+v.s+'</div><div class="seg art">'+v.arts.map((a,i)=>`<button class="${art===i?'on':''}" data-art="${i}"><b>${a[0]}</b>${a[1]}</button>`).join('')+'</div>';
+  } else $('artWrap').innerHTML='';
+  // Pads
+  const p=$('pads'); p.style.setProperty('--tc',color(v)); p.innerHTML='';
+  for(let s=0;s<16;s++){
+    const val=v.st[s]; const d=document.createElement('div'); d.className='pd'+(val?' v'+val:'');
+    d.innerHTML=(s+1)+(variant==='B'&&v.arts&&val?`<span class="ar">${v.arts[v.ar[s]][0]}</span>`:'');
+    d.onclick=()=>{ if(v.st[s]===vel && (!v.arts||variant!=='B'||v.ar[s]===art)) v.st[s]=0; else { v.st[s]=vel; v.ar[s]=art; } render(); };
+    p.appendChild(d);
+  }
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-vel]'); if(b){ vel=+b.dataset.vel; render(); }
+  const a=e.target.closest('[data-art]'); if(a){ art=+a.dataset.art; render(); }
+  const t=e.target.closest('[data-t]'); if(t) toast(t.dataset.t);
+  if(e.target.closest('[data-close]')) closeAll();
+});
+
+// ---------- Overlays ----------
+function closeAll(){ ['ovKit','shVoice','ovBrowse','dim'].forEach(id=>$(id).classList.remove('on')); }
+$('dim').onclick=closeAll;
+$('kitSel').onclick=openKit; $('bKit').onclick=openKit;
+function openKit(){
+  closeAll(); const L=$('kitList'); let h='<div class="grp">Standard</div>';
+  Object.entries(KITS).forEach(([id,k])=>{
+    h+=`<div class="kit${id===kitId?' on':''}" data-kit="${id}"><div class="t"><b>${k.name}</b><span>${k.desc}</span><div class="vc">${k[variant].length} Stimmen${k.size?' · '+k.size:''}</div></div><span class="tag ${k.type==='smp'?'':'syn'}">${k.type==='smp'?'SAMPLES':'SYNTH'}</span></div>`;
+  });
+  h+=`<div class="kit" style="opacity:.55"><div class="t"><b>RUSTY KIT</b><span>Big Rusty Drums · großes 80er-Rockkit</span><div class="vc">kommt später · ca. 2 MB</div></div><span class="tag">SAMPLES</span></div>`;
+  h+=`<div class="kit" style="opacity:.55"><div class="t"><b>BRUSH KIT</b><span>Swirly Drums · Besen</span><div class="vc">kommt später</div></div><span class="tag">SAMPLES</span></div>`;
+  h+='<div class="grp">Eigene Sets</div><div class="kit" data-own><div class="t"><b>Mein Studio-Mix</b><span>Studio-Kick + 808-Snare + Studio-Becken</span><div class="vc">10 Stimmen</div></div><span class="tag">MIX</span></div>';
+  h+='<div class="kit add" data-t="Aktuelles Kit als eigenes Set gespeichert">＋ Aktuelles Kit als Set speichern</div>';
+  h+='<div class="hint">Ein Kit bringt seine Stimmenliste mit. Beim Wechsel bleiben die Noten erhalten, wenn es im neuen Kit eine Stimme mit derselben Rolle gibt (Kick → Kick).</div>';
+  L.innerHTML=h; $('ovKit').classList.add('on');
+  L.querySelectorAll('[data-kit]').forEach(el=>el.onclick=()=>{
+    const id=el.dataset.kit; const k=KITS[id];
+    if(k.type==='smp'){ dl(el,()=>{ loadKit(id); closeAll(); toast(k.name+' geladen'); }); }
+    else { loadKit(id); closeAll(); toast(k.name+' geladen'); }
+  });
+}
+function dl(el,done){
+  const t=el.querySelector('.vc'); t.innerHTML='<span class="dl">Lädt <i></i></span>'; const i=t.querySelector('i'); let p=0;
+  const iv=setInterval(()=>{ p+=20; i.style.setProperty('--p',p+'%'); if(p>=100){ clearInterval(iv); done(); } },120);
+}
+
+function openVoice(i){
+  closeAll(); editIdx=i; const v=voices[i]; sel=i; render();
+  $('svTitle').innerHTML=v.s+'<small>'+v.name+'</small>';
+  let h=`<div class="snd on"><div class="t"><b>${v.name}</b><span>${LIB[v.lib].name} · ${v.role}</span></div><button class="ib pv" data-t="▶ ${v.name}">${IC.play}</button></div>`;
+  h+=`<button class="act" id="svSwap">${IC.swap}Sound tauschen</button>`;
+  h+=`<div class="grp">Kürzel</div><div class="row"><input class="txt" id="svShort" value="${v.s}" maxlength="3"></div>`;
+  h+=`<div class="grp">Rolle</div><div class="rolebox">${ROLES.map(r=>`<button class="${r===v.role?'on':''}" data-role="${r}">${r}</button>`).join('')}</div>`;
+  h+=`<div class="hint">Die Rolle steuert Fill, Würfeln und was beim Kit-Wechsel zusammengehört.</div>`;
+  if(variant==='B' && v.arts) h+=`<div class="grp">Spielweisen</div><div class="hint">${v.arts.map(a=>a[0]+' = '+a[1]).join(' · ')}<br>Jede Spielweise ist ein eigener Sound, den man hier tauschen könnte.</div>`;
+  h+=`<div class="row"><button class="act sec" id="svUp">${IC.up}Hoch</button><button class="act sec" id="svDn">${IC.down}Runter</button></div>`;
+  h+=`<button class="act d" id="svDel">${IC.del}Stimme entfernen</button>`;
+  $('svBody').innerHTML=h; $('dim').classList.add('on'); $('shVoice').classList.add('on');
+  $('svSwap').onclick=()=>openBrowse('swap');
+  $('svShort').oninput=e=>{ v.s=e.target.value.toUpperCase()||'?'; render(); };
+  $('svBody').querySelectorAll('[data-role]').forEach(b=>b.onclick=()=>{ v.role=b.dataset.role; openVoice(i); });
+  $('svUp').onclick=()=>{ if(i>0){ [voices[i-1],voices[i]]=[voices[i],voices[i-1]]; openVoice(i-1); } };
+  $('svDn').onclick=()=>{ if(i<voices.length-1){ [voices[i+1],voices[i]]=[voices[i],voices[i+1]]; openVoice(i+1); } };
+  $('svDel').onclick=()=>{ const n=v.s; voices.splice(i,1); sel=Math.max(0,Math.min(sel,voices.length-1)); closeAll(); render(); toast(n+' entfernt · Rückgängig'); };
+}
+
+function openBrowse(mode){
+  brMode=mode; brPick=null;
+  if(mode==='add' && voices.length>=16){ toast('Maximal 16 Stimmen'); return; }
+  const cur=mode==='swap'?voices[editIdx]:null;
+  brCat=cur?cur.role:'Alle'; brLib=cur?cur.lib:'studio';
+  $('brTitle').innerHTML=mode==='swap'?'Sound tauschen<small>'+cur.s+'</small>':'Stimme hinzufügen';
+  closeAll(); $('ovBrowse').classList.add('on'); drawBrowse();
+}
+function drawBrowse(){
+  $('brLib').innerHTML=Object.entries(LIB).map(([id,l])=>`<button class="${id===brLib?'on':''} ${l.soon?'soon':''}" data-lib="${id}">${l.name}</button>`).join('');
+  $('brCat').innerHTML=['Alle',...ROLES].map(c=>`<button class="${c===brCat?'on':''}" data-cat="${c}">${c}</button>`).join('');
+  const L=LIB[brLib]; let h='';
+  if(L.soon) h='<div class="hint" style="padding:20px 4px">'+L.sub+'. Ladbar wie das Studio Kit, ca. 2 MB.</div>';
+  else {
+    const items=L.items.filter(x=>brCat==='Alle'||x[1]===brCat);
+    if(!items.length) h='<div class="hint" style="padding:20px 4px">Keine Sounds in dieser Rolle.</div>';
+    items.forEach((x,i)=>{ const on=brPick&&brPick[0]===x[0]; h+=`<div class="snd${on?' on':''}" data-pick="${i}"><div class="t"><b>${x[0]}</b><span>${x[1]} · ${x[2]}</span></div><button class="ib pv" data-t="▶ ${x[0]}">${IC.play}</button></div>`; });
+    $('brList').dataset.items=JSON.stringify(items);
+  }
+  $('brList').innerHTML=h;
+  $('brOk').textContent=brMode==='swap'?'Sound übernehmen':'Als neue Stimme einfügen';
+  $('brOk').style.opacity=brPick?1:.45;
+}
+$('brLib').onclick=e=>{ const b=e.target.closest('[data-lib]'); if(b){ brLib=b.dataset.lib; brPick=null; drawBrowse(); } };
+$('brCat').onclick=e=>{ const b=e.target.closest('[data-cat]'); if(b){ brCat=b.dataset.cat; brPick=null; drawBrowse(); } };
+$('brList').onclick=e=>{ if(e.target.closest('.pv')) return; const r=e.target.closest('[data-pick]'); if(!r) return; const items=JSON.parse($('brList').dataset.items||'[]'); brPick=items[+r.dataset.pick]; drawBrowse(); };
+$('brOk').onclick=()=>{
+  if(!brPick){ toast('Erst einen Sound wählen'); return; }
+  if(brMode==='swap'){ const v=voices[editIdx]; v.name=brPick[0]; v.lib=brLib; v.role=brPick[1]; closeAll(); render(); toast(v.s+' → '+brPick[0]); }
+  else {
+    const short=brPick[0].replace(/[^A-Za-zÄÖÜ]/g,'').slice(0,2).toUpperCase();
+    voices.push({s:short,role:brPick[1],lib:brLib,name:brPick[0],arts:null,st:new Array(16).fill(0),ar:new Array(16).fill(0)});
+    sel=voices.length-1; closeAll(); render(); toast(brPick[0]+' hinzugefügt');
+  }
+};
+
+// ---------- Mockup-Leiste ----------
+document.querySelectorAll('#mbar [data-v]').forEach(b=>b.onclick=()=>{ variant=b.dataset.v; document.querySelectorAll('#mbar [data-v]').forEach(x=>x.classList.toggle('on',x===b)); closeAll(); loadKit(kitId); notes(); });
+$('trkEdit').onclick=()=>openVoice(sel);
+$('nBtn').onclick=()=>{ $('notes').innerHTML=NOTE()+'<p><button class="act" style="max-width:200px" id="nX">Zurück</button></p>'; $('notes').classList.add('on'); $('nX').onclick=()=>$('notes').classList.remove('on'); };
+
+const NOTE=()=>`
+<h3>Was neu ist</h3><ul>
+<li>Ein Kit bringt seine <b>eigene Stimmenliste</b> mit. Studio hat 11 Stimmen inklusive Ride, Ride Bell und Pedal-Hat, Rock behält seine 7.</li>
+<li>Unter dem Raster gibt es <b>＋ Stimme hinzufügen</b>, maximal 16 Stimmen.</li>
+<li><b>Zeile lang drücken</b> oder der Regler-Button in der Spurzeile öffnet das Stimmen-Sheet: Sound tauschen, Kürzel, Rolle, verschieben, entfernen.</li>
+<li>Der <b>Sound-Browser</b> hat die Reiter Studio, Synth, Rusty (später) und Eigene Samples, dazu einen Filter nach Rolle und ▶ zum Vorhören.</li>
+<li>Im <b>Kit-Menü</b> stehen Standard-Kits und eigene Sets nebeneinander. Sample-Kits zeigen ihre Größe und laden beim ersten Antippen.</li></ul>
+<h3>${variant==='A'?'Variante A · Zeilen':'Variante B · Artikulation'}</h3><ul>
+${variant==='A'
+?'<li>Jeder Sound ist eine eigene Zeile: zu, offen und Pedal sind drei Hi-Hat-Zeilen.</li><li>Pro: genau wie heute, jede Zeile hat Mixer, Mute und Solo.</li><li>Contra: Das Raster wird lang. Ab 10 Zeilen werden die Kästchen flacher.</li>'
+:'<li>Eine Zeile pro Instrument. Spielweisen sind zum Beispiel bei der Hi-Hat zu, locker, offen und Pedal, beim Ride Fläche und Bell, bei der Snare Mitte, Rimshot und Sidestick.</li><li>Unter der Lautstärke liegt eine zweite Leiste <b>Spielweise</b>. Der Step merkt sich Lautstärke und Spielweise, Raster und Pads zeigen den Buchstaben.</li><li>Pro: nur 7 Zeilen, die Hi-Hat würgt sich automatisch selbst ab wie echt.</li><li>Contra: eine Leiste mehr, die Hi-Hat hat nur einen Mixer-Kanal.</li>'}
+</ul>
+<h3>Unter der Haube</h3><ul>
+<li><b>Rolle</b> (Kick, Snare, Hi-Hat, Tom, Becken, Perc) ersetzt die festen IDs. Fill, Würfeln und Kit-Wechsel arbeiten mit der Rolle.</li>
+<li><b>Mixer:</b> ein Kanal pro Stimme. Bei 11 und mehr Stimmen wird die Drum-Gruppe aufklappbar.</li>
+<li><b>Perc</b> bleibt eine eigene Spur und bekommt dasselbe System.</li></ul>
+<h3>Offene Fragen</h3><ul>
+<li>A oder B, oder B nur für die Hi-Hat?</li>
+<li>Kit-Wechsel: Noten ohne passende Rolle verwerfen oder bis zum Zurückwechseln merken?</li>
+<li>Sind 16 Stimmen genug?</li></ul>`;
+function notes(){ $('sideNotes').innerHTML=NOTE(); }
+loadKit('studio'); notes();
+})();
+</script>
