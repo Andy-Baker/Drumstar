@@ -135,8 +135,9 @@ async def main():
       ok(f'{kit}: Hi-Hat locker klingt länger als zu', tail(xl,sr,0.15,0.4)>tail(xc,sr,0.15,0.4)+4, f'{tail(xc,sr,0.15,0.4):.0f} → {tail(xl,sr,0.15,0.4):.0f} dB')
       ok(f'{kit}: Hi-Hat Pedal leiser als zu', db(np.abs(xp).max())<db(np.abs(xc).max()), f'{db(np.abs(xc).max()):.0f} → {db(np.abs(xp).max()):.0f} dB')
     await pg.evaluate("__audio.smpLoad('rusty')")
+    await pg.evaluate("__audio.smpOpt({rr:false,vari:0})")  # ohne Zufall: Round Robin/Variation ließen den Vergleich flackern (~25 % FAIL)
     x,_=await exp('rusty',{'hl':{0:3},'ch':{1:3}}); y,_=await exp('rusty',{'hl':{0:3}}); z,_=await exp('rusty',{'ch':{1:3},'bd':{0:1}})  # 1 Step bei 100 BPM = 0,15 s
-    await pg.evaluate("__audio.smpOpt({room:0.22})")
+    await pg.evaluate("__audio.smpOpt({room:0.22,rr:true,vari:50})")
     w=lambda q:float((q[int(0.3*sr):int(0.55*sr)]**2).mean())
     ok('Hi-Hat locker wird vom nächsten Hi-Hat-Schlag abgewürgt', w(x)<0.5*(w(y)+w(z)) and w(y)>w(z), f'locker allein {db(np.sqrt(w(y))):.0f}, zu allein {db(np.sqrt(w(z))):.0f}, beide {db(np.sqrt(w(x))):.0f} dB')
     rt=await pg.evaluate("__audio.artRoundTrip()")
