@@ -79,3 +79,9 @@ Siehe GitHub Issues (seit 29.10.2026).
 - WAV-Export wartet, bis die benutzten Sample-Kits geladen sind (vorher still Synth-Ersatz im WAV, wenn kurz nach Kit-Wahl/App-Start exportiert wurde). Offene Sample-Hi-Hat wird beim Export wie `lastOpenHatGain` gesichert (#12).
 - WAV-Export: erster Schlag war bis ~3 dB leiser als live (Master-Kompressor schwingt in einem frischen Offline-Kontext ~0,2 s ein). Jetzt 0,25 s Vorlauf, der abgeschnitten wird; Timing im WAV unverändert.
 - Tests: Export bei nicht geladenem Kit, Song-Export (Arrangement) mit Samples + Spielweise im Clip, erster Schlag = späterer Schlag.
+
+## v74 – Sample-Kits: Größe und Offline-Meldung (29.10.)
+- Kit-Auswahl: Sample-Kits zeigen vor dem ersten Laden die Ladegröße am Chip („… · 1,8 MB“, Ersatz-Kit mitgerechnet). Geladen oder im Cache → nur noch die Beschreibung. Größen als `samples.kb` in `KITS` (#31).
+- Offline und noch nicht gespeichert: „Offline · Kit noch nicht gespeichert“ statt „Laden fehlgeschlagen“.
+- Kein Sperren auf Mobil: Kits laden ohnehin erst beim Antippen, der Rock-Synth spielt solange weiter.
+- Tests (ui): Größen passen zu `samples/`, Chip-Text vor dem Laden, Offline-Meldung.

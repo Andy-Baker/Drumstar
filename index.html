@@ -2792,17 +2792,18 @@ const KITS={
   }},
   // Sample-Kits: echte Aufnahmen (siehe SAMPLE-KITS weiter unten). voices = Rock-Synth als Ersatz,
   // solange die Samples laden, und für Stimmen ohne Aufnahme (Clap, Cowbell, Claves, Maracas).
-  // samples.fallback: Kit, das Stimmen ohne eigene Aufnahme spielt.
+  // samples.fallback: Kit, das Stimmen ohne eigene Aufnahme spielt. samples.kb: Größe aller Dateien in KB (Anzeige vor dem ersten Laden;
+  // tests/test-ui.py prüft, dass die Zahl zu samples/<dir>/ passt).
   studio:{ name:'STUDIO KIT', desc:'Echte Aufnahmen · modern, trocken', voices:null,
-    samples:{dir:'studio', voices:['bd','sd','rs','ch','hl','hf','oh','lt','ht','cy','rd','rb']} },
+    samples:{dir:'studio', kb:1805, voices:['bd','sd','rs','ch','hl','hf','oh','lt','ht','cy','rd','rb']} },
   s67:{ name:'STUDIO 67', desc:'Echte Aufnahmen · 1967er Snare, lockere Hi-Hat', voices:null,
-    samples:{dir:'s67', voices:['sd','ch','lt','ht','cy'], fallback:'studio'} },
+    samples:{dir:'s67', kb:718, voices:['sd','ch','lt','ht','cy'], fallback:'studio'} },
   hyb:{ name:'HYBRID', desc:'Echte Aufnahmen · bearbeitete Pop-Snare', voices:null,
-    samples:{dir:'hyb', voices:['sd','rs','cy'], fallback:'studio'} },
+    samples:{dir:'hyb', kb:493, voices:['sd','rs','cy'], fallback:'studio'} },
   rusty:{ name:'RUSTY KIT', desc:'Echte Aufnahmen · großes 80er-Rockkit', voices:null,
-    samples:{dir:'rusty', voices:['bd','sd','rs','ch','hl','hf','oh','lt','ht','cy','rd','rb']} },
+    samples:{dir:'rusty', kb:1853, voices:['bd','sd','rs','ch','hl','hf','oh','lt','ht','cy','rd','rb']} },
   vintage:{ name:'VINTAGE 73', desc:'Echte Aufnahmen · 70er, gedämpft', voices:null,
-    samples:{dir:'vintage', voices:['bd','sd','rs','ch','hl','hf','oh','lt','ht'], fallback:'studio'} },
+    samples:{dir:'vintage', kb:878, voices:['bd','sd','rs','ch','hl','hf','oh','lt','ht'], fallback:'studio'} },
   fm909:{ name:'FM-909', desc:'Klassisch · punchy', voices:{
     bd:{baseFreq:58, startMult:1.8, pitchEndMult:0.36, pitchDecay:0.08, clickLevel:0.25, ampDecay:0.32,
         ops:[{ratio:1,level:1,decay:0.32,feedback:0.3},{ratio:1.4,level:6,decay:0.05}]},
@@ -3026,6 +3027,22 @@ function smpKitsInUse(){ // Sample-Kits, die gerade klingen (Basis-Kit + Set-Sti
   return [...s];
 }
 function smpChipText(kid,t){ const c=KITS[kid]._chip; if(c){ const d=c.querySelector('.kd'); if(d) d.textContent=t; } }
+// Vor dem ersten Laden: Größe am Chip zeigen (mobil sinnvoll). smpCached[kit]=true, sobald alle Dateien im Cache liegen oder einmal geladen wurden.
+const smpCached={};
+function smpMB(kb){ return (kb/1024).toFixed(1).replace('.',',')+' MB'; }
+function smpIdleText(kid){
+  const k=KITS[kid]; if(!k || !k.samples) return '';
+  if(smpCached[kid]) return k.desc;
+  const fb=k.samples.fallback, kb=k.samples.kb+(fb && !smpCached[fb] && !(smp[fb] && smp[fb].state==='ready') ? KITS[fb].samples.kb : 0);
+  return k.desc+' · '+smpMB(kb);
+}
+function smpChipIdle(){ Object.keys(KITS).forEach(kid=>{ if(KITS[kid].samples && (!smp[kid] || smp[kid].state==='ready')) smpChipText(kid,smpIdleText(kid)); }); }
+function smpCheckCache(){
+  if(!window.caches) return Promise.resolve();
+  return Promise.all(Object.keys(KITS).filter(kid=>KITS[kid].samples).map(kid=>{ const sm=KITS[kid].samples;
+    return Promise.all(sm.voices.map(id=>caches.match('samples/'+sm.dir+'/'+id+'.mp3'))).then(r=>{ if(r.every(Boolean)) smpCached[kid]=true; }).catch(()=>{});
+  })).then(smpChipIdle);
+}
 function smpLoad(kid){
   const k=KITS[kid]; if(!k || !k.samples) return Promise.resolve();
   if(k.samples.fallback) smpLoad(k.samples.fallback);
@@ -3035,7 +3052,7 @@ function smpLoad(kid){
   const dc=new Ctor(1,1,44100); // nur zum Dekodieren, braucht keinen Tipp zum Starten
   const decode=ab=>new Promise((res,rej)=>{ const r=dc.decodeAudioData(ab,res,rej); if(r && r.then) r.then(res,rej); });
   const ids=k.samples.voices; let done=0;
-  const jobs=ids.map(id=>fetch('samples/'+k.samples.dir+'/'+id+'.mp3').then(x=>{ if(!x.ok) throw new Error(x.status); return x.arrayBuffer(); })
+  const jobs=ids.map(id=>fetch('samples/'+k.samples.dir+'/'+id+'.mp3').catch(()=>{ throw Object.assign(new Error('net'),{net:true}); }).then(x=>{ if(!x.ok) throw new Error(x.status); return x.arrayBuffer(); })
     .then(decode).then(b=>{
       const d=b.getChannelData(0), sr=b.sampleRate, L=SMP_LEN[id];
       let c=0; while(c<d.length && c<sr*0.3 && Math.abs(d[c])<0.4) c++; // Sync-Klick = Dateianfang, MP3-Vorlauf egal
@@ -3048,12 +3065,13 @@ function smpLoad(kid){
       }
       st.buf[id]=set; done++; smpChipText(kid,'Lädt … '+Math.round(done/ids.length*100)+' %');
     }));
-  st.promise=Promise.all(jobs).then(()=>{ st.state='ready'; smpChipText(kid,k.desc); })
-    .catch(e=>{ st.state='error'; st.promise=null; smpChipText(kid,'Laden fehlgeschlagen · antippen = erneut'); });
+  st.promise=Promise.all(jobs).then(()=>{ st.state='ready'; smpCached[kid]=true; smpChipIdle(); })
+    .catch(e=>{ st.state='error'; st.promise=null;
+      smpChipText(kid, (navigator.onLine===false || (e && e.net)) ? 'Offline · Kit noch nicht gespeichert' : 'Laden fehlgeschlagen · antippen = erneut'); });
   return st.promise;
 }
 function smpFree(keep){ // Speicher: dekodierte Kits, die gerade nicht klingen, wieder freigeben (lädt bei Bedarf neu)
-  Object.keys(smp).forEach(k=>{ if(keep.indexOf(k)<0 && smp[k].state!=='loading'){ delete smp[k]; smpChipText(k,KITS[k].desc); } });
+  Object.keys(smp).forEach(k=>{ if(keep.indexOf(k)<0 && smp[k].state!=='loading'){ delete smp[k]; smpChipText(k,smpIdleText(k)); } });
 }
 function smpSet(kid,id){ // Aufnahme des Kits, sonst des Ersatz-Kits; null = noch nicht da
   const k=KITS[kid]; if(!k || !k.samples) return null;
@@ -3688,6 +3706,7 @@ Object.keys(KITS).forEach(kitId=>{
   kit._chip=chip;
   kitPickerList.appendChild(chip);
 });
+smpChipIdle(); smpCheckCache();
 const lcdKitBtn=document.getElementById('lcdKitBtn');
 const kitPickerCloseBtn=document.getElementById('kitPickerCloseBtn');
 lcdKitBtn.addEventListener('click', ()=>{ closeAllOverlays(); if(patternGroup==='piano'){ soundPickerOverlay.classList.add('open'); syncBottomBarVisibility(); soundPickerRefresh(); return; } kitPickerOverlay.classList.add('open'); syncBottomBarVisibility(); smpOptCollapse(); kitPickerRefresh(); });

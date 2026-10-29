@@ -58,6 +58,22 @@ async def main():
     await pg.click('#patternTabBtn'); await pg.wait_for_timeout(200)
     # Kit + eigene Sets
     await pg.click('#lcdKitBtn'); await pg.wait_for_timeout(300); await pg.screenshot(path=OUT+'/kit.png'); await pg.click('#kitPickerCloseBtn')
+    # Sample-Kits vor dem ersten Laden: Größe am Chip (#31), Zahl passt zu den Dateien
+    import pathlib as _pl
+    sm=await pg.evaluate("__audio.smpChips()")
+    root=_pl.Path(__file__).resolve().parent.parent/'samples'
+    for k in sm:
+      real=sum(f.stat().st_size for f in (root/k['dir']).glob('*.mp3'))/1024
+      ok('Größe stimmt: '+k['id'], abs(real-k['kb'])<=max(20,real*0.05), (k['kb'],round(real)))
+    ok('Chips zeigen MB vor dem Laden', all(' MB' in k['t'] for k in sm), [k['t'] for k in sm])
+    hy=next(k['t'] for k in sm if k['id']=='hyb'); ok('Ersatz-Kit mitgerechnet (Hybrid + Studio)', '2,2 MB' in hy, hy)
+    # Offline und nicht geladen: klare Meldung
+    await pg.context.set_offline(True)
+    await pg.evaluate("__audio.smpTryLoad('hyb')"); await pg.wait_for_timeout(600)
+    t=next(k['t'] for k in await pg.evaluate("__audio.smpChips()") if k['id']=='hyb')
+    ok('Offline-Meldung', t.startswith('Offline'), t)
+    await pg.context.set_offline(False)
+    await pg.evaluate("__audio.smpReset()")
     # Sample-Kit: „Klang“-Optionen eingeklappt, aufklappbar, Chip-Klick schließt nicht
     await pg.click('#lcdKitBtn'); await pg.wait_for_timeout(200)
     await pg.click('#kitPickerList .kit-chip.smp >> nth=0'); await pg.wait_for_timeout(300)

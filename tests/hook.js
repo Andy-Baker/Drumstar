@@ -119,3 +119,7 @@ window.__audio.exportSong=async function(kit,clips,bars,bpmv){
   for(let i=0;i<x.length;i++) x[i]=L[i]+R[i];
   return {x:Array.from(x), sr:b.sampleRate};
 };
+// Sample-Kits: Größe/Text am Chip (#31)
+window.__audio.smpChips=()=>Object.keys(KITS).filter(k=>KITS[k].samples).map(k=>({id:k,dir:KITS[k].samples.dir,kb:KITS[k].samples.kb,t:KITS[k]._chip.querySelector('.kd').textContent}));
+window.__audio.smpTryLoad=kid=>{ smpFree([]); smpLoad(kid).catch(()=>{}); };
+window.__audio.smpReset=()=>{ smpFree([]); smpChipIdle(); };
