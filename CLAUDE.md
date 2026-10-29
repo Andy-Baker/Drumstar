@@ -3,7 +3,7 @@ Browser-Drum-Machine/Sequencer, Vanilla JS + Web Audio, eine `index.html` + `sw.
 
 ## Regeln
 - Kein Framework, kein Build. Plain HTML/CSS/JS.
-- Bei jedem Deploy `CACHE` in `sw.js` erhöhen (aktuell `mrm44-v76`).
+- Bei jedem Deploy `CACHE` in `sw.js` erhöhen (aktuell `mrm44-v77`).
 - UI: erst interaktives Mockup (HTML), dann Umbau. Design braucht Platz; dunkles Chassis, blaue Controls, Instrumentfarben (Acid orange, Cosmic lila, Piano gelb, Sample grün, Drums blau, Perc türkis).
 - Versionen über Git-Commits/Tags, nicht über Datei-Suffixe.
 - Tests gehören ins Repo (`tests/`), nie nur ins Claude-Projekt. Neue oder geänderte Tests immer mit committen und pushen.
@@ -24,6 +24,7 @@ Browser-Drum-Machine/Sequencer, Vanilla JS + Web Audio, eine `index.html` + `sw.
 ## Aufgaben & Ideen = GitHub Issues
 Einzige Quelle für „was noch“ sind die Issues (Labels: `aufgabe`, `idee`, `bug`, `aufräumen`). Keine Aufgabenlisten in Dateien oder Memory.
 - **Session-Start** („weiter machen“): offene Issues lesen (`gh api "repos/Andy-Baker/drumstar/issues?state=open&per_page=100"`; GraphQL/`gh issue` geht hier nicht).
+- **Titel**: so formulieren, dass der Nutzer ohne Code-Kenntnis versteht, was es bringt (Bereich + Wirkung, z. B. „Sample-Bibliothek: Samples löschen können“). Interne Namen höchstens im Text.
 - **Während der Session**: Neue Idee, Wunsch oder Fehler vom Nutzer sofort als Issue anlegen (knapp, mit Kontext), nicht erst am Ende.
 - **Commits**: `fixes #n` bzw. `refs #n` in die Commit-Nachricht.
 - **Session-Ende**: Erledigtes geschlossen? Neues angelegt? Rückmeldungen (z. B. Handytest) als Kommentar am Issue.

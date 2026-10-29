@@ -244,17 +244,12 @@
 
   /* ---------- OVERVIEW (glanceable + Volume pro Sound) ---------- */
   #overview{ background:var(--panel-inset); border-radius:8px; padding:6px 8px; box-shadow:inset 0 2px 6px rgba(0,0,0,.5); }
-  .ov-row{ display:grid; grid-template-columns:28px 20px 20px 20px repeat(16,1fr); align-items:center; gap:3px;
+  .ov-row{ display:grid; grid-template-columns:28px repeat(16,1fr); align-items:center; gap:3px;
     padding:2px 0; border-radius:4px; cursor:pointer; }
   .ov-row.active{ background:rgba(63,169,255,.10); }
   .ov-row .ov-label{ font-size:8px; font-weight:700; letter-spacing:.03em; color:var(--dim); cursor:pointer; }
   .ov-row.active .ov-label{ color:var(--blue-2); }
   .ov-row .knob-dial{ --ks:18px; cursor:grab; }
-  .ov-mute, .ov-solo, .ov-rand{ width:20px; height:20px; border-radius:5px; border:1px solid rgba(255,255,255,.12); background:var(--panel-inset);
-    color:var(--dim); font-size:8px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; }
-  .ov-mute.on{ background:var(--blue); color:#04121e; border-color:var(--blue); box-shadow:0 0 8px rgba(63,169,255,.5); }
-  .ov-solo.on{ background:#ffc247; color:#2a1a00; border-color:#ffc247; box-shadow:0 0 8px rgba(255,194,71,.5); }
-  .ov-mute:active, .ov-solo:active, .ov-rand:active{ transform:scale(.92); }
   .ov-row.muted .ov-cell{ opacity:.3; }
   .ov-row.solo-dim .ov-cell{ opacity:.25; } /* andere Spuren, während woanders Solo aktiv ist */
   .ov-cell{ height:7px; border-radius:2px; background:#0c0d10; cursor:pointer; }
@@ -792,7 +787,8 @@
   #dsList{ overflow-y:auto; display:flex; flex-direction:column; gap:5px; }
   .ds-it{ display:flex; align-items:center; gap:8px; background:var(--panel-inset); border-radius:8px; padding:10px; font-size:12px; border:1px solid transparent; cursor:pointer; }
   .ds-it.on{ border-color:var(--blue); background:rgba(63,169,255,.12); } .ds-it small{ margin-left:auto; font-size:9px; color:var(--dim); }
-  .ds-it.add{ border:1px dashed rgba(255,194,71,.5); color:#ffc247; } .ds-it button{ width:34px; height:30px; border-radius:6px; border:1px solid rgba(255,255,255,.12); background:transparent; color:#ff9d7a; cursor:pointer; }
+  .ds-it.add{ border:1px dashed rgba(255,194,71,.5); color:#ffc247; } .ds-it button{ width:44px; height:40px; margin:-6px -4px -6px auto; flex:none; display:flex; align-items:center; justify-content:center; border-radius:8px; border:1px solid rgba(255,157,122,.35); background:rgba(255,157,122,.06); color:#ff9d7a; cursor:pointer; }
+  .ds-it .grow{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .kp-sec{ font-size:10px; letter-spacing:.12em; color:var(--dim); text-transform:uppercase; margin:12px 2px 6px; flex-shrink:0; }
   #kitOwnList{ display:flex; flex-direction:column; gap:6px; }
   #kitOwnList .kit-chip{ display:flex; align-items:center; gap:8px; padding:12px 14px; min-width:0; }
@@ -946,7 +942,6 @@ html,body{min-height:100%;height:100%;}
 .menu button small{font-size:15px;color:var(--dim)} .menu button.cur{background:rgba(63,169,255,.14)}
 #overview{padding:4px;border-radius:10px}
 .ov-row{grid-template-columns:42px repeat(16,1fr);column-gap:2px;min-height:34px;padding:2px 6px;border-radius:8px}
-.ov-row .ov-mute,.ov-row .ov-solo,.ov-row .ov-rand{display:none}
 .ov-row .ov-label{font-size:14px;padding-right:4px}
 .ov-cell{height:18px}
 .ov-row.solo{background:rgba(255,194,71,.12)}
@@ -3625,13 +3620,11 @@ setBpm(bpm); // initiale Anzeige synchronisieren
 // immer denselben Zustand zeigen, egal wo zuerst geklickt wurde.
 function toggleTrackMute(tr){
   tr.muted=!tr.muted; syncTbMS();
-  if(tr._ovMuteBtn) tr._ovMuteBtn.classList.toggle('on', tr.muted);
   if(tr._ovRow) tr._ovRow.classList.toggle('muted', tr.muted);
   if(tr._mixMuteBtn) tr._mixMuteBtn.classList.toggle('on', tr.muted);
 }
 function toggleTrackSolo(tr){
   tr.solo=!tr.solo;
-  if(tr._ovSoloBtn) tr._ovSoloBtn.classList.toggle('on', tr.solo);
   if(tr._mixSoloBtn) tr._mixSoloBtn.classList.toggle('on', tr.solo);
   refreshSoloVisuals();
 }
@@ -3656,25 +3649,6 @@ TRACKS.forEach((tr,idx)=>{
   lab.addEventListener('click', ()=>selectTrack(idx));
   row.appendChild(lab);
 
-  const muteBtn=document.createElement('button'); muteBtn.className='ov-mute'; muteBtn.textContent='M';
-  muteBtn.addEventListener('click', (e)=>{ e.stopPropagation(); toggleTrackMute(tr); });
-  row.appendChild(muteBtn);
-  tr._ovMuteBtn=muteBtn;
-
-  const soloBtn=document.createElement('button'); soloBtn.className='ov-solo'; soloBtn.textContent='S';
-  soloBtn.addEventListener('click', (e)=>{ e.stopPropagation(); toggleTrackSolo(tr); });
-  row.appendChild(soloBtn);
-  tr._soloBtn=soloBtn;
-  tr._ovSoloBtn=soloBtn;
-
-  const randBtn=document.createElement('button'); randBtn.className='ov-rand'; randBtn.textContent='🎲';
-  randBtn.title='Nur diese Spur neu generieren';
-  randBtn.addEventListener('click', (e)=>{
-    e.stopPropagation();
-    randomizeTrackPattern(tr);
-    refreshTrackStepVisuals(tr);
-  });
-  row.appendChild(randBtn);
 
   const cells=[];
   for(let s=0;s<16;s++){
@@ -5986,8 +5960,8 @@ function applyTrackAndFillData(data){
       cosmic.steps=new Array(PATTERN_LENGTH).fill(VEL_OFF);
       cosmic.events=[]; delete cosmic.notes; delete cosmic.slides; cosmic._idx=null;
       cosmic.muted=false; cosmic.solo=false;
-      if(cosmic._ovMuteBtn) cosmic._ovMuteBtn.classList.remove('on'); if(cosmic._ovRow) cosmic._ovRow.classList.remove('muted');
-      if(cosmic._mixMuteBtn) cosmic._mixMuteBtn.classList.remove('on'); if(cosmic._ovSoloBtn) cosmic._ovSoloBtn.classList.remove('on'); if(cosmic._mixSoloBtn) cosmic._mixSoloBtn.classList.remove('on');
+      if(cosmic._ovRow) cosmic._ovRow.classList.remove('muted');
+      if(cosmic._mixMuteBtn) cosmic._mixMuteBtn.classList.remove('on'); if(cosmic._mixSoloBtn) cosmic._mixSoloBtn.classList.remove('on');
       applyTrackSound(cosmic,{vol:0.68,tune:0.5,rootNote:0,cutoff:0.62,resonance:0.22,envMod:0.62,decay:0.42,scale:'minor',reverbAmount:0.24,delaySend:0.28,cosmicWidth:0.62,cosmicMotion:0.46,cosmicWarmth:0.22,cosmicAir:0.18});
     }
   }
@@ -5995,7 +5969,7 @@ function applyTrackAndFillData(data){
     const pn=TRACKS.find(t=>t.id==='piano');
     if(pn){
       pn.steps=new Array(PATTERN_LENGTH).fill(VEL_OFF); pn.events=[]; delete pn.notes; delete pn.slides; pn._idx=null; pn.muted=false; pn.solo=false;
-      ['_ovMuteBtn','_mixMuteBtn','_ovSoloBtn','_mixSoloBtn'].forEach(k=>{ if(pn[k]) pn[k].classList.remove('on'); }); if(pn._ovRow) pn._ovRow.classList.remove('muted');
+      ['_mixMuteBtn','_mixSoloBtn'].forEach(k=>{ if(pn[k]) pn[k].classList.remove('on'); }); if(pn._ovRow) pn._ovRow.classList.remove('muted');
       applyTrackSound(pn,{vol:0.8,tune:0.5,rootNote:0,cutoff:0.55,resonance:0.2,envMod:0.5,decay:0.5,scale:'minor',reverbAmount:0.18,delaySend:0});
     }
   }
@@ -6021,10 +5995,8 @@ function applyTrackAndFillData(data){
       if(tr._mixEqKnobs.eqHighGain) tr._mixEqKnobs.eqHighGain.setValue(tr.eqHighGain);
     }
     tr.muted=!!saved.muted; tr.solo=!!saved.solo; // ältere Patterns ohne diese Felder -> beides aus
-    if(tr._ovMuteBtn) tr._ovMuteBtn.classList.toggle('on', tr.muted);
     if(tr._ovRow) tr._ovRow.classList.toggle('muted', tr.muted);
     if(tr._mixMuteBtn) tr._mixMuteBtn.classList.toggle('on', tr.muted);
-    if(tr._ovSoloBtn) tr._ovSoloBtn.classList.toggle('on', tr.solo);
     if(tr._mixSoloBtn) tr._mixSoloBtn.classList.toggle('on', tr.solo);
     tr.feel=saved.feel||0;
     tr.delaySend=saved.delaySend||0;
@@ -6911,13 +6883,31 @@ async function dsRenderList(){
   } else {
     const items=await listSampleLibrary();
     items.forEach(e=>{
-      const it=document.createElement('div'); it.className='ds-it'+(v && v.t==='smp' && v.sampleId===e.id?' on':''); it.textContent=e.name||'Sample';
+      const it=document.createElement('div'); it.className='ds-it'+(v && v.t==='smp' && v.sampleId===e.id?' on':'');
+      const nm=document.createElement('span'); nm.className='grow'; nm.textContent=e.name||'Sample'; it.appendChild(nm);
+      const del=document.createElement('button'); del.innerHTML=UI_IC.del; del.title='Sample löschen'; del.setAttribute('aria-label','Sample löschen');
+      del.onclick=ev=>{ ev.stopPropagation(); smpLibDelete(e); }; it.appendChild(del);
       it.onclick=async()=>{ drumSet.voices[id]={t:'smp',sampleId:e.id}; dsMarkDirty(); await drumSetLoadBuffers(); dsRender(); dsRenderList(); dsPreview(id); }; dsList.appendChild(it);
     });
     if(!items.length){ const e=document.createElement('div'); e.className='ds-it'; e.textContent='Noch keine Samples in der Bibliothek'; dsList.appendChild(e); }
     const add=document.createElement('div'); add.className='ds-it add'; add.textContent='＋ Aufnehmen / Datei laden (Sample-Editor)';
     add.onclick=()=>{ dsSheet.classList.remove('open'); openSampleEditor({sampleId:null}); }; dsList.appendChild(add);
   }
+}
+// Sample aus der Bibliothek löschen (#6): Stimmen des aktuellen Sets, die es nutzen, folgen wieder dem Basis-Kit.
+// Kein Rückfrage-Dialog, stattdessen Rückgängig im Toast (Eintrag inkl. Audio wird neu gespeichert).
+async function smpLibDelete(e){
+  const used=Object.keys(drumSet.voices).filter(k=>{ const v=drumSet.voices[k]; return v && v.t==='smp' && v.sampleId===e.id; });
+  const prev=used.map(k=>[k, drumSet.voices[k], drumSet.buffers[k]]), wasDirty=currentSet.dirty;
+  await deleteSampleLibraryEntry(e.id);
+  used.forEach(k=>{ delete drumSet.voices[k]; delete drumSet.buffers[k]; }); if(used.length) dsMarkDirty();
+  dsRender(); dsRenderList();
+  hmToast('„'+(e.name||'Sample')+'“ gelöscht', true, async()=>{
+    await saveSampleLibraryEntry(e);
+    prev.forEach(([k,v,b])=>{ drumSet.voices[k]=v; if(b) drumSet.buffers[k]=b; });
+    if(used.length && !wasDirty){ currentSet.dirty=false; updateKitLabel(); dsDirty.textContent=''; }
+    dsRender(); dsRenderList();
+  });
 }
 function dsOpenSheet(id){
   dsCur=id; const v=drumSet.voices[id]; dsMode=(v && v.t==='smp')?'smp':'syn';

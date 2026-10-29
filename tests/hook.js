@@ -123,3 +123,5 @@ window.__audio.exportSong=async function(kit,clips,bars,bpmv){
 window.__audio.smpChips=()=>Object.keys(KITS).filter(k=>KITS[k].samples).map(k=>({id:k,dir:KITS[k].samples.dir,kb:KITS[k].samples.kb,t:KITS[k]._chip.querySelector('.kd').textContent}));
 window.__audio.smpTryLoad=kid=>{ smpFree([]); smpLoad(kid).catch(()=>{}); };
 window.__audio.smpReset=()=>{ smpFree([]); smpChipIdle(); };
+// Sample-Bibliothek (#6)
+window.__lib={ save:e=>saveSampleLibraryEntry(e), list:()=>listSampleLibrary().then(a=>a.map(x=>x.id)) };
