@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Zurücksetzen Mockup</title>
+<link rel="stylesheet" href="../../fonts.css">
+<style>
+:root{color-scheme:dark;--bg:#050507;--chassis:#0e0e13;--chassis-2:#08080b;--panel:#16161c;--inset:#0a0a0d;--blue:#3fa9ff;--blue-2:#8fd4ff;--white:#f4f5f7;--dim:#7d818c;--metal:#c7cbd4;--lcd-fg:#5fc2ff;--line:rgba(255,255,255,.06)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--white);font-family:'Rajdhani',system-ui,sans-serif;user-select:none;-webkit-user-select:none}
+button{font-family:inherit;color:inherit;margin:0}
+svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+#mbar{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:calc(6px + env(safe-area-inset-top,0px)) 10px 6px;background:repeating-linear-gradient(135deg,#0b1622 0 8px,#0d1a28 8px 16px);border-bottom:1px dashed rgba(63,169,255,.45);font:700 11px 'JetBrains Mono',monospace;color:var(--blue-2)}
+#mbar .sp{flex:1}
+#mbar button{height:26px;padding:0 9px;border-radius:6px;border:1px solid rgba(63,169,255,.45);background:rgba(63,169,255,.12);font:700 11px 'JetBrains Mono',monospace;color:var(--blue-2);cursor:pointer}
+#mbar button.on{background:var(--blue);color:#042c53}
+#stage{position:fixed;top:calc(72px + env(safe-area-inset-top,0px));left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;gap:32px}
+#dev{position:relative;width:100%;height:100%;overflow:hidden;background:linear-gradient(180deg,var(--chassis),var(--chassis-2))}
+@media (min-width:780px) and (min-height:760px){#dev{width:390px;height:780px;border-radius:30px;border:8px solid #1a1e26;box-shadow:0 30px 80px rgba(0,0,0,.75)} #side{display:block} #stage{top:44px}}
+#side{display:none;width:340px;max-height:780px;overflow:auto;font-size:14px;color:var(--metal);line-height:1.45}
+#side h3{font:700 11px 'Rajdhani';letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin:16px 0 6px}
+#side p,#side li{margin:0 0 6px} #side ul{padding-left:18px;margin:0} #side b{color:var(--white)}
+/* Hintergrund (angedeutet) */
+#bgapp{position:absolute;inset:0;padding:10px;opacity:.35}
+#bgapp div{height:44px;border-radius:10px;background:#111319;margin-bottom:8px}
+#veil{position:absolute;inset:0;background:#0008}
+/* Sheet wie in der App */
+.sheet{position:absolute;left:0;right:0;bottom:0;background:#0f1015;border-top:1px solid rgba(63,169,255,.4);border-radius:16px 16px 0 0;padding:14px 16px 24px;display:flex;flex-direction:column;gap:6px;max-height:88%;overflow:auto}
+.sh{display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:17px;margin-bottom:4px}
+.shx{width:44px;height:44px;border-radius:9px;border:1px solid rgba(255,255,255,.12);background:var(--panel);color:var(--blue-2);cursor:pointer;font-size:15px}
+.seg{display:flex;border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,.12);margin-bottom:6px}
+.seg span{flex:1;min-height:40px;display:flex;align-items:center;justify-content:center;background:var(--panel);color:var(--dim);font-weight:700;font-size:12px;letter-spacing:.06em}
+.seg span.on{background:rgba(63,169,255,.2);color:var(--blue-2)}
+.acts{display:flex;gap:8px;margin-bottom:4px}
+.act{flex:1;min-height:44px;border-radius:9px;border:1px solid rgba(63,169,255,.4);background:rgba(63,169,255,.1);color:var(--blue-2);font:700 13px 'Rajdhani';display:flex;align-items:center;justify-content:center;gap:8px}
+.grph{display:flex;align-items:center;justify-content:space-between;min-height:30px;margin-top:8px}
+.grp{font:700 11px 'Rajdhani';letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.gres{height:32px;padding:0 10px;border-radius:8px;border:1px solid rgba(63,169,255,.4);background:rgba(63,169,255,.1);color:var(--blue-2);font:700 12px 'Rajdhani';letter-spacing:.04em;display:flex;align-items:center;gap:6px;cursor:pointer;transition:opacity .15s}
+.gres[disabled]{opacity:0;pointer-events:none}
+.srow{display:grid;grid-template-columns:64px 1fr 64px;align-items:center;gap:8px;min-height:44px}
+.srow label{font-size:14px;color:var(--dim)}
+.srow input{accent-color:var(--blue);height:36px;width:100%}
+.val{justify-self:end;font-family:'VT323',monospace;font-size:20px;color:var(--lcd-fg);display:flex;align-items:center;gap:4px;height:36px;padding:0 4px;border-radius:8px;border:1px solid transparent;background:none;cursor:default}
+.val.def{opacity:.45}
+.B .val:not(.def){border-color:rgba(63,169,255,.4);background:rgba(63,169,255,.1);padding:0 6px 0 8px;cursor:pointer}
+.val svg{display:none;width:14px;height:14px}
+.B .val:not(.def) svg{display:block}
+.hl{font-size:12px;color:var(--dim);text-align:center;margin-top:6px}
+#toast{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);z-index:9;display:flex;align-items:center;gap:12px;background:#0b0d12;border:1px solid rgba(63,169,255,.4);color:var(--blue-2);font:11px 'JetBrains Mono',monospace;padding:8px 12px;border-radius:8px;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap}
+#toast.on{opacity:1;pointer-events:auto}
+#toast button{background:none;border:0;color:var(--blue);font:700 12px 'Rajdhani';text-transform:uppercase;letter-spacing:.06em;cursor:pointer;padding:0}
+</style>
+</head>
+<body>
+<div id="mbar">
+  <span>ZURÜCKSETZEN</span>
+  <button data-v="A" class="on">A · pro Gruppe</button>
+  <button data-v="B">B · pro Regler</button>
+  <span class="sp"></span>
+  <button data-s="kl" class="on">Klang</button>
+  <button data-s="set">Einstellungen</button>
+</div>
+<div id="stage">
+  <div id="dev">
+    <div id="bgapp"><div></div><div></div><div style="height:260px"></div><div></div></div>
+    <div id="veil"></div>
+    <div class="sheet" id="sheet"></div>
+    <div id="toast"><span></span><button>Rückgängig</button></div>
+  </div>
+  <div id="side">
+    <h3>Problem</h3>
+    <p>Heute setzt ein <b>Doppeltipp</b> auf einen Schieberegler ihn auf den Standard zurück. Steht nirgends, passiert leicht aus Versehen. Der Doppeltipp fällt in beiden Varianten weg.</p>
+    <h3>A · pro Gruppe</h3>
+    <p>Rechts neben der Überschrift (Filter, Pegel, Effekte …) erscheint „↺ Standard“, sobald ein Regler der Gruppe verstellt ist. Ein Tipp setzt die ganze Gruppe zurück, Rückgängig im Hinweis unten.</p>
+    <p>Pro: ruhig, wenige Elemente. Contra: nicht einzeln.</p>
+    <h3>B · pro Regler</h3>
+    <p>Verstellte Werte werden zur kleinen Taste mit ↺. Antippen setzt nur diesen Regler zurück. Standardwerte bleiben blass wie heute.</p>
+    <p>Pro: genau, sichtbar wo verstellt. Contra: unruhiger, wenn viel verstellt ist.</p>
+    <h3>Probieren</h3>
+    <p>Regler verschieben, dann zurücksetzen. Oben zwischen Klang (Acid) und Einstellungen wechseln.</p>
+    <h3>Empfehlung</h3>
+    <p><b>B</b>: Meist will man genau einen Regler zurück, nicht alle.</p>
+  </div>
+</div>
+<script>
+const RES='<svg class="i" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.7"/><path d="M4 4v5h5"/></svg>';
+const pct=v=>v+'%', ms=v=>{const s=0.03*Math.pow(60,v/100);return s<1?Math.round(s*1000)+'ms':s.toFixed(1)+'s';};
+const SHEETS={
+  kl:{t:'Klang · ACID',tabs:true,groups:[
+    {n:'Filter',rows:[['Cutoff',50,50,pct],['Reso',35,35,pct],['Env Mod',50,50,pct],['Decay',26,26,ms],['Accent',50,50,pct]]}]},
+  set:{t:'Einstellungen · ganzes Pattern',groups:[
+    {n:'Pattern',rows:[['Master',85,85,pct],['Swing',0,0,pct],['Humanize',0,0,pct]]}],note:'Master zusätzlich über die Lautstärketasten des Geräts.'}
+};
+// Startwerte etwas verstellt, damit man sofort etwas sieht
+SHEETS.kl.groups[0].rows[0][1]=72; SHEETS.kl.groups[0].rows[1][1]=61; SHEETS.set.groups[0].rows[1][1]=30;
+let V='A', S='kl', undo=null, tt=null;
+const $=q=>document.querySelector(q);
+function render(){
+  const d=SHEETS[S], sh=$('#sheet'); sh.className='sheet '+V;
+  let h='<div class="sh"><span>'+d.t+'</span><button class="shx">✕</button></div>';
+  if(d.tabs) h+='<div class="seg"><span class="on">SOUND</span><span>MIX &amp; FX</span><span>TONART</span></div><div class="acts"><div class="act">Filter würfeln</div><div class="act">XY-Pad</div></div>';
+  d.groups.forEach((g,gi)=>{
+    const dev=g.rows.some(r=>r[1]!==r[2]);
+    h+='<div class="grph"><span class="grp">'+g.n+'</span>'+(V==='A'?'<button class="gres" data-g="'+gi+'"'+(dev?'':' disabled')+'>'+RES+'Standard</button>':'')+'</div>';
+    g.rows.forEach((r,ri)=>{
+      h+='<div class="srow"><label>'+r[0]+'</label><input type="range" min="0" max="100" value="'+r[1]+'" data-g="'+gi+'" data-r="'+ri+'"><button class="val'+(r[1]===r[2]?' def':'')+'" data-g="'+gi+'" data-r="'+ri+'">'+r[3](r[1])+RES+'</button></div>';
+    });
+  });
+  if(d.note) h+='<div class="hl">'+d.note+'</div>';
+  sh.innerHTML=h;
+  sh.querySelectorAll('input').forEach(i=>i.oninput=()=>{const r=d.groups[i.dataset.g].rows[i.dataset.r]; r[1]=+i.value;
+    const b=i.nextElementSibling; b.firstChild.textContent=r[3](r[1]); b.classList.toggle('def',r[1]===r[2]);
+    if(V==='A'){const g=d.groups[i.dataset.g], gb=sh.querySelector('.gres[data-g="'+i.dataset.g+'"]'); gb.disabled=!g.rows.some(x=>x[1]!==x[2]);}});
+  sh.querySelectorAll('.gres').forEach(b=>b.onclick=()=>{const g=d.groups[b.dataset.g]; undo=g.rows.map(r=>[r,r[1]]); g.rows.forEach(r=>r[1]=r[2]); render(); toast(g.n+' auf Standard');});
+  sh.querySelectorAll('.val').forEach(b=>b.onclick=()=>{ if(V!=='B'||b.classList.contains('def')) return; const r=d.groups[b.dataset.g].rows[b.dataset.r]; undo=[[r,r[1]]]; r[1]=r[2]; render(); toast(r[0]+' auf Standard');});
+}
+function toast(m){const t=$('#toast'); t.querySelector('span').textContent=m; t.classList.add('on'); clearTimeout(tt); tt=setTimeout(()=>t.classList.remove('on'),4000);}
+$('#toast button').onclick=()=>{ if(undo){undo.forEach(([r,v])=>r[1]=v); undo=null; render();} $('#toast').classList.remove('on'); };
+document.querySelectorAll('#mbar [data-v]').forEach(b=>b.onclick=()=>{V=b.dataset.v;document.querySelectorAll('#mbar [data-v]').forEach(x=>x.classList.toggle('on',x===b));render();});
+document.querySelectorAll('#mbar [data-s]').forEach(b=>b.onclick=()=>{S=b.dataset.s;document.querySelectorAll('#mbar [data-s]').forEach(x=>x.classList.toggle('on',x===b));render();});
+render();
+</script>
+</body>
+</html>
