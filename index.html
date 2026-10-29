@@ -691,9 +691,6 @@
   #patternSaveBtn{ font-size:10px; letter-spacing:.04em; text-transform:uppercase; border:1px solid rgba(63,169,255,.4);
     border-radius:6px; padding:7px 12px; cursor:pointer; background:rgba(63,169,255,.12); color:var(--blue-2); white-space:nowrap; }
   #patternSaveBtn:active{ transform:scale(.94); }
-  #patternUpdateBtn{ display:none; flex-shrink:0; font-size:14px; border:1px solid rgba(63,169,255,.4);
-    border-radius:6px; padding:7px 10px; cursor:pointer; background:rgba(63,169,255,.12); color:var(--blue-2); }
-  #patternUpdateBtn:active{ transform:scale(.94); }
   #exportWavBtn{ flex-shrink:0; font-size:12px; letter-spacing:.04em; text-transform:uppercase; font-weight:700;
     border:1px solid rgba(63,169,255,.4); border-radius:9px; padding:12px 0; cursor:pointer;
     background:rgba(63,169,255,.12); color:var(--blue-2); }
@@ -766,7 +763,9 @@
   #beatTabs{ display:flex; border-radius:8px; overflow:hidden; border:1px solid rgba(255,255,255,.12); flex-shrink:0; }
   #beatTabs button{ flex:1; min-height:38px; border:0; background:var(--panel); color:var(--dim); font-family:inherit; font-weight:700; font-size:12px; cursor:pointer; }
   #beatTabs button.on{ background:rgba(63,169,255,.2); color:var(--blue-2); }
-  #patternsOverlay.grp #patternUpdateBtn, #patternsOverlay.grp #exportWavBtn, #patternsOverlay.grp #patternIORow{ display:none !important; }
+  #patternsOverlay #patternSaveRow{ display:none; }
+  #patternsOverlay.grp #patternSaveRow{ display:flex; }
+  #patternsOverlay.grp #patternIORow{ display:none !important; }
   #drumSetOverlay{ display:none; position:fixed; inset:0; z-index:60; background:linear-gradient(180deg,var(--chassis),var(--chassis-2));
     padding:14px; padding-top:max(14px, env(safe-area-inset-top)); padding-bottom:max(14px, env(safe-area-inset-bottom)); flex-direction:column; gap:8px; overflow:hidden; }
   #drumSetOverlay.open{ display:flex; }
@@ -1169,8 +1168,33 @@ html,body{min-height:100%;height:100%;}
 /* Beats */
 #patternIORow button{display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;font-size:12px;border-radius:9px}
 #patternIORow #exportWavBtn{border:1px solid rgba(63,169,255,.45);background:rgba(63,169,255,.12);color:var(--blue-2);font-weight:700;letter-spacing:.04em;text-transform:uppercase}
-#patternUpdateBtn{align-items:center;justify-content:center}
-#patternUpdateBtn .uic{width:16px;height:16px}
+/* v76: Karte „Aktueller Beat“ + Neuer Beat (Mockup neuer-beat-mockup.html, Variante B) */
+#pbCard{flex-shrink:0;display:flex;flex-direction:column;gap:8px;border-radius:14px;border:1px solid rgba(63,169,255,.28);background:linear-gradient(180deg,#121621,#0d0f15);padding:10px 12px 12px}
+#pbCard .kp-sec{margin:2px 2px 0}
+#pbName{height:44px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:var(--panel-inset);padding:0 12px;color:var(--white);font:700 17px 'Rajdhani',sans-serif;min-width:0;user-select:text}
+#pbName:focus{outline:none;border-color:rgba(63,169,255,.6)}
+#pbName::placeholder{color:var(--dim);font-weight:500}
+#pbState{display:flex;align-items:center;gap:7px;font:600 12px 'Rajdhani',sans-serif;letter-spacing:.06em;color:var(--dim);margin:0 2px}
+#pbState i{width:7px;height:7px;border-radius:50%;background:#ff9d7a;box-shadow:0 0 6px rgba(255,157,122,.7);flex:none}
+#pbState.ok i{background:#7cffb2;box-shadow:none}
+#pbBtns{display:flex;gap:6px}
+#pbBtns button{flex:1;min-width:0;min-height:44px;border-radius:9px;border:1px solid rgba(255,255,255,.12);background:var(--panel-inset);color:var(--metal);display:flex;align-items:center;justify-content:center;gap:7px;font:700 12px 'Rajdhani',sans-serif;letter-spacing:.05em;text-transform:uppercase;padding:0 8px;cursor:pointer;white-space:nowrap}
+#pbBtns button.pri{border-color:rgba(63,169,255,.45);background:rgba(63,169,255,.12);color:var(--blue-2)}
+#pbBtns button.pri.done{border-color:rgba(255,255,255,.12);background:var(--panel-inset);color:var(--dim)}
+#pbBtns button:active{transform:scale(.96)}
+#pbBtns button:disabled{opacity:.6}
+#pbNewBtn{flex-shrink:0;min-height:52px;border-radius:12px;border:1px solid rgba(63,169,255,.5);background:rgba(63,169,255,.12);color:var(--blue-2);display:flex;align-items:center;justify-content:center;gap:8px;font:700 14px 'Rajdhani',sans-serif;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
+#pbNewBtn:active{transform:scale(.98)}
+#grpSaveBtn{min-height:44px;padding:0 14px;border-radius:9px;border:1px solid rgba(63,169,255,.45);background:rgba(63,169,255,.12);color:var(--blue-2);font:700 12px 'Rajdhani',sans-serif;letter-spacing:.05em;text-transform:uppercase;cursor:pointer}
+#patternSaveRow #patternNameInput{min-height:44px;font-size:15px}
+.patb .pdirty{width:7px;height:7px;border-radius:50%;background:#ff9d7a;box-shadow:0 0 6px rgba(255,157,122,.7);flex:none;display:none}
+.patb.unsaved .pdirty{display:block}
+.nb-opt{display:flex;align-items:center;gap:12px;width:100%;min-height:64px;padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:var(--panel);color:var(--white);text-align:left;cursor:pointer;font-family:'Rajdhani',sans-serif}
+.nb-opt.pri{border-color:rgba(63,169,255,.45);background:rgba(63,169,255,.1)}
+.nb-opt .uic{width:22px;height:22px;color:var(--blue-2)}
+.nb-opt b{display:block;font-size:16px}
+.nb-opt small{display:block;font-size:12px;color:var(--dim);line-height:1.3}
+.nb-opt:active{transform:scale(.98)}
 .pattern-row{gap:0;padding:0;overflow:hidden;border-radius:10px;flex-shrink:0}
 .pattern-row.renaming{padding:8px}
 .prow-top{display:flex;align-items:center;gap:8px;padding:8px 8px 8px 14px;min-height:56px}
@@ -1263,7 +1287,7 @@ html,body{min-height:100%;height:100%;}
             <div class="knob-val" style="visibility:hidden;" aria-hidden="true">0</div>
           </div>
         </div>
-        <button class="lcd-tap patb" id="lcdPatternBtn" aria-label="Pattern wechseln"><svg class="lcd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="3.2" rx="1"/><rect x="4" y="10.4" width="16" height="3.2" rx="1"/><rect x="4" y="15.8" width="10" height="3.2" rx="1"/></svg><span class="lcd l2" id="lcdPatternName">—</span><svg class="lcd-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+        <button class="lcd-tap patb" id="lcdPatternBtn" aria-label="Pattern wechseln"><svg class="lcd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="3.2" rx="1"/><rect x="4" y="10.4" width="16" height="3.2" rx="1"/><rect x="4" y="15.8" width="10" height="3.2" rx="1"/></svg><span class="lcd l2" id="lcdPatternName">—</span><span class="pdirty" aria-hidden="true"></span><svg class="lcd-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
         <button class="ib" id="settingsBtn" aria-label="Einstellungen" title="Einstellungen"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
       </div>
 
@@ -1315,19 +1339,29 @@ html,body{min-height:100%;height:100%;}
           <h2 class="ovt">Beats</h2>
           <button id="patternsOverlayCloseBtn" aria-label="Schließen">✕</button>
         </div>
-        <div class="kp-sec" style="margin:2px 2px 0">Länge</div>
-        <div id="lengthRow"></div>
-        <div class="len-hint">Kürzer wählen schneidet den Rest ab – die Rückgängig-Taste holt ihn zurück.</div>
+        <div id="pbCard">
+          <div class="kp-sec">Aktueller Beat</div>
+          <input type="text" id="pbName" maxlength="40" placeholder="Name für diesen Beat…" autocomplete="off">
+          <div id="pbState"><i></i><span></span></div>
+          <div class="kp-sec">Länge</div>
+          <div id="lengthRow"></div>
+          <div class="len-hint">Kürzer wählen schneidet den Rest ab – die Rückgängig-Taste holt ihn zurück.</div>
+          <div id="pbBtns">
+            <button id="patternSaveBtn" class="pri"><svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h11l3 3v13H5z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/></svg><span>Speichern</span></button>
+            <button id="patternCopyBtn" title="Als neuen Beat speichern"><svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg>Als Kopie</button>
+            <button id="exportWavBtn"><svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>WAV</button>
+          </div>
+        </div>
+        <div class="kp-sec">Gespeicherte Beats</div>
+        <button id="pbNewBtn"><svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Neuer Beat</button>
         <div id="beatTabs"><button data-t="all" class="on">Gesamt</button><button data-t="drums">Drums</button><button data-t="perc">Perc</button><button data-t="acid">Acid</button><button data-t="sample">Sample</button><button data-t="cosmic">Cosmic</button><button data-t="piano">Keys</button></div>
         <div id="patternSaveRow">
           <input type="text" id="patternNameInput" placeholder="Name für aktuellen Beat…" maxlength="40">
-          <button id="patternUpdateBtn" title="Aktuell geladenen Beat mit diesem Zustand überschreiben" aria-label="Überschreiben"><svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 5v6h-6"/></svg></button>
-          <button id="patternSaveBtn">Speichern</button>
+          <button id="grpSaveBtn">Speichern</button>
         </div>
         <div id="patternIORow">
-          <button id="exportWavBtn"><svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>WAV</button>
-          <button id="patternExportAllBtn" title="Alle Beats als JSON-Datei sichern"><svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h12M4 11h12M4 16h7"/><path d="M18 13v7M15 17l3 3 3-3"/></svg>Alle</button>
           <button id="patternImportBtn" title="Beats aus JSON-Datei laden"><svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V9M7 14l5-5 5 5M5 4h14"/></svg>Import</button>
+          <button id="patternExportAllBtn" title="Alle Beats als JSON-Datei sichern"><svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h12M4 11h12M4 16h7"/><path d="M18 13v7M15 17l3 3 3-3"/></svg>Alle sichern</button>
           <input type="file" id="patternImportInput" accept="application/json,.json" style="display:none;">
         </div>
         <div id="patternIOStatus"></div>
@@ -1696,6 +1730,10 @@ html,body{min-height:100%;height:100%;}
 <div class="sheet" id="hmConfSheet"><div class="sh"><span id="hmCfT"></span><button class="shx" id="hmCfX" aria-label="Schließen">✕</button></div>
   <div class="hl" id="hmCfD" style="text-align:left;font-size:13px;margin-bottom:8px"></div>
   <div class="acts"><button class="act" id="hmCfNo">Abbrechen</button><button class="act hm-del" id="hmCfYes">Harmonie aus</button></div>
+</div>
+<div class="sheet" id="newBeatSheet"><div class="sh"><span>Neuer Beat</span><button class="shx" id="nbX" aria-label="Schließen">✕</button></div>
+  <button class="nb-opt pri" data-k="keep"><svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 10h16"/></svg><span><b>Leer, gleicher Klang</b><small>Alle Noten weg. Tempo, Kit, Sounds, Mixer und Länge bleiben.</small></span></button>
+  <button class="nb-opt" data-k="def"><svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.3-5.7"/><path d="M4 4v5h5"/></svg><span><b>Leer, Standard</b><small>Alles auf Anfang: Tempo, Kit, Sounds und Mixer wie beim ersten Start.</small></span></button>
 </div>
 <div id="hmToast" role="status" aria-live="polite"><span></span><button type="button">Rückgängig</button></div>
 <div class="sheet" id="prSheet"><div class="sh"><span id="prShT"></span><button class="shx" id="prShX" aria-label="Schließen">✕</button></div><div id="prShRows"></div></div>
@@ -3716,6 +3754,7 @@ lcdPatternBtn.addEventListener('click', ()=>{
   closeAllOverlays();
   patternsOverlay.classList.add('open');
   syncBottomBarVisibility();
+  pbRender(true);
   refreshPatternList();
 });
 // Zentrale Stelle, die currentLoadedPatternId setzt UND die LCD-Anzeige synchron hält —
@@ -3726,7 +3765,7 @@ function setCurrentLoadedPattern(id, name){
   currentLoadedPatternId=id;
   currentLoadedPatternName=name;
   lcdPatternName.textContent=name||'—';
-  patternUpdateBtn.style.display = id ? 'inline-block' : 'none';
+  if(typeof pbRender==='function') pbRender(true);
 }
 
 // ---- Pattern-Länge (16/32/48/64 Steps) ----
@@ -4019,11 +4058,12 @@ function hmConvert(tr){
 // Ohne Rückfrage zurücksetzen, wenn eine Spur von außen komplett neue Noten bekommt (Beat laden, Clip bearbeiten, Alles leeren)
 function hmReset(tr){ if(tr.harm) tr.harm.mode='off'; delete tr.harmOwn; }
 let hmToastT=null;
-function hmToast(msg,undo){
-  const t=$id('hmToast'); t.querySelector('span').textContent=msg; t.querySelector('button').style.display=undo?'':'none';
+let hmToastFn=null;
+function hmToast(msg,undo,fn){
+  hmToastFn=fn||null; const t=$id('hmToast'); t.querySelector('span').textContent=msg; t.querySelector('button').style.display=undo?'':'none';
   t.classList.add('on'); clearTimeout(hmToastT); hmToastT=setTimeout(()=>t.classList.remove('on'),undo?4000:1800);
 }
-$id('hmToast').querySelector('button').addEventListener('click',()=>{ $id('hmToast').classList.remove('on'); taUndoBtn.click(); });
+$id('hmToast').querySelector('button').addEventListener('click',()=>{ $id('hmToast').classList.remove('on'); const f=hmToastFn; hmToastFn=null; if(f) f(); else taUndoBtn.click(); });
 // ---- UI: Harmonie-Karte (Pattern-Seite, statt Arpeggio-Generator) ----
 const HM_CHEV='<svg class="am-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
 function hmIntroSeen(){ try{ return localStorage.getItem('mrm44-hm-intro')==='1'; }catch(e){ return false; } }
@@ -4506,7 +4546,7 @@ $id('tbM').addEventListener('click', ()=>toggleTrackMute(TRACKS[activeTrackIdx])
 $id('tbS').addEventListener('click', ()=>toggleTrackSolo(TRACKS[activeTrackIdx]));
 $id('tbSound').addEventListener('click', ()=>openKlang(TRACKS[activeTrackIdx]));
 
-function closeSheets(){ $id('sheetVeil').style.display='none'; ['setSheet','klSheet','fillSheet','prSheet','hmChordSheet','hmTplSheet','hmConfSheet'].forEach(i=>$id(i).classList.remove('open')); }
+function closeSheets(){ $id('sheetVeil').style.display='none'; ['setSheet','klSheet','fillSheet','prSheet','hmChordSheet','hmTplSheet','hmConfSheet','newBeatSheet'].forEach(i=>$id(i).classList.remove('open')); }
 function openSheet(id){ closeMenus(); $id('sheetVeil').style.display='block'; $id(id).classList.add('open'); }
 $id('sheetVeil').addEventListener('click', closeSheets); $id('setX').addEventListener('click', closeSheets); $id('fillX').addEventListener('click', closeSheets);
 document.querySelectorAll('.sheet').forEach(sh=>sh.addEventListener('dblclick', e=>{ const i=e.target; if(i.type==='range' && i.dataset.def!=null){ i.value=i.dataset.def; i.dispatchEvent(new Event('input')); } }));
@@ -6135,9 +6175,10 @@ exportWavBtn.addEventListener('click', async ()=>{
 });
 const patternNameInput=document.getElementById('patternNameInput');
 const patternSaveBtn=document.getElementById('patternSaveBtn');
-const patternUpdateBtn=document.getElementById('patternUpdateBtn');
+const patternCopyBtn=document.getElementById('patternCopyBtn');
+const pbName=document.getElementById('pbName'), pbState=document.getElementById('pbState'), pbNewBtn=document.getElementById('pbNewBtn');
 let currentLoadedPatternId=null; // id des zuletzt geladenen/gespeicherten/duplizierten Patterns (für Song-Referenzen/Anzeige)
-let currentLoadedPatternName=null; // Name dazu — für die Bestätigungsmeldung von patternUpdateBtn
+let currentLoadedPatternName=null; // Name dazu (ohne id: „Neuer Beat“ = Entwurf, „♫ …“ = Song)
 const patternList=document.getElementById('patternList');
 
 // Beat-Zeile (v65): oben Name/Datum + Laden + Weitere; Weitere klappt die übrigen Aktionen mit Namen auf
@@ -6174,7 +6215,7 @@ async function refreshPatternList(){
     const loadBtn=document.createElement('button'); loadBtn.className='prow-btn pload'; loadBtn.innerHTML=UI_IC.play; loadBtn.title='Laden'; loadBtn.setAttribute('aria-label','Laden');
     loadBtn.addEventListener('click', async ()=>{
       const data=await loadPatternFromIndexedDB(item.id);
-      if(data){ applyPatternData(data); setCurrentLoadedPattern(item.id, item.name); rememberLastPattern(item.id); }
+      if(data){ applyPatternData(data); setCurrentLoadedPattern(item.id, item.name); rememberLastPattern(item.id); pbMarkClean(); }
       patternsOverlay.classList.remove('open');
       syncBottomBarVisibility();
     });
@@ -6188,7 +6229,7 @@ async function refreshPatternList(){
       await savePatternToIndexedDB(newData);
       applyPatternData(newData);
       setCurrentLoadedPattern(newData.id, newData.name);
-      rememberLastPattern(newData.id);
+      rememberLastPattern(newData.id); pbMarkClean();
       refreshPatternList();
       showPatternIOStatus('„'+item.name+'“ dupliziert als „'+newName+'“ und geladen');
     });
@@ -6892,31 +6933,85 @@ document.getElementById('dsSave').addEventListener('click', async ()=>{
 document.getElementById('dsCloseBtn').addEventListener('click', ()=>{ dsSheet.classList.remove('open'); drumSetOverlay.classList.remove('open'); syncBottomBarVisibility(); });
 updateKitLabel();
 
+// ---- v76: Karte „Aktueller Beat“ ----
+// Speichern: Beat mit id -> überschreiben (Name aus dem Feld), sonst neu anlegen. „Als Kopie“ legt immer neu an.
+// Ungespeichert = Fingerabdruck des Zustands (ohne id/Name/Zeit) weicht vom letzten Laden/Speichern ab;
+// geprüft nach Bedienung (pointerup/change, entprellt), nicht per Dauerschleife.
+let pbBase=null, pbTimer=null;
+function pbPrint(){ const d=collectPatternData('',''); delete d.id; delete d.name; delete d.savedAt; return JSON.stringify(d); }
+function pbMarkClean(){ pbBase=pbPrint(); pbRender(true); }
+function pbKind(){ const n=currentLoadedPatternName; if(currentLoadedPatternId) return 'beat'; if(n && n.charAt(0)==='♫') return 'song'; return 'draft'; }
+function pbDirty(){
+  const k=pbKind(); if(k!=='beat') return k==='draft';
+  if(pbBase===null || pbPrint()!==pbBase) return true;
+  return patternsOverlay.classList.contains('open') && pbName.value.trim()!=='' && pbName.value.trim()!==currentLoadedPatternName;
+}
+function pbRender(syncName){
+  const k=pbKind(), dirty=pbDirty();
+  if(syncName || document.activeElement!==pbName) pbName.value = k==='song' ? '' : (currentLoadedPatternName||'');
+  pbState.classList.toggle('ok', k==='beat' && !dirty);
+  pbState.querySelector('span').textContent = k==='beat' ? (dirty?'Ungespeicherte Änderungen':'Gespeichert') : k==='song' ? 'Gehört zum Song · Speichern legt einen Beat an' : 'Noch nicht gespeichert';
+  const done=k==='beat' && !dirty; patternSaveBtn.classList.toggle('done',done); patternSaveBtn.querySelector('span').textContent=done?'Gespeichert':'Speichern';
+  patternCopyBtn.disabled = k!=='beat';
+  lcdPatternBtn.classList.toggle('unsaved', dirty);
+}
+function pbSoon(){ clearTimeout(pbTimer); pbTimer=setTimeout(()=>pbRender(), 350); }
+['pointerup','change','keyup'].forEach(t=>document.addEventListener(t, pbSoon, true));
+pbName.addEventListener('input', ()=>pbRender());
+pbName.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); pbName.blur(); patternSaveBtn.click(); } });
 patternSaveBtn.addEventListener('click', async ()=>{
-  const typedName=patternNameInput.value.trim();
-  if(!typedName) return;
-  if(beatTab!=='all'){ await beatSaveGroup(typedName); return; }
-  const existingNames=new Set((await listPatternsFromIndexedDB()).map(p=>p.name));
-  const finalName=uniqueName(typedName, existingNames);
-  const data=collectPatternData(finalName, genId());
-  await savePatternToIndexedDB(data);
-  currentLoadedPatternId=data.id;
-  setCurrentLoadedPattern(data.id, data.name);
-  rememberLastPattern(data.id);
-  patternNameInput.value='';
-  refreshPatternList();
-  if(finalName!==typedName) showPatternIOStatus('Name bereits vergeben — gespeichert als „'+finalName+'“');
-});
-// Überschreibt den gerade geladenen Beat unter gleicher ID + gleichem Namen mit dem
-// aktuellen Zustand — anders als "Speichern" (das immer einen neuen Beat anlegt). Die ID
-// bleibt gleich (keine erneute Zuordnung nötig).
-patternUpdateBtn.addEventListener('click', async ()=>{
-  if(!currentLoadedPatternId) return;
-  const data=collectPatternData(currentLoadedPatternName, currentLoadedPatternId);
+  const typed=pbName.value.trim(), all=await listPatternsFromIndexedDB();
+  let data;
+  if(currentLoadedPatternId && all.some(p=>p.id===currentLoadedPatternId)){
+    let name=currentLoadedPatternName;
+    if(typed && typed!==name) name=uniqueName(typed, new Set(all.filter(p=>p.id!==currentLoadedPatternId).map(p=>p.name)));
+    data=collectPatternData(name, currentLoadedPatternId);
+  } else data=collectPatternData(uniqueName(typed||'Neuer Beat', new Set(all.map(p=>p.name))), genId());
   await savePatternToIndexedDB(data); // gleiche id -> gleicher Key, nur Inhalt aktualisiert
-  showPatternIOStatus('„'+currentLoadedPatternName+'“ aktualisiert');
+  setCurrentLoadedPattern(data.id, data.name); rememberLastPattern(data.id); pbMarkClean();
+  if(typed && data.name!==typed) showPatternIOStatus('Name bereits vergeben — gespeichert als „'+data.name+'“');
   refreshPatternList();
 });
+patternCopyBtn.addEventListener('click', async ()=>{
+  if(!currentLoadedPatternId) return;
+  const base=(pbName.value.trim()||currentLoadedPatternName)+' (Kopie)';
+  const data=collectPatternData(uniqueName(base, new Set((await listPatternsFromIndexedDB()).map(p=>p.name))), genId());
+  await savePatternToIndexedDB(data);
+  setCurrentLoadedPattern(data.id, data.name); rememberLastPattern(data.id); pbMarkClean();
+  showPatternIOStatus('Als „'+data.name+'“ gespeichert'); refreshPatternList();
+});
+document.getElementById('grpSaveBtn').addEventListener('click', async ()=>{ const t=patternNameInput.value.trim(); if(t && beatTab!=='all') await beatSaveGroup(t); });
+
+// ---- v76: Neuer Beat — leer mit gleichem Klang oder Standard (Zustand beim ersten Start), Undo per Toast ----
+let nbDefault=null, nbBefore=null;
+function nbBlank(d){
+  d.tracks.forEach(t=>{
+    t.steps=t.steps.map(()=>VEL_OFF);
+    if(t.notes) t.notes=t.notes.map(()=>0);
+    if(t.slides) t.slides=t.slides.map(()=>false);
+    if(t.events) t.events=[];
+    if(t.harm) t.harm=Object.assign({}, t.harm, {mode:'off'});
+    t.muted=false; t.solo=false;
+  });
+  return d;
+}
+function nbMake(k){
+  nbBefore={ data:collectPatternData(currentLoadedPatternName, currentLoadedPatternId), id:currentLoadedPatternId, name:currentLoadedPatternName, base:pbBase, clean:pbBase!==null && pbBase===pbPrint() };
+  const src = k==='def' && nbDefault ? JSON.parse(JSON.stringify(nbDefault)) : collectPatternData('Neuer Beat', null);
+  applyPatternData(nbBlank(src));
+  taResetUndo();
+  setCurrentLoadedPattern(null, 'Neuer Beat'); pbBase=null; pbRender(true);
+  closeSheets(); patternsOverlay.classList.remove('open'); syncBottomBarVisibility();
+  hmToast(k==='def'?'Neuer Beat · Standard':'Neuer Beat', true, nbUndo);
+}
+function nbUndo(){
+  const b=nbBefore; if(!b) return; nbBefore=null;
+  applyPatternData(b.data); taResetUndo();
+  setCurrentLoadedPattern(b.id, b.name); if(b.clean) pbMarkClean(); else { pbBase=b.base; pbRender(true); } // Laden ergänzt fehlende Felder -> Fingerabdruck neu
+}
+pbNewBtn.addEventListener('click', ()=>openSheet('newBeatSheet'));
+document.querySelectorAll('#newBeatSheet .nb-opt').forEach(b=>b.addEventListener('click', ()=>nbMake(b.dataset.k)));
+document.getElementById('nbX').addEventListener('click', closeSheets);
 
 // =========================================================================
 // SCHEDULER (Lookahead-Pattern)
@@ -7141,13 +7236,14 @@ async function importDefaultBeatsIfEmpty(){
 // wenn es keinen "zuletzt geöffneten" Beat gibt oder er nicht mehr existiert
 // (z.B. zwischenzeitlich gelöscht).
 async function restoreLastOpenedOrSeed(){
+  setCurrentLoadedPattern(null, 'Neuer Beat');
   await importDefaultBeatsIfEmpty();
   let lastId=null;
   try{ lastId=localStorage.getItem(LAST_PATTERN_KEY); } catch(err){ /* ignore */ }
   if(!lastId) return;
   try{
     const data=await loadPatternFromIndexedDB(lastId);
-    if(data){ applyPatternData(data); setCurrentLoadedPattern(lastId, data.name); }
+    if(data){ applyPatternData(data); setCurrentLoadedPattern(lastId, data.name); pbMarkClean(); }
   } catch(err){ console.warn('Zuletzt geöffneter Beat konnte nicht geladen werden:', err); }
 }
 
@@ -7601,6 +7697,7 @@ $id('taRoll').addEventListener('click',()=>prOpen(TRACKS[activeTrackIdx]));
 $id('prPv').addEventListener('click',()=>prOpen(TRACKS[activeTrackIdx]));
 
 restoreSampleAssignments();
+nbDefault=collectPatternData('Neuer Beat', null); // „Leer, Standard“ = Zustand beim ersten Start
 restoreLastOpenedOrSeed().then(restoreLastSong);
 
 })();

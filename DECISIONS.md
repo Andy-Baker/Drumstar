@@ -16,6 +16,7 @@ Zusammengeführt am 28.10.2026 aus DECISIONS-2/-3, ARCHITECTURE-11/-12 und ROADM
 - Master/Swing/Humanize im Einstellungs-Sheet (Zahnrad), nicht in der Transportleiste.
 - Keine Pop-up-/Toast-Meldungen außer Undo-Toasts (z. B. `hmConvert`). Rückgängig ist global.
 - Länge gehört zum Pattern (Beats-Ansicht). Kein „Folgen“-Schalter: Ansicht blättert mit, manuelles Blättern fixiert bis Stopp/Tippen.
+- Neuer Beat (29.10., Mockup `neuer-beat-mockup.html` Variante B): Beats-Fenster oben Karte „Aktueller Beat“, darunter Bibliothek mit „Neuer Beat“. Auswahl „Leer, gleicher Klang“ / „Leer, Standard“, keine Rückfrage, Undo-Toast. Speichern überschreibt den geladenen Beat, „Als Kopie“ legt neu an. Oranger Punkt neben dem Namen = ungespeichert.
 - Step-Stärke über Pinsel (Ghost leise, Ghost, Normal, Akzent), nicht Tipp-Zyklus.
 - Kit nur bei Drums/Perc; Fill nur bei Drums (Icon-Taste + Sheet), steuert nur BD/SD/Toms/Becken/Hats. Perc-Fill evtl. später als eigene Version.
 - Design braucht Raum; Sticky-Elemente am Rand dürfen keinen Spalt zum Chassis lassen (Safe-Area im Element selbst auffangen).
