@@ -117,7 +117,7 @@ async def main():
     seg=lambda i:xs[t0+i*bar:t0+i*bar+int(0.3*sr)]
     e=[db(np.sqrt((seg(i)**2).mean())) for i in range(4)]
     ok('Song-Export mit Samples: Clips in Takt 1 und 3 klingen, Takt 2 leer', e[0]>-40 and e[2]>-40 and e[1]<e[0]-30, ' / '.join(f'{v:.0f}' for v in e))
-    ok('Song-Export: Takt 3 = gleicher Schlag wie im Pattern-Export', abs(e[2]-db(np.sqrt((ref[t0:t0+int(0.3*sr)]**2).mean())))<1.5 and float(np.abs(seg(2)[:int(0.05*sr)]-ref[t0:t0+int(0.05*sr)]).max())<0.05, f'{e[2]:.1f} dB')
+    ok('Song-Export: Takt 3 = gleicher Schlag wie im Pattern-Export auf der Eins (kein Kompressor-Einschwingen)', abs(e[2]-db(np.sqrt((ref[t0:t0+int(0.3*sr)]**2).mean())))<1.5 and float(np.abs(seg(2)[:int(0.05*sr)]-ref[t0:t0+int(0.05*sr)]).max())<0.05, f'{e[2]:.1f} dB')
     xb,_=await exp('studio',{'rb':{0:3}}); xf,_=await exp('studio',{'rd':{0:3}}); n=int(0.3*sr)
     cb=float(np.abs(seg(3)-xb[t0:t0+n]).max()); cf=float(np.abs(seg(3)-xf[t0:t0+n]).max())
     ok('Song-Export: Spielweise im Clip (Ride Bell) wird gespielt', cb<cf and np.isfinite(xs).all(), f'Abw. zu Bell {cb:.3f}, zu Fläche {cf:.3f}')

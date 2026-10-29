@@ -4770,7 +4770,10 @@ async function renderPatternToWav(){
 
   const secondsPerStep=60/bpm/4;
   const tailSeconds=2.6; // Hall-/Delay-Ausklang nach dem letzten Step
-  const totalSeconds=secondsPerStep*seqLength() + tailSeconds;
+  // Vorlauf: der Master-Kompressor schwingt in den ersten ~0,2 s eines frischen Kontexts ein und dämpft dort stärker
+  // (erster Schlag sonst bis ~3 dB leiser als live). Wird nach dem Rendern wieder abgeschnitten.
+  const preRoll=0.25;
+  const totalSeconds=preRoll + secondsPerStep*seqLength() + tailSeconds;
   const sampleRate=liveCtx.sampleRate;
   const OfflineCtor=window.OfflineAudioContext||window.webkitOfflineAudioContext;
   const offlineCtx=new OfflineCtor(2, Math.ceil(totalSeconds*sampleRate), sampleRate);
@@ -4811,7 +4814,7 @@ async function renderPatternToWav(){
 
   // ---- Alle Steps des Patterns direkt durchplanen (kein Echtzeit-Scheduler nötig) ----
   const anySolo=TRACKS.some(t=>t.solo);
-  let t=0.05;
+  let t=preRoll+0.05;
   for(let step=0; step<seqLength(); step++){
     let dur=secondsPerStep;
     if(step%2===1) dur += secondsPerStep*swing;
@@ -4830,7 +4833,9 @@ async function renderPatternToWav(){
     t+=dur;
   }
 
-  const renderedBuffer=await offlineCtx.startRendering();
+  const fullBuffer=await offlineCtx.startRendering();
+  const cut=Math.round(preRoll*sampleRate), renderedBuffer=liveCtx.createBuffer(2, fullBuffer.length-cut, sampleRate);
+  for(let ch=0; ch<2; ch++) renderedBuffer.getChannelData(ch).set(fullBuffer.getChannelData(ch).subarray(cut));
 
   // ---- Live-Zustand wiederherstellen ----
   audioCtx=liveCtx; master=liveMaster; comp=liveComp; noiseBuf=liveNoise;

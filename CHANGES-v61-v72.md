@@ -77,4 +77,5 @@ Siehe GitHub Issues (seit 29.10.2026).
 ## v73 – Aufräumen + Export mit Samples (29.10.)
 - Alter Song-Modus (Slots, „Zum Song“, Song aus/Loop) samt Resten ausgebaut: `#groupBar`, `tbKnobs` + tote Knob-Variablen, versteckte Random/Clear-Buttons, `#taToast`, `#ctxRow`, `lenBtn`/`lenUiRender` (#21). Sichtbar ändert sich nichts.
 - WAV-Export wartet, bis die benutzten Sample-Kits geladen sind (vorher still Synth-Ersatz im WAV, wenn kurz nach Kit-Wahl/App-Start exportiert wurde). Offene Sample-Hi-Hat wird beim Export wie `lastOpenHatGain` gesichert (#12).
-- Tests: Export bei nicht geladenem Kit, Song-Export (Arrangement) mit Samples + Spielweise im Clip.
+- WAV-Export: erster Schlag war bis ~3 dB leiser als live (Master-Kompressor schwingt in einem frischen Offline-Kontext ~0,2 s ein). Jetzt 0,25 s Vorlauf, der abgeschnitten wird; Timing im WAV unverändert.
+- Tests: Export bei nicht geladenem Kit, Song-Export (Arrangement) mit Samples + Spielweise im Clip, erster Schlag = späterer Schlag.
