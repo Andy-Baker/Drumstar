@@ -1134,10 +1134,15 @@ html,body{min-height:100%;height:100%;}
 /* Klang-Sheet (Reiter) + Editor-Optionen */
 #klSheet{max-height:88vh;overflow-y:auto}
 #klSheet .am-seg{flex:none}
-#klSheet .srow{grid-template-columns:72px 1fr 66px}
+#klSheet .srow{grid-template-columns:72px 1fr 86px}
 #klSheet.cos input[type=range]{accent-color:#b88cff}
 #klSheet.pno input[type=range]{accent-color:#ffd166}
 .srow b.def{opacity:.45}
+.srow b.rs{justify-self:end;display:flex;align-items:center;gap:4px;height:36px;padding:0 4px;border:1px solid transparent;border-radius:8px;white-space:nowrap}
+.srow b.rs:not(.def){border-color:rgba(63,169,255,.4);background:rgba(63,169,255,.1);padding:0 6px 0 8px;cursor:pointer}
+.srow b.rs:not(.def)::after{content:"";width:14px;height:14px;flex:none;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 12a8 8 0 1 0 2.3-5.7'/%3E%3Cpath d='M4 4v5h5'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 12a8 8 0 1 0 2.3-5.7'/%3E%3Cpath d='M4 4v5h5'/%3E%3C/svg%3E") center/contain no-repeat}
+.srow b.rs:not(.def):active{transform:scale(.95)}
+#setSheet .srow{grid-template-columns:64px 1fr 78px}
 .kl-keys{display:grid;grid-template-columns:repeat(12,1fr);gap:3px;height:64px;margin-top:4px}
 .kl-keys button{border:0;border-radius:0 0 6px 6px;background:#e6e8ec;color:#555;font:700 11px 'JetBrains Mono',monospace;cursor:pointer;display:flex;align-items:flex-end;justify-content:center;padding:0 0 6px}
 .kl-keys button.bk{background:#1c1d22;color:#999;height:70%;border:1px solid rgba(255,255,255,.08)}
@@ -3249,6 +3254,7 @@ const TRACKS=[
   {id:'piano', name:'KEYS', short:'KEY', sound:'piano', tremolo:0, color:'#ffd166', tune:0.5, vol:0.8, type:'arp',
    rootNote:0, cutoff:0.55, resonance:0.2, envMod:0.5, decay:0.5, scale:'minor', reverbAmount:0.18, delaySend:0},
 ];
+TRACKS.forEach(t=>{ t._def={vol:t.vol, tune:t.tune, reverbAmount:t.reverbAmount||0, delaySend:t.delaySend||0}; }); // Standardwerte je Spur (Zurücksetzen im Klang-Sheet)
 // steps[s] speichert die Velocity eines Steps direkt als Zahl:
 // 0 = aus, 0.15 = Ghost soft (sehr leise), 0.35 = Ghost, 0.85 = Normal, 1.3 = Accent.
 // Ersetzt das alte reine An/Aus + globalen Accent-Layer durch echte
@@ -4523,11 +4529,26 @@ $id('tbSound').addEventListener('click', ()=>openKlang(TRACKS[activeTrackIdx]));
 function closeSheets(){ $id('sheetVeil').style.display='none'; ['setSheet','klSheet','fillSheet','prSheet','hmChordSheet','hmTplSheet','hmConfSheet','newBeatSheet'].forEach(i=>$id(i).classList.remove('open')); }
 function openSheet(id){ closeMenus(); $id('sheetVeil').style.display='block'; $id(id).classList.add('open'); }
 $id('sheetVeil').addEventListener('click', closeSheets); $id('setX').addEventListener('click', closeSheets); $id('fillX').addEventListener('click', closeSheets);
-document.querySelectorAll('.sheet').forEach(sh=>sh.addEventListener('dblclick', e=>{ const i=e.target; if(i.type==='range' && i.dataset.def!=null){ i.value=i.dataset.def; i.dispatchEvent(new Event('input')); } }));
+// Zurücksetzen (v78, Mockup zuruecksetzen-mockup.html B, ersetzt den versteckten Doppeltipp): Regler mit data-def zeigen
+// ihren Wert als Taste mit ↺, sobald er vom Standard abweicht. Antippen = dieser Regler auf Standard, Rückgängig im Toast.
+function srowMark(inp){
+  const b=inp.parentNode && inp.parentNode.querySelector('b'); if(!b || inp.dataset.def==null) return;
+  b.classList.add('rs'); const d=+inp.value===+inp.dataset.def; b.classList.toggle('def',d);
+  if(d){ b.removeAttribute('role'); b.removeAttribute('aria-label'); } else { b.setAttribute('role','button'); b.setAttribute('aria-label','Auf Standard zurücksetzen'); }
+}
+document.addEventListener('input', e=>{ const i=e.target; if(i.matches && i.matches('.srow input[data-def]')) srowMark(i); }, true);
+document.addEventListener('click', e=>{
+  const b=e.target.closest && e.target.closest('.srow b.rs'); if(!b || b.classList.contains('def')) return;
+  const inp=b.parentNode.querySelector('input'), old=inp.value, lab=b.parentNode.querySelector('label');
+  const set=v=>{ if(inp.isConnected){ inp.value=v; inp.dispatchEvent(new Event('input',{bubbles:true})); } else if(inp._on) inp._on(+v); };
+  set(inp.dataset.def);
+  hmToast((lab?lab.textContent:'Regler')+' auf Standard', true, ()=>set(old));
+});
 function syncSettingsUI(){
   $id('sMaster').value=Math.round(masterVol*100); $id('sMasterV').textContent=$id('sMaster').value+'%';
   $id('sSwing').value=Math.round(swing/0.6*100); $id('sSwingV').textContent=$id('sSwing').value+'%';
   $id('sHum').value=Math.round(humanize*100); $id('sHumV').textContent=$id('sHum').value+'%';
+  ['sMaster','sSwing','sHum'].forEach(i=>srowMark($id(i)));
 }
 $id('sMaster').addEventListener('input', e=>setMasterVol(e.target.value/100));
 $id('sSwing').addEventListener('input', e=>{ swing=e.target.value/100*0.6; syncSettingsUI(); });
@@ -4539,7 +4560,7 @@ function soundRow(label,min,max,val,def,fmt,on){
   const r=document.createElement('div'); r.className='srow';
   r.innerHTML='<label>'+label+'</label><input type="range" min="'+min+'" max="'+max+'" step="1"><b></b>';
   const inp=r.querySelector('input'), b=r.querySelector('b'); inp.value=Math.round(val); inp.dataset.def=def; b.textContent=fmt(+inp.value);
-  b.classList.toggle('def',+inp.value===+def);
+  inp._on=on; srowMark(inp);
   inp.addEventListener('input', ()=>{ b.textContent=fmt(+inp.value); b.classList.toggle('def',+inp.value===+def); on(+inp.value); });
   return r;
 }
@@ -4594,11 +4615,11 @@ function renderKlang(){
     const xy=$id('klXy'); if(xy) xy.onclick=()=>{ closeSheets(); if(prIsOpen()) prClose(); if(TRACKS[activeTrackIdx]!==tr) selectTrack(TRACKS.indexOf(tr)); openXY(); };
   } else if(tab==='fx'){
     grp('Pegel');
-    box.appendChild(soundRow('Laut',0,100,tr.vol*100,80,v=>v,v=>setTrackVol(tr,v/100)));
-    if(!arp) box.appendChild(soundRow('Tune',0,100,tr.tune*100,50,v=>tr.isSample?Math.round(Math.pow(2,(v/100-0.5)*2)*100)+'%':v,v=>tr.tune=v/100));
+    box.appendChild(soundRow('Laut',0,100,tr.vol*100,Math.round(tr._def.vol*100),v=>v,v=>setTrackVol(tr,v/100)));
+    if(!arp) box.appendChild(soundRow('Tune',0,100,tr.tune*100,Math.round(tr._def.tune*100),v=>tr.isSample?Math.round(Math.pow(2,(v/100-0.5)*2)*100)+'%':v,v=>tr.tune=v/100));
     grp('Effekte');
-    box.appendChild(soundRow('Hall',0,100,(tr.reverbAmount||0)*100,0,v=>v+'%',v=>{ tr.reverbAmount=v/100; if(tr.sendGain) tr.sendGain.gain.value=tr.reverbAmount; }));
-    box.appendChild(soundRow('Delay',0,100,(tr.delaySend||0)*100,0,v=>v+'%',v=>{ tr.delaySend=v/100; if(tr.delaySendGain) tr.delaySendGain.gain.value=tr.delaySend; }));
+    box.appendChild(soundRow('Hall',0,100,(tr.reverbAmount||0)*100,Math.round(tr._def.reverbAmount*100),v=>v+'%',v=>{ tr.reverbAmount=v/100; if(tr.sendGain) tr.sendGain.gain.value=tr.reverbAmount; }));
+    box.appendChild(soundRow('Delay',0,100,(tr.delaySend||0)*100,Math.round(tr._def.delaySend*100),v=>v+'%',v=>{ tr.delaySend=v/100; if(tr.delaySendGain) tr.delaySendGain.gain.value=tr.delaySend; }));
     grp('Groove');
     box.appendChild(soundRow('Feel',-30,30,tr.feel||0,0,v=>(v>0?'+':'')+v+'ms',v=>tr.feel=v));
   } else {
