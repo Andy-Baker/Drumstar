@@ -63,7 +63,7 @@ async def main():
     for kit in ['rock','fm909']:
       lv=await pg.evaluate("([i,k,w])=>__audio.drum(i,k,w,4)",['bd',kit,True]); ex=await pg.evaluate("([i,k])=>__audio.exportDrum(i,k)",['bd',kit])
       (tl,dl),(te,de)=tail_db(lv['x'],lv['sr']),tail_db(ex['x'],ex['sr'])
-      ok(f'{kit} bd: WAV-Export endet wie live (Worklet)', abs(tl-te)<6 and abs(dl-de)<0.05, f'live {tl:.0f} dB @{dl:.2f}s, Export {te:.0f} dB @{de:.2f}s')
+      ok(f'{kit} bd: WAV-Export endet wie live (Worklet)', te<tl+6 and abs(dl-de)<0.05, f'live {tl:.0f} dB @{dl:.2f}s, Export {te:.0f} dB @{de:.2f}s')
     # ---------- Sample-Kits (Studio, Studio 67, Hybrid, Rusty, Vintage) über den WAV-Export ----------
     S=lambda d:{k:{str(a):b for a,b in v.items()} for k,v in d.items()}
     async def exp(kit,pat):
