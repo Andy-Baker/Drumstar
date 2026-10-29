@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Neuer Beat Mockup</title>
+<link rel="stylesheet" href="../../fonts.css">
+<style>
+:root{color-scheme:dark;--bg:#050507;--chassis:#0e0e13;--chassis-2:#08080b;--panel:#16161c;--inset:#0a0a0d;--blue:#3fa9ff;--blue-2:#8fd4ff;--blue-dim:#1c4666;--white:#f4f5f7;--dim:#7d818c;--metal:#c7cbd4;--lcd-bg:#04070a;--lcd-fg:#5fc2ff;--line:rgba(255,255,255,.06);--warn:#ff9d7a}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--white);font-family:'Rajdhani',system-ui,sans-serif;user-select:none;-webkit-user-select:none}
+button,input{font-family:inherit;color:inherit;margin:0}
+svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+/* Mockup-Leiste */
+#mbar{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:calc(6px + env(safe-area-inset-top,0px)) 10px 6px;background:repeating-linear-gradient(135deg,#0b1622 0 8px,#0d1a28 8px 16px);border-bottom:1px dashed rgba(63,169,255,.45);font:700 11px 'JetBrains Mono',monospace;color:var(--blue-2)}
+#mbar .sp{flex:1}
+#mbar button{height:26px;padding:0 9px;border-radius:6px;border:1px solid rgba(63,169,255,.45);background:rgba(63,169,255,.12);font:700 11px 'JetBrains Mono',monospace;color:var(--blue-2);cursor:pointer}
+#mbar button.on{background:var(--blue);color:#042c53}
+#stage{position:fixed;top:calc(72px + env(safe-area-inset-top,0px));left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;gap:32px}
+#dev{position:relative;width:100%;height:100%;overflow:hidden;background:linear-gradient(180deg,var(--chassis),var(--chassis-2))}
+@media (min-width:780px) and (min-height:760px){#dev{width:390px;height:780px;border-radius:30px;border:8px solid #1a1e26;box-shadow:0 30px 80px rgba(0,0,0,.75)} #side{display:block} #stage{top:44px}}
+#side{display:none;width:340px;max-height:780px;overflow:auto;font-size:14px;color:var(--metal);line-height:1.45}
+#side h3{font:700 11px 'Rajdhani';letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin:16px 0 6px}
+#side p,#side li{margin:0 0 6px}
+#side ul{padding-left:18px;margin:0}
+#side b{color:var(--white)}
+
+/* Hauptseite (vereinfacht) */
+#main{position:absolute;inset:0;display:flex;flex-direction:column}
+#tbar{display:flex;gap:6px;padding:8px 8px 8px;border-bottom:1px solid rgba(63,169,255,.18)}
+.tb{height:46px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:var(--lcd-bg);display:flex;align-items:center;justify-content:center}
+#play{width:50px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#22262e,#0b0d11);color:var(--blue)}
+#bpm{width:76px;font:22px 'VT323',monospace;color:var(--lcd-fg);gap:4px}
+#bpm small{font:600 11px 'Rajdhani';color:var(--dim)}
+#lcd{flex:1;min-width:0;justify-content:flex-start;gap:8px;padding:0 10px;color:var(--lcd-fg);font:20px 'VT323',monospace;cursor:pointer}
+#lcd .nm{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left}
+#lcd .dirty{width:7px;height:7px;border-radius:50%;background:var(--warn);box-shadow:0 0 6px var(--warn);display:none}
+#lcd.unsaved .dirty{display:block}
+#gear{width:50px;background:rgba(63,169,255,.1);border-color:rgba(63,169,255,.35);color:var(--blue-2)}
+#sel{display:flex;gap:6px;padding:8px}
+#sel div{flex:1;height:44px;border-radius:10px;border:1px solid rgba(63,169,255,.3);background:var(--lcd-bg);display:flex;align-items:center;padding:0 12px;font:22px 'VT323',monospace;color:var(--lcd-fg)}
+#grid{margin:0 8px;padding:6px;border-radius:12px;background:var(--inset);display:flex;flex-direction:column;gap:6px}
+.row{display:flex;align-items:center;gap:3px}
+.row b{width:30px;font:700 13px 'Rajdhani';color:var(--metal);letter-spacing:.04em}
+.st{flex:1;height:24px;border-radius:3px;background:#101015}
+.st:nth-child(4n+2){background:#15151b}
+.st.on{background:var(--blue);box-shadow:0 0 8px rgba(63,169,255,.6)}
+.st.on.w{background:#eaf6ff}
+#hint{margin:14px 16px 0;font-size:13px;color:var(--dim);text-align:center}
+#tabs{margin-top:auto;display:flex;border-top:1px solid rgba(63,169,255,.2);background:#0a0a0e}
+#tabs div{flex:1;height:58px;display:flex;align-items:center;justify-content:center;font:600 11px 'Rajdhani';letter-spacing:.08em;color:var(--dim)}
+#tabs div.on{color:var(--blue-2);box-shadow:inset 0 2px 0 var(--blue)}
+
+/* Beats-Fenster */
+#ov{position:absolute;inset:0;background:var(--chassis);display:none;flex-direction:column;gap:8px;padding:10px 14px 16px;overflow:auto;z-index:20}
+#ov.open{display:flex}
+.head{display:flex;align-items:center;gap:8px;min-height:52px;border-bottom:1px solid var(--line);padding-bottom:8px;flex-shrink:0}
+.ovt{margin:0;flex:1;font:700 19px 'Rajdhani';letter-spacing:.02em}
+.x{width:44px;height:44px;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:var(--panel);color:var(--blue-2);font-size:18px;cursor:pointer}
+.newb{height:44px;padding:0 14px;border-radius:10px;border:1px solid rgba(63,169,255,.5);background:rgba(63,169,255,.14);color:var(--blue-2);display:flex;align-items:center;gap:6px;font:700 13px 'Rajdhani';letter-spacing:.06em;text-transform:uppercase;cursor:pointer}
+.newb:active,.act:active,.x:active{transform:scale(.95)}
+.sec{font-size:10px;letter-spacing:.12em;color:var(--dim);text-transform:uppercase;margin:6px 2px 0;flex-shrink:0}
+.lenrow{display:flex;gap:6px}
+.len{flex:1;min-height:44px;border-radius:9px;border:1px solid rgba(255,255,255,.1);background:var(--panel);display:flex;align-items:center;justify-content:center;font:700 14px 'Rajdhani';color:var(--dim);cursor:pointer}
+.len.on{border-color:var(--blue);background:rgba(63,169,255,.14);color:var(--blue-2)}
+.small{font-size:12px;color:var(--dim);margin:0 2px}
+.btabs{display:flex;border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,.12);flex-shrink:0}
+.btabs span{flex:1;min-height:36px;display:flex;align-items:center;justify-content:center;background:var(--panel);color:var(--dim);font-weight:700;font-size:12px}
+.btabs span.on{background:rgba(63,169,255,.2);color:var(--blue-2)}
+.saverow{display:flex;gap:6px}
+.saverow input{flex:1;min-width:0;height:44px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:var(--inset);padding:0 12px;font-size:15px}
+.act{min-height:44px;border-radius:9px;border:1px solid rgba(255,255,255,.12);background:var(--inset);color:var(--metal);display:flex;align-items:center;justify-content:center;gap:7px;font:700 12px 'Rajdhani';letter-spacing:.05em;text-transform:uppercase;padding:0 12px;cursor:pointer}
+.act.pri{border-color:rgba(63,169,255,.45);background:rgba(63,169,255,.12);color:var(--blue-2)}
+.iorow{display:flex;gap:6px}.iorow .act{flex:1}
+.list{display:flex;flex-direction:column;gap:6px}
+.prow{display:flex;align-items:center;gap:8px;padding:8px 8px 8px 14px;min-height:58px;border-radius:12px;border:1px solid rgba(255,255,255,.08);background:var(--panel)}
+.prow.cur{border-color:rgba(63,169,255,.45)}
+.prow .m{flex:1;min-width:0}
+.prow .m b{display:block;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prow .m small{font:12px 'JetBrains Mono',monospace;color:var(--dim)}
+.pb{width:44px;height:44px;border-radius:12px;border:1px solid rgba(63,169,255,.4);background:rgba(63,169,255,.1);color:var(--blue-2);display:flex;align-items:center;justify-content:center}
+/* Variante B: Karte „Aktueller Beat“ */
+.card{border-radius:14px;border:1px solid rgba(63,169,255,.28);background:linear-gradient(180deg,#121621,#0d0f15);padding:10px 12px 12px;display:flex;flex-direction:column;gap:8px;flex-shrink:0}
+.card .nmrow{display:flex;align-items:center;gap:8px}
+.card .nmrow input{flex:1;min-width:0;height:44px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:var(--inset);padding:0 12px;font:700 17px 'Rajdhani'}
+.state{font:600 12px 'Rajdhani';letter-spacing:.06em;color:var(--dim);display:flex;align-items:center;gap:6px}
+.state i{width:7px;height:7px;border-radius:50%;background:var(--warn);display:inline-block}
+.state.ok i{background:#7cffb2}
+.btnrow{display:flex;gap:6px}.btnrow .act{flex:1}
+.newwide{min-height:52px;border-radius:12px;border:1px solid rgba(63,169,255,.5);background:rgba(63,169,255,.12);color:var(--blue-2);display:flex;align-items:center;justify-content:center;gap:8px;font:700 14px 'Rajdhani';letter-spacing:.08em;text-transform:uppercase;cursor:pointer;flex-shrink:0}
+
+/* Auswahl-Sheet */
+#shade{position:absolute;inset:0;background:rgba(0,0,0,.55);display:none;z-index:40}
+#sheet{position:absolute;left:0;right:0;bottom:0;z-index:41;background:var(--chassis);border-top:1px solid rgba(63,169,255,.35);border-radius:16px 16px 0 0;padding:6px 14px 22px;transform:translateY(105%);transition:transform .18s}
+#sheet.open{transform:none}
+#shade.open{display:block}
+.opt{display:flex;align-items:center;gap:12px;width:100%;min-height:64px;margin-top:8px;padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:var(--panel);text-align:left;cursor:pointer}
+.opt.pri{border-color:rgba(63,169,255,.45);background:rgba(63,169,255,.1)}
+.opt b{display:block;font-size:16px}
+.opt small{display:block;font-size:12px;color:var(--dim);line-height:1.3}
+.opt svg{color:var(--blue-2)}
+
+/* Undo-Toast */
+#toast{position:absolute;left:12px;right:12px;bottom:72px;z-index:50;display:flex;align-items:center;gap:10px;padding:10px 10px 10px 14px;border-radius:12px;background:#1a2230;border:1px solid rgba(63,169,255,.35);box-shadow:0 10px 30px rgba(0,0,0,.6);font-weight:600;font-size:15px;opacity:0;pointer-events:none;transform:translateY(8px);transition:.18s}
+#toast.show{opacity:1;pointer-events:auto;transform:none}
+#toast span{flex:1}
+#toast button{height:38px;padding:0 12px;border-radius:9px;border:1px solid rgba(63,169,255,.5);background:rgba(63,169,255,.15);color:var(--blue-2);font:700 12px 'Rajdhani';letter-spacing:.06em;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;gap:6px}
+</style>
+</head>
+<body>
+<div id="mbar">
+  <span>NEUER BEAT</span>
+  <button data-v="A" class="on">A · Knopf im Kopf</button>
+  <button data-v="B">B · Aktueller Beat oben</button>
+  <span class="sp"></span>
+  <button id="askBtn" class="on">Auswahl: an</button>
+  <button id="resetBtn">Reset</button>
+</div>
+
+<div id="stage">
+  <div id="dev">
+    <div id="main">
+      <div id="tbar">
+        <div class="tb" id="play"><svg class="i" viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z" fill="currentColor"/></svg></div>
+        <div class="tb" id="bpm">128<small>BPM</small></div>
+        <div class="tb" id="lcd"><svg class="i" viewBox="0 0 24 24" style="width:16px"><path d="M4 6h12M4 11h12M4 16h8"/></svg><span class="nm" id="lcdName">Firestarter</span><span class="dirty"></span><svg class="i" viewBox="0 0 24 24" style="width:16px;color:var(--dim)"><path d="M6 9l6 6 6-6"/></svg></div>
+        <div class="tb" id="gear"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg></div>
+      </div>
+      <div id="sel"><div>DRUMS</div><div>ROCK</div></div>
+      <div id="grid"></div>
+      <div id="hint">Tippe oben auf den Beat-Namen.</div>
+      <div id="tabs"><div class="on">PATTERN</div><div>PADS</div><div>MIXER</div><div>SONG</div></div>
+    </div>
+
+    <div id="ov"></div>
+
+    <div id="shade"></div>
+    <div id="sheet">
+      <div class="head" style="border:0;min-height:44px"><h2 class="ovt">Neuer Beat</h2><button class="x" id="shX">✕</button></div>
+      <button class="opt pri" data-k="keep"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 10h16"/></svg><span><b>Leer, gleicher Klang</b><small>Alle Noten weg. Tempo, Kit, Sounds, Mixer und Länge bleiben.</small></span></button>
+      <button class="opt" data-k="def"><svg class="i" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.7"/><path d="M4 4v5h5"/></svg><span><b>Leer, Standard</b><small>Alles auf Anfang: 120 BPM, Rock-Kit, Standard-Sounds, 16 Steps.</small></span></button>
+    </div>
+
+    <div id="toast"><span id="toastT">Neuer Beat</span><button id="undoBtn"><svg class="i" viewBox="0 0 24 24" style="width:16px"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>Rückgängig</button></div>
+  </div>
+
+  <div id="side">
+    <h3>Problem</h3>
+    <p>Heute gibt es kein „Neu“. Man muss jede Spur einzeln leeren und dann unter neuem Namen speichern. Das Beats-Fenster mischt außerdem den aktuellen Beat (Länge, Speichern, WAV) mit der Bibliothek.</p>
+    <h3>Verhalten (beide Varianten)</h3>
+    <ul>
+      <li><b>Neu</b> leert alle Spuren, schaltet die Harmonie aus, Name „Neuer Beat“, noch nicht gespeichert.</li>
+      <li>Fenster schließt sich, man landet im leeren Step-Raster.</li>
+      <li>Keine Rückfrage. Stattdessen <b>Undo-Toast</b> (wie bei der Harmonie), Rückgängig holt den alten Stand zurück.</li>
+      <li>Ungespeichert: oranger Punkt neben dem Namen oben.</li>
+      <li>Schalter <b>Auswahl</b> oben: an = kleines Sheet „gleicher Klang / Standard“, aus = immer „gleicher Klang“ ohne Zwischenschritt.</li>
+    </ul>
+    <h3>A · Knopf im Kopf</h3>
+    <p>Nur ein „＋ Neu“ neben dem ✕. Kleinster Eingriff, Rest bleibt wie er ist.</p>
+    <h3>B · Aktueller Beat oben</h3>
+    <p>Oben eine Karte für den <b>aktuellen Beat</b>: Name direkt bearbeitbar, Status (gespeichert/ungespeichert), Länge, Speichern und WAV. Darunter <b>Gespeicherte Beats</b> mit großem „＋ Neuer Beat“, Import/Sichern und Liste. Speichern ist eindeutig: Erstes Speichern legt an, danach überschreibt es; „Als Kopie“ für einen zweiten Stand.</p>
+  </div>
+</div>
+
+<script>
+const IC={
+ plus:'<svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+ play:'<svg class="i" viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z" fill="currentColor"/></svg>',
+ more:'<svg class="i" viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.3" fill="currentColor"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><circle cx="18" cy="12" r="1.3" fill="currentColor"/></svg>',
+ wav:'<svg class="i" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>',
+ all:'<svg class="i" viewBox="0 0 24 24"><path d="M4 6h12M4 11h12M4 16h7"/><path d="M18 13v7M15 17l3 3 3-3"/></svg>',
+ imp:'<svg class="i" viewBox="0 0 24 24"><path d="M12 20V9M7 14l5-5 5 5M5 4h14"/></svg>',
+ save:'<svg class="i" viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/></svg>',
+ copy:'<svg class="i" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg>'
+};
+const SAVED=['Let me be your fantasy|11.09.','Ragga Jungle|07.09.','Nirvana - In Bloom|06.09.','Raggae Classic|06.09.','Halftidere|22.08.','Firestarter|19.08.'];
+const ROWS=['BD','SD','CH','LT','HT','OH','CY','RD'];
+const FIRE={BD:[0,8,10],SD:[4,12],CH:[0,2,4,6,8,10,12,14],OH:[15]};
+let V='A', ask=true, st={name:'Firestarter',saved:true,pat:FIRE,len:16,bpm:128,kit:'ROCK'}, prev=null;
+const $=s=>document.querySelector(s);
+
+function renderMain(){
+  const g=$('#grid'); g.innerHTML='';
+  ROWS.forEach(r=>{const row=document.createElement('div');row.className='row';row.innerHTML='<b>'+r+'</b>';
+    for(let s=0;s<16;s++){const d=document.createElement('div');d.className='st';
+      if((st.pat[r]||[]).includes(s)){d.classList.add('on');if(r==='SD'||r==='CH'||r==='OH')d.classList.add('w');}
+      d.onclick=()=>{const a=st.pat[r]=(st.pat[r]||[]).slice();const i=a.indexOf(s);i<0?a.push(s):a.splice(i,1);st.saved=false;renderMain();};
+      row.appendChild(d);}
+    g.appendChild(row);});
+  $('#lcdName').textContent=st.name;
+  $('#lcd').classList.toggle('unsaved',!st.saved);
+  $('#bpm').firstChild.textContent=st.bpm;
+  $('#sel div:last-child').textContent=st.kit;
+}
+
+function rowsHtml(){
+  return SAVED.map(x=>{const[n,d]=x.split('|');return '<div class="prow'+(n===st.name&&st.saved?' cur':'')+'"><div class="m"><b>'+n+'</b><small>'+d+'</small></div><div class="pb">'+IC.play+'</div><div class="pb">'+IC.more+'</div></div>';}).join('');
+}
+function lenHtml(){return '<div class="lenrow">'+[16,32,48,64].map(n=>'<div class="len'+(n===st.len?' on':'')+'" data-len="'+n+'">'+n+'</div>').join('')+'</div>';}
+const TABS='<div class="btabs"><span class="on">Gesamt</span><span>Drums</span><span>Perc</span><span>Acid</span><span>Sample</span><span>Cosmic</span><span>Keys</span></div>';
+
+function renderOv(){
+  const o=$('#ov');
+  if(V==='A'){
+    o.innerHTML='<div class="head"><h2 class="ovt">Beats</h2><button class="newb" data-new>'+IC.plus+'Neu</button><button class="x" data-close>✕</button></div>'
+     +'<div class="sec">Länge</div>'+lenHtml()
+     +'<div class="small">Kürzer wählen schneidet den Rest ab – die Rückgängig-Taste holt ihn zurück.</div>'
+     +TABS
+     +'<div class="saverow"><input placeholder="Name für aktuellen Beat…"><button class="act pri">Speichern</button></div>'
+     +'<div class="iorow"><button class="act pri">'+IC.wav+'WAV</button><button class="act">'+IC.all+'Alle</button><button class="act">'+IC.imp+'Import</button></div>'
+     +'<div class="list">'+rowsHtml()+'</div>';
+  } else {
+    o.innerHTML='<div class="head"><h2 class="ovt">Beats</h2><button class="x" data-close>✕</button></div>'
+     +'<div class="card"><div class="sec" style="margin-top:0">Aktueller Beat</div>'
+     +'<div class="nmrow"><input value="'+st.name+'" data-name></div>'
+     +'<div class="state'+(st.saved?' ok':'')+'"><i></i>'+(st.saved?'Gespeichert':'Noch nicht gespeichert')+'</div>'
+     +'<div class="sec">Länge</div>'+lenHtml()
+     +'<div class="btnrow"><button class="act pri" data-save>'+IC.save+(st.saved?'Gespeichert':'Speichern')+'</button><button class="act">'+IC.copy+'Als Kopie</button><button class="act">'+IC.wav+'WAV</button></div></div>'
+     +'<div class="sec">Gespeicherte Beats</div>'
+     +'<button class="newwide" data-new>'+IC.plus+'Neuer Beat</button>'
+     +TABS
+     +'<div class="iorow"><button class="act">'+IC.imp+'Import</button><button class="act">'+IC.all+'Alle sichern</button></div>'
+     +'<div class="list">'+rowsHtml()+'</div>';
+  }
+  o.querySelectorAll('[data-close]').forEach(b=>b.onclick=closeOv);
+  o.querySelectorAll('[data-new]').forEach(b=>b.onclick=()=>ask?openSheet():doNew('keep'));
+  o.querySelectorAll('[data-len]').forEach(b=>b.onclick=()=>{st.len=+b.dataset.len;st.saved=false;renderOv();renderMain();});
+  const nm=o.querySelector('[data-name]'); if(nm) nm.oninput=()=>{st.name=nm.value;st.saved=false;renderMain();const s=o.querySelector('.state');s.className='state';s.innerHTML='<i></i>Noch nicht gespeichert';o.querySelector('[data-save]').innerHTML=IC.save+'Speichern';};
+  const sv=o.querySelector('[data-save]'); if(sv) sv.onclick=()=>{st.saved=true;if(!SAVED.some(x=>x.startsWith(st.name+'|')))SAVED.unshift(st.name+'|29.10.');renderOv();renderMain();};
+}
+function openOv(){renderOv();$('#ov').classList.add('open');}
+function closeOv(){$('#ov').classList.remove('open');}
+function openSheet(){$('#shade').classList.add('open');$('#sheet').classList.add('open');}
+function closeSheet(){$('#shade').classList.remove('open');$('#sheet').classList.remove('open');}
+let tt=null;
+function doNew(k){
+  prev=JSON.parse(JSON.stringify(st));
+  st={name:'Neuer Beat',saved:false,pat:{},len:k==='def'?16:st.len,bpm:k==='def'?120:st.bpm,kit:k==='def'?'ROCK':st.kit};
+  closeSheet();closeOv();renderMain();
+  $('#hint').textContent='Leeres Raster. Oben steht „Neuer Beat“ mit Punkt = ungespeichert.';
+  $('#toastT').textContent=k==='def'?'Neuer Beat (Standard)':'Neuer Beat';
+  $('#toast').classList.add('show');clearTimeout(tt);tt=setTimeout(()=>$('#toast').classList.remove('show'),5000);
+}
+$('#undoBtn').onclick=()=>{if(prev){st=prev;prev=null;renderMain();}$('#toast').classList.remove('show');$('#hint').textContent='Alter Stand ist zurück.';};
+$('#lcd').onclick=openOv;
+$('#shade').onclick=closeSheet;$('#shX').onclick=closeSheet;
+document.querySelectorAll('.opt').forEach(b=>b.onclick=()=>doNew(b.dataset.k));
+document.querySelectorAll('#mbar [data-v]').forEach(b=>b.onclick=()=>{V=b.dataset.v;document.querySelectorAll('#mbar [data-v]').forEach(x=>x.classList.toggle('on',x===b));if($('#ov').classList.contains('open'))renderOv();});
+$('#askBtn').onclick=()=>{ask=!ask;$('#askBtn').classList.toggle('on',ask);$('#askBtn').textContent='Auswahl: '+(ask?'an':'aus');};
+$('#resetBtn').onclick=()=>{st={name:'Firestarter',saved:true,pat:FIRE,len:16,bpm:128,kit:'ROCK'};prev=null;closeSheet();closeOv();$('#toast').classList.remove('show');$('#hint').textContent='Tippe oben auf den Beat-Namen.';renderMain();};
+renderMain();
+</script>
+</body>
+</html>
