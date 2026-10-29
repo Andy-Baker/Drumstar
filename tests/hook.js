@@ -101,3 +101,21 @@ window.__audio.artRoundTrip=function(){
   rd.steps.fill(VEL_NORMAL); d.tracks=d.tracks.filter(t=>t.id!=='rd'); applyTrackAndFillData(d);
   r.oldRide=rd.steps.filter(v=>v>0).length; return r;
 };
+// #12: Kit aus dem Speicher werfen (Export muss dann selbst aufs Laden warten)
+window.__audio.smpDrop=function(){ smpFree([]); return Object.keys(smp); };
+// #12: Song-Export (Arrangement) über den echten WAV-Export. clips={spur:[{start,steps:{s:stufe},notes:{s:spielweise}}]}, je Clip 1 Takt
+window.__audio.exportSong=async function(kit,clips,bars,bpmv){
+  currentKitId=kit; drumSet.voices={}; drumSet.buffers={}; bpm=bpmv||100; swing=0; humanize=0; PATTERN_LENGTH=16;
+  const V=[0,VEL_GHOST_SOFT,VEL_GHOST,VEL_NORMAL,VEL_ACCENT];
+  TRACKS.forEach(t=>{ t.solo=false; t.muted=(t.type==='arp'||t.isSample||!VOICE_FNS[t.id]); t.feel=0; t.reverbAmount=0; t.delaySend=0;
+    if(t.sendGain) t.sendGain.gain.value=0; if(t.delaySendGain) t.delaySendGain.gain.value=0; });
+  const keep={enabled:arr.enabled, bars:arr.bars, clips:arr.clips}, ke=editClip;
+  arr.clips={}; arr.bars=bars; arr.enabled=true; editClip=null;
+  for(const id in clips) arr.clips[id]=clips[id].map(c=>{ const st=new Array(16).fill(0), no=new Array(16).fill(0);
+    for(const s in c.steps) st[+s]=V[c.steps[s]]; for(const s in (c.notes||{})) no[+s]=c.notes[s]; return {start:c.start, bars:1, steps:st, notes:no, slides:[]}; });
+  let b; try{ b=await renderPatternToWav(); } finally { arr.enabled=keep.enabled; arr.bars=keep.bars; arr.clips=keep.clips; editClip=ke; }
+  if(window.gc) gc();
+  const L=b.getChannelData(0), R=b.getChannelData(1), x=new Float32Array(L.length);
+  for(let i=0;i<x.length;i++) x[i]=L[i]+R[i];
+  return {x:Array.from(x), sr:b.sampleRate};
+};

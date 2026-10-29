@@ -107,6 +107,21 @@ async def main():
     ok('Option Variation/Round Robin an: zwei gleiche Schläge klingen verschieden', float(np.abs(v1-v2).max())>1e-3)
     x,_=await exp('studio',{'hc':{0:3},'cb':{4:3}})
     ok('Sample-Kits: Clap/Cowbell ohne Aufnahme spielen den Rock-Synth', db(np.abs(x).max())>-30, f'{db(np.abs(x).max()):.0f} dB')
+    # ---------- #12: Export wartet aufs Laden, Song-Export mit Samples ----------
+    await pg.evaluate("__audio.smpOpt({layers:true,rr:false,vari:0,room:0.22})")
+    ref,_=await exp('studio',{'sd':{0:3}})
+    left=await pg.evaluate("__audio.smpDrop()"); x,_=await exp('studio',{'sd':{0:3}})
+    ok('Export bei noch nicht geladenem Kit: wartet und spielt die Samples', 'studio' not in left and len(x)==len(ref) and float(np.abs(x-ref).max())<1e-3, f'Abw. {float(np.abs(x-ref).max()):.4f}')
+    r=await pg.evaluate("([k,c,n])=>__audio.exportSong(k,c,n,100)",['studio',{'sd':[{'start':0,'steps':{'0':3}},{'start':2,'steps':{'0':3}}],'rd':[{'start':3,'steps':{'0':3},'notes':{'0':1}}]},4])
+    xs=np.array(r['x']); sr=r['sr']; bar=int(60/100*4*sr); t0=int(0.05*sr)
+    seg=lambda i:xs[t0+i*bar:t0+i*bar+int(0.3*sr)]
+    e=[db(np.sqrt((seg(i)**2).mean())) for i in range(4)]
+    ok('Song-Export mit Samples: Clips in Takt 1 und 3 klingen, Takt 2 leer', e[0]>-40 and e[2]>-40 and e[1]<e[0]-30, ' / '.join(f'{v:.0f}' for v in e))
+    ok('Song-Export: Takt 3 = gleicher Schlag wie im Pattern-Export', abs(e[2]-db(np.sqrt((ref[t0:t0+int(0.3*sr)]**2).mean())))<1.5 and float(np.abs(seg(2)[:int(0.05*sr)]-ref[t0:t0+int(0.05*sr)]).max())<0.05, f'{e[2]:.1f} dB')
+    xb,_=await exp('studio',{'rb':{0:3}}); xf,_=await exp('studio',{'rd':{0:3}}); n=int(0.3*sr)
+    cb=float(np.abs(seg(3)-xb[t0:t0+n]).max()); cf=float(np.abs(seg(3)-xf[t0:t0+n]).max())
+    ok('Song-Export: Spielweise im Clip (Ride Bell) wird gespielt', cb<cf and np.isfinite(xs).all(), f'Abw. zu Bell {cb:.3f}, zu Fläche {cf:.3f}')
+    await pg.evaluate("__audio.smpOpt({layers:true,rr:true,vari:50,room:0.22})")
     await pg.evaluate("__audio.smpLoad('vintage')"); x,_=await exp('vintage',{'cy':{0:4}})
     ok('Vintage: Crash ohne eigene Aufnahme kommt aus Studio', db(np.abs(x).max())>-20, f'{db(np.abs(x).max()):.0f} dB')
     # ---------- Ride + Spielweisen (v72) ----------
