@@ -1974,7 +1974,8 @@ const fxSave=list=>(list||[]).map(f=>({t:f.t,on:f.on,p:Object.assign({},f.p)}));
 const GRP_DEF={drums:{n:'Drums',ab:'DRUMS',ids:['bd','sd','ch','oh','lt','ht','cy','rd'],color:'#2a5a86'},
                perc:{n:'Perc',ab:'PERC',ids:['rs','hc','cb','cl','mr'],color:'#1f6f68'}};
 const GRP_KEYS=Object.keys(GRP_DEF);
-const grpNew=k=>({grp:true,k,vol:1,muted:false,fx:[]});
+const grpNew=k=>({grp:true,k,vol:1,muted:false,fx:[],eqOn:true,eqLc:0,eqLowGain:0,eqMidGain:0,eqMf:EQ_MF_DEF,eqHighGain:0});
+const EQ_KEYS=['eqOn','eqLc','eqLowGain','eqMidGain','eqMf','eqHighGain'];
 let grps={}; GRP_KEYS.forEach(k=>grps[k]=grpNew(k));
 const trGrp=tr=>GRP_KEYS.find(k=>GRP_DEF[k].ids.includes(tr.id));
 const grpIn=tr=>{ const k=trGrp(tr); return k&&FXG.g&&FXG.g[k]?FXG.g[k].i:master; };
@@ -1998,11 +1999,18 @@ function buildFxBuses(){ const c=audioCtx;
   padDelaySendGain=c.createGain(); padDelaySendGain.gain.value=padDelayAmount; padDelaySendGain.connect(FXG.dlIn);
   // Gruppen: Eingang → Effekte → Laut (+Meter) → Master
   FXG.g={}; GRP_KEYS.forEach(k=>{ const G=grps[k], o=FXG.g[k]={i:c.createGain(),v:c.createGain(),an:c.createAnalyser(),n:[]};
-    o.v.gain.value=G.muted?0:G.vol; o.an.fftSize=256; o.v.connect(master); o.v.connect(o.an); grpFxRebuild(k); });
+    eqNodes(o,c); o.v.gain.value=G.muted?0:G.vol; o.an.fftSize=2048; o.an.smoothingTimeConstant=.82; o.v.connect(master); o.v.connect(o.an); eqSetNodes(o,G,c); grpFxRebuild(k); });
 }
-function grpFxRebuild(k){ const o=FXG.g&&FXG.g[k]; if(!o) return; const c=audioCtx; try{o.i.disconnect();}catch(e){} o.n.forEach(n=>{ try{n.o.disconnect();}catch(e){} });
-  o.n=grps[k].fx.filter(f=>f.on&&!f._byp).map(f=>{ const n=FXDEF[f.t].build(c); n.u(f.p); n.id=f.id; return n; });
-  let last=o.i; o.n.forEach(n=>{ last.connect(n.i); last=n.o; }); last.connect(o.v); }
+// Gruppe: i → EQ (nur wenn nicht neutral) → Inserts → v (Laut) → Master
+function grpFxRebuild(k){ const o=FXG.g&&FXG.g[k], G=grps[k]; if(!o) return; const c=audioCtx; try{o.i.disconnect();}catch(e){} try{o.eqHigh.disconnect();}catch(e){} o.n.forEach(n=>{ try{n.o.disconnect();}catch(e){} });
+  o.n=G.fx.filter(f=>f.on&&!f._byp).map(f=>{ const n=FXDEF[f.t].build(c); n.u(f.p); n.id=f.id; return n; });
+  let last=o.i; G._eqIn=G.eqOn!==false && !G._eqByp && !eqNeutral(G); if(G._eqIn){ last.connect(o.eqHp); last=o.eqHigh; }
+  o.n.forEach(n=>{ last.connect(n.i); last=n.o; }); last.connect(o.v); }
+function eqNodes(n,c){ n.eqHp=c.createBiquadFilter(); n.eqHp.type='highpass'; n.eqHp.Q.value=.707;
+  n.eqLow=c.createBiquadFilter(); n.eqLow.type='lowshelf'; n.eqLow.frequency.value=250;
+  n.eqMid=c.createBiquadFilter(); n.eqMid.type='peaking'; n.eqMid.Q.value=1;
+  n.eqHigh=c.createBiquadFilter(); n.eqHigh.type='highshelf'; n.eqHigh.frequency.value=4000;
+  n.eqHp.connect(n.eqLow); n.eqLow.connect(n.eqMid); n.eqMid.connect(n.eqHigh); }
 function fxDelayBuild(){ const c=audioCtx, p=fxDelay; (FXG.dlNodes||[]).forEach(n=>{ try{n.disconnect();}catch(e){} }); try{FXG.dlIn.disconnect();}catch(e){}
   FXG.dlNodes=[]; const mk=n=>(FXG.dlNodes.push(n),n), t=fxDelaySec();
   const tone=()=>{ const f=mk(c.createBiquadFilter()); f.type='lowpass'; f.Q.value=.5; f.frequency.value=fxDelayTone(); return f; };
@@ -2030,11 +2038,7 @@ function ensureTrackBuses(){
   TRACKS.forEach(tr=>{
     if(tr.bus) return; const c=audioCtx;
     tr.bus=c.createGain();
-    tr.eqHp=c.createBiquadFilter(); tr.eqHp.type='highpass'; tr.eqHp.Q.value=.707;
-    tr.eqLow=c.createBiquadFilter(); tr.eqLow.type='lowshelf'; tr.eqLow.frequency.value=250;
-    tr.eqMid=c.createBiquadFilter(); tr.eqMid.type='peaking'; tr.eqMid.Q.value=1;
-    tr.eqHigh=c.createBiquadFilter(); tr.eqHigh.type='highshelf'; tr.eqHigh.frequency.value=4000;
-    tr.eqHp.connect(tr.eqLow); tr.eqLow.connect(tr.eqMid); tr.eqMid.connect(tr.eqHigh);
+    eqNodes(tr,c);
     tr.post=c.createGain();
     tr.panner=c.createStereoPanner(); tr.panner.pan.value=tr.pan||0;
     tr.post.connect(tr.panner); tr.panner.connect(grpIn(tr));
@@ -2046,7 +2050,8 @@ function ensureTrackBuses(){
 }
 const eqNeutral=tr=>!(tr.eqLc>.005) && !tr.eqLowGain && !tr.eqMidGain && !tr.eqHighGain;
 function eqSetNodes(n,tr,c){ fxSet(n.eqHp.frequency,eqLcHz(tr.eqLc||0),c); fxSet(n.eqLow.gain,tr.eqLowGain||0,c); fxSet(n.eqMid.gain,tr.eqMidGain||0,c); fxSet(n.eqMid.frequency,eqMfHz(tr.eqMf),c); fxSet(n.eqHigh.gain,tr.eqHighGain||0,c); }
-function eqApply(tr,force){ if(!tr.eqLow) return; eqSetNodes(tr,tr,audioCtx); const want=tr.eqOn!==false && !tr._eqByp && !eqNeutral(tr); if(force||want!==tr._eqIn) trFxRebuild(tr); }
+function eqApply(tr,force){ if(tr.grp){ const o=FXG.g&&FXG.g[tr.k]; if(!o) return; eqSetNodes(o,tr,audioCtx); const want=tr.eqOn!==false && !tr._eqByp && !eqNeutral(tr); if(force||want!==tr._eqIn) grpFxRebuild(tr.k); return; }
+  if(!tr.eqLow) return; eqSetNodes(tr,tr,audioCtx); const want=tr.eqOn!==false && !tr._eqByp && !eqNeutral(tr); if(force||want!==tr._eqIn) trFxRebuild(tr); }
 function trFxRebuild(tr){ if(!tr.bus) return; const c=audioCtx; try{tr.bus.disconnect();}catch(e){} try{tr.eqHigh.disconnect();}catch(e){} (tr._fxN||[]).forEach(n=>{ try{n.o.disconnect();}catch(e){} });
   tr._fxN=(tr.fx||[]).filter(f=>f.on&&!f._byp).map(f=>{ const n=FXDEF[f.t].build(c); n.u(f.p); n.id=f.id; return n; });
   let last=tr.bus; tr._eqIn=tr.eqOn!==false && !tr._eqByp && !eqNeutral(tr); if(tr._eqIn){ last.connect(tr.eqHp); last=tr.eqHigh; }
@@ -2058,7 +2063,7 @@ function fxLoadTrack(tr,sv){ tr.eqOn=sv.eqOn!==false; tr.eqLc=sv.eqLc||0; tr.eqM
 function fxLoadGlobal(d){ fxHall=Object.assign({},FX_SEND.hall.pre[0][1],d.fxHall||{}); fxDelay=Object.assign({},FX_SEND.delay.pre[0][1],d.fxDelay||{});
   if(!FX_NV.some(n=>n[0]===fxDelay.div)) fxDelay.div='4'; masterFx=fxClean(d.masterFx);
   const sg=d.grps||(d.grpDrums?{drums:d.grpDrums}:{}); // vor v80 gab es nur die Drums-Gruppe (ohne Effekte)
-  GRP_KEYS.forEach(k=>{ const v=sg[k]||{}; grps[k]=Object.assign(grpNew(k),{vol:v.vol!=null?v.vol:1,muted:!!v.muted,fx:fxClean(v.fx)}); });
+  GRP_KEYS.forEach(k=>{ const v=sg[k]||{}; const G=grps[k]=Object.assign(grpNew(k),{vol:v.vol!=null?v.vol:1,muted:!!v.muted,fx:fxClean(v.fx)}); EQ_KEYS.forEach(q=>{ if(v[q]!=null) G[q]=v[q]; }); });
   if(audioCtx&&FXG.dlIn){ fxMasterRebuild(); fxHallUpdate(); fxDelayUpdate(); GRP_KEYS.forEach(grpFxRebuild); grpUpdate(); } if(typeof mixerRebuild==='function') mixerRebuild(); }
 function fxAllRebuild(){ if(!audioCtx) return; TRACKS.forEach(tr=>eqApply(tr,true)); fxMasterRebuild(); fxHallUpdate(); fxDelayUpdate(); GRP_KEYS.forEach(grpFxRebuild); grpUpdate(); }
 // Alle Synth-Funktionen verbinden sich hierüber statt direkt mit "master",
@@ -4823,10 +4828,9 @@ const EQF0=20,EQF1=20000, eqFx=f=>Math.log(f/EQF0)/Math.log(EQF1/EQF0), eqXf=x=>
 function eqMini(tr){ const N=40, fr=new Float32Array(N).map((_,i)=>eqXf(i/(N-1))), c=eqCurve(tr,fr);
   return '<svg class="fxmini" viewBox="0 0 64 22" aria-hidden="true"><line x1="0" y1="11" x2="64" y2="11"/><polyline points="'+[...c].map((d,i)=>(i/(N-1)*64).toFixed(1)+','+(11-Math.max(-12,Math.min(12,d))*.8).toFixed(1)).join(' ')+'"/></svg>'; }
 // Effektkette: Übersicht (an/aus, Preset). owner = Spur oder null (Master)
-function fxChainHTML(owner){ const L=owner?owner.fx||(owner.fx=[]):masterFx, master=!owner, types=Object.keys(FXDEF).filter(k=>(master||!FXDEF[k].master)&&!L.some(f=>f.t===k));
-  const grp=!master&&owner.grp;
+function fxChainHTML(owner){ const L=owner?owner.fx||(owner.fx=[]):masterFx, master=!owner, grp=!master&&owner.grp, types=Object.keys(FXDEF).filter(k=>(master||grp||!FXDEF[k].master)&&!L.some(f=>f.t===k));
   let h='<div class="fxchain'+(fxUI.order?' ord':'')+'"><div class="fxterm"><b>'+(master?'Mix':fxShort(owner))+'</b>'+(master?'alle Spuren':grp?GRP_DEF[owner.k].ids.length+' Spuren':'Klang')+'</div>';
-  if(!master&&!grp){ const on=owner.eqOn!==false; h+='<div class="fxslot fixed'+(on?'':' byp')+'"><button class="fxnode" data-eqpw aria-label="EQ '+(on?'ausschalten':'einschalten')+'"></button><div class="fxsr" data-eqopen role="button"><span class="n">EQ</span><span class="v">'+(on?eqMini(owner):'aus')+'</span>'+FXI.go+'<span class="fixl">fest</span></div></div>'; }
+  if(!master){ const on=owner.eqOn!==false; h+='<div class="fxslot fixed'+(on?'':' byp')+'"><button class="fxnode" data-eqpw aria-label="EQ '+(on?'ausschalten':'einschalten')+'"></button><div class="fxsr" data-eqopen role="button"><span class="n">EQ</span><span class="v">'+(on?eqMini(owner):'aus')+'</span>'+FXI.go+'<span class="fixl">fest</span></div></div>'; }
   L.forEach((f,i)=>{ const d=FXDEF[f.t], pn=fxPreName(d.pre,f.p);
     h+='<div class="fxslot'+(f.on?'':' byp')+'"><button class="fxnode" data-pw="'+f.id+'" aria-label="'+d.n+' '+(f.on?'ausschalten':'einschalten')+'"></button><div class="fxsr" data-sl="'+f.id+'" role="button"><span class="n">'+d.n+'</span><span class="v">'+(f.on?(pn!=='Eigene'?pn:d.sum(f.p)):'aus')+'</span>'+FXI.go+
        '<span class="mv"><button data-mv="'+f.id+'" data-d="-1" '+(i===0?'disabled':'')+' aria-label="Nach oben">'+FXI.up+'</button><button data-mv="'+f.id+'" data-d="1" '+(i===L.length-1?'disabled':'')+' aria-label="Nach unten">'+FXI.dn+'</button></span></div></div>'; });
@@ -4845,7 +4849,7 @@ function fxBindChain(root,owner){ const L=owner?owner.fx:masterFx, find=id=>L.fi
   const ad=root.querySelector('[data-add]'); if(ad) ad.onclick=()=>{ fxUI.pick=!fxUI.pick; renderKlang(); const pk=$id('klRows').querySelector('.fxpick.open'); if(pk) pk.scrollIntoView({block:'nearest',behavior:'smooth'}); };
   root.querySelectorAll('[data-new]').forEach(b=>b.onclick=()=>{ const f=fxNew(b.dataset.new); let at=L.findIndex(x=>FXDEF[x.t].rank>FXDEF[f.t].rank); if(at<0) at=L.length; L.splice(at,0,f); fxUI.pick=false; done(); });
   if(owner){ const ep=root.querySelector('[data-eqpw]'); if(ep) ep.onclick=e=>{ e.stopPropagation(); owner.eqOn=owner.eqOn===false; eqApply(owner); renderKlang(); };
-    const eo=root.querySelector('[data-eqopen]'); if(eo) eo.onclick=()=>{ if(!fxUI.order) klPush({v:'eq'}); }; } }
+    const eo=root.querySelector('[data-eqopen]'); if(eo) eo.onclick=()=>{ if(!fxUI.order) klPush({v:'eq',o:owner}); }; } }
 // Mix & FX = Kanal-Einstellungen
 function mixFxBody(tr,box){ const arp=tr.type==='arp';
   box.appendChild(soundRow('Laut',0,100,tr.vol*100,Math.round(tr._def.vol*100),v=>v,v=>setTrackVol(tr,v/100)));
@@ -4879,7 +4883,7 @@ function fxRenderView(box,v){ FXH={}; fxHid=0; const T=t=>$id('klT').textContent
     box.querySelector('[data-pwd]').onclick=()=>{ f.on=!f.on; fxRebuildOwner(o); renderKlang(); mixerRebuild(); };
     box.querySelector('[data-rm]').onclick=()=>{ const i=L.indexOf(f); L.splice(i,1); fxRebuildOwner(o); klView.pop(); renderKlang(); mixerRebuild(); hmToast(d.n+' entfernt',true,()=>{ L.splice(i,0,f); fxRebuildOwner(o); renderKlang(); mixerRebuild(); }); };
     fxHold(box.querySelector('[data-hold]'),st=>{ f._byp=st; fxRebuildOwner(o); }); return; }
-  if(v.v==='eq'){ T('EQ · '+fxShort(tr)); const on=tr.eqOn!==false;
+  if(v.v==='eq'){ const tr=v.o||klTr; T('EQ · '+fxShort(tr)); const on=tr.eqOn!==false;
     h+='<div class="fxdevtop"><button class="fxpwr'+(on?' on':'')+'" data-pwd aria-label="An/Aus">'+FXI.pw+'</button>'+fxLsel('Preset',EQ_PRE.map(x=>[x[0],x[0]]),fxPreName(EQ_PRE,tr),n=>{ Object.assign(tr,EQ_PRE.find(x=>x[0]===n)[1]); eqApply(tr); renderKlang(); },{custom:'Eigene'})+'</div>';
     h+='<div class="fxeqbox"><canvas id="fxEqCv" aria-label="EQ-Kurve: Punkte ziehen"></canvas></div><div class="fxcap"><span>Punkte ziehen</span><span>'+(isPlaying?'Spektrum läuft':'Play zeigt das Spektrum')+'</span></div>';
     EQ_PS.forEach(ps=>h+=fxRow(ps,ps.k==='eqMf'?(tr.eqMf!=null?tr.eqMf:EQ_MF_DEF):(tr[ps.k]||0),EQ_PRE[0][1][ps.k],x=>{ tr[ps.k]=x; eqApply(tr); fxSoft(); }));
@@ -4909,7 +4913,7 @@ function fxRenderView(box,v){ FXH={}; fxHid=0; const T=t=>$id('klT').textContent
 function fxSoft(){ const v=klView[klView.length-1]||{v:klMode}, x=$id('klRows').querySelector('.fxdevtop .x, .fxlsel .x');
   if(v.v==='send'){ const t=$id('fxTl'); if(t) t.innerHTML=fxTl(); const k=v.k||klArg; if(x) x.textContent=fxPreName(FX_SEND[k].pre,k==='hall'?fxHall:fxDelay); }
   if(v.v==='dev'){ const L=v.o?v.o.fx:masterFx, f=L.find(y=>y.id===v.id); if(f&&x) x.textContent=fxPreName(FXDEF[f.t].pre,f.p); }
-  if(v.v==='eq'&&x) x.textContent=fxPreName(EQ_PRE,klTr); }
+  if(v.v==='eq'&&x) x.textContent=fxPreName(EQ_PRE,v.o||klTr); }
 function fxTl(){ const p=fxDelay, T=FX_NV.find(n=>n[0]===p.div)[3], pos=s=>'calc(6px + (100% - 12px) * '+((s+.5)/16)+')';
   let h='<div class="g">'+'<i></i>'.repeat(16)+'</div><div class="m s" style="left:'+pos(0)+';height:30px"></div>';
   for(let k=1;k<40;k++){ const s=k*T; if(s>=16) break; const a=Math.pow(p.fb,k-1)*p.lv; if(a<.04) break; h+='<div class="m'+(p.md==='pp'&&k%2===0?' r':'')+'" style="left:'+pos(s)+';height:'+Math.max(4,30*a)+'px"></div>'; }
@@ -4920,13 +4924,13 @@ function eqDraw(tr){ eqStop(); const cv=$id('fxEqCv'); if(!cv) return; const dpr
   const g=cv.getContext('2d'); g.scale(dpr,dpr); const N=160, fr=new Float32Array(N).map((_,i)=>eqXf(i/(N-1))), R=15, pad=8;
   const X=f=>pad+eqFx(f)*(W-2*pad), Y=d=>H/2-d/R*(H/2-12);
   const hs=()=>[{k:'eqLc',x:X(Math.max(20,eqLcHz(tr.eqLc||0))),y:Y(0),l:'Tiefen-Filter',off:!(tr.eqLc>.005)},{k:'eqLowGain',x:X(250),y:Y(tr.eqLowGain||0),l:'Tiefen'},{k:'eqMidGain',x:X(eqMfHz(tr.eqMf)),y:Y(tr.eqMidGain||0),l:'Mitten'},{k:'eqHighGain',x:X(4000),y:Y(tr.eqHighGain||0),l:'Höhen'}];
-  let spec=tr.analyser?new Float32Array(tr.analyser.frequencyBinCount):null, drag=null;
+  const an=tr.grp?(FXG.g&&FXG.g[tr.k]&&FXG.g[tr.k].an):tr.analyser; let spec=an?new Float32Array(an.frequencyBinCount):null, drag=null;
   function frame(){ if(!$id('fxEqCv')) return; g.clearRect(0,0,W,H); const on=tr.eqOn!==false;
     g.strokeStyle='rgba(63,169,255,.08)'; g.lineWidth=1; g.font='13px VT323, monospace'; g.fillStyle='#2f6a92';
     [50,100,200,500,1000,2000,5000,10000].forEach(f=>{ const x=Math.round(X(f))+.5; g.beginPath(); g.moveTo(x,0); g.lineTo(x,H); g.stroke(); if(f===100||f===1000||f===10000) g.fillText(f>=1000?f/1000+'k':f,x+3,H-4); });
     [-12,-6,6,12].forEach(d=>{ const y=Math.round(Y(d))+.5; g.beginPath(); g.moveTo(0,y); g.lineTo(W,y); g.stroke(); });
     g.strokeStyle='rgba(143,212,255,.25)'; g.beginPath(); g.moveTo(0,Y(0)+.5); g.lineTo(W,Y(0)+.5); g.stroke();
-    if(spec&&isPlaying&&audioCtx){ tr.analyser.getFloatFrequencyData(spec); const sr=audioCtx.sampleRate, n=spec.length; g.beginPath(); g.moveTo(X(20),H);
+    if(spec&&isPlaying&&audioCtx){ an.getFloatFrequencyData(spec); const sr=audioCtx.sampleRate, n=spec.length; g.beginPath(); g.moveTo(X(20),H);
       for(let i=1;i<n;i++){ const f=i*sr/2/n; if(f<20||f>20000) continue; g.lineTo(X(f),H-Math.max(0,Math.min(1,(spec[i]+100)/80))*H*.85); }
       g.lineTo(X(20000),H); g.closePath(); g.fillStyle='rgba(63,169,255,.12)'; g.fill(); }
     const c=on?eqCurve(tr,fr):new Float32Array(N), path=()=>{ g.beginPath(); for(let i=0;i<N;i++){ const x=X(fr[i]), y=Y(Math.max(-R,Math.min(R,c[i]))); i?g.lineTo(x,y):g.moveTo(x,y); } };
@@ -6238,7 +6242,7 @@ function collectPatternData(name, id){
     })),
     harmony: JSON.parse(JSON.stringify(harmony)), // v62: Akkordfolge + Tonart (optional, ältere Pattern: Standard-Vorlage)
     acidAuto: { shape: autoShape, bars: autoBars, depth: autoDepth },
-    fxHall: Object.assign({},fxHall), fxDelay: Object.assign({},fxDelay), masterFx: fxSave(masterFx), grps: Object.fromEntries(GRP_KEYS.map(k=>[k,{vol:grps[k].vol,muted:grps[k].muted,fx:fxSave(grps[k].fx)}])),
+    fxHall: Object.assign({},fxHall), fxDelay: Object.assign({},fxDelay), masterFx: fxSave(masterFx), grps: Object.fromEntries(GRP_KEYS.map(k=>[k,Object.assign({vol:grps[k].vol,muted:grps[k].muted,fx:fxSave(grps[k].fx)},Object.fromEntries(EQ_KEYS.map(q=>[q,grps[k][q]])))])),
     fill: {
       lengthSteps: fillLengthSteps,
       everyN: fillEveryN,
