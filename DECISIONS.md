@@ -41,6 +41,9 @@ Zusammengeführt am 28.10.2026 aus DECISIONS-2/-3, ARCHITECTURE-11/-12 und ROADM
 - Höchstens 4 Insert-Effekte pro Kanal. Reihenfolge umsortierbar, mit sinnvoller Standardreihenfolge. (Die früher notierte Reihenfolge EQ → Kompressor → Filter → Distortion → Reverb → Delay war nur eine Aufzählung gewünschter Effekte, keine Festlegung.)
 - Delay: Notenwert inkl. punktiert/Triole, Mono/Ping-Pong, Feedback, Ton, Pegel, Presets.
 - Dieselben Geräte-Ansichten aus Klang-Sheet und Mixer erreichbar.
+- Mix & FX (Klang) = Kanal-Einstellungen im Mixer, gleicher Inhalt: Laut, Pan, Sends (über den Effekten), Effektkette, EQ und Groove eingeklappt. Dort nur Übersicht (an/aus, Preset), Details erst im Effekt- bzw. Send-Gerät – nach Gehör arbeiten.
+- Alle Regler behalten das Zurücksetzen (Wert ≠ Standard → Wert wird zum Knopf).
+- Mixer: alle Kanäle volle Höhe; sichtbar nur Fader, Meter, M/S und ein Knopf, der die Kanal-Einstellungen als Sheet öffnet. Gruppen, Hall/Delay und Master optisch leicht abgesetzt.
 - UX: Je mehr Regler, desto wichtiger ist Ordnung. Bereiche klar abgegrenzt, Details eingeklappt, selbsterklärend. Schriftgrößen wie in der App, nicht größer. Außergewöhnliches Design ist zentral für den Erfolg der App.
 
 **Technik**
