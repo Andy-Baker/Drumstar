@@ -155,6 +155,7 @@ svg{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-l
 .cb{display:none;padding:0 12px 12px;flex-direction:column;gap:4px}
 .card.open>.cb{display:flex}
 .tbtn{height:30px;padding:0 10px;border-radius:7px;border:1px solid rgba(63,169,255,.3);background:none;color:var(--blue-2);font:700 11px 'Rajdhani';letter-spacing:.06em;text-transform:uppercase;cursor:pointer;flex:none;display:inline-flex;align-items:center}
+.card.static>.ch{cursor:default}
 .tbtn.on{background:rgba(63,169,255,.18);border-color:var(--blue)}
 
 /* Signalkette – das tragende Element */
@@ -291,7 +292,7 @@ svg{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-l
 </style>
 </head>
 <body>
-<div id="mbar"><span>v6</span><span class="mg">Sends<button data-vs="A" class="on">A</button><button data-vs="B">B</button><button data-vs="C">C</button></span><span class="mg">Mixer<button data-vm="A">A</button><button data-vm="B" class="on">B</button><button data-vm="C">C</button></span><span class="sp"></span><button id="resetBtn">Reset</button></div>
+<div id="mbar"><span>v7</span><span class="mg">Sends A · Mixer A, Gruppe zu</span><span class="sp"></span><button id="resetBtn">Reset</button></div>
 
 <div id="stage">
  <div id="dev">
@@ -323,23 +324,17 @@ svg{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-l
  </div>
 
  <div id="side">
-  <h3>v6 – Varianten oben umschalten</h3>
-  <p><b>Sends</b> (Klang → Mix &amp; FX): Regler jetzt wie alle anderen (Wert, Zurücksetzen auf den Startwert), ohne Geräte-Infos rechts. Unterschied nur im Weg zum Hall-/Delay-Gerät:</p>
+  <h3>v7 – entschieden</h3>
   <ul>
-   <li><b>A</b> – Name antippen (Hall ›, Delay ›).</li>
-   <li><b>B</b> – eine leise Zeile „Einstellen: Hall › Delay ›“ unter den Reglern.</li>
-   <li><b>C</b> – gar nicht hier, nur im Mixer.</li>
+   <li><b>Sends A</b>: Regler wie alle anderen, Name antippen (Hall ›, Delay ›) öffnet das Gerät.</li>
+   <li><b>Mixer A</b>: Hall/Delay scrollen am Ende mit, nur Master fest. Drums-Gruppe startet zugeklappt („DRUMS ›“ klappt auf).</li>
+   <li><b>Sends und Effekte immer offen</b> (keine Klapp-Karten mehr, nur optische Bereiche). Groove bleibt einklappbar.</li>
+   <li>Jeder Effekt nur einmal pro Kanal. EQ fest als erstes Glied mit Kurve.</li>
   </ul>
-  <p><b>Mixer</b>: Fader lassen sich jetzt ziehen (Doppeltipp = Startwert). Drums laufen über eine echte Gruppe; „DRUMS ›“ klappt die Einzelkanäle auf.</p>
+  <h3>Bedienen</h3>
   <ul>
-   <li><b>A</b> – Hall/Delay scrollen am Ende mit, nur Master fest. Gruppe offen.</li>
-   <li><b>B</b> – Gruppe zu, Hall/Delay + Master fest rechts. Platz durch die Gruppe.</li>
-   <li><b>C</b> – nur Master fest; Hall/Delay-Pegel im Master-Sheet (Knopf unter MASTER).</li>
-  </ul>
-  <h3>Außerdem</h3>
-  <ul>
-   <li>Jeder Effekt nur einmal pro Kanal („hinzufügen“ bietet nur noch Fehlendes an).</li>
-   <li>Gruppen-Mischen als eigenes Issue #36.</li>
+   <li>Play → Klang (ACID) → Mix &amp; FX.</li>
+   <li>Mixer: Fader ziehen, Doppeltipp = Startwert, Knopf = Kanal-Einstellungen.</li>
   </ul>
  </div>
 </div>
@@ -434,7 +429,7 @@ function init(){ return {
  master:{fx:[fx('comp',0),fx('limit',0)]}, grp:{vol:.85}, mvol:.85,
  send:{hall:{...SEND.hall.pre[1][1]},delay:{...SEND.delay.pre[2][1]}} }; }
 let ST=init(), cur=3, bpm=120; ST.tr.forEach(t=>t.dsnd={...t.snd});
-let VAR={snd:'A',mix:'B'};
+let VAR={snd:'A',mix:'A'}; // entschieden 30.10.: Sends A, Mixer A mit zugeklappter Gruppe
 
 /* ---------- Audio ---------- */
 let ctx,mIn,mOut,nb,R={},AN={},GRP;
@@ -558,6 +553,7 @@ function slider(ps,val,fn,def,bare){ const d=def===undefined?ps.d:def, isd=d===u
 function lsel(k,opts,val,fn,o={}){ const c=opts.find(x=>x[0]===val), id=on(fn);
   return '<div class="lsel" data-ls="'+id+'"><button class="ar" data-step="-1" aria-label="'+k+' zurück">'+SV.l+'</button><button class="lb" data-op aria-haspopup="listbox"><span class="k">'+k+'</span><span class="x">'+(c?c[1]:o.custom||val)+(o.sub?' <em>'+o.sub+'</em>':'')+'</span>'+SV.ch+'</button><button class="ar" data-step="1" aria-label="'+k+' weiter">'+SV.r+'</button>'+
    '<div class="menu" role="listbox">'+opts.map(x=>'<button data-v="'+x[0]+'" class="'+(x[0]===val?'cur':'')+'"><span>'+x[1]+'</span>'+(x[2]?'<small>'+x[2]+'</small>':'')+'</button>').join('')+'</div></div>'; }
+const sec=(title,body,extra='')=>'<div class="card open static"><div class="ch">'+title+extra+'</div><div class="cb">'+body+'</div></div>';
 const card=(key,title,sum,body,extra='')=>'<div class="card'+(UI.cards[key]?' open':'')+'"><button class="ch" data-card="'+key+'" aria-expanded="'+!!UI.cards[key]+'">'+title+extra+'<span class="sum">'+(UI.cards[key]?'':sum)+'</span>'+SV.dn+'</button><div class="cb">'+body+'</div></div>';
 
 /* Effektkette: nur Übersicht. Antippen = Detail-Ansicht */
@@ -582,8 +578,8 @@ const ordBtn=o=>o.fx.length>1?'<span class="tbtn'+(UI.order?' on':'')+'" data-or
 function mixBody(t){ let h='';
   h+=slider({l:'Laut',a:0,b:1,s:.01,d:t.dvol,f:v=>Math.round(v*100)},t.vol,x=>{ t.vol=x; mix(t); renderMix(); });
   h+=slider({l:'Pan',a:-1,b:1,s:.01,d:0,f:v=>Math.abs(v)<.005?'C':(v<0?'L':'R')+Math.round(Math.abs(v)*100)},t.pan,x=>{ t.pan=x; });
-  h+=card('snd','Sends','Hall '+Math.round(t.snd.hall*100)+' · Delay '+Math.round(t.snd.delay*100),sendRows(t));
-  h+=card('fx','Effekte',sumFx(t.fx),rack(t,t.l),UI.cards.fx?'<span style="flex:1"></span>'+ordBtn(t):'');
+  h+=sec('Sends',sendRows(t));
+  h+=sec('Effekte',rack(t,t.l),'<span style="flex:1"></span>'+ordBtn(t));
   h+=card('grv','Groove','Feel 0 ms',slider({l:'Feel',a:-30,b:30,s:1,d:0,f:v=>Math.round(v)+' ms'},0,()=>{}));
   return h; }
 
@@ -717,8 +713,6 @@ document.addEventListener('click',e=>{ if(!e.target.closest('.lsel')) $$('.menu.
 
 function refresh(){ renderPat(); renderMix(); if(STK.length) render(); }
 $('#resetBtn').onclick=()=>{ if(P.on) $('#play').click(); if(ctx){ ctx.close(); ctx=null; } ST=init(); bpm=120; cur=3; $('#bpmV').textContent=120; close(); UI.cards={snd:true,fx:true,eq:false,grv:false,who:false}; refresh(); };
-$$('[data-vs]').forEach(b=>b.onclick=()=>{ VAR.snd=b.dataset.vs; $$('[data-vs]').forEach(x=>x.classList.toggle('on',x===b)); UI.cards.snd=true; refresh(); });
-$$('[data-vm]').forEach(b=>b.onclick=()=>{ VAR.mix=b.dataset.vm; $$('[data-vm]').forEach(x=>x.classList.toggle('on',x===b)); UI.grpOpen=VAR.mix!=='B'; refresh(); });
 refresh();
 const fit=()=>{ $('#stage').style.top=(innerWidth<800||innerHeight<780)?$('#mbar').offsetHeight+'px':''; }; fit(); addEventListener('resize',fit);
 </script>
