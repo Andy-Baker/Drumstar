@@ -36,6 +36,13 @@ Zusammengeführt am 28.10.2026 aus DECISIONS-2/-3, ARCHITECTURE-11/-12 und ROADM
   - Umgesetzt in v72 (Schritt 1): Ride als neue Drum-Zeile (Fläche/Bell), Hi-Hat mit Zu/Locker/Pedal. Spielweise liegt im sonst leeren `tr.notes[s]` der Drum-Spuren (zieht überall mit). Offene Hi-Hat bleibt vorerst eigene Zeile (Synth-Kits, Fill, Mixer, eigene Sets hängen an `oh`). Noch offen (Schritt 2): Issue #2.
   - „Locker“ = halb offen. Studio hat keine halb offene Aufnahme → offene Hi-Hat abgedämpft.
 
+**Effekte** (30.10., Mockup `docs/mockups/effekte-mockup.html`, Issue #16/#35)
+- Drei Ebenen: Insert-Effekte pro Spur, gemeinsame Sends (nur Hall + Delay, vorerst keine weiteren), Master-Effekte in der Master-Spalte des Mixers.
+- Höchstens 4 Insert-Effekte pro Kanal. Reihenfolge umsortierbar, mit sinnvoller Standardreihenfolge. (Die früher notierte Reihenfolge EQ → Kompressor → Filter → Distortion → Reverb → Delay war nur eine Aufzählung gewünschter Effekte, keine Festlegung.)
+- Delay: Notenwert inkl. punktiert/Triole, Mono/Ping-Pong, Feedback, Ton, Pegel, Presets.
+- Dieselben Geräte-Ansichten aus Klang-Sheet und Mixer erreichbar.
+- UX: Je mehr Regler, desto wichtiger ist Ordnung. Bereiche klar abgegrenzt, Details eingeklappt, selbsterklärend. Schriftgrößen wie in der App, nicht größer. Außergewöhnliches Design ist zentral für den Erfolg der App.
+
 **Technik**
 - Schriften lokal (`fonts/`, `fonts.css`), kein Google.
 - Service Worker: stale-while-revalidate für App-Dateien, Cache zuerst für Schriften/Bilder; `CACHE` trotzdem bei jedem Deploy erhöhen.
