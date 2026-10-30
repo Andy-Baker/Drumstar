@@ -45,6 +45,7 @@ Zusammengeführt am 28.10.2026 aus DECISIONS-2/-3, ARCHITECTURE-11/-12 und ROADM
 - EQ (30.10.): eigenes Gerät mit Kurve, fest als erstes Glied jeder Spur-Kette (kein Effekt-Platz). Bänder Tiefen-Filter, Tiefen, Mitten (Lage wählbar), Höhen; Punkte auf der Kurve ziehen oder Regler; Spektrum beim Abspielen; Mini-Kurve in der Übersicht. Die EQ-Knöpfe im Mixer-Kanal entfallen.
 - Regler in Effekt-/Send-Geräten ohne Zahlenwerte (nach Gehör); Wert nur kurz beim Ziehen im Label, Zurücksetzen als Symbol-Knopf nur bei Abweichung.
 - Entschieden 30.10. (Mockup v7): Sends-Regler wie alle anderen Regler; Name antippen öffnet Hall-/Delay-Gerät. Sends und Effekte im Klang-Sheet immer offen (keine Klapp-Karten). Jeder Effekt nur einmal pro Kanal. Mixer: Hall/Delay scrollen am Ende mit, nur Master fest; Drums als Gruppe, startet zugeklappt (Issue #36).
+- Umgesetzt in v79 (30.10.): alles oben außer Effekten im Sample-Editor. Sends zapfen jetzt nach EQ und Effekten ab (vorher vor dem EQ) – EQ und Effekte wirken also auch auf Hall/Delay.
 - Alle Regler behalten das Zurücksetzen (Wert ≠ Standard → Wert wird zum Knopf).
 - Mixer: alle Kanäle volle Höhe; sichtbar nur Fader, Meter, M/S und ein Knopf, der die Kanal-Einstellungen als Sheet öffnet. Gruppen, Hall/Delay und Master optisch leicht abgesetzt.
 - UX: Je mehr Regler, desto wichtiger ist Ordnung. Bereiche klar abgegrenzt, Details eingeklappt, selbsterklärend. Schriftgrößen wie in der App, nicht größer. Außergewöhnliches Design ist zentral für den Erfolg der App.

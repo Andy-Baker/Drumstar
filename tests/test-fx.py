@@ -1,0 +1,137 @@
+# Drumstar-Test (Playwright, headless): Effekte v79 – Spur-Kette (EQ + Inserts), Sends Hall/Delay, Master, Drums-Gruppe,
+# Speichern/Laden, Klang → Mix & FX, Geräte-Ansichten, Mixer. Klang selbst ist headless nicht beurteilbar.
+# Start über tests/run.py. Direkt: python3 test-fx.py URL AUSGABEORDNER
+import asyncio, sys
+from playwright.async_api import async_playwright
+URL=sys.argv[1]; OUT=sys.argv[2]
+res=[]
+def ok(n,c,extra=''): res.append(('PASS ' if c else 'FAIL ')+n+(' '+str(extra) if extra else '')); print(res[-1],flush=True)
+# eine Spur allein mit einem Schlag auf Step 0 rendern; liefert Pegel links/rechts in Zeitfenstern
+RENDER="""async(o)=>{ const tr=__T.find(t=>t.id===o.id); __T.forEach(t=>t.solo=(t===tr)); tr.steps=tr.steps.map((_,i)=>i===0?1:0); tr.feel=0;
+  tr.reverbAmount=o.rev||0; tr.delaySend=o.dly||0; const b=await __ev('renderPatternToWav')(), L=b.getChannelData(0), R=b.getChannelData(1), sr=b.sampleRate;
+  const win=(ch,a,z)=>{ let m=0; for(let i=Math.floor(a*sr);i<Math.min(ch.length,Math.floor(z*sr));i++) m=Math.max(m,Math.abs(ch[i])); return m; };
+  const rms=ch=>{ let s=0; for(let i=0;i<ch.length;i++) s+=ch[i]*ch[i]; return Math.sqrt(s/ch.length); };
+  return {rmsL:rms(L), rmsR:rms(R), w:(o.wins||[]).map(([a,z])=>[win(L,a,z),win(R,a,z)])}; }"""
+async def main():
+  async with async_playwright() as p:
+    b=await p.chromium.launch(args=['--autoplay-policy=no-user-gesture-required'])
+    pg=await b.new_page(viewport={'width':390,'height':844}); errs=[]
+    pg.on('pageerror',lambda e:errs.append(str(e)[:300])); pg.on('console',lambda m: m.type=='error' and errs.append(m.text[:200]))
+    await pg.goto(URL,wait_until='domcontentloaded'); await pg.wait_for_timeout(1500)
+    ev=lambda s: pg.evaluate("s=>__ev(s)",s)
+    s=lambda n: pg.screenshot(path=f'{OUT}/{n}.png')
+    await pg.evaluate("Promise.resolve(__ev('initAudio')())"); await pg.wait_for_timeout(300)
+    # --- Standard = bisheriger Klang
+    d=await ev("({div:fxDelay.div,md:fxDelay.md,fb:fxDelay.fb,lv:fxDelay.lv,sz:fxHall.sz,to:fxHall.to,nfx:masterFx.length})")
+    ok('Delay-Standard wie bisher (1/4, mono, 34 %, 85 %)', d['div']=='4' and d['md']=='mono' and abs(d['fb']-.34)<1e-6 and abs(d['lv']-.85)<1e-6, d)
+    ok('Hall-Standard wie bisher (2,4 s, offen)', abs(d['sz']-2.4)<1e-6 and d['to']==1, d)
+    ok('Keine Master-Effekte als Standard', d['nfx']==0)
+    ok('EQ neutral = nicht im Signalweg', await ev("__T.every(t=>t._eqIn===false)"))
+    await ev("(()=>{const t=__T.find(x=>x.id==='arp'); t.eqMidGain=6; eqApply(t);})()")
+    ok('EQ verändert = im Signalweg', await ev("__T.find(x=>x.id==='arp')._eqIn===true"))
+    await ev("(()=>{const t=__T.find(x=>x.id==='arp'); t.eqMidGain=0; eqApply(t);})()")
+    ok('EQ wieder neutral = raus', await ev("__T.find(x=>x.id==='arp')._eqIn===false"))
+    # --- Delay-Zeit nach Notenwert und Tempo
+    await ev("(()=>{ setBpm(120); fxDelay.div='8d'; fxDelayUpdate(); })()"); await pg.wait_for_timeout(400)
+    t=await ev("FXG.dl[0].delayTime.value"); ok('Delay 1/8· bei 120 BPM = 375 ms', abs(t-0.375)<0.01, round(t,4))
+    await ev("setBpm(100)"); await pg.wait_for_timeout(400)
+    t=await ev("FXG.dl[0].delayTime.value"); ok('Delay folgt dem Tempo (100 BPM = 450 ms)', abs(t-0.45)<0.01, round(t,4))
+    # --- Export: Ping-Pong verteilt Echos links/rechts
+    await ev("(()=>{ setBpm(120); Object.assign(fxDelay,{div:'8',md:'pp',fb:.6,to:1,lv:1}); fxDelayUpdate(); })()")
+    st=0.125  # 1/8 bei 120 BPM = 250 ms
+    w=[[0.05+st*2*k-0.02, 0.05+st*2*k+0.06] for k in range(1,4)]  # Schlag bei 0,05 s (nach dem Vorlauf), Echo k bei +k·250 ms
+    r=await pg.evaluate(RENDER,{'id':'cb','dly':1,'wins':w})
+    e1,e2,e3=r['w']
+    ok('Ping-Pong: 1. Echo links', e1[0]>e1[1]*3, [round(x,4) for x in e1])
+    ok('Ping-Pong: 2. Echo rechts', e2[1]>e2[0]*3, [round(x,4) for x in e2])
+    ok('Ping-Pong: 3. Echo wieder links', e3[0]>e3[1]*3, [round(x,4) for x in e3])
+    await ev("(()=>{ Object.assign(fxDelay,FX_SEND.delay.pre[0][1]); fxDelayUpdate(); })()")
+    # --- Insert: Verzerrung hörbar im Export, aus = wie vorher
+    await ev("(()=>{ const t=__T.find(x=>x.id==='sd'); t.fx=[]; trFxRebuild(t); })()")
+    a=await pg.evaluate(RENDER,{'id':'sd'})
+    await ev("(()=>{ const t=__T.find(x=>x.id==='sd'); t.fx=[fxNew('dist',2)]; trFxRebuild(t); })()")
+    b2=await pg.evaluate(RENDER,{'id':'sd'})
+    ok('Verzerrung verändert den Export', abs(b2['rmsL']-a['rmsL'])/max(a['rmsL'],1e-9)>0.1, [round(a['rmsL'],4),round(b2['rmsL'],4)])
+    await ev("(()=>{ const t=__T.find(x=>x.id==='sd'); t.fx[0].on=false; trFxRebuild(t); })()")
+    c=await pg.evaluate(RENDER,{'id':'sd'})
+    ok('Effekt aus = nicht im Signalweg (Export wie ohne)', abs(c['rmsL']-a['rmsL'])/max(a['rmsL'],1e-9)<0.05, [round(a['rmsL'],4),round(c['rmsL'],4)])
+    # --- Drums-Gruppe: stumm schaltet alle Drum-Spuren, nicht Perc
+    await ev("(()=>{ grpDrums.muted=true; })()")
+    g1=await pg.evaluate(RENDER,{'id':'bd'}); g2=await pg.evaluate(RENDER,{'id':'cb'})
+    ok('Gruppe stumm: BD still', g1['rmsL']<1e-5, g1['rmsL']); ok('Gruppe stumm: Perc (CB) hörbar', g2['rmsL']>1e-4, g2['rmsL'])
+    await ev("(()=>{ grpDrums.muted=false; grpUpdate(); })()")
+    # --- Speichern/Laden
+    await ev("(()=>{ const t=__T.find(x=>x.id==='arp'); t.fx=[fxNew('filter',1),fxNew('comp',0)]; t.fx[1].on=false; t.eqLc=.3; t.eqMf=.6; t.eqHighGain=-4; masterFx=[fxNew('limit',1)]; Object.assign(fxDelay,{div:'4t',md:'pp',fb:.5}); fxHall.sz=1.2; grpDrums.vol=.7; })()")
+    dat=await ev("JSON.parse(JSON.stringify(collectPatternData('fx-test',null)))")
+    ok('schemaVersion 8', dat['schemaVersion']==8)
+    await ev("(()=>{ const t=__T.find(x=>x.id==='arp'); t.fx=[]; t.eqLc=0; t.eqHighGain=0; masterFx=[]; Object.assign(fxDelay,FX_SEND.delay.pre[0][1]); fxHall.sz=2.4; grpDrums.vol=1; })()")
+    await pg.evaluate("d=>__ev('applyPatternData')(d)",dat); await pg.wait_for_timeout(200)
+    r=await ev("(()=>{ const t=__T.find(x=>x.id==='arp'); return {fx:t.fx.map(f=>f.t+(f.on?'':'-')), lc:t.eqLc, mf:t.eqMf, hi:t.eqHighGain, m:masterFx.map(f=>f.t), d:fxDelay.div+fxDelay.md, h:fxHall.sz, g:grpDrums.vol}; })()")
+    ok('Laden: Effekte der Spur samt an/aus', r['fx']==['filter','comp-'], r['fx'])
+    ok('Laden: EQ-Werte', abs(r['lc']-.3)<1e-6 and abs(r['mf']-.6)<1e-6 and r['hi']==-4, r)
+    ok('Laden: Master, Delay, Hall, Gruppe', r['m']==['limit'] and r['d']=='4tpp' and abs(r['h']-1.2)<1e-6 and abs(r['g']-.7)<1e-6, r)
+    old=await ev("(()=>{ const d=JSON.parse(JSON.stringify(collectPatternData('alt',null))); delete d.fxDelay; delete d.fxHall; delete d.masterFx; delete d.grpDrums; d.tracks.forEach(t=>{ delete t.fx; delete t.eqLc; delete t.eqMf; delete t.eqOn; }); d.schemaVersion=7; return d; })()")
+    await pg.evaluate("d=>__ev('applyPatternData')(d)",old); await pg.wait_for_timeout(200)
+    r=await ev("({fx:__T.every(t=>!t.fx.length), d:fxDelay.div+fxDelay.md+fxDelay.fb, m:masterFx.length})")
+    ok('Altes Pattern (v7): neutral, Delay wie bisher', r['fx'] and r['d']=='4mono0.34' and r['m']==0, r)
+    # --- Klang → Mix & FX
+    await pg.click('#grpBtn'); await pg.click('#grpMenu button:has-text("ACID")'); await pg.wait_for_timeout(200)
+    await pg.click('#tbSound'); await pg.wait_for_timeout(300); await pg.click('#klTabs [data-t=fx]'); await pg.wait_for_timeout(300)
+    secs=await pg.evaluate("[...document.querySelectorAll('#klRows .fxsh span')].map(e=>e.textContent)")
+    ok('Mix & FX: Sends über Effekten', secs[:2]==['Sends','Effekte'], secs)
+    ok('Mix & FX: Laut, Pan, Sends mit Zurücksetzen-Wert', await pg.evaluate("[...document.querySelectorAll('#klRows > .srow label')].map(l=>l.textContent).join()==='Laut,Pan' && document.querySelectorAll('#klRows .fxsb .srow b').length===2"))
+    ok('EQ fest als erstes Glied', await pg.evaluate("!!document.querySelector('#klRows .fxslot.fixed [data-eqopen]')"))
+    for k in ['dist','filter','comp']:
+        await pg.click('#klRows [data-add]'); await pg.click(f'#klRows [data-new="{k}"]'); await pg.wait_for_timeout(150)
+    ok('Drei Effekte, Standard-Reihenfolge', await ev("__T.find(x=>x.id==='arp').fx.map(f=>f.t).join()")=='dist,filter,comp')
+    ok('Jeder Effekt nur einmal: kein Hinzufügen mehr (Limiter nur Master)', await pg.evaluate("!document.querySelector('#klRows [data-add]')"))
+    await s('fx_01_mixfx')
+    await pg.click('#klRows [data-ord]'); await pg.wait_for_timeout(100)
+    await pg.click('#klRows [data-mv][data-d="1"] >> nth=0'); await pg.wait_for_timeout(400)
+    ok('Ordnen: Verzerrung nach unten', await ev("__T.find(x=>x.id==='arp').fx.map(f=>f.t).join()")=='filter,dist,comp')
+    ok('Ordnen: Signalweg folgt', await ev("(()=>{const t=__T.find(x=>x.id==='arp'); return t._fxN.map(n=>t.fx.find(f=>f.id===n.id).t).join();})()")=='filter,dist,comp')
+    await pg.click('#klRows [data-ord]'); await pg.wait_for_timeout(100)
+    await pg.click('#klRows [data-sl] >> nth=1'); await pg.wait_for_timeout(250)
+    ok('Gerät: Zurück-Pfeil, Titel', await pg.evaluate("!document.getElementById('klBack').hidden && document.getElementById('klT').textContent.startsWith('Verzerrung')"))
+    ok('Gerät: Regler ohne Zahlen', await pg.evaluate("document.querySelectorAll('#klRows .fxbare').length===3 && !document.querySelector('#klRows .fxbare b')"))
+    await pg.evaluate("(()=>{const i=document.querySelector('#klRows .fxbare input'); i.value=.9; i.dispatchEvent(new Event('input'));})()")
+    ok('Gerät: Zurücksetzen erscheint bei Abweichung', await pg.evaluate("!document.querySelector('#klRows .fxrz').classList.contains('def')"))
+    ok('Gerät: Preset wird „Eigene“', (await pg.text_content('#klRows .fxdevtop .x')).strip()=='Eigene')
+    await s('fx_02_device'); await pg.click('#klBack'); await pg.wait_for_timeout(200)
+    await pg.click('#klRows [data-eqopen]'); await pg.wait_for_timeout(300)
+    bx=await pg.locator('#fxEqCv').bounding_box()
+    import math; fx=8+math.log(1000/20)/math.log(1000)*(bx['width']-16)  # Mitten-Punkt (1 kHz)
+    await pg.mouse.move(bx['x']+fx,bx['y']+bx['height']/2); await pg.mouse.down(); await pg.mouse.move(bx['x']+fx+40,bx['y']+bx['height']*.25,steps=6); await pg.mouse.up()
+    r=await ev("(()=>{const t=__T.find(x=>x.id==='arp'); return [t.eqMidGain,t.eqMf,t._eqIn];})()")
+    ok('EQ-Kurve: Mitten-Punkt ziehen hebt an und verschiebt', r[0]>3 and r[1]>0.5 and r[2], r)
+    await s('fx_03_eq'); await pg.click('#klBack'); await pg.wait_for_timeout(200)
+    await pg.click('#klRows label.fxlk >> nth=1'); await pg.wait_for_timeout(300)
+    ok('Delay-Gerät über den Namen', (await pg.text_content('#klT')).startswith('Delay'))
+    await pg.click('#klRows .fxlsel >> nth=1 >> [data-op]'); await pg.click('#klRows .fxlsel .menu.open [data-v="8d"]'); await pg.wait_for_timeout(200)
+    ok('Notenwert per LCD-Liste', await ev("fxDelay.div")=='8d')
+    ok('Zeitleiste zeigt Echos', await pg.evaluate("document.querySelectorAll('#fxTl .m').length")>=3)
+    await s('fx_04_delay'); await pg.click('#klX'); await pg.wait_for_timeout(300)
+    # --- Mixer
+    await pg.click('#mixerToggleBtn'); await pg.wait_for_timeout(600)
+    r=await pg.evaluate("(()=>{const ss=[...document.querySelectorAll('#mixerChannels .mix-strip, #mixerMaster .mix-strip')]; return {n:ss.map(s=>s.querySelector('.mix-name,.mix-grp').textContent.trim()), h:[...new Set(ss.map(s=>Math.round(s.getBoundingClientRect().height)))]};})()")
+    ok('Mixer: Drums-Gruppe zugeklappt (kein BD)', r['n'][0].startswith('DRUMS') and 'BD' not in r['n'], r['n'])
+    ok('Mixer: Hall/Delay am Ende, Master fest', r['n'][-3:]==['HALL','DELAY','MASTER'], r['n'][-3:])
+    ok('Mixer: alle Kanäle gleich hoch', len(r['h'])==1, r['h'])
+    ok('Mixer: keine Drehregler mehr im Kanal', await pg.evaluate("!document.querySelector('#mixerChannels .knob-dial')"))
+    ok('Mixer: Effekt-Punkte am ACID-Knopf', await pg.evaluate("[...document.querySelectorAll('#mixerChannels .mix-strip')].find(s=>s.querySelector('.mix-name')&&s.querySelector('.mix-name').textContent==='ARP').querySelectorAll('.mx-dots i.on').length")==3)
+    await s('fx_05_mixer')
+    await pg.click('#mixerChannels .mix-grp'); await pg.wait_for_timeout(300)
+    ok('Mixer: Gruppe aufklappen zeigt BD', await pg.evaluate("[...document.querySelectorAll('#mixerChannels .mix-name')].some(e=>e.textContent==='BD')"))
+    await pg.click('#mixerChannels .mix-grp'); await pg.wait_for_timeout(300)
+    await pg.evaluate("[...document.querySelectorAll('#mixerChannels .mix-strip')].find(s=>s.querySelector('.mix-name')&&s.querySelector('.mix-name').textContent==='ARP').querySelector('.mix-set').click()"); await pg.wait_for_timeout(300)
+    ok('Mixer-Knopf öffnet Kanal-Einstellungen (= Mix & FX)', (await pg.text_content('#klT')).startswith('Kanal') and 'Sends' in (await pg.evaluate("[...document.querySelectorAll('#klRows .fxsh span')].map(e=>e.textContent).join()")))
+    await pg.click('#klX'); await pg.wait_for_timeout(300)
+    await pg.click('#mixerMaster .mix-set'); await pg.wait_for_timeout(300)
+    await pg.click('#klRows [data-add]'); await pg.click('#klRows [data-new="limit"]'); await pg.wait_for_timeout(200)
+    ok('Master-Effekt Limiter im Signalweg', await ev("FXG.mfxN.length")==1)
+    await s('fx_06_master'); await pg.click('#klX')
+    ok('Keine JS-Fehler', not errs, errs[:3])
+    await b.close()
+  fails=[r for r in res if r.startswith('FAIL')]
+  print(f'\n{len(res)-len(fails)}/{len(res)} bestanden'); sys.exit(1 if fails else 0)
+asyncio.run(main())

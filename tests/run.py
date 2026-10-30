@@ -2,7 +2,7 @@
 
 Aufruf aus dem Repo-Ordner:
     python3 tests/run.py            # alle Tests
-    python3 tests/run.py editor ui  # nur ausgewählte (audio | ui | editor | walkthrough)
+    python3 tests/run.py editor ui  # nur ausgewählte (audio | ui | editor | fx | walkthrough)
 
 Voraussetzung (einmalig):  pip install playwright && python3 -m playwright install chromium
 
@@ -23,7 +23,7 @@ def free_port():
     s = socket.socket(); s.bind(('127.0.0.1', 0)); p = s.getsockname()[1]; s.close(); return p
 
 def main():
-    pick = sys.argv[1:] or ['audio', 'ui', 'editor', 'walkthrough']
+    pick = sys.argv[1:] or ['audio', 'ui', 'editor', 'fx', 'walkthrough']
     tmp = pathlib.Path(tempfile.mkdtemp(prefix='drumstar-test-'))
     site = tmp / 'site'
     shutil.copytree(ROOT, site, ignore=shutil.ignore_patterns('.git', 'tests'))
@@ -42,6 +42,7 @@ def main():
             script = str(TESTS / f'test-{name}.py')
             args = {'ui': [script, str(out), url],
                     'editor': [script, url, str(out)],
+                    'fx': [script, url, str(out)],
                     'walkthrough': [script, 'X', url, str(out)]}.get(name, [script, url])
             print(f'\n=== {name} ===', flush=True)
             results[name] = subprocess.call([sys.executable] + args) == 0

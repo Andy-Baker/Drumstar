@@ -125,3 +125,6 @@ window.__audio.smpTryLoad=kid=>{ smpFree([]); smpLoad(kid).catch(()=>{}); };
 window.__audio.smpReset=()=>{ smpFree([]); smpChipIdle(); };
 // Sample-Bibliothek (#6)
 window.__lib={ save:e=>saveSampleLibraryEntry(e), list:()=>listSampleLibrary().then(a=>a.map(x=>x.id)) };
+
+// Effekte (v79): Zugriff auf interne Zustände für tests/test-fx.py
+window.__ev=s=>eval(s);
