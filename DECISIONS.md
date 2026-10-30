@@ -42,6 +42,8 @@ Zusammengeführt am 28.10.2026 aus DECISIONS-2/-3, ARCHITECTURE-11/-12 und ROADM
 - Delay: Notenwert inkl. punktiert/Triole, Mono/Ping-Pong, Feedback, Ton, Pegel, Presets.
 - Dieselben Geräte-Ansichten aus Klang-Sheet und Mixer erreichbar.
 - Mix & FX (Klang) = Kanal-Einstellungen im Mixer, gleicher Inhalt: Laut, Pan, Sends (über den Effekten), Effektkette, EQ und Groove eingeklappt. Dort nur Übersicht (an/aus, Preset), Details erst im Effekt- bzw. Send-Gerät – nach Gehör arbeiten.
+- EQ (30.10.): eigenes Gerät mit Kurve, fest als erstes Glied jeder Spur-Kette (kein Effekt-Platz). Bänder Tiefen-Filter, Tiefen, Mitten (Lage wählbar), Höhen; Punkte auf der Kurve ziehen oder Regler; Spektrum beim Abspielen; Mini-Kurve in der Übersicht. Die EQ-Knöpfe im Mixer-Kanal entfallen.
+- Regler in Effekt-/Send-Geräten ohne Zahlenwerte (nach Gehör); Wert nur kurz beim Ziehen im Label, Zurücksetzen als Symbol-Knopf nur bei Abweichung.
 - Alle Regler behalten das Zurücksetzen (Wert ≠ Standard → Wert wird zum Knopf).
 - Mixer: alle Kanäle volle Höhe; sichtbar nur Fader, Meter, M/S und ein Knopf, der die Kanal-Einstellungen als Sheet öffnet. Gruppen, Hall/Delay und Master optisch leicht abgesetzt.
 - UX: Je mehr Regler, desto wichtiger ist Ordnung. Bereiche klar abgegrenzt, Details eingeklappt, selbsterklärend. Schriftgrößen wie in der App, nicht größer. Außergewöhnliches Design ist zentral für den Erfolg der App.
@@ -70,6 +72,7 @@ Zusammengeführt am 28.10.2026 aus DECISIONS-2/-3, ARCHITECTURE-11/-12 und ROADM
 - CSS: Flex-Items in scrollenden Containern mit `min-height` brauchen `flex-shrink:0`; gleiche Spezifität → spätere Regel gewinnt; Fixed-Elemente in einem Element mit `z-index` kommen nicht über Geschwister außerhalb (Sheets deshalb außerhalb von `#panelContent`).
 - JS: Funktionsdeklarationen sind hoisted, `const`-Hilfen nicht.
 - Native `<select>` mit `<optgroup>` funktioniert auf Android.
+- Mockups, die dem Nutzer als einzelne Datei geschickt werden, brauchen eingebettete Schriften (sonst Ersatzschrift in der Handy-Vorschau).
 - Manifest-Änderungen (z. B. `orientation`) greifen in der installierten App oft erst nach Neu-Hinzufügen zum Homescreen.
 
 ## Bekannte Einschränkungen
