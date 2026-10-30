@@ -12,6 +12,15 @@ async def main():
     await pg.goto(URL,wait_until='domcontentloaded'); await pg.wait_for_timeout(1800)
     await pg.click('#lcdPatternBtn'); await pg.wait_for_timeout(400)
     rows=await pg.evaluate("document.querySelectorAll('#patternList .pattern-row').length"); ok('Beats-Liste da', rows>0, rows)
+    # Standard-Beats (default-beats.json): frisches Profil bekommt alle, jeder lädt fehlerfrei
+    nDef=await pg.evaluate("fetch('./default-beats.json').then(r=>r.json()).then(d=>d.patterns.length)")
+    ok('Standard-Beats vollständig importiert', rows==nDef, (rows,nDef))
+    e0=len(errs)
+    for i in range(1,rows+1):
+      if i>1: await pg.click('#lcdPatternBtn'); await pg.wait_for_timeout(150)
+      await pg.click(f'#patternList .pattern-row:nth-child({i}) .prow-top .pload'); await pg.wait_for_timeout(150)
+    ok('Alle Standard-Beats laden ohne Fehler', len(errs)==e0, errs[e0:])
+    await pg.click('#lcdPatternBtn'); await pg.wait_for_timeout(400)
     h=await pg.evaluate("document.querySelector('#patternList .pattern-row').offsetHeight"); ok('Zeilenhöhe ≥ 56', h>=56, h)
     await pg.click('#patternList .pattern-row:nth-child(2) .prow-top .prow-btn:last-child'); await pg.wait_for_timeout(200)
     ok('⋯ klappt Aktionen auf', await pg.evaluate("document.querySelectorAll('#patternList .pattern-row.open .prow-more .act').length")==5)
