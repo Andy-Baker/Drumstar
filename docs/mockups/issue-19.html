@@ -6,182 +6,97 @@
 <title>Schriftgrößen Mockup (#19)</title>
 <link rel="stylesheet" href="../../fonts.css">
 <style>
-/* Mockup zu Issue #19: Schrift unter 11 px anheben. Umschalter oben: Heute / A / B.
-   A = nur Schrift auf mind. 11 px (Layout bleibt, Texte kürzen sich ggf. mit …)
-   B = mind. 11 px + Platz dort angepasst, wo es sonst eng wird. */
-:root{color-scheme:dark;--bg:#050507;--chassis:#0e0e13;--chassis-2:#08080b;--panel:#16161c;--inset:#0a0a0d;--blue:#3fa9ff;--blue-2:#8fd4ff;--white:#f4f5f7;--dim:#7d818c;--metal:#c7cbd4;--lcd-fg:#5fc2ff;--line:rgba(255,255,255,.06);
-  /* Größen-Stufen (werden je Variante überschrieben) */
-  --f-tab:8px;--f-knl:8px;--f-knv:9px;--f-mxn:8px;--f-mxs:9px;--f-mxd:8px;--f-pdl:10px;--f-pds:8px;--f-date:8px;--f-hint:9px;--f-kd:9px;--f-sec:10px;--f-num:10px;
-  --mx-w:62px;--kn:34px;}
-body.vA,body.vB{--f-tab:11px;--f-knl:11px;--f-knv:11px;--f-mxn:11px;--f-mxs:11px;--f-mxd:11px;--f-pdl:11px;--f-pds:11px;--f-date:11px;--f-hint:11px;--f-kd:11px;--f-sec:11px;--f-num:11px}
-body.vB{--mx-w:74px;--kn:38px}
+/* Mockup zu Issue #19: Die echte App (../../index.html) läuft unverändert im Rahmen.
+   Der Umschalter hebt dort zur Laufzeit jede Schrift unter 11 bzw. 12 px auf diese Größe an.
+   Nichts ist nachgebaut – was man sieht, ist 1:1 die aktuelle App. */
+:root{color-scheme:dark;--bg:#050507;--blue:#3fa9ff;--blue-2:#8fd4ff;--white:#f4f5f7;--dim:#7d818c;--metal:#c7cbd4}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;margin:0}
-body{background:var(--bg);color:var(--white);font-family:'Rajdhani',system-ui,sans-serif;user-select:none;-webkit-user-select:none}
-button{font-family:inherit;color:inherit;margin:0}
-svg.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+body{background:var(--bg);color:var(--white);font-family:'Rajdhani',system-ui,sans-serif}
 #mbar{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:calc(6px + env(safe-area-inset-top,0px)) 10px 6px;background:repeating-linear-gradient(135deg,#0b1622 0 8px,#0d1a28 8px 16px);border-bottom:1px dashed rgba(63,169,255,.45);font:700 11px 'JetBrains Mono',monospace;color:var(--blue-2)}
 #mbar .sp{flex:1}
 #mbar button{height:28px;padding:0 10px;border-radius:6px;border:1px solid rgba(63,169,255,.45);background:rgba(63,169,255,.12);font:700 11px 'JetBrains Mono',monospace;color:var(--blue-2);cursor:pointer}
 #mbar button.on{background:var(--blue);color:#042c53}
-#mbar label{display:flex;align-items:center;gap:4px;cursor:pointer}
-#stage{position:fixed;top:calc(46px + env(safe-area-inset-top,0px));left:0;right:0;bottom:0;display:flex;align-items:flex-start;justify-content:center;gap:32px;overflow:auto;padding:12px 0}
-#dev{position:relative;width:100%;max-width:390px;background:linear-gradient(180deg,var(--chassis),var(--chassis-2));padding:10px 10px 0;min-height:100%}
-#side{display:none;width:360px;font-size:14px;color:var(--metal);line-height:1.45}
-@media (min-width:780px){#dev{border-radius:30px;border:8px solid #1a1e26;box-shadow:0 30px 80px rgba(0,0,0,.75);min-height:0} #side{display:block}}
+#mbar label{display:flex;align-items:center;gap:5px;cursor:pointer}
+#stage{position:fixed;top:calc(42px + env(safe-area-inset-top,0px));left:0;right:0;bottom:0;display:flex;justify-content:center;align-items:flex-start;gap:28px;overflow:auto}
+.ph{display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;width:100%}
+.ph h4{display:none;margin:0;font:700 11px 'Rajdhani';letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.ph h4 b{color:var(--blue-2)}
+iframe{border:0;width:100%;height:100%;background:#050507;display:block}
+#phL{display:none}
+#side{display:none;width:300px;font-size:14px;color:var(--metal);line-height:1.45;padding-top:26px}
 #side h3{font:700 11px 'Rajdhani';letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin:16px 0 6px}
-#side p{margin:0 0 6px}
-#side table{border-collapse:collapse;width:100%;font:12px 'JetBrains Mono',monospace}
-#side td{padding:3px 4px;border-bottom:1px solid var(--line)} #side td:nth-child(n+2){text-align:right;white-space:nowrap}
-#side td.up{color:var(--blue-2)}
-/* Messmarke: zeigt Schriftgröße beim Antippen */
-.mark .sz{outline:1px dashed rgba(255,194,71,.7);outline-offset:1px}
-#tip{position:fixed;z-index:300;pointer-events:none;background:#ffc247;color:#2a1b00;font:700 11px 'JetBrains Mono',monospace;padding:3px 6px;border-radius:5px;display:none}
-
-.sec{font:600 var(--f-sec) 'Rajdhani';letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin:14px 2px 6px}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px}
-
-/* Kit-Chips */
-.chips{display:flex;gap:6px;overflow-x:auto}
-.chip{flex:none;min-width:88px;padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:var(--inset);text-align:left}
-.chip.on{border-color:var(--blue);background:rgba(63,169,255,.12)}
-.chip .kn{font-weight:700;font-size:12px;letter-spacing:.04em;color:var(--metal)}
-.chip .kd{font-size:var(--f-kd);color:var(--dim);letter-spacing:.02em;white-space:nowrap}
-
-/* Regler */
-.knobs{display:flex;justify-content:space-between;gap:4px}
-.kb{display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;min-width:0}
-.knob{width:var(--kn);height:var(--kn);border-radius:50%;background:radial-gradient(circle at 35% 30%,#2a2d36,#0d0e12);border:1px solid rgba(255,255,255,.1);position:relative}
-.knob::after{content:'';position:absolute;left:50%;top:4px;width:2px;height:30%;background:var(--blue);transform-origin:50% calc(var(--kn)/2 - 4px);transform:translateX(-50%) rotate(var(--r,0deg));border-radius:1px}
-.knob-label{font-size:var(--f-knl);letter-spacing:.1em;color:var(--dim);text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
-.knob-val{font-size:var(--f-knv);color:var(--white);font-family:'JetBrains Mono',monospace}
-body.vB .knobs{flex-wrap:wrap;row-gap:10px} body.vB .kb{flex:0 0 calc(25% - 4px)}
-
-/* Mixer */
-.mixer{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
-.strip{flex:none;width:var(--mx-w);background:#101117;border:1px solid var(--line);border-radius:10px;padding:0 0 8px;display:flex;flex-direction:column;align-items:center;gap:6px;overflow:hidden}
-.strip .top{height:4px;align-self:stretch;background:var(--c)}
-.mix-name{font-size:var(--f-mxn);font-weight:700;letter-spacing:.04em;color:var(--white);max-width:100%;padding:0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.mix-sub{font-size:var(--f-mxs);letter-spacing:.06em;color:var(--dim);margin-top:-5px}
-.fader{width:10px;height:110px;border-radius:5px;background:#050507;position:relative}
-.fader i{position:absolute;left:-7px;right:-7px;height:22px;top:var(--y,30%);border-radius:4px;background:linear-gradient(#3a3d45,#1c1e24);border:1px solid rgba(255,255,255,.15)}
-.mix-db{font-size:var(--f-mxd);color:var(--blue-2);font-family:'JetBrains Mono',monospace}
-.ms{display:flex;gap:3px}.ms button{width:24px;height:22px;border-radius:5px;border:1px solid rgba(255,255,255,.14);background:var(--inset);color:var(--dim);font-size:11px;font-weight:700;padding:0}
-
-/* Pads */
-.pads{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-.pad{aspect-ratio:1;border-radius:10px;background:var(--inset);border:1px solid rgba(255,255,255,.08);padding:6px;display:flex;flex-direction:column;justify-content:space-between}
-.pad.on{background:linear-gradient(#2c90e6,#1f6fb6);border-color:var(--blue)}
-.plabel{font-size:var(--f-pdl);font-weight:700;color:var(--metal);letter-spacing:.05em}
-.pstat{font-size:var(--f-pds);color:var(--dim);font-family:'JetBrains Mono',monospace}
-body.vB .pstat{display:none} body.vB .pad.on .pstat{display:block;color:#dff1ff}
-
-/* Beats-Liste */
-.prow{display:flex;align-items:center;gap:8px;padding:9px 8px;border-bottom:1px solid var(--line)}
-.prow .pn{flex:1;font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pdate{font-size:var(--f-date);color:var(--dim);font-family:'JetBrains Mono',monospace;flex-shrink:0}
-body.vB .prow{flex-wrap:wrap;row-gap:0} body.vB .prow .pn{flex:1 1 60%}
-.prow button{width:30px;height:30px;border-radius:7px;border:1px solid rgba(63,169,255,.35);background:rgba(63,169,255,.08);color:var(--blue-2);display:flex;align-items:center;justify-content:center;padding:0}
-
-/* Step-Nummern */
-.steps{display:grid;grid-template-columns:repeat(16,1fr);gap:3px}
-.steps span{text-align:center;font-family:'JetBrains Mono',monospace;font-size:var(--f-num);color:rgba(255,255,255,.28)}
-.steps span:nth-child(4n+1){color:rgba(255,255,255,.55)}
-body.vB .steps span:not(:nth-child(4n+1)){visibility:hidden}
-
-.hint{text-align:center;font-size:var(--f-hint);color:var(--dim);letter-spacing:.03em;margin:10px 0 0;line-height:1.35}
-
-/* Tab-Leiste */
-.tabs{position:sticky;bottom:0;display:flex;margin:14px -10px 0;background:#0b0c10;border-top:1px solid rgba(255,255,255,.08)}
-.ti{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 0 calc(8px + env(safe-area-inset-bottom,0px));border:0;background:none;color:var(--dim);border-top:2px solid transparent}
-.ti.cur{color:var(--blue);border-top-color:var(--blue);background:rgba(63,169,255,.06)}
-.ti-lbl{font-size:var(--f-tab);letter-spacing:.05em;text-transform:uppercase;font-weight:600}
+#side p{margin:0 0 8px} #side b{color:var(--white)}
+/* Breiter Bildschirm: zwei Handys nebeneinander (links heute, rechts Vorschlag) */
+@media (min-width:900px) and (min-height:900px){
+  #stage{padding:14px 0;align-items:flex-start}
+  .ph{width:auto;height:auto}
+  .ph h4{display:block}
+  iframe{width:390px;height:844px;border-radius:30px;border:8px solid #1a1e26;box-shadow:0 30px 80px rgba(0,0,0,.75);box-sizing:content-box}
+  #phL{display:flex}
+  #side{display:block}
+}
+@media (min-width:900px) and (max-width:1200px){ #side{display:none} }
 </style>
 </head>
-<body class="v0">
+<body>
 <div id="mbar">
   <span>#19 Schrift</span>
-  <button data-v="v0" class="on">Heute</button>
-  <button data-v="vA">A · nur Größe</button>
-  <button data-v="vB">B · Größe + Platz</button>
+  <button data-v="0" class="on">Heute</button>
+  <button data-v="11">mind. 11 px</button>
+  <button data-v="12">mind. 12 px</button>
   <span class="sp"></span>
-  <label><input type="checkbox" id="mk"> Größe zeigen</label>
+  <label><input type="checkbox" id="mk"> Geänderte markieren</label>
 </div>
-<div id="tip"></div>
 <div id="stage">
-  <div id="dev">
-    <div class="sec sz">Kit</div>
-    <div class="chips">
-      <button class="chip on"><div class="kn">ROCK</div><div class="kd sz">Synth · 9 Stimmen</div></button>
-      <button class="chip"><div class="kn">STUDIO</div><div class="kd sz">Samples · 4 Layer</div></button>
-      <button class="chip"><div class="kn">VINTAGE 73</div><div class="kd sz">Samples · RR</div></button>
-    </div>
-
-    <div class="sec sz">Step-Nummern</div>
-    <div class="steps" id="steps"></div>
-
-    <div class="sec sz">Klang · Acid</div>
-    <div class="card"><div class="knobs" id="knobs"></div></div>
-
-    <div class="sec sz">Mixer</div>
-    <div class="mixer" id="mixer"></div>
-
-    <div class="sec sz">Pads</div>
-    <div class="pads" id="pads"></div>
-
-    <div class="sec sz">Beats</div>
-    <div class="card" style="padding:0 4px" id="beats"></div>
-
-    <p class="hint sz">Lang drücken = Step-Stärke · Wischen = Seite wechseln</p>
-
-    <div class="tabs">
-      <button class="ti cur"><svg class="i" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg><span class="ti-lbl sz">Pattern</span></button>
-      <button class="ti"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6"/><rect x="14" y="4" width="6" height="6"/><rect x="4" y="14" width="6" height="6"/><rect x="14" y="14" width="6" height="6"/></svg><span class="ti-lbl sz">Pads</span></button>
-      <button class="ti"><svg class="i" viewBox="0 0 24 24"><path d="M6 4v16M12 4v16M18 4v16"/><circle cx="6" cy="14" r="2"/><circle cx="12" cy="9" r="2"/><circle cx="18" cy="15" r="2"/></svg><span class="ti-lbl sz">Mixer</span></button>
-      <button class="ti"><svg class="i" viewBox="0 0 24 24"><path d="M4 6h10M4 12h16M4 18h7"/></svg><span class="ti-lbl sz">Song</span></button>
-    </div>
-  </div>
-
+  <div class="ph" id="phL"><h4>Heute</h4><iframe id="fL" src="../../index.html" title="App heute"></iframe></div>
+  <div class="ph" id="phR"><h4 id="hR">Vorschlag · <b>Heute</b></h4><iframe id="fR" src="../../index.html" title="App mit Vorschlag"></iframe></div>
   <div id="side">
-    <h3>Worum es geht</h3>
-    <p>Im Code stehen <b>65 Stellen unter 11 px</b> (6–10 px). Das Mockup zeigt die wichtigsten Bereiche.</p>
-    <h3>Varianten</h3>
-    <p><b>A · nur Größe:</b> alles mind. 11 px, Layout bleibt. Lange Texte werden mit … gekürzt (Mixer-Namen, Regler-Labels).</p>
-    <p><b>B · Größe + Platz:</b> mind. 11 px und dort Platz geschaffen, wo es eng wird: Mixer-Kanäle breiter (62→74 px, weniger Kanäle gleichzeitig sichtbar), Regler 4 pro Zeile, Step-Nummern nur 1·5·9·13, Pad-Status nur auf aktivem Pad.</p>
-    <p>„Größe zeigen“ anhaken und Text antippen = Schriftgröße.</p>
-    <h3>Betroffene Stellen (Auswahl)</h3>
-    <table>
-      <tr><td>Tab-Leiste Beschriftung</td><td>8</td><td class="up">11</td></tr>
-      <tr><td>Regler-Label / Wert</td><td>7–9 / 8–10</td><td class="up">11</td></tr>
-      <tr><td>Mixer Name / dB / Untertitel</td><td>8 / 8 / 9</td><td class="up">11</td></tr>
-      <tr><td>Mixer EQ-Knöpfe (alt)</td><td>6</td><td class="up">11</td></tr>
-      <tr><td>Kit-Beschreibung</td><td>8–9</td><td class="up">11</td></tr>
-      <tr><td>Pad-Status</td><td>8</td><td class="up">11</td></tr>
-      <tr><td>Datum Beats/Song</td><td>8</td><td class="up">11</td></tr>
-      <tr><td>Hinweise, Footer, Impressum</td><td>8–10</td><td class="up">11</td></tr>
-      <tr><td>Sample-Editor Labels</td><td>9–10</td><td class="up">11</td></tr>
-      <tr><td>Harmonie, Piano-Roll-Labels</td><td>9–10</td><td class="up">11</td></tr>
-    </table>
-    <h3>Frage zur Entscheidung</h3>
-    <p>A oder B? Und: gilt 11 px ausnahmslos, oder dürfen reine Orientierungs-Ziffern (Step-Nummern, Piano-Roll-Oktaven) bei 10 px bleiben?</p>
+    <h3>Was das ist</h3>
+    <p>Beide Handys zeigen die <b>echte, aktuelle App</b> – nichts ist nachgebaut. Alles ist bedienbar (Tabs, Spuren, Klang, Mixer, Beats, Einstellungen).</p>
+    <p>Rechts hebt der Umschalter oben jede Schrift unter <b>11 px</b> (bzw. <b>12 px</b>) auf genau diese Größe an. Alles andere bleibt, wie es ist.</p>
+    <h3>Was sich ändert</h3>
+    <p>Im Code stehen 65 Angaben zwischen 6 und 10 px, u. a. Tab-Leiste (8 px), Step-Nummern (10), Mixer-Untertitel (9), Song-Spuren M/S (9), Abschnitts-Titel in Beats/Kit (10), Kit-Beschreibung, Impressum-Zeile (8).</p>
+    <p>„Geänderte markieren“ umrandet jede angehobene Stelle gelb.</p>
+    <h3>Hinweis</h3>
+    <p>Die Rahmen nutzen denselben Speicher wie die App: Wer hier einen Beat speichert, findet ihn auch in der echten App.</p>
+    <h3>Nicht erfasst</h3>
+    <p>Schrift, die auf eine Zeichenfläche gemalt wird (Noteneditor-Raster, EQ-Kurve), ändert sich hier nicht.</p>
+    <h3>Zur Entscheidung</h3>
+    <p>11 px oder 12 px als Untergrenze? Und gibt es Stellen, die danach zu eng werden?</p>
   </div>
 </div>
 <script>
-const $=s=>document.querySelector(s);
-$('#steps').innerHTML=Array.from({length:16},(_,i)=>`<span class="sz">${i+1}</span>`).join('');
-$('#knobs').innerHTML=[['Cutoff','62',40],['Reso','48',10],['Env Mod','70',60],['Decay','35',-30],['Accent','50',0],['Drive','22',-60],['Glide','40',-20],['Tune','0',0]]
-  .map(([l,v,r])=>`<div class="kb"><div class="knob" style="--r:${r}deg"></div><div class="knob-label sz">${l}</div><div class="knob-val sz">${v}</div></div>`).join('');
-$('#mixer').innerHTML=[['Drums','8 Spuren','#2d6db3','0.0',8],['Perc','5 Spuren','#1fa59a','0.0',8],['MC','','#7bd14a','-0.9',30],['Acid','','#ff7a2e','-1.9',45],['Cosmic','','#b88cff','-3.2',40],['Keys','','#ffd23f','-2.4',35],['Master','','#3fa9ff','-1.4',25]]
-  .map(([n,s,c,d,y])=>`<div class="strip" style="--c:${c}"><div class="top"></div><div class="mix-name sz">${n.toUpperCase()}</div>${s?`<div class="mix-sub sz">${s}</div>`:''}<div class="fader" style="--y:${y}%"><i></i></div><div class="mix-db sz">${d}dB</div><div class="ms"><button>M</button><button>S</button></div></div>`).join('');
-$('#pads').innerHTML=['BD','SD','CH','OH','LT','HT','CY','RD'].map((l,i)=>`<div class="pad${i===0?' on':''}"><span class="plabel sz">${l}</span><span class="pstat sz">${i===0?'4/16':i%3?'2/16':'—'}</span></div>`).join('');
-const ic='<svg class="i" viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z"/></svg>';
-$('#beats').innerHTML=[['Kkk bit','29.10.26 14:02'],['Late Night Dub','28.10.26 22:41'],['Acid Morgen (lange Version)','27.10.26 08:15']]
-  .map(([n,d])=>`<div class="prow"><button>${ic}</button><span class="pn">${n}</span><span class="pdate sz">${d}</span></div>`).join('');
-document.querySelectorAll('#mbar [data-v]').forEach(b=>b.onclick=()=>{document.body.className=b.dataset.v+($('#mk').checked?' mark':'');document.querySelectorAll('#mbar [data-v]').forEach(x=>x.classList.toggle('on',x===b))});
-$('#mk').onchange=e=>document.body.classList.toggle('mark',e.target.checked);
-const tip=$('#tip');
-document.addEventListener('pointerdown',e=>{const el=e.target.closest('.sz');if(!document.body.classList.contains('mark')||!el){tip.style.display='none';return}
-  tip.textContent=getComputedStyle(el).fontSize;tip.style.left=(e.clientX+8)+'px';tip.style.top=(e.clientY-26)+'px';tip.style.display='block'});
+// Läuft im Rahmen der echten App: Schrift unter "min" anheben, rückgängig machbar.
+function hookFrame(f){
+  const w=f.contentWindow, d=f.contentDocument; if(!d||!d.body||w.__fz) return;
+  const st=d.createElement('style'); st.textContent='html.fzmark [data-fz]{outline:1px dashed #ffc247!important;outline-offset:1px}'; d.head.appendChild(st);
+  const touched=new Map(); let min=0, pend=false;
+  function scan(){ pend=false; if(!min) return;
+    d.querySelectorAll('body *').forEach(el=>{
+      if(touched.has(el) || el instanceof w.SVGElement) return;
+      const fs=parseFloat(w.getComputedStyle(el).fontSize);
+      if(fs<min){ touched.set(el,[el.style.getPropertyValue('font-size'),el.style.getPropertyPriority('font-size')]); el.style.setProperty('font-size',min+'px','important'); el.setAttribute('data-fz',fs); }
+    }); }
+  function set(v){
+    touched.forEach(([val,pr],el)=>{ if(val) el.style.setProperty('font-size',val,pr); else el.style.removeProperty('font-size'); el.removeAttribute('data-fz'); });
+    touched.clear(); min=v; scan(); w.dispatchEvent(new w.Event('resize'));
+  }
+  new w.MutationObserver(()=>{ if(min&&!pend){ pend=true; w.requestAnimationFrame(scan); } }).observe(d.body,{childList:true,subtree:true});
+  w.setInterval(()=>{ if(min) scan(); },1500);
+  w.__fz={set,mark:on=>d.documentElement.classList.toggle('fzmark',on)};
+}
+const fR=document.getElementById('fR'), fL=document.getElementById('fL');
+let cur=0;
+function applyR(){ hookFrame(fR); if(fR.contentWindow.__fz){ fR.contentWindow.__fz.set(cur); fR.contentWindow.__fz.mark(document.getElementById('mk').checked); } }
+fR.addEventListener('load',()=>setTimeout(applyR,600));
+fL.addEventListener('load',()=>hookFrame(fL));
+document.querySelectorAll('#mbar [data-v]').forEach(b=>b.onclick=()=>{
+  cur=+b.dataset.v; document.querySelectorAll('#mbar [data-v]').forEach(x=>x.classList.toggle('on',x===b));
+  document.getElementById('hR').innerHTML='Vorschlag · <b>'+(cur?'mind. '+cur+' px':'Heute')+'</b>'; applyR();
+});
+const fitTop=()=>document.getElementById('stage').style.top=document.getElementById('mbar').offsetHeight+'px'; addEventListener('resize',fitTop); fitTop();
+document.getElementById('mk').onchange=e=>{ if(fR.contentWindow.__fz) fR.contentWindow.__fz.mark(e.target.checked); };
 </script>
 </body>
 </html>

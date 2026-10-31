@@ -6,6 +6,7 @@ Zusammengeführt am 28.10.2026 aus DECISIONS-2/-3, ARCHITECTURE-11/-12 und ROADM
 
 **Arbeitsweise**
 - Mockups immer als interaktive HTML-Seiten (klickbar, bei Musik-Funktionen mit Ton), nicht als Bilder/Artboards. Erst Mockup, dann Umbau.
+- Vergleiche an bestehenden Bildschirmen (vorher/nachher) immer 1:1 im Look der App, nicht nachgebaut: echte App (`../../index.html`) im Mockup einbetten und die Änderung dort zur Laufzeit anwenden (Beispiel `docs/mockups/issue-19.html`).
 - Klang und Performance vor neuen Funktionen. Kostet ein Feature eines davon, vorher Bescheid geben.
 - Fremdänderungen (andere KI, eigene Edits) prüfen: Diff, Syntaxcheck, Nebenwirkungen auf geteilten Zustand.
 - Dient es Qualität und Sound, keine Rücksicht auf alte Patterns (keine Migrationspflicht).
