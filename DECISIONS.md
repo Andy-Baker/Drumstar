@@ -6,7 +6,8 @@ Zusammengeführt am 28.10.2026 aus DECISIONS-2/-3, ARCHITECTURE-11/-12 und ROADM
 
 **Arbeitsweise**
 - Mockups immer als interaktive HTML-Seiten (klickbar, bei Musik-Funktionen mit Ton), nicht als Bilder/Artboards. Erst Mockup, dann Umbau.
-- Vergleiche an bestehenden Bildschirmen (vorher/nachher) immer 1:1 im Look der App, nicht nachgebaut: echte App (`../../index.html`) im Mockup einbetten und die Änderung dort zur Laufzeit anwenden (Beispiel `docs/mockups/issue-19.html`).
+- Vergleiche an bestehenden Bildschirmen (vorher/nachher) immer 1:1 im Look der App, nicht nachgebaut: echte App (`../../index.html`) im Mockup einbetten und die Änderung dort zur Laufzeit anwenden, mit Schalter „Geänderte markieren“ (Beispiel `docs/mockups/issue-19.html`, vom Nutzer als Vorlage bestätigt).
+- Schrift (31.10., #19): Untergrenze 11 px (12 px verglichen, 11 gewählt).
 - Klang und Performance vor neuen Funktionen. Kostet ein Feature eines davon, vorher Bescheid geben.
 - Fremdänderungen (andere KI, eigene Edits) prüfen: Diff, Syntaxcheck, Nebenwirkungen auf geteilten Zustand.
 - Dient es Qualität und Sound, keine Rücksicht auf alte Patterns (keine Migrationspflicht).
@@ -81,7 +82,7 @@ Zusammengeführt am 28.10.2026 aus DECISIONS-2/-3, ARCHITECTURE-11/-12 und ROADM
 ## Bekannte Einschränkungen
 - iOS-Stummschalter kann Web Audio stumm halten; Gerätetasten regeln nur die Systemausgabe.
 - Sample-Quellen in Drums und Sample-Spur einstimmig (eine Note pro Step).
-- Schriftgrößen < 11 px an vielen Stellen (Anheben braucht eigenes Mockup).
+- Schriftgrößen < 11 px an vielen Stellen (entschieden: auf 11 px anheben, #19).
 - Rechtstexte (Impressum/Datenschutz) nicht anwaltlich geprüft.
 
 ## Offene Punkte
