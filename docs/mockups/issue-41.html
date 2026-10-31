@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Song-Export Mockup (#41)</title>
+<link rel="stylesheet" href="../../fonts.css">
+<style>
+/* Mockup zu Issue #41: Die echte App (../../index.html) läuft unverändert im Rahmen und öffnet den Song-Tab.
+   Rechts werden die neuen Knöpfe zur Laufzeit in die echte Song-Liste eingesetzt – im Look der App.
+   Löschen ist in beiden Rahmen abgeschaltet (gleicher Speicher wie die echte App). */
+:root{color-scheme:dark;--bg:#050507;--blue:#3fa9ff;--blue-2:#8fd4ff;--white:#f4f5f7;--dim:#7d818c;--metal:#c7cbd4}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--white);font-family:'Rajdhani',system-ui,sans-serif}
+#mbar{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:calc(6px + env(safe-area-inset-top,0px)) 10px 6px;background:repeating-linear-gradient(135deg,#0b1622 0 8px,#0d1a28 8px 16px);border-bottom:1px dashed rgba(63,169,255,.45);font:700 11px 'JetBrains Mono',monospace;color:var(--blue-2)}
+#mbar .sp{flex:1}
+#mbar button{height:28px;padding:0 10px;border-radius:6px;border:1px solid rgba(63,169,255,.45);background:rgba(63,169,255,.12);font:700 11px 'JetBrains Mono',monospace;color:var(--blue-2);cursor:pointer}
+#mbar button.on{background:var(--blue);color:#042c53}
+#mbar label{display:flex;align-items:center;gap:5px;cursor:pointer}
+#stage{position:fixed;top:42px;left:0;right:0;bottom:0;display:flex;justify-content:center;align-items:flex-start;gap:28px;overflow:auto}
+.ph{display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;width:100%}
+.ph h4{display:none;margin:0;font:700 11px 'Rajdhani';letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.ph h4 b{color:var(--blue-2)}
+iframe{border:0;width:100%;height:100%;background:#050507;display:block}
+#phL{display:none}
+#side{display:none;width:300px;font-size:14px;color:var(--metal);line-height:1.45;padding-top:26px}
+#side h3{font:700 11px 'Rajdhani';letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin:16px 0 6px}
+#side p{margin:0 0 8px} #side b{color:var(--white)}
+@media (min-width:900px) and (min-height:900px){
+  #stage{padding:14px 0}
+  .ph{width:auto;height:auto}
+  .ph h4{display:block}
+  iframe{width:390px;height:844px;border-radius:30px;border:8px solid #1a1e26;box-shadow:0 30px 80px rgba(0,0,0,.75);box-sizing:content-box}
+  #phL{display:flex}
+  #side{display:block}
+}
+@media (min-width:900px) and (max-width:1200px){ #side{display:none} }
+</style>
+</head>
+<body>
+<div id="mbar">
+  <span>#41 Songs</span>
+  <button data-v="0">Heute</button>
+  <button data-v="A" class="on">A · Knopf je Zeile</button>
+  <button data-v="B">B · wie Beats ⋯</button>
+  <span class="sp"></span>
+  <label><input type="checkbox" id="mk" checked> Geänderte markieren</label>
+</div>
+<div id="stage">
+  <div class="ph" id="phL"><h4>Heute</h4><iframe id="fL" src="../../index.html" title="App heute"></iframe></div>
+  <div class="ph" id="phR"><h4 id="hR">Vorschlag · <b>A</b></h4><iframe id="fR" src="../../index.html" title="App mit Vorschlag"></iframe></div>
+  <div id="side">
+    <h3>Was das ist</h3>
+    <p>Beide Handys zeigen die <b>echte App</b> im Song-Tab. Rechts sind die neuen Knöpfe eingesetzt. Unter „Gespeicherte Songs“ siehst du deine eigenen Songs, falls du welche hast, sonst Beispiele.</p>
+    <h3>Für alle Varianten gleich</h3>
+    <p>Unter „Gespeicherte Songs“ kommt eine Zeile <b>Import · Alle sichern</b>, genau wie bei den Beats. Darunter steht kurz, was passiert ist (z. B. „3 Songs exportiert“).</p>
+    <h3>Einzelner Song</h3>
+    <p><b>A:</b> In jeder Zeile ein zusätzlicher Knopf „Als Datei sichern“ zwischen ▶ und Löschen.</p>
+    <p><b>B:</b> Song-Zeilen sehen aus wie Beat-Zeilen: ▶ und ⋯. Hinter ⋯ liegen „Exportieren“ und „Löschen“. Das ist einheitlich mit den Beats, und Löschen liegt nicht mehr direkt neben ▶.</p>
+    <h3>Im Mockup</h3>
+    <p>Export und Import zeigen nur die Meldung. Löschen ist abgeschaltet, damit nichts von deinen echten Songs verloren geht.</p>
+    <h3>Zur Entscheidung</h3>
+    <p>A oder B?</p>
+  </div>
+</div>
+<script>
+const IC={
+  play:'<svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5l11 7-11 7z" fill="currentColor" stroke="none"/></svg>',
+  more:'<svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="19" cy="12" r="1.6" fill="currentColor"/></svg>',
+  dl:'<svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>',
+  del:'<svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>',
+  imp:'<svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V9M7 14l5-5 5 5M5 4h14"/></svg>',
+  all:'<svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h12M4 11h12M4 16h7"/><path d="M18 13v7M15 17l3 3 3-3"/></svg>'
+};
+// Kopie der App-Regeln von #patternIORow / #patternIOStatus, nur für die neue Song-Zeile
+const CSS=`
+#songIORow{display:flex;gap:6px;flex-shrink:0}
+#songIORow button{flex:1;letter-spacing:.04em;text-transform:uppercase;border:1px solid rgba(255,255,255,.12);padding:7px 9px;cursor:pointer;background:var(--panel-inset);color:var(--dim);white-space:nowrap;display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;font-size:12px;border-radius:9px;font-family:inherit}
+#songIORow button:active{transform:scale(.96);border-color:rgba(63,169,255,.5);color:var(--blue-2)}
+#songIOStatus{font-size:10px;color:var(--blue-2);font-family:'JetBrains Mono',monospace;letter-spacing:.02em;min-height:12px;text-align:center;flex-shrink:0}
+.sg-row button.dl .uic{width:18px;height:18px}
+#songList .pattern-row{background:var(--panel-inset);border:1px solid transparent}
+#songList.mkB .sg-row{display:none!important}
+html.mk [data-new]{outline:1px dashed #ffc247!important;outline-offset:1px}
+`;
+const DEMO=[['Gothic Rock',  '29.10.'],['Sonntag Dub','27.10.'],['Acid Jam (lang)','24.10.']];
+
+function guardDelete(w,d,say){
+  d.addEventListener('click',e=>{
+    const b=e.target.closest('#songList .sg-row .del, #songList .prow-del'); if(!b) return;
+    e.stopImmediatePropagation(); e.preventDefault(); say('Mockup: Löschen ist hier abgeschaltet');
+  },true);
+}
+function openSong(d){ const b=d.getElementById('songToggleBtn'); if(b) b.click(); }
+
+function setupLeft(f){
+  const w=f.contentWindow,d=f.contentDocument; if(!d||!d.body) return;
+  guardDelete(w,d,m=>{ const t=d.getElementById('ovToast'); if(t){ t.textContent=m; setTimeout(()=>t.textContent='',2500);} });
+  openSong(d);
+  const list=d.getElementById('songList'), say=m=>{ const t=d.getElementById('ovToast'); if(t){ t.textContent=m; setTimeout(()=>t.textContent='',2500);} };
+  const obs=new w.MutationObserver(()=>w.requestAnimationFrame(run));
+  function run(){ obs.disconnect(); demoRows(d,list,say); obs.takeRecords(); obs.observe(list,{childList:true}); }
+  run();
+}
+// Beispiele, wenn noch keine Songs gespeichert sind (in beiden Rahmen gleich, nur im Mockup-DOM)
+function demoRows(d,list,say){
+  const empty=list.querySelector('.sg-empty'); if(!empty) return;
+  empty.remove();
+  DEMO.forEach(([n,dt])=>{ const r=d.createElement('div'); r.className='sg-row'; r.dataset.demo='1';
+    r.innerHTML='<span class="sg-name"></span><span class="sg-date">'+dt+'</span><button class="load" title="Laden">▶</button><button class="del" title="Löschen">✕</button>';
+    r.querySelector('.sg-name').textContent=n; r.querySelector('.load').onclick=()=>say('Beispiel – kein echter Song'); list.appendChild(r); });
+}
+function setupRight(f,v){
+  const w=f.contentWindow,d=f.contentDocument; if(!d||!d.body) return;
+  const st=d.createElement('style'); st.textContent=CSS; d.head.appendChild(st);
+  d.documentElement.classList.toggle('mk',document.getElementById('mk').checked);
+  let stat=null, tmr=0;
+  const say=m=>{ if(stat){ stat.textContent=m; clearTimeout(tmr); tmr=setTimeout(()=>stat.textContent='',3000);} else { const t=d.getElementById('ovToast'); if(t) t.textContent=m; } };
+  guardDelete(w,d,say);
+  openSong(d);
+  if(v==='0') return;
+  const list=d.getElementById('songList');
+  // Import · Alle sichern unter „Gespeicherte Songs“
+  const io=d.createElement('div'); io.id='songIORow'; io.setAttribute('data-new','');
+  io.innerHTML='<button id="songImportBtn">'+IC.imp+'Import</button><button id="songExportAllBtn">'+IC.all+'Alle sichern</button>';
+  stat=d.createElement('div'); stat.id='songIOStatus';
+  list.parentNode.insertBefore(io,list); list.parentNode.insertBefore(stat,list);
+  io.querySelector('#songImportBtn').onclick=()=>say('Datei wählen … (im Mockup ohne Funktion) → z. B. „2 Songs importiert“');
+  io.querySelector('#songExportAllBtn').onclick=()=>{ const n=list.querySelectorAll('.sg-row').length; say(n+' Song'+(n===1?'':'s')+' exportiert'); };
+
+  let busy=false;
+  function decorate(){
+    if(busy) return; busy=true;
+    demoRows(d,list,say);
+    const rows=[...list.querySelectorAll('.sg-row')];
+    if(v==='A'){
+      rows.forEach(r=>{ if(r.querySelector('.dl')) return;
+        const b=d.createElement('button'); b.className='dl'; b.title='Als Datei sichern'; b.setAttribute('aria-label','Als Datei sichern'); b.setAttribute('data-new',''); b.innerHTML=IC.dl;
+        b.onclick=()=>say('„'+r.querySelector('.sg-name').textContent+'“ exportiert');
+        r.insertBefore(b,r.querySelector('.del')); });
+    }
+    if(v==='B'){
+      list.classList.add('mkB');
+      list.querySelectorAll('.pattern-row').forEach(x=>x.remove());
+      rows.forEach(r=>{
+        const name=r.querySelector('.sg-name').textContent, date=r.querySelector('.sg-date').textContent;
+        const row=d.createElement('div'); row.className='pattern-row'+(r.classList.contains('active')?' active':''); row.setAttribute('data-new','');
+        row.innerHTML='<div class="prow-top"><div class="prow-meta"><div class="pname"></div><div class="pdate"></div></div>'
+          +'<button class="prow-btn pload" title="Laden" aria-label="Laden">'+IC.play+'</button>'
+          +'<button class="prow-btn" title="Weitere Aktionen" aria-label="Weitere Aktionen">'+IC.more+'</button></div>'
+          +'<div class="prow-more"><button class="act sec">'+IC.dl+'Exportieren</button><button class="act sec prow-del">'+IC.del+'Löschen</button></div>';
+        row.querySelector('.pname').textContent=name; row.querySelector('.pdate').textContent=r.classList.contains('active')?'● aktiv':date;
+        row.querySelector('.pload').onclick=()=>r.querySelector('.load').click();
+        const mb=row.querySelector('.prow-top .prow-btn:last-child');
+        mb.onclick=e=>{ e.stopPropagation(); const open=!row.classList.contains('open');
+          list.querySelectorAll('.pattern-row.open').forEach(x=>{ x.classList.remove('open'); x.querySelector('.prow-top .prow-btn:last-child').classList.remove('on'); });
+          row.classList.toggle('open',open); mb.classList.toggle('on',open); };
+        row.querySelector('.act:not(.prow-del)').onclick=e=>{ e.stopPropagation(); say('„'+name+'“ exportiert'); };
+        list.appendChild(row);
+      });
+    }
+    busy=false;
+  }
+  const obs=new w.MutationObserver(()=>w.requestAnimationFrame(run));
+  function run(){ obs.disconnect(); decorate(); obs.takeRecords(); obs.observe(list,{childList:true}); }
+  run();
+}
+const fL=document.getElementById('fL'), fR=document.getElementById('fR');
+let cur='A';
+fL.addEventListener('load',()=>setTimeout(()=>setupLeft(fL),700));
+fR.addEventListener('load',()=>setTimeout(()=>setupRight(fR,cur),700));
+document.querySelectorAll('#mbar [data-v]').forEach(b=>b.onclick=()=>{
+  cur=b.dataset.v; document.querySelectorAll('#mbar [data-v]').forEach(x=>x.classList.toggle('on',x===b));
+  document.getElementById('hR').innerHTML='Vorschlag · <b>'+(cur==='0'?'Heute':cur)+'</b>';
+  fR.contentWindow.location.reload();
+});
+document.getElementById('mk').onchange=e=>{ try{ fR.contentDocument.documentElement.classList.toggle('mk',e.target.checked); }catch(_){} };
+const fitTop=()=>document.getElementById('stage').style.top=document.getElementById('mbar').offsetHeight+'px'; addEventListener('resize',fitTop); fitTop();
+</script>
+</body>
+</html>
