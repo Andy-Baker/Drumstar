@@ -690,12 +690,12 @@
     border:1px solid rgba(63,169,255,.4); border-radius:9px; padding:12px 0; cursor:pointer;
     background:rgba(63,169,255,.12); color:var(--blue-2); }
   #exportWavBtn:active{ transform:scale(.98); }
-  #patternIORow{ display:flex; gap:6px; flex-shrink:0; }
-  #patternIORow button{ flex:1; font-size:11px; letter-spacing:.04em; text-transform:uppercase; border:1px solid rgba(255,255,255,.12);
+  #patternIORow, #songIORow{ display:flex; gap:6px; flex-shrink:0; }
+  #patternIORow button, #songIORow button{ flex:1; font-size:11px; letter-spacing:.04em; text-transform:uppercase; border:1px solid rgba(255,255,255,.12);
     border-radius:6px; padding:7px 9px; cursor:pointer; background:var(--panel-inset); color:var(--dim); white-space:nowrap; }
-  #patternIORow button:active{ transform:scale(.96); border-color:rgba(63,169,255,.5); color:var(--blue-2); }
-  #patternIOStatus{ font-size:11px; color:var(--blue-2); font-family:'JetBrains Mono',monospace; letter-spacing:.02em; min-height:12px; text-align:center; flex-shrink:0; }
-  #patternIOStatus.err{ color:#ff9d7a; }
+  #patternIORow button:active, #songIORow button:active{ transform:scale(.96); border-color:rgba(63,169,255,.5); color:var(--blue-2); }
+  #patternIOStatus, #songIOStatus{ font-size:11px; color:var(--blue-2); font-family:'JetBrains Mono',monospace; letter-spacing:.02em; min-height:12px; text-align:center; flex-shrink:0; }
+  #patternIOStatus.err, #songIOStatus.err{ color:#ff9d7a; }
   #patternList{ display:flex; flex-direction:column; gap:5px; flex:1; overflow-y:auto; }
   .pattern-row{ display:flex; flex-direction:column; gap:5px;
     background:var(--panel); border-radius:9px; padding:8px 10px; border:1px solid rgba(255,255,255,.08); }
@@ -740,12 +740,7 @@
   #songNameInput::placeholder{ color:var(--dim); }
   #songSaveBtn, #songUpdateBtn{ min-height:38px; padding:0 12px; border-radius:6px; border:1px solid rgba(63,169,255,.4); background:rgba(63,169,255,.12); color:var(--blue-2); font-family:inherit; font-weight:700; font-size:11px; letter-spacing:.04em; text-transform:uppercase; cursor:pointer; }
   #songList{ display:flex; flex-direction:column; gap:5px; }
-  .sg-row{ display:flex; align-items:center; gap:6px; background:var(--panel-inset); border-radius:8px; padding:6px 8px; border:1px solid transparent; }
-  .sg-row.active{ border-color:var(--blue); background:rgba(63,169,255,.1); }
-  .sg-name{ flex:1; font-size:12px; color:var(--white); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .sg-date{ font:11px 'JetBrains Mono',monospace; color:var(--dim); }
-  .sg-row button{ width:34px; height:34px; border-radius:6px; border:1px solid rgba(255,255,255,.12); background:transparent; color:var(--blue-2); font-size:14px; cursor:pointer; padding:0; }
-  .sg-row button.del{ color:#ff9d7a; }
+  #songList .pattern-row:not(.active){ background:var(--panel-inset); border:1px solid transparent; }
   .sg-empty{ font-size:11px; color:var(--dim); text-align:center; padding:6px 0; }
   #clipBanner{ position:sticky; top:0; z-index:30; align-items:center; gap:8px; flex-wrap:wrap; background:#0c1e2e; border:1px solid rgba(63,169,255,.5); border-radius:8px; padding:8px 10px; font-size:12px; color:var(--blue-2); }
   #clipBanner span{ flex:1; min-width:150px; } #clipBanner small{ display:block; font-size:11px; color:var(--dim); margin-top:2px; }
@@ -1166,7 +1161,7 @@ html,body{min-height:100%;height:100%;}
 #kitPickerHead,#soundPickerHead,#tempoOverlayHead,#patternsOverlayHead,#sampleEditorHead,#dsHead,#xyHead{min-height:52px;gap:10px}
 #kitPickerCloseBtn,#soundPickerCloseBtn,#tempoOverlayCloseBtn,#patternsOverlayCloseBtn,#sampleEditorCloseBtn,#dsCloseBtn,#xyCloseBtn{width:44px;height:44px;border-radius:9px;border:1px solid rgba(255,255,255,.12);background:var(--panel);color:var(--blue-2);font-size:15px;flex:none;display:flex;align-items:center;justify-content:center;cursor:pointer}
 /* Beats */
-#patternIORow button{display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;font-size:12px;border-radius:9px}
+#patternIORow button,#songIORow button{display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;font-size:12px;border-radius:9px}
 #patternIORow #exportWavBtn{border:1px solid rgba(63,169,255,.45);background:rgba(63,169,255,.12);color:var(--blue-2);font-weight:700;letter-spacing:.04em;text-transform:uppercase}
 /* v76: Karte „Aktueller Beat“ + Neuer Beat (Mockup neuer-beat-mockup.html, Variante B) */
 #pbCard{flex-shrink:0;display:flex;flex-direction:column;gap:8px;border-radius:14px;border:1px solid rgba(63,169,255,.28);background:linear-gradient(180deg,#121621,#0d0f15);padding:10px 12px 12px}
@@ -1762,6 +1757,12 @@ html,body{min-height:100%;height:100%;}
           <div id="ovToast"></div>
           
           <div class="arr-head" style="margin-top:4px"><span>GESPEICHERTE SONGS</span></div>
+          <div id="songIORow">
+            <button id="songImportBtn" title="Songs aus JSON-Datei laden"><svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V9M7 14l5-5 5 5M5 4h14"/></svg>Import</button>
+            <button id="songExportAllBtn" title="Alle Songs als JSON-Datei sichern"><svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h12M4 11h12M4 16h7"/><path d="M18 13v7M15 17l3 3 3-3"/></svg>Alle sichern</button>
+            <input type="file" id="songImportInput" accept="application/json,.json" style="display:none;">
+          </div>
+          <div id="songIOStatus"></div>
           <div id="songList"></div>
         </div>
       </div>
@@ -6498,7 +6499,7 @@ function prowFinish(row, loadBtn, more){
   top.appendChild(loadBtn); top.appendChild(mb);
   const box=document.createElement('div'); box.className='prow-more'; more.forEach(b=>box.appendChild(b)); row.appendChild(box);
   mb.addEventListener('click', e=>{ e.stopPropagation(); const open=!row.classList.contains('open');
-    patternList.querySelectorAll('.pattern-row.open').forEach(r=>{ r.classList.remove('open'); const x=r.querySelector('.prow-top .prow-btn:last-child'); if(x) x.classList.remove('on'); });
+    (row.parentNode||patternList).querySelectorAll('.pattern-row.open').forEach(r=>{ r.classList.remove('open'); const x=r.querySelector('.prow-top .prow-btn:last-child'); if(x) x.classList.remove('on'); });
     row.classList.toggle('open',open); mb.classList.toggle('on',open); });
 }
 async function refreshPatternList(){
@@ -6957,14 +6958,68 @@ async function songRefreshList(){
   const items=await songAll(); songListEl.innerHTML='';
   if(!items.length){ const e=document.createElement('div'); e.className='sg-empty'; e.textContent='Noch keine gespeicherten Songs'; songListEl.appendChild(e); return; }
   items.forEach(it=>{
-    const row=document.createElement('div'); row.className='sg-row'+(it.id===currentSongId?' active':'');
-    row.innerHTML='<span class="sg-name"></span><span class="sg-date">'+new Date(it.savedAt).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'})+'</span><button class="load" title="Laden">▶</button><button class="del" title="Löschen">✕</button>';
-    row.querySelector('.sg-name').textContent=it.name;
-    row.querySelector('.load').onclick=async()=>{ const d=await songGet(it.id); if(d){ songApply(d); songSetCurrent(it.id,it.name); songRefreshList(); ovSay('„'+it.name+'“ geladen'); } };
-    row.querySelector('.del').onclick=async()=>{ await songDel(it.id); if(it.id===currentSongId) songSetCurrent(null,null); songRefreshList(); };
+    // #41: Zeile wie bei den Beats (▶ + ⋯, dahinter Exportieren und Löschen)
+    const row=document.createElement('div'); row.className='pattern-row'+(it.id===currentSongId?' active':'');
+    const meta=document.createElement('div'); meta.className='prow-meta';
+    const nameEl=document.createElement('div'); nameEl.className='pname'; nameEl.textContent=it.name;
+    const dateEl=document.createElement('div'); dateEl.className='pdate';
+    dateEl.textContent=it.id===currentSongId ? '● aktiv' : new Date(it.savedAt).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'});
+    meta.appendChild(nameEl); meta.appendChild(dateEl); row.appendChild(meta);
+    const loadBtn=document.createElement('button'); loadBtn.className='prow-btn pload'; loadBtn.innerHTML=UI_IC.play; loadBtn.title='Laden'; loadBtn.setAttribute('aria-label','Laden');
+    loadBtn.onclick=async()=>{ const d=await songGet(it.id); if(d){ songApply(d); songSetCurrent(it.id,it.name); songRefreshList(); ovSay('„'+it.name+'“ geladen'); } };
+    const exportBtn=document.createElement('button'); exportBtn.className='act sec'; exportBtn.innerHTML=UI_IC.dl+'Exportieren'; exportBtn.title='Als JSON exportieren';
+    exportBtn.onclick=e=>{ e.stopPropagation(); exportSingleSong(it); };
+    const delBtn=document.createElement('button'); delBtn.className='act sec prow-del'; delBtn.innerHTML=UI_IC.del+'Löschen'; delBtn.title='Löschen';
+    delBtn.onclick=async e=>{ e.stopPropagation(); await songDel(it.id); if(it.id===currentSongId) songSetCurrent(null,null); songRefreshList(); };
+    prowFinish(row, loadBtn, [exportBtn, delBtn]);
     songListEl.appendChild(row);
   });
 }
+// ---- Songs als Datei sichern/laden (#41), analog zu den Beats ----
+const songIOStatusEl=document.getElementById('songIOStatus'); let songIOStatusTimer=null;
+function showSongIOStatus(msg, isError){
+  songIOStatusEl.textContent=msg; songIOStatusEl.classList.toggle('err', !!isError);
+  clearTimeout(songIOStatusTimer); songIOStatusTimer=setTimeout(()=>{ songIOStatusEl.textContent=''; }, 4500);
+}
+function makeSongExportPayload(songs){ return { app:'MRM-44', kind:'mrm44-songs', formatVersion:1, exportedAt:Date.now(), songs }; }
+async function exportAllSongs(){
+  const items=await songAll();
+  if(!items.length){ showSongIOStatus('Keine gespeicherten Songs zum Exportieren', true); return; }
+  await downloadJson(makeSongExportPayload(items), 'mrm44-songs-'+ioStamp()+'.json');
+  showSongIOStatus(items.length+' Song'+(items.length===1?'':'s')+' exportiert');
+}
+function exportSingleSong(item){
+  const safeName=(item.name||'song').replace(/[^a-z0-9\-_]+/gi,'_').slice(0,40) || 'song';
+  downloadJson(makeSongExportPayload([item]), 'mrm44-song-'+safeName+'-'+ioStamp()+'.json');
+  showSongIOStatus('„'+item.name+'“ exportiert');
+}
+document.getElementById('songExportAllBtn').addEventListener('click', exportAllSongs);
+const songImportInput=document.getElementById('songImportInput');
+document.getElementById('songImportBtn').addEventListener('click', ()=> songImportInput.click());
+songImportInput.addEventListener('change', async (e)=>{
+  const file=e.target.files[0]; songImportInput.value=''; if(!file) return;
+  try{
+    const parsed=JSON.parse(await file.text());
+    // Eigenes Format ({songs:[...]}), rohes Array oder einzelner Song (mit Arrangement)
+    const incoming=Array.isArray(parsed) ? parsed
+      : (parsed && Array.isArray(parsed.songs)) ? parsed.songs
+      : (parsed && Array.isArray(parsed.tracks) && parsed.arrangement) ? [parsed] : null;
+    if(!incoming || !incoming.length) throw new Error('Kein gültiges Song-Format gefunden');
+    const names=new Set((await songAll()).map(s=>s.name)); let imported=0, renamed=0;
+    for(const sg of incoming){
+      if(!sg || !sg.name || !Array.isArray(sg.tracks) || !sg.arrangement) continue;
+      const name=uniqueName(sg.name, names); if(name!==sg.name) renamed++; names.add(name);
+      await songPut(Object.assign({}, sg, { id:genId(), name, kind:'song', savedAt:Date.now() })); // immer frische id
+      imported++;
+    }
+    if(!imported) throw new Error('Keine gültigen Songs in der Datei gefunden');
+    songRefreshList();
+    showSongIOStatus(imported+' Song'+(imported===1?'':'s')+' importiert'+(renamed?' · '+renamed+'x umbenannt (Namenskonflikt)':''));
+  } catch(err){
+    console.warn('Song-Import fehlgeschlagen:', err);
+    showSongIOStatus('Import fehlgeschlagen — Datei ungültig', true);
+  }
+});
 songSaveBtn.addEventListener('click', async ()=>{
   const typed=songNameInput.value.trim(); if(!typed) return;
   const names=new Set((await songAll()).map(s=>s.name)), name=uniqueName(typed,names);
