@@ -3,13 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Taktart und Triolen (#46)</title>
+<title>Raster 32tel und Triolen (#46)</title>
 <link rel="stylesheet" href="../../fonts.css">
 <style>
-/* Mockup zu Issue #46: Die echte App (../../index.html) läuft im Rahmen.
-   „Vorschlag“ ersetzt dort zur Laufzeit Step-Raster, Übersicht und Scheduler:
-   jede Zeile im großen Raster ist ein Schlag, jeder Schlag hat seine eigene Unterteilung
-   (16tel, Triole, 16tel-Triole, Quintole). Abspielen klingt echt (Kit, Effekte, Mixer der App). */
+/* Mockup zu Issue #46 (vereinfacht): ein Raster pro Pattern – 16tel · 32tel · Triole.
+   Die echte App läuft im Rahmen; „Vorschlag“ ersetzt dort zur Laufzeit das große Raster,
+   die Übersicht und das Abspielen. Klang = Kit, Effekte und Mixer der App. */
 :root{color-scheme:dark;--bg:#050507;--blue:#3fa9ff;--blue-2:#8fd4ff;--white:#f4f5f7;--dim:#7d818c;--metal:#c7cbd4}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;margin:0}
@@ -26,7 +25,7 @@ body{background:var(--bg);color:var(--white);font-family:'Rajdhani',system-ui,sa
 .ph h4 b{color:var(--blue-2)}
 iframe{border:0;width:100%;height:100%;background:#050507;display:block}
 #phL{display:none}
-#side{display:none;width:310px;font-size:14px;color:var(--metal);line-height:1.45;padding-top:26px}
+#side{display:none;width:300px;font-size:14px;color:var(--metal);line-height:1.45;padding-top:26px}
 #side h3{font:700 11px 'Rajdhani';letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin:16px 0 6px}
 #side p{margin:0 0 8px} #side b{color:var(--white)}
 @media (min-width:900px) and (min-height:900px){
@@ -44,116 +43,68 @@ iframe{border:0;width:100%;height:100%;background:#050507;display:block}
 <div id="mbar">
   <span>#46</span>
   <div class="g"><button data-on="0">Heute</button><button data-on="1" class="on">Vorschlag</button></div>
-  <div class="g" id="gM"><span>Takt</span><button data-m="4/4" class="on">4/4</button><button data-m="3/4">3/4</button><button data-m="5/4">5/4</button><button data-m="6/8">6/8</button><button data-m="7/8">7/8</button></div>
-  <div class="g" id="gB"><span>Bedienung</span><button data-b="tap" class="on">Schlag antippen</button><button data-b="brush">Raster-Pinsel</button></div>
-  <div class="g" id="gX"><span>Beispiel</span><button data-x="fill">Triolen-Fill</button><button data-x="waltz">3/4 Walzer</button><button data-x="quint">5er-Hats</button><button data-x="shuffle">12/8 Shuffle</button></div>
+  <div class="g" id="gX"><span>Beispiel</span><button data-x="shuffle">Shuffle</button><button data-x="rolls">32tel-Hats</button></div>
 </div>
 <div id="stage">
   <div class="ph" id="phL"><h4>Heute</h4><iframe id="fL" src="../../index.html" title="App heute"></iframe></div>
-  <div class="ph" id="phR"><h4 id="hR">Vorschlag · <b>4/4</b></h4><iframe id="fR" title="App mit Vorschlag"></iframe></div>
+  <div class="ph" id="phR"><h4 id="hR">Vorschlag</h4><iframe id="fR" title="App mit Vorschlag"></iframe></div>
   <div id="side">
     <h3>Was das ist</h3>
-    <p>Beide Handys zeigen die <b>echte App</b>. Rechts sind Step-Raster, Übersicht und Abspielen zur Laufzeit ersetzt – der Klang kommt aus Kit, Effekten und Mixer der App.</p>
+    <p>Beide Handys zeigen die <b>echte App</b>. Rechts sind großes Raster, Übersicht und Abspielen zur Laufzeit ersetzt – der Klang kommt aus Kit, Effekten und Mixer der App.</p>
     <h3>Die Idee</h3>
-    <p>Im großen Raster ist <b>jede Zeile ein Schlag</b> (so wie heute schon 4 × 4). Die Taktart bestimmt die Zahl der Zeilen, jede Zeile hat ihre <b>eigene Unterteilung</b>: 16tel (4), Triole (3), 16tel-Triole (6) oder Quintole (5). Die Zellen füllen immer die ganze Zeile – damit ist das Raster automatisch zeitgetreu.</p>
-    <p>Links neben jeder Zeile sitzt der <b>Schlag-Kopf</b> (Nummer + Unterteilung). Triolen-Zeilen sind blau abgesetzt.</p>
-    <h3>Zwei Bedienungen</h3>
-    <p><b>Schlag antippen:</b> Kopf antippen → Auswahl, optional für alle Schläge.<br><b>Raster-Pinsel:</b> wie der Stärke-Pinsel – Raster wählen, dann Köpfe antippen.</p>
+    <p>Neue Leiste <b>Raster</b> über der Stärke: <b>16tel</b> (wie heute), <b>32tel</b> oder <b>Triole</b>. Gilt für das ganze Pattern.</p>
+    <p>Jede Zeile im großen Raster bleibt ein Schlag – nur die Zahl der Zellen ändert sich: 4, 8 oder 3.</p>
+    <p>Shuffle: Triole wählen, Hi-Hat auf Zelle 1 und 3 jedes Schlags.</p>
     <h3>Umschalten</h3>
-    <p>Gesetzte Schläge rutschen auf die zeitlich nächste Zelle. Schaltet man direkt zurück, ist das Original wieder da. Beim Taktwechsel bleiben weggefallene Schläge gemerkt.</p>
-    <p>Swing wirkt nur in 16tel-Schlägen. Das Metronom klickt auf jedem Schlag, die 1 betont.</p>
+    <p>Gesetzte Steps rutschen auf die zeitlich nächste Zelle. Direkt zurückschalten bringt das Original wieder.</p>
     <h3>Im Mockup nicht drin</h3>
-    <p>1 Takt, kein Speichern. Melodiespuren spielen nur, wo ihre 16tel auf eine Zelle fallen. Fill, Undo und Song ignorieren das neue Raster.</p>
+    <p>1 Takt, kein Speichern. Melodiespuren spielen nur, wo ihre 16tel auf eine Zelle fallen.</p>
     <h3>Zur Entscheidung</h3>
-    <p>Antippen oder Pinsel? Reichen die vier Unterteilungen? Taktart in der Karte „Aktueller Beat“ neben der Länge?</p>
+    <p>Passt der Ort der Leiste? Reicht das so für Shuffle?</p>
   </div>
 </div>
 <script>
-// ===== Läuft im Rahmen der App: per __mkEval im Skript-Scope der App (sieht und ersetzt deren Funktionen) =====
+// ===== Läuft im Skript-Scope der App (per __mkEval, siehe unten) =====
 function MK(){
   if(window.__mk) return;
-  const METERS={'4/4':[2,2,2,2],'3/4':[2,2,2],'5/4':[2,2,2,2,2],'6/8':[3,3],'7/8':[2,2,3]};
-  // Unterteilungen je Schlaglänge (in Achteln): 2 = Viertel, 3 = punktierte Viertel
-  const DIVS={2:[4,3,6,5],3:[6,3,4,2]};
-  const DLAB={2:{4:['16','16tel'],3:['3','Triole'],6:['6','16tel-Triole'],5:['5','Quintole']},
-              3:{6:['16','16tel'],3:['8','Achtel'],4:['4','Quartole'],2:['2','Duole']}};
-  const STRAIGHT={2:4,3:6};
-  let on=false, meter='4/4', mode='tap', brushIdx=1, beats=[]; const spare={};
+  const RAS=[[4,'16','16tel'],[8,'32','32tel'],[3,'3','Triole']];
+  let on=false, spb=4, H={}, A={}, snap={};
   const clone=o=>JSON.parse(JSON.stringify(o));
-  const newBeat=len=>({len,div:STRAIGHT[len],h:{},a:{},snap:{}});
-  const isTup=b=>b.div!==STRAIGHT[b.len];
-  const drumTr=()=>TRACKS.filter(t=>t.type!=='arp');
-
-  // ---------- Zellen / Zeiten ----------
-  function cells(){
-    const e=60/bpm/2, out=[]; let t=0;
-    beats.forEach((b,bi)=>{ const d=b.len*e/b.div; for(let j=0;j<b.div;j++){ out.push({b:bi,j,dur:d,start:t,beat:b}); t+=d; } });
-    return out;
-  }
+  const n=()=>spb*4;
+  const cellDur=()=>60/bpm/spb;
   const s16=()=>60/bpm/4;
-  function vOf(tr,c){
-    if(tr.type==='arp'){ const p=c.start/s16(), k=Math.round(p); return Math.abs(p-k)<1e-6 && k<tr.steps.length ? (tr.steps[k]||0) : 0; }
-    return (c.beat.h[tr.id]||[])[c.j]||0;
+  function importSteps(){ spb=4; H={}; A={}; snap={};
+    TRACKS.filter(t=>t.type!=='arp').forEach(t=>{ H[t.id]=t.steps.slice(0,16).map(v=>v||0); A[t.id]=Array.from({length:16},(_,i)=>t.notes?t.notes[i]|0:0); }); }
+  function vOf(tr,k){
+    if(tr.type==='arp'){ const p=k*4/spb, r=Math.round(p); return Math.abs(p-r)<1e-6&&r<tr.steps.length?(tr.steps[r]||0):0; }
+    return (H[tr.id]||[])[k]||0;
   }
-  function aOf(tr,c){ return (c.beat.a[tr.id]||[])[c.j]|0; }
-  function letter(tr,c){ const L=ART[tr.id]; if(!L||!(vOf(tr,c)>0)) return ''; const a=aOf(tr,c); return a>0&&L[a]?L[a].k:''; }
-
-  function remap(src,from,to){
-    const r={h:{},a:{}};
-    Object.keys(src.h).forEach(id=>{
-      const H=new Array(to).fill(0), A=new Array(to).fill(0);
-      (src.h[id]||[]).forEach((v,j)=>{ if(!(v>0)) return; const k=Math.min(to-1,Math.round(j/from*to)); if(v>H[k]){ H[k]=v; A[k]=(src.a[id]||[])[j]|0; } });
-      r.h[id]=H; r.a[id]=A;
-    });
-    return r;
+  const aOf=(tr,k)=>(A[tr.id]||[])[k]|0;
+  function letter(tr,k){ const L=ART[tr.id]; if(!L||!(vOf(tr,k)>0)) return ''; const a=aOf(tr,k); return a>0&&L[a]?L[a].k:''; }
+  function remap(src,from,to){ const r={h:{},a:{}}, N=to*4;
+    Object.keys(src.h).forEach(id=>{ const h=new Array(N).fill(0), a=new Array(N).fill(0);
+      src.h[id].forEach((v,j)=>{ if(!(v>0)) return; const k=Math.min(N-1,Math.round(j/from*to)); if(v>h[k]){ h[k]=v; a[k]=src.a[id][j]|0; } });
+      r.h[id]=h; r.a[id]=a; }); return r; }
+  function setRaster(to){
+    if(to===spb) return; const from=spb; snap[from]={h:clone(H),a:clone(A)};
+    const s=snap[to];
+    if(s && JSON.stringify(remap(s,to,from))===JSON.stringify({h:H,a:A})){ H=clone(s.h); A=clone(s.a); }
+    else { const r=remap({h:H,a:A},from,to); H=r.h; A=r.a; }
+    spb=to; render();
   }
-  function setDiv(b,to){
-    if(b.div===to) return;
-    const from=b.div; b.snap[from]={h:clone(b.h),a:clone(b.a)};
-    const s=b.snap[to]; let done=false;
-    if(s && JSON.stringify(remap(s,to,from))===JSON.stringify(remap({h:b.h,a:b.a},from,from))){ b.h=clone(s.h); b.a=clone(s.a); done=true; }
-    if(!done){ const r=remap({h:b.h,a:b.a},from,to); b.h=r.h; b.a=r.a; }
-    b.div=to;
-  }
-  function setMeter(m){
-    const lens=METERS[m];
-    beats.forEach((b,i)=>{ spare[i+':'+b.len]=b; });
-    beats=lens.map((len,i)=>spare[i+':'+len]||newBeat(len));
-    meter=m; render();
-  }
-  function importSteps(){
-    beats=METERS['4/4'].map(newBeat); meter='4/4';
-    drumTr().forEach(tr=>beats.forEach((b,bi)=>{
-      b.h[tr.id]=[0,1,2,3].map(j=>tr.steps[bi*4+j]||0);
-      b.a[tr.id]=[0,1,2,3].map(j=>tr.notes?tr.notes[bi*4+j]|0:0);
-    }));
-  }
-  function put(id,bi,arr){ const b=beats[bi]; b.h[id]=arr.slice(); b.a[id]=arr.map(()=>0); }
-  const N=VEL_NORMAL, A=VEL_ACCENT, G=VEL_GHOST, O=0;
+  const N=VEL_NORMAL, X=VEL_ACCENT, G=VEL_GHOST, O=0;
   function example(k){
-    Object.keys(spare).forEach(x=>delete spare[x]);
-    const ids=drumTr().map(t=>t.id);
-    if(k==='waltz'){ beats=METERS['3/4'].map(newBeat); meter='3/4';
-      put('bd',0,[A,O,O,O]); put('sd',1,[N,O,O,O]); put('sd',2,[N,O,O,G]);
-      [0,1,2].forEach(i=>put('ch',i,[N,O,G,O]));
-    } else if(k==='quint'){ beats=METERS['4/4'].map(newBeat); meter='4/4';
-      beats.forEach(b=>b.div=5);
-      put('bd',0,[A,O,O,O,O]); put('bd',2,[N,O,O,O,O]); put('sd',1,[N,O,O,O,O]); put('sd',3,[N,O,O,O,G]);
-      [0,1,2,3].forEach(i=>put('ch',i,[N,G,N,G,N]));
-    } else if(k==='shuffle'){ beats=METERS['4/4'].map(newBeat); meter='4/4';
-      beats.forEach(b=>b.div=3);
-      put('bd',0,[A,O,O]); put('bd',2,[N,O,N]); put('sd',1,[N,O,O]); put('sd',3,[N,O,G]);
-      [0,1,2,3].forEach(i=>put('ch',i,[N,O,N]));
-    } else { beats=METERS['4/4'].map(newBeat); meter='4/4';
-      put('bd',0,[A,O,O,O]); put('bd',2,[N,O,N,O]); put('sd',1,[N,O,O,O]);
-      [0,1,2].forEach(i=>put('ch',i,[N,O,N,O]));
-      beats[3].div=6; put('sd',3,[N,G,N,N,G,N]); put('bd',3,[O,O,O,O,O,O]); put('ch',3,[O,O,O,O,O,O]);
-      put('cy',0,[N,O,O,O]);
+    importSteps(); Object.keys(H).forEach(id=>{ H[id]=[]; A[id]=[]; });
+    if(k==='shuffle'){ spb=3;
+      H.bd=[X,O,O, O,O,O, N,O,N, O,O,O]; H.sd=[O,O,O, N,O,O, O,O,G, N,O,O];
+      H.ch=[N,O,G, N,O,G, N,O,G, N,O,G];
+    } else { spb=8;
+      H.bd=[X,O,O,O,O,O,O,O, O,O,O,O,O,O,O,O, O,O,O,O,N,O,O,O, O,O,O,O,O,O,O,O];
+      H.sd=[O,O,O,O,O,O,O,O, N,O,O,O,O,O,O,O, O,O,O,O,O,O,O,O, N,O,O,O,O,O,O,O];
+      H.ch=[N,O,O,O,N,O,O,O, N,O,O,O,N,O,G,G, N,O,O,O,N,O,O,O, N,O,G,O,N,G,N,G];
     }
-    ids.forEach(id=>beats.forEach(b=>{ if(!b.h[id]){ b.h[id]=new Array(b.div).fill(0); b.a[id]=new Array(b.div).fill(0); } }));
-    beats.forEach(b=>{ b.snap={}; });
-    const sd=TRACKS.findIndex(t=>t.id===(k==='quint'||k==='shuffle'?'ch':'sd')); selectTrack(sd);
-    render();
+    Object.keys(H).forEach(id=>{ const h=H[id]; H[id]=Array.from({length:n()},(_,i)=>h[i]||0); A[id]=new Array(n()).fill(0); });
+    snap={}; selectTrack(TRACKS.findIndex(t=>t.id==='ch')); render();
   }
 
   // ---------- DOM ----------
@@ -162,165 +113,103 @@ function MK(){
   html.mk #bigGrid{display:none!important}
   html.mk #pageNav,html.mk #pinBtn,html.mk #taScope{display:none!important}
   #mkGrid{flex:1;min-height:260px;display:flex;flex-direction:column;gap:8px}
-  .mk-row{flex:1;display:flex;gap:8px;min-height:44px}
-  .mk-head{flex:0 0 38px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:var(--panel);color:var(--dim);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;padding:0;font-family:inherit}
-  .mk-head i{font:700 15px 'JetBrains Mono',monospace;font-style:normal;color:var(--metal)}
-  .mk-head b{font:700 11px 'JetBrains Mono',monospace;min-width:22px;height:18px;padding:0 3px;border-radius:4px;background:var(--blue-dim,#1c4666);color:var(--blue-2);display:flex;align-items:center;justify-content:center}
-  .mk-row.tup .mk-head{border-color:var(--blue);background:rgba(63,169,255,.16)}
-  .mk-row.tup .mk-head b{background:var(--blue);color:#042c53}
-  .mk-row.sel .mk-head{box-shadow:0 0 0 2px var(--blue-2)}
-  .mk-cells{flex:1;display:flex;gap:clamp(5px,1.6vw,8px);border-radius:12px}
-  .mk-row.tup .mk-cells{background:rgba(63,169,255,.07);box-shadow:inset 0 0 0 1px rgba(63,169,255,.28);padding:3px}
-  .mk-cells .bstep{flex:1;min-width:0;aspect-ratio:auto}
+  .mk-row{flex:1;display:flex;gap:clamp(5px,1.6vw,8px);min-height:44px}
+  .mk-row .bstep{flex:1;min-width:0;aspect-ratio:auto}
+  #mkGrid.r8 .mk-row{gap:4px}
+  #mkGrid.r8 .bstep{border-radius:8px;padding:4px}
   html.mk .ov-row{grid-template-columns:42px 1fr}
   html.mk .ov-row>.ov-cell{display:none}
   .mk-ov{display:flex;gap:2px;align-items:center;min-width:0}
-  .mk-ov .ov-cell{min-width:0}
+  .mk-ov.r8{gap:1px}
+  .mk-ov .ov-cell{flex:1;min-width:0}
   .mk-ov .ov-cell.bs{margin-left:4px}
-  .mk-ov .ov-cell.tp{border-bottom:2px solid rgba(63,169,255,.55)}
   #mkRas{display:flex;gap:6px;align-items:center}
   #mkRas .al{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);flex:none;width:72px}
-  #mkRas button{flex:1;min-width:0;min-height:44px;border-radius:9px;border:1px solid rgba(255,255,255,.12);background:var(--panel);color:var(--dim);font-family:inherit;font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center;gap:5px;padding:0 3px;cursor:pointer;line-height:1.05;text-align:left}
+  #mkRas button{flex:1;min-width:0;min-height:44px;border-radius:9px;border:1px solid rgba(255,255,255,.12);background:var(--panel);color:var(--dim);font-family:inherit;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px;padding:0 4px;cursor:pointer}
   #mkRas button b{font:700 11px 'JetBrains Mono',monospace;min-width:20px;height:18px;padding:0 2px;border-radius:4px;background:var(--blue-dim,#1c4666);color:var(--blue-2);display:flex;align-items:center;justify-content:center;flex:none}
   #mkRas button.on{border-color:var(--blue);background:rgba(63,169,255,.16);color:var(--blue-2)}
   #mkRas button.on b{background:var(--blue);color:#042c53}
-  #mkPop{position:fixed;z-index:90;width:min(300px,calc(100vw - 24px));background:#0f1015;border:1px solid rgba(63,169,255,.4);border-radius:14px;padding:10px;box-shadow:0 16px 40px rgba(0,0,0,.7);display:none;flex-direction:column;gap:8px}
-  #mkPop.open{display:flex}
-  #mkPop .t{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
-  #mkPop .o{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-  #mkPop .o button{min-height:48px;border-radius:9px;border:1px solid rgba(255,255,255,.12);background:var(--panel);color:var(--metal);font-family:inherit;font-weight:700;font-size:13px;display:flex;align-items:center;gap:8px;padding:0 10px;cursor:pointer}
-  #mkPop .o button b{font:700 11px 'JetBrains Mono',monospace;min-width:22px;height:20px;border-radius:4px;background:var(--blue-dim,#1c4666);color:var(--blue-2);display:flex;align-items:center;justify-content:center}
-  #mkPop .o button.on{border-color:var(--blue);background:rgba(63,169,255,.16);color:var(--blue-2)}
-  #mkPop .o button.on b{background:var(--blue);color:#042c53}
-  #mkPop .all{min-height:40px;border-radius:9px;border:1px solid rgba(255,255,255,.12);background:transparent;color:var(--dim);font-family:inherit;font-weight:700;font-size:12px;cursor:pointer}
-  #mkPop .all.on{color:var(--blue-2);border-color:var(--blue)}
   `;
   document.head.appendChild(st);
   const grid=document.createElement('div'); grid.id='mkGrid';
   const ras=document.createElement('div'); ras.id='mkRas';
-  const pop=document.createElement('div'); pop.id='mkPop';
-  let popBeat=-1, popAll=false;
-  let bigEls=[]; // je Zelle (flach) das bstep-Element
-  const ovEls=new Map(); // tr → Zellen
+  ras.addEventListener('click',e=>{ const b=e.target.closest('[data-r]'); if(b) setRaster(+b.dataset.r); });
+  let bigEls=[]; const ovEls=new Map();
 
   function render(){
     if(!on) return;
-    const tr=TRACKS[activeTrackIdx], C=cells();
-    // großes Raster
-    grid.style.display=tr.type==='arp'?'none':'';
-    grid.innerHTML=''; bigEls=[];
-    beats.forEach((b,bi)=>{
-      const row=document.createElement('div'); row.className='mk-row'+(isTup(b)?' tup':'')+(bi===popBeat?' sel':'');
-      const hd=document.createElement('button'); hd.className='mk-head';
-      hd.innerHTML='<i>'+(bi+1)+'</i><b>'+DLAB[b.len][b.div][0]+'</b>';
-      hd.setAttribute('aria-label','Schlag '+(bi+1)+': '+DLAB[b.len][b.div][1]);
-      hd.onclick=e=>{ e.stopPropagation(); headTap(bi,hd); };
-      const cs=document.createElement('div'); cs.className='mk-cells';
-      for(let j=0;j<b.div;j++){
-        const c=C.find(x=>x.b===bi&&x.j===j);
-        const el=document.createElement('div'); el.className='bstep'+(j===0?' beat-start':'');
-        el.style.setProperty('--tc',tr.color);
-        el.innerHTML='<span class="num">'+(j===0?(bi+1):'')+'</span>';
-        updateStepVisual(el,vOf(tr,c)); el.dataset.a=letter(tr,c);
-        el.onclick=()=>cellTap(bi,j);
-        cs.appendChild(el); bigEls.push(el);
+    const tr=TRACKS[activeTrackIdx], arp=tr.type==='arp';
+    ras.style.display=arp?'none':'';
+    ras.innerHTML='<span class="al">Raster</span>'+RAS.map(([v,k,l])=>'<button data-r="'+v+'" class="'+(v===spb?'on':'')+'"><b>'+k+'</b>'+l+'</button>').join('');
+    grid.style.display=arp?'none':''; grid.className=spb===8?'r8':''; grid.innerHTML=''; bigEls=[];
+    for(let b=0;b<4;b++){
+      const row=document.createElement('div'); row.className='mk-row';
+      for(let j=0;j<spb;j++){
+        const k=b*spb+j, el=document.createElement('div');
+        el.className='bstep'+(j===0?' beat-start':''); el.style.setProperty('--tc',tr.color);
+        el.innerHTML='<span class="num">'+(j===0?b+1:'')+'</span>';
+        updateStepVisual(el,vOf(tr,k)); el.dataset.a=letter(tr,k);
+        el.onclick=()=>tap(k); row.appendChild(el); bigEls.push(el);
       }
-      row.append(hd,cs); grid.appendChild(row);
-    });
-    // Pinsel-Leiste
-    ras.style.display=(mode==='brush'&&tr.type!=='arp')?'':'none';
-    const L0=beats.every(b=>b.len===3)?3:2;
-    ras.innerHTML='<span class="al">Raster</span>'+DIVS[L0].map((d,i)=>'<button data-i="'+i+'" class="'+(i===brushIdx?'on':'')+'"><b>'+DLAB[L0][d][0]+'</b>'+DLAB[L0][d][1].replace('16tel-','16tel-<br>')+'</button>').join('');
-    // Übersicht
-    const tot=C.reduce((s,c)=>s+c.dur,0);
+      grid.appendChild(row);
+    }
     TRACKS.forEach((t,idx)=>{
       let box=t._ovRow.querySelector('.mk-ov');
-      if(!box){ box=document.createElement('div'); box.className='mk-ov'; t._ovRow.appendChild(box); }
-      box.innerHTML=''; const arr=[];
-      C.forEach(c=>{ const el=document.createElement('div'); el.className='ov-cell'+(c.j===0&&c.b>0?' bs':'')+(isTup(c.beat)?' tp':'');
-        el.style.flex=(c.dur/tot*100)+' 1 0'; updateStepVisual(el,vOf(t,c)); el.onclick=()=>selectTrack(idx); box.appendChild(el); arr.push(el); });
+      if(!box){ box=document.createElement('div'); t._ovRow.appendChild(box); }
+      box.className='mk-ov'+(spb===8?' r8':''); box.innerHTML=''; const arr=[];
+      for(let k=0;k<n();k++){ const el=document.createElement('div'); el.className='ov-cell'+(k%spb===0&&k>0?' bs':'');
+        updateStepVisual(el,vOf(t,k)); el.onclick=()=>selectTrack(idx); box.appendChild(el); arr.push(el); }
       ovEls.set(t,arr);
     });
   }
-  function cellTap(bi,j){
-    const tr=TRACKS[activeTrackIdx], b=beats[bi];
-    const H=b.h[tr.id]||(b.h[tr.id]=new Array(b.div).fill(0)), Aa=b.a[tr.id]||(b.a[tr.id]=new Array(b.div).fill(0));
+  function tap(k){
+    const tr=TRACKS[activeTrackIdx];
+    const h=H[tr.id]||(H[tr.id]=new Array(n()).fill(0)), a=A[tr.id]||(A[tr.id]=new Array(n()).fill(0));
     const sa=ART[tr.id]?stepArt[tr.id]|0:0;
-    if(H[j]===stepBrush && (!ART[tr.id]||(Aa[j]|0)===sa)) H[j]=0; else { H[j]=stepBrush; Aa[j]=sa; }
-    b.snap={}; render();
+    if(h[k]===stepBrush && (!ART[tr.id]||(a[k]|0)===sa)) h[k]=0; else { h[k]=stepBrush; a[k]=sa; }
+    snap={}; render();
   }
-  function divFor(b,i){ return DIVS[b.len][i]; }
-  function headTap(bi,hd){
-    const b=beats[bi];
-    if(mode==='brush'){ setDiv(b,divFor(b,brushIdx)); render(); return; }
-    popBeat=bi; popAll=false; drawPop(); render();
-    const r=hd.getBoundingClientRect(), ph=pop.offsetHeight||170;
-    pop.style.left='12px';
-    pop.style.top=(r.bottom+8+ph<innerHeight? r.bottom+8 : Math.max(8,r.top-ph-8))+'px';
-  }
-  function drawPop(){
-    const b=beats[popBeat]; if(!b){ pop.classList.remove('open'); return; }
-    pop.innerHTML='<div class="t">Schlag '+(popBeat+1)+' · Unterteilung</div><div class="o">'+DIVS[b.len].map(d=>'<button data-d="'+d+'" class="'+(d===b.div?'on':'')+'"><b>'+DLAB[b.len][d][0]+'</b>'+DLAB[b.len][d][1]+'</button>').join('')+'</div><button class="all'+(popAll?' on':'')+'">Für alle Schläge</button>';
-    pop.classList.add('open');
-  }
-  pop.addEventListener('click',e=>{
-    e.stopPropagation();
-    if(e.target.closest('.all')){ popAll=!popAll; if(popAll){ const d=beats[popBeat].div, i=DIVS[beats[popBeat].len].indexOf(d); beats.forEach(b=>setDiv(b,divFor(b,i))); } drawPop(); render(); return; }
-    const bt=e.target.closest('[data-d]'); if(!bt) return;
-    const b=beats[popBeat], i=DIVS[b.len].indexOf(+bt.dataset.d);
-    if(popAll) beats.forEach(x=>setDiv(x,divFor(x,i))); else setDiv(b,+bt.dataset.d);
-    drawPop(); render();
-  });
-  document.addEventListener('pointerdown',e=>{ if(popBeat>=0 && !pop.contains(e.target) && !e.target.closest('.mk-head')){ popBeat=-1; pop.classList.remove('open'); render(); } },true);
-  ras.addEventListener('click',e=>{ const bt=e.target.closest('[data-i]'); if(!bt) return; brushIdx=+bt.dataset.i; render(); });
-
-  // Leeren / Zufall der aktiven Spur aufs neue Raster umlenken
-  function intercept(id,fn){ const el=document.getElementById(id); el.addEventListener('click',e=>{ if(!on||TRACKS[activeTrackIdx].type==='arp') return; e.stopImmediatePropagation(); fn(TRACKS[activeTrackIdx]); render(); },true); }
-  intercept('taClearBtn',tr=>beats.forEach(b=>{ b.h[tr.id]=new Array(b.div).fill(0); b.snap={}; }));
-  intercept('taRandBtn',tr=>beats.forEach(b=>{ b.h[tr.id]=Array.from({length:b.div},(_,j)=>Math.random()<(j===0?.55:.3)?[VEL_GHOST,VEL_NORMAL,VEL_NORMAL,VEL_ACCENT][Math.random()*4|0]:0); b.a[tr.id]=new Array(b.div).fill(0); b.snap={}; }));
+  function intercept(id,fn){ document.getElementById(id).addEventListener('click',e=>{ if(!on||TRACKS[activeTrackIdx].type==='arp') return; e.stopImmediatePropagation(); fn(TRACKS[activeTrackIdx]); snap={}; render(); },true); }
+  intercept('taClearBtn',tr=>{ H[tr.id]=new Array(n()).fill(0); });
+  intercept('taRandBtn',tr=>{ H[tr.id]=Array.from({length:n()},(_,k)=>Math.random()<(k%spb===0?.5:.25)?[VEL_GHOST,VEL_NORMAL,VEL_NORMAL,VEL_ACCENT][Math.random()*4|0]:0); A[tr.id]=new Array(n()).fill(0); });
 
   // ---------- Abspielen ----------
   const orig={scheduler, visualLoop, renderBigGrid, renderAllForPage};
-  let C_=[];
   function mkScheduler(){
     while(nextNoteTime < audioCtx.currentTime + scheduleAheadTime){
-      C_=cells(); if(currentStep>=C_.length) currentStep=0;
-      const c=C_[currentStep];
-      const sw=(c.beat.div===STRAIGHT[c.beat.len] && c.beat.len===2 && c.j%2===1) ? c.dur*swing : 0;
-      curAbsStep=absStepCounter;
-      schedCell(currentStep,c,nextNoteTime+sw);
-      absStepCounter++;
-      nextNoteTime+=c.dur;
-      currentStep=(currentStep+1)%C_.length;
+      if(currentStep>=n()) currentStep=0;
+      const k=currentStep, d=cellDur();
+      // Swing wie heute: nur ungerade 16tel (bei 32tel die beiden Zellen darin), nicht bei Triolen
+      const sw=spb===3?0:(Math.floor(k*4/spb)%2===1?s16()*swing:0);
+      curAbsStep=absStepCounter; cell(k,nextNoteTime+sw); absStepCounter++;
+      nextNoteTime+=d; currentStep=(k+1)%n();
     }
     timerID=setTimeout(scheduler, lookahead);
   }
-  function schedCell(idx,c,time){
-    if(metronomeClickEnabled && c.j===0) playMetronomeClick(time, c.b===0);
-    scheduledSteps.push({step:idx,time,isFill:false,abs:curAbsStep});
+  function cell(k,time){
+    if(metronomeClickEnabled && k%spb===0) playMetronomeClick(time, k===0);
+    scheduledSteps.push({step:k,time,isFill:false,abs:curAbsStep});
     const anySolo=TRACKS.some(t=>t.solo);
     TRACKS.forEach(tr=>{
-      if(anySolo && !tr.solo) return; if(!anySolo && tr.muted) return;
-      const v=vOf(tr,c); if(!(v>0)) return;
-      const jit=humanize>0?(Math.random()*2-1)*0.012*humanize:0, t=time+(tr.feel||0)/1000+jit;
-      if(tr.type==='arp'){ evPlay(tr, Math.round(c.start/s16()), t, 1, curAbsStep); return; }
-      const pv=humanize>0?Math.max(0.05,Math.min(1.5,v*(1+(Math.random()*2-1)*0.12*humanize))):v;
-      triggerTrack(tr,t,pv,aOf(tr,c));
+      if(anySolo&&!tr.solo) return; if(!anySolo&&tr.muted) return;
+      const v=vOf(tr,k); if(!(v>0)) return;
+      const t=time+(tr.feel||0)/1000+(humanize>0?(Math.random()*2-1)*0.012*humanize:0);
+      if(tr.type==='arp'){ evPlay(tr,Math.round(k*4/spb),t,1,curAbsStep); return; }
+      triggerTrack(tr,t,humanize>0?Math.max(0.05,Math.min(1.5,v*(1+(Math.random()*2-1)*0.12*humanize))):v,aOf(tr,k));
     });
   }
-  let lastI=-1;
+  let last=-1;
   function mkVisual(){
     if(!isPlaying) return;
     requestAnimationFrame(visualLoop);
     const now=audioCtx.currentTime;
     while(scheduledSteps.length && scheduledSteps[0].time<=now){
       const ev=scheduledSteps.shift(); modVisAbs=ev.abs; updateAutoVisual();
-      if(ev.step===lastI) continue; lastI=ev.step;
+      if(ev.step===last) continue; last=ev.step;
       document.querySelectorAll('.playcol').forEach(el=>el.classList.remove('playcol'));
-      const be=bigEls[ev.step]; if(be){ be.classList.add('playcol'); }
+      const be=bigEls[ev.step]; if(be) be.classList.add('playcol');
       ovEls.forEach(arr=>{ if(arr[ev.step]) arr[ev.step].classList.add('playcol'); });
-      const tr=TRACKS[activeTrackIdx], c=C_[ev.step];
-      if(be && c && vOf(tr,c)>0){ be.classList.add('flash'); setTimeout(()=>be.classList.remove('flash'),90); }
+      if(be && vOf(TRACKS[activeTrackIdx],ev.step)>0){ be.classList.add('flash'); setTimeout(()=>be.classList.remove('flash'),90); }
     }
   }
   function enable(v){
@@ -328,50 +217,43 @@ function MK(){
     if(isPlaying) stop();
     on=v; document.documentElement.classList.toggle('mk',on);
     if(on){
-      if(!beats.length) importSteps();
+      if(!Object.keys(H).length) importSteps();
       document.getElementById('bigGrid').after(grid);
-      document.getElementById('artRow').after(ras);
-      document.body.appendChild(pop);
+      document.getElementById('brushRow').before(ras);
       scheduler=mkScheduler; visualLoop=mkVisual;
       renderBigGrid=function(){ orig.renderBigGrid(); render(); };
       renderAllForPage=function(){ orig.renderAllForPage(); render(); };
       currentPage=0; render();
     } else {
       scheduler=orig.scheduler; visualLoop=orig.visualLoop; renderBigGrid=orig.renderBigGrid; renderAllForPage=orig.renderAllForPage;
-      grid.remove(); ras.remove(); pop.remove();
-      document.querySelectorAll('.mk-ov').forEach(x=>x.remove());
+      grid.remove(); ras.remove(); document.querySelectorAll('.mk-ov').forEach(x=>x.remove());
       renderAllForPage(); renderPageNav();
     }
   }
-  window.__mk={enable, setMeter, mode:m=>{ mode=m; popBeat=-1; pop.classList.remove('open'); render(); }, example, get meter(){ return meter; }};
+  window.__mk={enable, example};
 }
 
 // ===== Rahmen-Steuerung =====
-const fR=document.getElementById('fR');
-let st={on:true, meter:'4/4', mode:'tap'};
-function hook(){ const w=fR.contentWindow; if(!w||!w.__mkEval) return null; if(!w.__mk){ try{ w.__mkEval('('+MK.toString()+')()'); }catch(e){ console.error(e); return null; } } return w.__mk; }
 // Die App kapselt alles in einer Funktion. Wie bei den Tests (tests/run.py) wird in eine Kopie
 // eine Brücke eingesetzt; der Rahmen lädt diese Kopie, index.html selbst bleibt unverändert.
+const fR=document.getElementById('fR');
+let isOn=true;
+function hook(){ const w=fR.contentWindow; if(!w||!w.__mkEval) return null; if(!w.__mk){ try{ w.__mkEval('('+MK.toString()+')()'); }catch(e){ console.error(e); return null; } } return w.__mk; }
+function apply(){ const m=hook(); if(m) m.enable(isOn); sync(); }
+function sync(){
+  document.querySelectorAll('[data-on]').forEach(b=>b.classList.toggle('on',+b.dataset.on===+isOn));
+  document.querySelectorAll('[data-x]').forEach(b=>b.disabled=!isOn);
+  document.getElementById('hR').innerHTML='Vorschlag · <b>'+(isOn?'Raster':'aus')+'</b>';
+}
 const HOOK="let activeTrackIdx=0;";
 fetch('../../index.html',{cache:'no-store'}).then(r=>r.text()).then(html=>{
   if(!html.includes(HOOK)){ document.getElementById('hR').textContent='Brücke nicht gefunden'; return; }
   const base=new URL('../../',location.href).href;
-  html=html.replace(HOOK,HOOK+'\nwindow.__mkEval=s=>eval(s);').replace('<head>','<head><base href="'+base+'">');
-  fR.srcdoc=html;
+  fR.srcdoc=html.replace(HOOK,HOOK+'\nwindow.__mkEval=s=>eval(s);').replace('<head>','<head><base href="'+base+'">');
 });
-function apply(){ const m=hook(); if(!m) return; m.enable(st.on); if(st.on){ m.mode(st.mode); if(m.meter!==st.meter) m.setMeter(st.meter); } sync(); }
-function sync(){
-  document.querySelectorAll('[data-on]').forEach(b=>b.classList.toggle('on',+b.dataset.on===+st.on));
-  document.querySelectorAll('[data-m]').forEach(b=>{ b.classList.toggle('on',b.dataset.m===st.meter); b.disabled=!st.on; });
-  document.querySelectorAll('[data-b]').forEach(b=>{ b.classList.toggle('on',b.dataset.b===st.mode); b.disabled=!st.on; });
-  document.querySelectorAll('[data-x]').forEach(b=>b.disabled=!st.on);
-  document.getElementById('hR').innerHTML='Vorschlag · <b>'+(st.on?st.meter:'aus')+'</b>';
-}
 fR.addEventListener('load',()=>setTimeout(apply,700));
-document.querySelectorAll('[data-on]').forEach(b=>b.onclick=()=>{ st.on=!!+b.dataset.on; apply(); });
-document.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{ st.meter=b.dataset.m; apply(); });
-document.querySelectorAll('[data-b]').forEach(b=>b.onclick=()=>{ st.mode=b.dataset.b; apply(); });
-document.querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{ const m=hook(); if(!m) return; m.example(b.dataset.x); st.meter=m.meter; sync(); });
+document.querySelectorAll('[data-on]').forEach(b=>b.onclick=()=>{ isOn=!!+b.dataset.on; apply(); });
+document.querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{ const m=hook(); if(m) m.example(b.dataset.x); });
 const fitTop=()=>document.getElementById('stage').style.top=document.getElementById('mbar').offsetHeight+'px'; addEventListener('resize',fitTop); fitTop();
 sync();
 </script>
