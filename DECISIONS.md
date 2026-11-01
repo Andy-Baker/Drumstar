@@ -63,6 +63,7 @@ Zusammengeführt am 28.10.2026 aus DECISIONS-2/-3, ARCHITECTURE-11/-12 und ROADM
 - Master-Regler in der Transportleiste; dauerhafter „Folgen“-Schalter; gestrichelter Rand der Random-Leiste.
 - Eigenes Pattern-Sheet für Name + Länge.
 - Sample-Quellen aus den Drums streichen (höchstens Aufräumschritt, nachdem der Sampler steht).
+- Farben/Themes wählbar machen (1.11., Mockup Presets bzw. Presets + Anpassen; liegt in der Git-Historie, #47).
 
 ## Lektionen
 - Dekodierte Sample-Kits sind groß (Studio ≈ 45 MB als Float). Nicht benutzte Kits freigeben (`smpFree`); Tests mit vielen WAV-Exporten brauchen frische Seiten bzw. `gc()`, sonst stürzt Chromium ab.
