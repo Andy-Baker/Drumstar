@@ -105,6 +105,12 @@ async def main():
     await pg.evaluate("__audio.smpOpt({layers:true,rr:true,vari:50,room:0.22})")
     v1,_=await exp('studio',{'sd':{0:3}}); v2,_=await exp('studio',{'sd':{0:3}})
     ok('Option Variation/Round Robin an: zwei gleiche Schläge klingen verschieden', float(np.abs(v1-v2).max())>1e-3)
+    # #42: Gruppe stumm muss auch den Kit-Raum stummschalten (Raum lief direkt auf den Master)
+    await pg.evaluate("s=>__ev(s)","(()=>{ grps.drums.muted=true; })()")
+    m,_=await exp('studio',{'sd':{0:4},'bd':{4:4}})
+    await pg.evaluate("s=>__ev(s)","(()=>{ grps.drums.muted=false; })()")
+    u,_=await exp('studio',{'sd':{0:4},'bd':{4:4}})
+    ok('Sample-Kit: Drums-Gruppe stumm = auch Raum still (#42)', float(np.abs(m).max())<1e-5 and float(np.abs(u).max())>1e-3, f'stumm {db(float(np.abs(m).max())+1e-12):.0f} dB, an {db(float(np.abs(u).max())):.0f} dB')
     x,_=await exp('studio',{'hc':{0:3},'cb':{4:3}})
     ok('Sample-Kits: Clap/Cowbell ohne Aufnahme spielen den Rock-Synth', db(np.abs(x).max())>-30, f'{db(np.abs(x).max()):.0f} dB')
     # ---------- #12: Export wartet aufs Laden, Song-Export mit Samples ----------

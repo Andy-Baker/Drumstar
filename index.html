@@ -3334,9 +3334,10 @@ function smpSet(kid,id){ // Aufnahme des Kits, sonst des Ersatz-Kits; null = noc
   if(st.buf[id]) return st.buf[id];
   return k.samples.fallback ? smpSet(k.samples.fallback,id) : null;
 }
-function smpRoom(){ // ein Raum je AudioContext (Live und WAV-Export getrennt)
-  let r=smpRooms.get(audioCtx);
-  if(!r || r.master!==master){
+function smpRoom(dest){ // ein Raum je AudioContext (Live und WAV-Export getrennt) und Ziel (Gruppe bzw. Master), damit Gruppen-Mute/Laut/FX auch den Raum treffen (#42)
+  dest=dest||master; let rs=smpRooms.get(audioCtx); if(!rs){ rs=new Map(); smpRooms.set(audioCtx,rs); }
+  let r=rs.get(dest);
+  if(!r){
     const sr=audioCtx.sampleRate, len=Math.floor(sr*0.9), ir=audioCtx.createBuffer(2,len,sr);
     for(let ch=0;ch<2;ch++){ const d=ir.getChannelData(ch); let seed=ch?7:3;
       for(let i=0;i<len;i++){ seed=(seed*16807)%2147483647; const t=i/sr; d[i]=(seed/2147483647*2-1)*Math.exp(-t*7.5)*(t<0.004?t/0.004:1)*0.6; }
@@ -3345,8 +3346,8 @@ function smpRoom(){ // ein Raum je AudioContext (Live und WAV-Export getrennt)
     const input=audioCtx.createGain(); input.gain.value=STUDIO_ROOM;
     const hp=audioCtx.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=180;
     const conv=audioCtx.createConvolver(); conv.buffer=ir;
-    input.connect(hp).connect(conv).connect(master);
-    r={input,master}; smpRooms.set(audioCtx,r);
+    input.connect(hp).connect(conv).connect(dest);
+    r={input}; rs.set(dest,r);
   }
   if(r.input.gain.value!==smpOpt.room) r.input.gain.value=smpOpt.room;
   return r.input;
@@ -3367,7 +3368,7 @@ function smpPlay(kid, tr, time, velocity, choked, vid){
   const g=audioCtx.createGain();
   const gv=Math.max(0.0001, tr.vol*(STUDIO_GAIN[vid]||0.6)*STUDIO_OUT*fine*Math.pow(10,vr*(Math.random()*3-1.5)/20));
   g.gain.value=gv;
-  src.connect(g); g.connect(getBus()); g.connect(smpRoom());
+  src.connect(g); g.connect(getBus()); g.connect(smpRoom(grpIn(tr)));
   src.start(time, s.off, s.dur);
   if(choked){ g.gain.setValueAtTime(gv,time+0.06); g.gain.linearRampToValueAtTime(0.0001,time+0.1); src.stop(time+0.11); }
   if(vid==='oh' || vid==='hl') lastOpenSample={src,g}; // offene/lockere Hi-Hat: nächster Hi-Hat-Schlag würgt ab
