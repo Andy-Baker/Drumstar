@@ -9,9 +9,9 @@ Wann welcher Satz: siehe CLAUDE.md („Tests“). audio (~6½ min) nur bei Ände
 
 Voraussetzung (einmalig):  pip install playwright && python3 -m playwright install chromium
 
-Ablauf: Repo wird in einen Temp-Ordner kopiert, dort in index.html der Test-Hook
-(tests/hook.js: window.__T, __sel, __pv, __audio …) eingesetzt und ein lokaler Server gestartet. Die echte
-index.html bleibt unverändert. Screenshots landen in tests/out/ (nicht im Git).
+Ablauf: Repo wird in einen Temp-Ordner kopiert, dort in js/*.js (Datei mit der Hook-Stelle) der Test-Hook
+(tests/hook.js: window.__T, __sel, __pv, __audio …) eingesetzt und ein lokaler Server gestartet. Die echten
+Dateien bleiben unverändert. Screenshots landen in tests/out/ (nicht im Git).
 Kein Hörtest: Klang und Last am Gerät beurteilen.
 """
 import pathlib, shutil, socket, subprocess, sys, tempfile, time
@@ -26,15 +26,15 @@ def free_port():
     s = socket.socket(); s.bind(('127.0.0.1', 0)); p = s.getsockname()[1]; s.close(); return p
 
 def main():
-    pick = sys.argv[1:] or ['audio', 'ui', 'editor', 'fx', 'walkthrough']
-    if pick == ['schnell']: pick = ['ui', 'editor', 'fx', 'walkthrough']
+    pick = sys.argv[1:] or ['audio', 'ui', 'editor', 'fx', 'walkthrough', 'sw']
+    if pick == ['schnell']: pick = ['ui', 'editor', 'fx', 'walkthrough', 'sw']
     tmp = pathlib.Path(tempfile.mkdtemp(prefix='drumstar-test-'))
     site = tmp / 'site'
     shutil.copytree(ROOT, site, ignore=shutil.ignore_patterns('.git', 'tests'))
-    idx = site / 'index.html'; html = idx.read_text(encoding='utf8')
-    if HOOK_FROM not in html:
-        sys.exit(f'Test-Hook nicht gefunden: "{HOOK_FROM}" fehlt in index.html')
-    idx.write_text(html.replace(HOOK_FROM, HOOK_TO, 1), encoding='utf8')
+    hits = [f for f in sorted((site / 'js').glob('*.js')) if HOOK_FROM in f.read_text(encoding='utf8')]
+    if len(hits) != 1:
+        sys.exit(f'Test-Hook: "{HOOK_FROM}" muss in genau einer Datei unter js/ stehen (gefunden: {len(hits)})')
+    hits[0].write_text(hits[0].read_text(encoding='utf8').replace(HOOK_FROM, HOOK_TO, 1), encoding='utf8')
     port = free_port(); url = f'http://127.0.0.1:{port}/index.html'
     srv = subprocess.Popen([sys.executable, '-m', 'http.server', str(port), '--bind', '127.0.0.1'],
                            cwd=site, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -47,7 +47,8 @@ def main():
             args = {'ui': [script, str(out), url],
                     'editor': [script, url, str(out)],
                     'fx': [script, url, str(out)],
-                    'walkthrough': [script, 'X', url, str(out)]}.get(name, [script, url])
+                    'walkthrough': [script, 'X', url, str(out)],
+                    'sw': [script, url, str(out), str(site)]}.get(name, [script, url])
             print(f'\n=== {name} ===', flush=True)
             results[name] = subprocess.call([sys.executable] + args) == 0
     finally:

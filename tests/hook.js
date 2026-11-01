@@ -1,5 +1,6 @@
-// Test-Hook: wird von tests/run.py in eine TEMP-KOPIE der index.html direkt nach "let activeTrackIdx=0;" eingesetzt
-// (innerhalb der App-IIFE, hat also Zugriff auf deren Variablen). Nie in die echte index.html übernehmen.
+// Test-Hook: wird von tests/run.py in eine TEMP-KOPIE von js/tracks.js direkt nach "let activeTrackIdx=0;" eingesetzt
+// (globaler Skript-Scope, Zugriff auf alle App-Variablen; nur Funktionen aus früher geladenen Dateien sofort nutzen).
+// Nie in die echten Dateien übernehmen.
 window.__T=TRACKS; window.__sel=()=>activeTrackIdx; window.__pv=pianoVoice; window.__setCtx=c=>{audioCtx=c};
 window.__audio={
   kits:()=>Object.keys(KITS).filter(k=>!KITS[k].samples), // Sample-Kits: eigener Test unten

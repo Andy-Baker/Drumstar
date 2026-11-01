@@ -54,7 +54,8 @@ Zusammengeführt am 28.10.2026 aus DECISIONS-2/-3, ARCHITECTURE-11/-12 und ROADM
 
 **Technik**
 - Schriften lokal (`fonts/`, `fonts.css`), kein Google.
-- Service Worker: stale-while-revalidate für App-Dateien, Cache zuerst für Schriften/Bilder; `CACHE` trotzdem bei jedem Deploy erhöhen.
+- Code in mehreren Dateien ohne Build (v89, #25): `css/app.css` + `js/*.js` als klassische Skripte im globalen Scope (vorher eine IIFE in `index.html`). Grund: kleinere Dateien sind für Claude/Agenten lesbar und editierbar, Diffs pro Bereich; „was im Repo liegt, läuft“ bleibt. ES-Module erst, wenn der globale Zustand ohnehin aufgeräumt wird (z. B. mit #13); TypeScript/Build-Schritt nicht nötig (Pages liefert gzip, kein Kompilat, Debuggen am Handy einfach). Typprüfung später ggf. per JSDoc + `tsc --noEmit` im Test.
+- Service Worker: App (index.html + verlinkte js/css) wird nur als Ganzes aktualisiert (Start aus dem Cache, Hintergrund-Prüfung von index.html, alles oder nichts); Liste aus index.html; Cache zuerst für Schriften/Bilder; `CACHE` + `?v=` bei jedem Deploy erhöhen.
 - Pinch-Zoom erlaubt (kein `user-scalable=no`).
 
 ## Verworfen / bewusst nicht gebaut
@@ -75,7 +76,8 @@ Zusammengeführt am 28.10.2026 aus DECISIONS-2/-3, ARCHITECTURE-11/-12 und ROADM
 - Playwright: Service Worker nur über `http://localhost` testbar; „offline“ blockiert Anfragen des Service Workers nicht (Server abschalten); emulierter Doppeltipp erzeugt kein `dblclick`.
 - Messung Cosmic: eine Note ≈ 1,4× ein Kick-Schlag (≈ 12 neue Knoten pro Note). Wirksam wäre nur Stimmen-Wiederverwendung (Klang könnte sich ändern) → vorerst nicht gewünscht.
 - CSS: Flex-Items in scrollenden Containern mit `min-height` brauchen `flex-shrink:0`; gleiche Spezifität → spätere Regel gewinnt; Fixed-Elemente in einem Element mit `z-index` kommen nicht über Geschwister außerhalb (Sheets deshalb außerhalb von `#panelContent`).
-- JS: Funktionsdeklarationen sind hoisted, `const`-Hilfen nicht.
+- JS: Funktionsdeklarationen sind hoisted, `const`-Hilfen nicht. Seit der Aufteilung (v89) gilt Hoisting nur innerhalb einer Datei: Code auf oberster Ebene, der eine Funktion aus einer späteren Datei aufruft oder als Wert übergibt (`addEventListener('click',f)`), wirft beim Laden `ReferenceError`.
+- Mehrere Skriptdateien + Service Worker: Ohne `?v=` an den Links nimmt Chromium beim Neuladen Skripte evtl. aus dem Speicher-Cache, obwohl der Service Worker schon die neuen hat → neue index.html mit alten Skripten.
 - Native `<select>` mit `<optgroup>` funktioniert auf Android.
 - Mockups, die dem Nutzer als einzelne Datei geschickt werden, brauchen eingebettete Schriften (sonst Ersatzschrift in der Handy-Vorschau).
 - Manifest-Änderungen (z. B. `orientation`) greifen in der installierten App oft erst nach Neu-Hinzufügen zum Homescreen.
