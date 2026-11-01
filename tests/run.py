@@ -3,6 +3,9 @@
 Aufruf aus dem Repo-Ordner:
     python3 tests/run.py            # alle Tests
     python3 tests/run.py editor ui  # nur ausgewählte (audio | ui | editor | fx | walkthrough)
+    python3 tests/run.py schnell    # alles außer audio (~2 min statt ~8½ min)
+
+Wann welcher Satz: siehe CLAUDE.md („Tests“). audio (~6½ min) nur bei Änderungen am Klang.
 
 Voraussetzung (einmalig):  pip install playwright && python3 -m playwright install chromium
 
@@ -24,6 +27,7 @@ def free_port():
 
 def main():
     pick = sys.argv[1:] or ['audio', 'ui', 'editor', 'fx', 'walkthrough']
+    if pick == ['schnell']: pick = ['ui', 'editor', 'fx', 'walkthrough']
     tmp = pathlib.Path(tempfile.mkdtemp(prefix='drumstar-test-'))
     site = tmp / 'site'
     shutil.copytree(ROOT, site, ignore=shutil.ignore_patterns('.git', 'tests'))
