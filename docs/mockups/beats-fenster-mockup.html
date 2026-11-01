@@ -69,6 +69,24 @@ button{font:inherit;color:inherit;cursor:pointer}
 .bugTag{position:absolute;top:8px;right:60px;font-size:11px;color:var(--red);font-weight:700;display:none}
 #phone.bug .bugTag{display:block}
 
+.ccard{flex-shrink:0;border-radius:14px;border:1px solid rgba(63,169,255,.22);background:linear-gradient(180deg,#121621,#0d0f15);padding:10px 12px 12px;display:flex;flex-direction:column;gap:8px}
+.ccard>.cardTop{min-height:30px}
+.cnt{font-size:11px;color:var(--dim);font-family:'JetBrains Mono',monospace}
+.newOpts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.newOpts button{border:1px solid rgba(63,169,255,.4);background:rgba(63,169,255,.1);border-radius:11px;padding:12px 10px;text-align:left;display:flex;flex-direction:column;gap:3px;color:var(--blue-2)}
+.newOpts button b{font-size:14px;display:flex;align-items:center;gap:6px;letter-spacing:.03em}
+.newOpts button span{font-size:11px;color:var(--dim);line-height:1.25}
+.newOpts.tall{grid-template-columns:1fr}
+.newOpts.tall button{padding:16px 14px}
+.newOpts.tall button b{font-size:17px}
+.newOpts.tall button span{font-size:13px}
+.main3{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--panel-inset);border:1px solid rgba(255,255,255,.08);border-radius:11px;padding:4px;flex-shrink:0;position:sticky;top:-14px;z-index:2;box-shadow:0 6px 10px rgba(8,9,13,.8)}
+.main3 button{border:0;background:none;border-radius:8px;padding:11px 2px;font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--dim);display:flex;align-items:center;justify-content:center;gap:5px}
+.main3 button.on{background:rgba(63,169,255,.16);color:var(--blue-2)}
+.main3 button i{font-style:normal;font-size:10px;font-family:'JetBrains Mono',monospace;opacity:.8}
+.toast{position:absolute;left:14px;right:14px;bottom:16px;background:#1b2130;border:1px solid rgba(63,169,255,.35);border-radius:10px;padding:11px 12px;font-size:14px;display:none;justify-content:space-between}
+.toast.on{display:flex}
+.toast b{color:var(--blue-2)}
 /* Sheet „Neuer Beat“ */
 #sh{position:absolute;inset:0;background:rgba(0,0,0,.55);display:none;align-items:flex-end}
 #sh.open{display:flex}
@@ -84,9 +102,9 @@ button{font:inherit;color:inherit;cursor:pointer}
 <div id="pick">
   <div class="seg" id="seg">
     <button data-v="bug">Heute</button>
-    <button data-v="a">A · Kopf</button>
-    <button data-v="b" class="on">B · Karte</button>
-    <button data-v="c">C · Unten</button>
+    <button data-v="b">B · Karte</button>
+    <button data-v="d" class="on">D · Bereiche</button>
+    <button data-v="e">E · Reiter</button>
   </div>
   <div id="note"></div>
 </div>
@@ -94,6 +112,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 <div id="phone">
   <div id="ov"></div>
   <div class="bar"><button class="newBig" style="width:100%" data-new><svg class="uic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Neuer Beat</button></div>
+  <div class="toast" id="toast"><span>Neuer Beat angelegt</span><b>Rückgängig</b></div>
   <span class="bugTag">scrollt nur hier ↓</span>
   <div id="sh"><div class="s">
     <h3>Neuer Beat</h3>
@@ -108,15 +127,24 @@ const I={plus:'<path d="M12 5v14M5 12h14"/>',save:'<path d="M5 4h11l3 3v13H5z"/>
 const ic=k=>'<svg class="uic" viewBox="0 0 24 24">'+I[k]+'</svg>';
 const BEATS=[['Xtrustyla','30.10.','drums'],['U know it\'s true','30.10.','all'],['Tribedrum','29.10.','drums'],['Acid Morning','28.10.','acid'],['Sunday Dub','27.10.','all'],['Perc Loop 3','27.10.','perc'],['Late Train','26.10.','all'],['Keys Sketch','25.10.','piano'],['Cosmic Drift','24.10.','cosmic'],['Breaks 140','23.10.','drums'],['Vocal Chop','22.10.','sample'],['Warehouse','21.10.','all'],['Shuffle','20.10.','drums'],['Night Bus','19.10.','acid']];
 const NOTE={bug:'<b>Heute:</b> Karte, Knopf, Tabs und Import nehmen die Höhe, die Liste bekommt den Rest und scrollt in einem kleinen Kasten (gestrichelt). Das Fenster selbst bewegt sich nicht.',
+ d:'<b>D · Drei Bereiche:</b> Neu, Aktueller Beat, Gespeicherte Beats als gleich gebaute Karten untereinander. „Neu“ zeigt die zwei Startarten direkt – kein Zwischenfenster mehr. Ganzes Fenster scrollt.',
+ e:'<b>E · Reiter:</b> Dieselben drei Bereiche als Reiter oben (bleiben beim Scrollen stehen). Jeder Bereich hat das ganze Fenster; „Gespeichert“ öffnet als Standard. Nach „Anlegen“ springt es zu „Aktuell“.',
  a:'<b>A · Kopf:</b> „+ Neu“ oben neben ✕, immer sichtbar wie eine App-Aktion. Liste direkt unter der Überschrift, ganzes Fenster scrollt.',
  b:'<b>B · Karte:</b> „+ Neu“ in der Karte „Aktueller Beat“ – ein neuer Beat ersetzt ja den aktuellen. Import/Sichern als kleine Symbole an der Listenüberschrift. Ganzes Fenster scrollt.',
  c:'<b>C · Unten:</b> „Neuer Beat“ fest am unteren Rand, gut mit dem Daumen erreichbar, bleibt beim Scrollen stehen. Ganzes Fenster scrollt.'};
-let V='b', T='all', openRow=1;
+let V='d', T='all', openRow=1;
 function card(chip){return '<div class="card"><div class="cardTop"><div class="sec">Aktueller Beat</div>'+(chip?'<button class="newChip" data-new>'+ic('plus')+'Neu</button>':'')+'</div>'
  +'<input class="name" value="Tribedrum"><div class="state"><i></i>Gespeichert</div><div class="sec">Länge</div>'
  +'<div class="len"><button class="on">16</button><button>32</button><button>48</button><button>64</button></div>'
  +'<div class="hint">Kürzer wählen schneidet den Rest ab – die Rückgängig-Taste holt ihn zurück.</div>'
  +'<div class="btns"><button class="pri">'+ic('save')+'Speichern</button><button>'+ic('copy')+'Kopie</button><button>'+ic('dl')+'WAV</button></div></div>';}
+const newOpts=tall=>'<div class="newOpts'+(tall?' tall':'')+'"><button data-mk>'+'<b>'+ic('plus')+'Klang behalten</b><span>Kit, Sounds, Tempo bleiben – Noten leer</span></button><button data-mk><b>'+ic('plus')+'Standard</b><span>Startzustand wie beim Öffnen der App</span></button></div>';
+function curBody(){return '<input class="name" value="Tribedrum"><div class="state"><i></i>Gespeichert</div><div class="sec">Länge</div>'
+ +'<div class="len"><button class="on">16</button><button>32</button><button>48</button><button>64</button></div>'
+ +'<div class="hint">Kürzer wählen schneidet den Rest ab – die Rückgängig-Taste holt ihn zurück.</div>'
+ +'<div class="btns"><button class="pri">'+ic('save')+'Speichern</button><button>'+ic('copy')+'Kopie</button><button>'+ic('dl')+'WAV</button></div>';}
+const ioMini='<div class="ioMini"><button title="Import">'+ic('up')+'</button><button title="Alle sichern">'+ic('all')+'</button></div>';
+let E='saved';
 const tabs=()=>'<div class="tabs">'+[['all','Gesamt'],['drums','Drums'],['perc','Perc'],['acid','Acid'],['sample','Sample'],['cosmic','Cosmic'],['piano','Keys']].map(([k,n])=>'<button data-t="'+k+'"'+(k===T?' class="on"':'')+'>'+n+'</button>').join('')+'</div>';
 const io='<div class="io"><button>'+ic('up')+'Import</button><button>'+ic('all')+'Alle sichern</button></div>';
 function list(){const rows=BEATS.map((b,i)=>[b,i]).filter(([b])=>T==='all'||b[2]===T);
@@ -129,6 +157,13 @@ function render(){const ov=document.getElementById('ov'), ph=document.getElement
  if(V==='bug') h+=card()+'<div class="sec">Gespeicherte Beats</div><button class="newBig" data-new>'+ic('plus')+'Neuer Beat</button>'+tabs()+io+list();
  if(V==='a') h+=card()+'<div class="listHead"><div class="sec">Gespeicherte Beats</div></div>'+tabs()+list()+io;
  if(V==='b') h+=card(true)+'<div class="listHead"><div class="sec">Gespeicherte Beats</div><div class="ioMini"><button title="Import">'+ic('up')+'</button><button title="Alle sichern">'+ic('all')+'</button></div></div>'+tabs()+list();
+ if(V==='d') h+='<div class="ccard"><div class="cardTop"><div class="sec">Neuer Beat</div></div>'+newOpts()+'</div>'
+   +'<div class="ccard"><div class="cardTop"><div class="sec">Aktueller Beat</div></div>'+curBody()+'</div>'
+   +'<div class="ccard"><div class="cardTop"><div class="sec">Gespeicherte Beats <span class="cnt">'+BEATS.length+'</span></div>'+ioMini+'</div>'+tabs()+list()+'</div>';
+ if(V==='e'){ h+='<div class="main3">'+[['new','Neu',''],['cur','Aktuell',''],['saved','Gespeichert','<i>'+BEATS.length+'</i>']].map(([k,n,x])=>'<button data-e="'+k+'"'+(k===E?' class="on"':'')+'>'+n+x+'</button>').join('')+'</div>';
+   if(E==='new') h+='<div class="sec" style="margin-top:4px">Womit anfangen?</div>'+newOpts(true)+'<div class="hint">Ungespeicherte Änderungen am aktuellen Beat lassen sich danach mit Rückgängig zurückholen.</div>';
+   if(E==='cur') h+='<div class="ccard">'+curBody()+'</div>';
+   if(E==='saved') h+='<div class="listHead" style="margin-top:0"><div class="sec">Filtern</div>'+ioMini+'</div>'+tabs()+list(); }
  if(V==='c') h+=card()+'<div class="listHead"><div class="sec">Gespeicherte Beats</div></div>'+tabs()+list()+io;
  ov.innerHTML=h; document.getElementById('note').innerHTML=NOTE[V];
  document.querySelectorAll('#seg button').forEach(b=>b.classList.toggle('on',b.dataset.v===V));}
@@ -136,6 +171,8 @@ document.getElementById('seg').onclick=e=>{const b=e.target.closest('button'); i
 document.getElementById('phone').addEventListener('click',e=>{
  const t=e.target.closest('[data-t]'); if(t){T=t.dataset.t; render(); return;}
  const m=e.target.closest('[data-more]'); if(m){const i=+m.dataset.more; openRow=openRow===i?-1:i; render(); return;}
+ const eb=e.target.closest('[data-e]'); if(eb){E=eb.dataset.e; render(); document.getElementById('ov').scrollTop=0; return;}
+ if(e.target.closest('[data-mk]')){ if(V==='e'){E='cur'; render();} const t=document.getElementById('toast'); t.classList.add('on'); clearTimeout(window._tt); window._tt=setTimeout(()=>t.classList.remove('on'),2200); return;}
  if(e.target.closest('[data-new]')){document.getElementById('sh').classList.add('open'); return;}
  const o=e.target.closest('#sh .opt'); if(o){document.querySelectorAll('#sh .opt').forEach(x=>x.classList.toggle('on',x===o)); return;}
  if(e.target.id==='shGo'||e.target.id==='sh') document.getElementById('sh').classList.remove('open');
