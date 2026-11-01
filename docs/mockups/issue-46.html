@@ -47,7 +47,7 @@ iframe{border:0;width:100%;height:100%;background:#050507;display:block}
 </div>
 <div id="stage">
   <div class="ph" id="phL"><h4>Heute</h4><iframe id="fL" src="../../index.html" title="App heute"></iframe></div>
-  <div class="ph" id="phR"><h4 id="hR">Vorschlag</h4><iframe id="fR" title="App mit Vorschlag"></iframe></div>
+  <div class="ph" id="phR"><h4 id="hR">Vorschlag</h4><iframe id="fR" src="../../index.html" title="App mit Vorschlag"></iframe></div>
   <div id="side">
     <h3>Was das ist</h3>
     <p>Beide Handys zeigen die <b>echte App</b>. Rechts sind großes Raster, Übersicht und Abspielen zur Laufzeit ersetzt – der Klang kommt aus Kit, Effekten und Mixer der App.</p>
@@ -64,7 +64,7 @@ iframe{border:0;width:100%;height:100%;background:#050507;display:block}
   </div>
 </div>
 <script>
-// ===== Läuft im Skript-Scope der App (per __mkEval, siehe unten) =====
+// ===== Läuft im globalen Scope der App (klassische Skripte js/*.js; per eval im Rahmen) =====
 function MK(){
   if(window.__mk) return;
   const RAS=[[4,'16','16tel'],[8,'32','32tel'],[3,'3','Triole']];
@@ -234,23 +234,16 @@ function MK(){
 }
 
 // ===== Rahmen-Steuerung =====
-// Die App kapselt alles in einer Funktion. Wie bei den Tests (tests/run.py) wird in eine Kopie
-// eine Brücke eingesetzt; der Rahmen lädt diese Kopie, index.html selbst bleibt unverändert.
+// Die App (js/*.js) liegt im gemeinsamen globalen Scope: eval im Rahmen sieht und ersetzt ihre Funktionen.
 const fR=document.getElementById('fR');
 let isOn=true;
-function hook(){ const w=fR.contentWindow; if(!w||!w.__mkEval) return null; if(!w.__mk){ try{ w.__mkEval('('+MK.toString()+')()'); }catch(e){ console.error(e); return null; } } return w.__mk; }
+function hook(){ const w=fR.contentWindow; try{ if(!w||w.eval('typeof TRACKS')!=='object') return null; if(!w.__mk) w.eval('('+MK.toString()+')()'); }catch(e){ console.error(e); return null; } return w.__mk; }
 function apply(){ const m=hook(); if(m) m.enable(isOn); sync(); }
 function sync(){
   document.querySelectorAll('[data-on]').forEach(b=>b.classList.toggle('on',+b.dataset.on===+isOn));
   document.querySelectorAll('[data-x]').forEach(b=>b.disabled=!isOn);
   document.getElementById('hR').innerHTML='Vorschlag · <b>'+(isOn?'Raster':'aus')+'</b>';
 }
-const HOOK="let activeTrackIdx=0;";
-fetch('../../index.html',{cache:'no-store'}).then(r=>r.text()).then(html=>{
-  if(!html.includes(HOOK)){ document.getElementById('hR').textContent='Brücke nicht gefunden'; return; }
-  const base=new URL('../../',location.href).href;
-  fR.srcdoc=html.replace(HOOK,HOOK+'\nwindow.__mkEval=s=>eval(s);').replace('<head>','<head><base href="'+base+'">');
-});
 fR.addEventListener('load',()=>setTimeout(apply,700));
 document.querySelectorAll('[data-on]').forEach(b=>b.onclick=()=>{ isOn=!!+b.dataset.on; apply(); });
 document.querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{ const m=hook(); if(m) m.example(b.dataset.x); });
