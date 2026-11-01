@@ -61,9 +61,13 @@ async def main():
     await ev("(()=>{ grps.drums.muted=true; })()")
     g1=await pg.evaluate(RENDER,{'id':'bd'}); g2=await pg.evaluate(RENDER,{'id':'cb'})
     ok('Gruppe stumm: BD still', g1['rmsL']<1e-5, g1['rmsL']); ok('Gruppe stumm: Perc (CB) hörbar', g2['rmsL']>1e-4, g2['rmsL'])
+    g5=await pg.evaluate(RENDER,{'id':'bd','rev':1,'dly':1})
+    ok('Gruppe stumm: auch Hall/Delay der Spur still (#43)', g5['rmsL']<1e-5, g5['rmsL'])
     await ev("(()=>{ grps.drums.muted=false; grps.perc.muted=true; })()")
     g3=await pg.evaluate(RENDER,{'id':'cb'}); g4=await pg.evaluate(RENDER,{'id':'bd'})
     ok('Perc-Gruppe stumm: CB still, BD hörbar', g3['rmsL']<1e-5 and g4['rmsL']>1e-4, [g3['rmsL'],g4['rmsL']])
+    g6=await pg.evaluate(RENDER,{'id':'bd','rev':1,'dly':1}); await ev("(()=>{ grps.drums.vol=0; })()"); g7=await pg.evaluate(RENDER,{'id':'bd','rev':1}); await ev("(()=>{ grps.drums.vol=1; })()")
+    ok('Gruppe an: Sends hörbar; Gruppen-Lautstärke 0 lässt Sends stehen', g6['rmsL']>1e-4 and g7['rmsL']>1e-5, [g6['rmsL'],g7['rmsL']])
     await ev("(()=>{ grps.perc.muted=false; grpUpdate(); })()")
     # --- Gruppen-Effekte: wirken im Export auf die Gruppe, nicht auf andere Spuren
     a=await pg.evaluate(RENDER,{'id':'sd'}); ac=await pg.evaluate(RENDER,{'id':'cb'})

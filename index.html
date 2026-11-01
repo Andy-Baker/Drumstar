@@ -1980,6 +1980,8 @@ const EQ_KEYS=['eqOn','eqLc','eqLowGain','eqMidGain','eqMf','eqHighGain'];
 let grps={}; GRP_KEYS.forEach(k=>grps[k]=grpNew(k));
 const trGrp=tr=>GRP_KEYS.find(k=>GRP_DEF[k].ids.includes(tr.id));
 const grpIn=tr=>{ const k=trGrp(tr); return k&&FXG.g&&FXG.g[k]?FXG.g[k].i:master; };
+// Sends einer Gruppenspur laufen über das Send-Tor der Gruppe: Gruppe stumm = auch Hall/Delay der Spuren still (wie Pro Tools Basic Folder / Cubase „Mute Sources“, #43)
+const grpSend=(tr,w)=>{ const k=trGrp(tr), o=k&&FXG.g&&FXG.g[k]; return o?o[w]:(w==='sr'?reverbInputNode:delayInputNode); };
 let FXG={};
 const fxDelaySec=()=>FX_NV.find(n=>n[0]===fxDelay.div)[3]*60/bpm/4;
 const fxDelayTone=()=>fxDelay.to>=.995?20000:fxEx(600,13000,fxDelay.to);
@@ -2000,7 +2002,8 @@ function buildFxBuses(){ const c=audioCtx;
   padDelaySendGain=c.createGain(); padDelaySendGain.gain.value=padDelayAmount; padDelaySendGain.connect(FXG.dlIn);
   // Gruppen: Eingang → Effekte → Laut (+Meter) → Master
   FXG.g={}; GRP_KEYS.forEach(k=>{ const G=grps[k], o=FXG.g[k]={i:c.createGain(),v:c.createGain(),an:c.createAnalyser(),n:[]};
-    eqNodes(o,c); o.v.gain.value=G.muted?0:G.vol; o.an.fftSize=2048; o.an.smoothingTimeConstant=.82; o.v.connect(master); o.v.connect(o.an); eqSetNodes(o,G,c); grpFxRebuild(k); });
+    eqNodes(o,c); o.v.gain.value=G.muted?0:G.vol; o.an.fftSize=2048; o.an.smoothingTimeConstant=.82; o.v.connect(master); o.v.connect(o.an); eqSetNodes(o,G,c); grpFxRebuild(k);
+    o.sr=c.createGain(); o.sd=c.createGain(); o.sr.gain.value=o.sd.gain.value=G.muted?0:1; o.sr.connect(FXG.revIn); o.sd.connect(FXG.dlIn); });
 }
 // Gruppe: i → EQ (nur wenn nicht neutral) → Inserts → v (Laut) → Master
 function grpFxRebuild(k){ const o=FXG.g&&FXG.g[k], G=grps[k]; if(!o) return; const c=audioCtx; try{o.i.disconnect();}catch(e){} try{o.eqHigh.disconnect();}catch(e){} o.n.forEach(n=>{ try{n.o.disconnect();}catch(e){} });
@@ -2030,7 +2033,7 @@ let fxHallT=null;
 function fxHallUpdate(){ if(!FXG.revIn) return; const c=audioCtx, t=c.currentTime;
   FXG.revLp.frequency.setTargetAtTime(fxHallTone(),t,.02); FXG.revOut.gain.setTargetAtTime(fxHall.lv,t,.02);
   if(Math.abs(fxHall.sz-FXG.revSz)>.05){ clearTimeout(fxHallT); fxHallT=setTimeout(()=>{ if(!FXG.revConv) return; FXG.revSz=fxHall.sz; FXG.revConv.buffer=createImpulseResponse(fxHall.sz,2.8); },160); } }
-function grpUpdate(k){ (k?[k]:GRP_KEYS).forEach(k=>{ const o=FXG.g&&FXG.g[k], G=grps[k]; if(o) o.v.gain.setTargetAtTime(G.muted?0:G.vol,audioCtx.currentTime,.015); }); }
+function grpUpdate(k){ (k?[k]:GRP_KEYS).forEach(k=>{ const o=FXG.g&&FXG.g[k], G=grps[k]; if(!o) return; const t=audioCtx.currentTime; o.v.gain.setTargetAtTime(G.muted?0:G.vol,t,.015); o.sr.gain.setTargetAtTime(G.muted?0:1,t,.015); o.sd.gain.setTargetAtTime(G.muted?0:1,t,.015); }); }
 function fxMasterRebuild(){ if(!FXG.mfxIn) return; const c=audioCtx; try{FXG.mfxIn.disconnect();}catch(e){} FXG.mfxN.forEach(n=>{ try{n.o.disconnect();}catch(e){} });
   FXG.mfxN=masterFx.filter(f=>f.on&&!f._byp).map(f=>{ const n=FXDEF[f.t].build(c); n.u(f.p); n.id=f.id; return n; });
   let last=FXG.mfxIn; FXG.mfxN.forEach(n=>{ last.connect(n.i); last=n.o; }); last.connect(comp); }
@@ -2044,8 +2047,8 @@ function ensureTrackBuses(){
     tr.panner=c.createStereoPanner(); tr.panner.pan.value=tr.pan||0;
     tr.post.connect(tr.panner); tr.panner.connect(grpIn(tr));
     tr.analyser=c.createAnalyser(); tr.analyser.fftSize=2048; tr.analyser.smoothingTimeConstant=.82; tr.panner.connect(tr.analyser);
-    tr.sendGain=c.createGain(); tr.reverbAmount=tr.reverbAmount||0; tr.sendGain.gain.value=tr.reverbAmount; tr.post.connect(tr.sendGain); tr.sendGain.connect(reverbInputNode);
-    tr.delaySendGain=c.createGain(); tr.delaySend=tr.delaySend||0; tr.delaySendGain.gain.value=tr.delaySend; tr.post.connect(tr.delaySendGain); tr.delaySendGain.connect(delayInputNode);
+    tr.sendGain=c.createGain(); tr.reverbAmount=tr.reverbAmount||0; tr.sendGain.gain.value=tr.reverbAmount; tr.post.connect(tr.sendGain); tr.sendGain.connect(grpSend(tr,'sr'));
+    tr.delaySendGain=c.createGain(); tr.delaySend=tr.delaySend||0; tr.delaySendGain.gain.value=tr.delaySend; tr.post.connect(tr.delaySendGain); tr.delaySendGain.connect(grpSend(tr,'sd'));
     tr._fxN=[]; eqApply(tr,true);
   });
 }
