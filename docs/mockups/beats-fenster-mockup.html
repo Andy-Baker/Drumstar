@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Beats-Fenster Mockup</title>
+<!-- Mockup zu #44 (Liste scrollt nur im kleinen Kasten) und #45 (Platz für „Neuer Beat“). Nicht verlinkt, nur zum Ansehen. -->
+<style>
+:root{--chassis:#0f1117;--chassis-2:#08090d;--panel:#171a22;--panel-inset:#0c0e13;--blue:#3fa9ff;--blue-2:#8fcbff;--white:#eef2f8;--dim:#7d8596;--red:#ff9d7a}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#05060a;color:var(--white);font-family:Rajdhani,'Segoe UI',system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:14px 12px 30px;gap:12px}
+button{font:inherit;color:inherit;cursor:pointer}
+.uic{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+
+/* Variantenwahl */
+#pick{width:100%;max-width:390px;display:flex;flex-direction:column;gap:8px}
+#pick .seg{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;background:var(--panel-inset);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:4px}
+#pick .seg button{border:0;background:none;border-radius:7px;padding:9px 2px;font-size:13px;font-weight:700;color:var(--dim)}
+#pick .seg button.on{background:rgba(63,169,255,.16);color:var(--blue-2)}
+#note{font-size:13px;line-height:1.35;color:var(--dim);min-height:36px}
+#note b{color:var(--white)}
+
+/* Telefon */
+#phone{width:100%;max-width:390px;height:min(760px,calc(100vh - 150px));min-height:520px;border-radius:26px;border:1px solid rgba(255,255,255,.1);overflow:hidden;position:relative;background:linear-gradient(180deg,var(--chassis),var(--chassis-2))}
+#ov{position:absolute;inset:0;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;-webkit-overflow-scrolling:touch}
+#phone.fixbar #ov{padding-bottom:88px}
+.head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,.06);flex-shrink:0}
+.head h2{font-size:22px;font-weight:700;flex:1}
+.x{width:36px;height:36px;border-radius:8px;background:var(--panel);border:1px solid rgba(255,255,255,.1);color:var(--blue-2);display:flex;align-items:center;justify-content:center}
+.newHead{height:36px;border-radius:8px;border:1px solid rgba(63,169,255,.5);background:rgba(63,169,255,.12);color:var(--blue-2);display:flex;align-items:center;gap:6px;padding:0 12px;font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+.sec{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);font-weight:600}
+.card{flex-shrink:0;display:flex;flex-direction:column;gap:8px;border-radius:14px;border:1px solid rgba(63,169,255,.28);background:linear-gradient(180deg,#121621,#0d0f15);padding:10px 12px 12px}
+.cardTop{display:flex;align-items:center;justify-content:space-between}
+.newChip{height:30px;border-radius:8px;border:1px solid rgba(63,169,255,.5);background:rgba(63,169,255,.12);color:var(--blue-2);display:flex;align-items:center;gap:5px;padding:0 10px;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+.name{background:var(--panel-inset);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:10px 12px;font-size:18px;font-weight:700;color:var(--white);width:100%}
+.state{font-size:13px;color:var(--dim);display:flex;align-items:center;gap:7px}
+.state i{width:7px;height:7px;border-radius:50%;background:#5fe0a0}
+.len{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.len button{border:1px solid rgba(255,255,255,.1);background:var(--panel-inset);border-radius:8px;padding:11px 0;font-weight:700;color:var(--dim)}
+.len button.on{border-color:var(--blue);color:var(--blue-2);background:rgba(63,169,255,.12)}
+.hint{font-size:11px;color:var(--dim);line-height:1.3}
+.btns{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.btns button{border:1px solid rgba(255,255,255,.12);background:var(--panel-inset);border-radius:9px;padding:11px 0;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;display:flex;align-items:center;justify-content:center;gap:6px;color:var(--dim)}
+.btns button.pri{color:var(--blue-2);border-color:rgba(63,169,255,.4);background:rgba(63,169,255,.12)}
+.newBig{flex-shrink:0;min-height:52px;border-radius:12px;border:1px solid rgba(63,169,255,.5);background:rgba(63,169,255,.12);color:var(--blue-2);display:flex;align-items:center;justify-content:center;gap:8px;font-size:14px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.listHead{display:flex;align-items:center;justify-content:space-between;margin-top:6px}
+.ioMini{display:flex;gap:6px}
+.ioMini button{width:34px;height:30px;border-radius:7px;border:1px solid rgba(255,255,255,.12);background:var(--panel-inset);color:var(--dim);display:flex;align-items:center;justify-content:center}
+.tabs{display:flex;gap:2px;background:var(--panel-inset);border:1px solid rgba(255,255,255,.08);border-radius:9px;padding:3px;flex-shrink:0;overflow-x:auto}
+.tabs button{flex:1;border:0;background:none;border-radius:6px;padding:8px 6px;font-size:12px;font-weight:700;color:var(--dim);white-space:nowrap}
+.tabs button.on{background:rgba(63,169,255,.16);color:var(--blue-2)}
+.io{display:flex;gap:6px;flex-shrink:0}
+.io button{flex:1;font-size:11px;letter-spacing:.04em;text-transform:uppercase;border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:9px;background:var(--panel-inset);color:var(--dim);display:flex;align-items:center;justify-content:center;gap:6px}
+.list{display:flex;flex-direction:column;gap:5px}
+#phone.bug .list{flex:1;overflow-y:auto;min-height:0;outline:1px dashed rgba(255,157,122,.55);outline-offset:3px}
+#phone.bug #ov{overflow:hidden}
+.row{border-radius:10px;border:1px solid rgba(255,255,255,.08);background:var(--panel);padding:9px 10px;display:flex;flex-direction:column;gap:7px;flex-shrink:0}
+.rowTop{display:flex;align-items:center;gap:8px}
+.rowTop .t{flex:1;min-width:0}
+.rowTop .t b{display:block;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rowTop .t span{font-size:11px;color:var(--dim);font-family:'JetBrains Mono',monospace}
+.rb{width:42px;height:38px;border-radius:9px;border:1px solid rgba(63,169,255,.35);background:rgba(63,169,255,.1);color:var(--blue-2);display:flex;align-items:center;justify-content:center}
+.more{display:none;grid-template-columns:repeat(3,1fr);gap:6px}
+.row.open .more{display:grid}
+.more button{border:1px solid rgba(255,255,255,.1);background:var(--panel-inset);border-radius:8px;padding:9px 0;font-size:12px;font-weight:700}
+.more button.del{color:var(--red);border-color:rgba(255,157,122,.35)}
+.bar{position:absolute;left:0;right:0;bottom:0;padding:12px 14px 14px;background:linear-gradient(180deg,rgba(8,9,13,0),rgba(8,9,13,.92) 30%);display:none}
+#phone.fixbar .bar{display:block}
+.bugTag{position:absolute;top:8px;right:60px;font-size:11px;color:var(--red);font-weight:700;display:none}
+#phone.bug .bugTag{display:block}
+
+/* Sheet „Neuer Beat“ */
+#sh{position:absolute;inset:0;background:rgba(0,0,0,.55);display:none;align-items:flex-end}
+#sh.open{display:flex}
+#sh .s{width:100%;background:#12151d;border-top:1px solid rgba(63,169,255,.3);border-radius:18px 18px 0 0;padding:16px 14px 20px;display:flex;flex-direction:column;gap:10px}
+#sh h3{font-size:18px}
+#sh .opt{border:1px solid rgba(255,255,255,.12);background:var(--panel-inset);border-radius:10px;padding:12px;text-align:left}
+#sh .opt b{display:block;font-size:15px}
+#sh .opt span{font-size:12px;color:var(--dim)}
+#sh .opt.on{border-color:var(--blue)}
+</style>
+</head>
+<body>
+<div id="pick">
+  <div class="seg" id="seg">
+    <button data-v="bug">Heute</button>
+    <button data-v="a">A · Kopf</button>
+    <button data-v="b" class="on">B · Karte</button>
+    <button data-v="c">C · Unten</button>
+  </div>
+  <div id="note"></div>
+</div>
+
+<div id="phone">
+  <div id="ov"></div>
+  <div class="bar"><button class="newBig" style="width:100%" data-new><svg class="uic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Neuer Beat</button></div>
+  <span class="bugTag">scrollt nur hier ↓</span>
+  <div id="sh"><div class="s">
+    <h3>Neuer Beat</h3>
+    <button class="opt on"><b>Klang behalten</b><span>Kit, Sounds und Tempo bleiben, Noten leer</span></button>
+    <button class="opt"><b>Standard</b><span>Startzustand wie beim Öffnen der App</span></button>
+    <button class="newBig" id="shGo">Anlegen</button>
+  </div></div>
+</div>
+
+<script>
+const I={plus:'<path d="M12 5v14M5 12h14"/>',save:'<path d="M5 4h11l3 3v13H5z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/>',copy:'<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/>',dl:'<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>',up:'<path d="M12 20V9M7 14l5-5 5 5M5 4h14"/>',all:'<path d="M4 6h12M4 11h12M4 16h7"/><path d="M18 13v7M15 17l3 3 3-3"/>',play:'<path d="M8 5l11 7-11 7z" fill="currentColor" stroke="none"/>',dots:'<circle cx="5" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="19" cy="12" r="1.6" fill="currentColor"/>'};
+const ic=k=>'<svg class="uic" viewBox="0 0 24 24">'+I[k]+'</svg>';
+const BEATS=[['Xtrustyla','30.10.','drums'],['U know it\'s true','30.10.','all'],['Tribedrum','29.10.','drums'],['Acid Morning','28.10.','acid'],['Sunday Dub','27.10.','all'],['Perc Loop 3','27.10.','perc'],['Late Train','26.10.','all'],['Keys Sketch','25.10.','piano'],['Cosmic Drift','24.10.','cosmic'],['Breaks 140','23.10.','drums'],['Vocal Chop','22.10.','sample'],['Warehouse','21.10.','all'],['Shuffle','20.10.','drums'],['Night Bus','19.10.','acid']];
+const NOTE={bug:'<b>Heute:</b> Karte, Knopf, Tabs und Import nehmen die Höhe, die Liste bekommt den Rest und scrollt in einem kleinen Kasten (gestrichelt). Das Fenster selbst bewegt sich nicht.',
+ a:'<b>A · Kopf:</b> „+ Neu“ oben neben ✕, immer sichtbar wie eine App-Aktion. Liste direkt unter der Überschrift, ganzes Fenster scrollt.',
+ b:'<b>B · Karte:</b> „+ Neu“ in der Karte „Aktueller Beat“ – ein neuer Beat ersetzt ja den aktuellen. Import/Sichern als kleine Symbole an der Listenüberschrift. Ganzes Fenster scrollt.',
+ c:'<b>C · Unten:</b> „Neuer Beat“ fest am unteren Rand, gut mit dem Daumen erreichbar, bleibt beim Scrollen stehen. Ganzes Fenster scrollt.'};
+let V='b', T='all', openRow=1;
+function card(chip){return '<div class="card"><div class="cardTop"><div class="sec">Aktueller Beat</div>'+(chip?'<button class="newChip" data-new>'+ic('plus')+'Neu</button>':'')+'</div>'
+ +'<input class="name" value="Tribedrum"><div class="state"><i></i>Gespeichert</div><div class="sec">Länge</div>'
+ +'<div class="len"><button class="on">16</button><button>32</button><button>48</button><button>64</button></div>'
+ +'<div class="hint">Kürzer wählen schneidet den Rest ab – die Rückgängig-Taste holt ihn zurück.</div>'
+ +'<div class="btns"><button class="pri">'+ic('save')+'Speichern</button><button>'+ic('copy')+'Kopie</button><button>'+ic('dl')+'WAV</button></div></div>';}
+const tabs=()=>'<div class="tabs">'+[['all','Gesamt'],['drums','Drums'],['perc','Perc'],['acid','Acid'],['sample','Sample'],['cosmic','Cosmic'],['piano','Keys']].map(([k,n])=>'<button data-t="'+k+'"'+(k===T?' class="on"':'')+'>'+n+'</button>').join('')+'</div>';
+const io='<div class="io"><button>'+ic('up')+'Import</button><button>'+ic('all')+'Alle sichern</button></div>';
+function list(){const rows=BEATS.map((b,i)=>[b,i]).filter(([b])=>T==='all'||b[2]===T);
+ return '<div class="list">'+rows.map(([b,i])=>'<div class="row'+(i===openRow?' open':'')+'"><div class="rowTop"><div class="t"><b>'+b[0]+'</b><span>'+b[1]+'</span></div><button class="rb">'+ic('play')+'</button><button class="rb" data-more="'+i+'">'+ic('dots')+'</button></div>'
+ +'<div class="more"><button>Duplizieren</button><button>Umbenennen</button><button>Aufteilen</button><button>Exportieren</button><button class="del" style="grid-column:span 2">Löschen</button></div></div>').join('')+'</div>';}
+function render(){const ov=document.getElementById('ov'), ph=document.getElementById('phone');
+ ph.className=V==='bug'?'bug':V==='c'?'fixbar':'';
+ const head='<div class="head"><h2>Beats</h2>'+(V==='a'?'<button class="newHead" data-new>'+ic('plus')+'Neu</button>':'')+'<button class="x">✕</button></div>';
+ let h=head;
+ if(V==='bug') h+=card()+'<div class="sec">Gespeicherte Beats</div><button class="newBig" data-new>'+ic('plus')+'Neuer Beat</button>'+tabs()+io+list();
+ if(V==='a') h+=card()+'<div class="listHead"><div class="sec">Gespeicherte Beats</div></div>'+tabs()+list()+io;
+ if(V==='b') h+=card(true)+'<div class="listHead"><div class="sec">Gespeicherte Beats</div><div class="ioMini"><button title="Import">'+ic('up')+'</button><button title="Alle sichern">'+ic('all')+'</button></div></div>'+tabs()+list();
+ if(V==='c') h+=card()+'<div class="listHead"><div class="sec">Gespeicherte Beats</div></div>'+tabs()+list()+io;
+ ov.innerHTML=h; document.getElementById('note').innerHTML=NOTE[V];
+ document.querySelectorAll('#seg button').forEach(b=>b.classList.toggle('on',b.dataset.v===V));}
+document.getElementById('seg').onclick=e=>{const b=e.target.closest('button'); if(!b) return; V=b.dataset.v; render(); document.getElementById('ov').scrollTop=0;};
+document.getElementById('phone').addEventListener('click',e=>{
+ const t=e.target.closest('[data-t]'); if(t){T=t.dataset.t; render(); return;}
+ const m=e.target.closest('[data-more]'); if(m){const i=+m.dataset.more; openRow=openRow===i?-1:i; render(); return;}
+ if(e.target.closest('[data-new]')){document.getElementById('sh').classList.add('open'); return;}
+ const o=e.target.closest('#sh .opt'); if(o){document.querySelectorAll('#sh .opt').forEach(x=>x.classList.toggle('on',x===o)); return;}
+ if(e.target.id==='shGo'||e.target.id==='sh') document.getElementById('sh').classList.remove('open');
+});
+render();
+</script>
+</body>
+</html>
