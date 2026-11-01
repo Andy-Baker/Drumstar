@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Farben Mockup</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&family=JetBrains+Mono:wght@700&family=VT323&display=swap">
+<style>
+/* Alle Theme-Werte als Variablen. Akzent zusätzlich als RGB-Triplet, damit rgba(var(--acc-rgb),.x) funktioniert. */
+:root{color-scheme:dark;
+  --bg:#050507;--chassis:#0e0e13;--chassis-2:#08080b;--panel:#16161c;--inset:#0a0a0d;
+  --acc-rgb:63,169,255;--acc:rgb(var(--acc-rgb));--acc-2:#8fd4ff;--acc-ink:#042c53;
+  --lcd-rgb:95,194,255;--lcd-fg:rgb(var(--lcd-rgb));--lcd-bg:#04070a;
+  --white:#f4f5f7;--dim:#7d818c;--metal:#c7cbd4;
+  --c-drums:#3fa9ff;--c-perc:#2fd1c4;--c-acid:#ff8a3d;--c-cosmic:#b88cff;--c-keys:#ffd166;--c-sample:#4fd18b}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--white);font-family:'Rajdhani',system-ui,sans-serif;user-select:none;-webkit-user-select:none}
+button{font-family:inherit;color:inherit;margin:0}
+#mbar{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:calc(6px + env(safe-area-inset-top,0px)) 10px 6px;background:repeating-linear-gradient(135deg,#0b1622 0 8px,#0d1a28 8px 16px);border-bottom:1px dashed rgba(63,169,255,.45);font:700 11px 'JetBrains Mono',monospace;color:#8fd4ff}
+#mbar .sp{flex:1}
+#mbar button{height:26px;padding:0 9px;border-radius:6px;border:1px solid rgba(63,169,255,.45);background:rgba(63,169,255,.12);font:700 11px 'JetBrains Mono',monospace;color:#8fd4ff;cursor:pointer}
+#mbar button.on{background:#3fa9ff;color:#042c53}
+#stage{position:fixed;top:calc(72px + env(safe-area-inset-top,0px));left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;gap:32px}
+#dev{position:relative;width:100%;height:100%;overflow:hidden;background:linear-gradient(180deg,var(--chassis),var(--chassis-2))}
+@media (min-width:780px) and (min-height:760px){#dev{width:390px;height:780px;border-radius:30px;border:8px solid #1a1e26;box-shadow:0 30px 80px rgba(0,0,0,.75)} #side{display:block} #stage{top:44px}}
+#side{display:none;width:340px;max-height:780px;overflow:auto;font-size:14px;color:#c7cbd4;line-height:1.45}
+#side h3{font:700 11px 'Rajdhani';letter-spacing:.14em;text-transform:uppercase;color:#7d818c;margin:16px 0 6px}
+#side p,#side li{margin:0 0 6px} #side ul{padding-left:18px;margin:0} #side b{color:#f4f5f7}
+
+/* angedeutete App, reagiert live auf die Variablen */
+#app{position:absolute;inset:0;padding:10px;display:flex;flex-direction:column;gap:8px}
+.top{display:flex;gap:8px;align-items:center}
+.lcd{flex:1;height:44px;border-radius:8px;background:var(--lcd-bg);border:1px solid rgba(var(--acc-rgb),.35);display:flex;align-items:center;justify-content:space-between;padding:0 10px;font:24px 'VT323',monospace;color:var(--lcd-fg);text-shadow:0 0 8px rgba(var(--lcd-rgb),.5)}
+.lcd small{font-size:16px;color:var(--dim);text-shadow:none}
+.ib{width:44px;height:44px;border-radius:9px;border:1px solid rgba(255,255,255,.1);background:var(--panel);color:var(--acc-2);display:flex;align-items:center;justify-content:center}
+.ib svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ib.on{background:var(--acc);color:var(--acc-ink);border-color:transparent}
+.grid{background:var(--panel);border-radius:10px;padding:8px;display:flex;flex-direction:column;gap:5px}
+.row{display:grid;grid-template-columns:46px repeat(8,1fr);gap:4px;align-items:center}
+.row b{font:700 11px 'Rajdhani';letter-spacing:.08em;color:var(--tc)}
+.row i{height:22px;border-radius:4px;background:var(--inset);border:1px solid rgba(255,255,255,.04)}
+.row i.x{background:var(--tc);box-shadow:0 0 8px color-mix(in srgb,var(--tc) 55%,transparent)}
+.row i.p{outline:2px solid rgba(var(--acc-rgb),.8);outline-offset:-1px}
+.knobs{display:flex;gap:10px;justify-content:space-around;background:var(--panel);border-radius:10px;padding:10px}
+.kn{display:flex;flex-direction:column;align-items:center;gap:4px;font:700 10px 'Rajdhani';letter-spacing:.1em;color:var(--dim)}
+.kn span{width:38px;height:38px;border-radius:50%;background:conic-gradient(var(--acc) 0 var(--v),var(--inset) var(--v) 100%);display:flex;align-items:center;justify-content:center}
+.kn span::after{content:'';width:28px;height:28px;border-radius:50%;background:var(--chassis)}
+
+#veil{position:absolute;inset:0;background:#0007;transition:opacity .2s}
+#dev.peek #veil{opacity:0}
+#dev.peek .sheet{transform:translateY(calc(100% - 56px))}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:#0f1015;border-top:1px solid rgba(var(--acc-rgb),.4);border-radius:16px 16px 0 0;padding:14px 16px 24px;display:flex;flex-direction:column;gap:6px;max-height:70%;overflow:auto;transition:transform .25s}
+.sh{display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:17px;margin-bottom:4px;gap:8px}
+.sh .sp{flex:1}
+.shx{width:44px;height:44px;border-radius:9px;border:1px solid rgba(255,255,255,.12);background:var(--panel);color:var(--acc-2);cursor:pointer;font-size:15px;flex:none}
+.peekb{height:44px;padding:0 10px;border-radius:9px;border:1px solid rgba(var(--acc-rgb),.4);background:rgba(var(--acc-rgb),.1);color:var(--acc-2);font:700 12px 'Rajdhani';letter-spacing:.06em;cursor:pointer}
+.grp{font:700 11px 'Rajdhani';letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-top:8px}
+.pres{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pr{min-height:64px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:var(--panel);padding:8px 10px;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;cursor:pointer;text-align:left}
+.pr.on{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc) inset}
+.pr strong{font-size:14px}
+.sw{display:flex;gap:4px}
+.sw i{width:16px;height:16px;border-radius:50%;border:1px solid #0006}
+.crow{display:grid;grid-template-columns:96px 1fr 44px;align-items:center;gap:8px;min-height:44px}
+.crow label{font-size:14px;color:var(--dim)}
+.crow input[type=range]{width:100%;height:36px;accent-color:var(--acc)}
+.hue{-webkit-appearance:none;appearance:none;height:14px!important;border-radius:7px;background:linear-gradient(90deg,#f33,#fd3,#3f6,#3ff,#36f,#c3f,#f33)}
+.hue::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:var(--acc);border:3px solid #fff}
+.hue::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:var(--acc);border:3px solid #fff}
+.chip{width:44px;height:44px;border-radius:9px;border:1px solid rgba(255,255,255,.15);position:relative;overflow:hidden}
+.chip input{position:absolute;inset:-8px;width:60px;height:60px;opacity:0;cursor:pointer}
+.insts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.ins{min-height:44px;border-radius:9px;background:var(--panel);border:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:8px;padding:0 10px;position:relative;font:700 12px 'Rajdhani';letter-spacing:.06em}
+.ins i{width:18px;height:18px;border-radius:50%;flex:none}
+.ins input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+.acts{display:flex;gap:8px;margin-top:10px}
+.act{flex:1;min-height:44px;border-radius:9px;border:1px solid rgba(var(--acc-rgb),.4);background:rgba(var(--acc-rgb),.1);color:var(--acc-2);font:700 13px 'Rajdhani';cursor:pointer}
+.hl{font-size:12px;color:var(--dim);text-align:center;margin-top:6px}
+</style>
+</head>
+<body>
+<div id="mbar">
+  <span>FARBEN</span>
+  <button data-v="A" class="on">A · nur Presets</button>
+  <button data-v="B">B · Presets + Anpassen</button>
+  <span class="sp"></span>
+  <button id="reset">Standard</button>
+</div>
+<div id="stage">
+  <div id="dev">
+    <div id="app">
+      <div class="top">
+        <div class="ib on"><svg viewBox="0 0 24 24"><path d="M7 5l12 7-12 7z"/></svg></div>
+        <div class="lcd"><span>BEAT 07</span><small>124 BPM</small></div>
+        <div class="ib"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg></div>
+      </div>
+      <div class="grid" id="grid"></div>
+      <div class="knobs">
+        <div class="kn"><span style="--v:70%"></span>CUTOFF</div>
+        <div class="kn"><span style="--v:40%"></span>RESO</div>
+        <div class="kn"><span style="--v:55%"></span>DECAY</div>
+        <div class="kn"><span style="--v:85%"></span>MASTER</div>
+      </div>
+    </div>
+    <div id="veil"></div>
+    <div class="sheet" id="sheet"></div>
+  </div>
+  <div id="side">
+    <h3>Ort</h3>
+    <p>Neuer Abschnitt <b>Farben</b> im Einstellungs-Sheet (Zahnrad). Änderungen wirken sofort, gespeichert in localStorage. <b>Vorschau</b> klappt das Sheet ein, damit man die App sieht.</p>
+    <h3>A · nur Presets</h3>
+    <p>Fünf kuratierte Themes. Jedes setzt Akzent, LCD und Chassis passend zueinander. Instrumentfarben bleiben fix.</p>
+    <p>Pro: kann nicht hässlich werden, ein Tipp. Contra: keine eigene Farbe.</p>
+    <h3>B · Presets + Anpassen</h3>
+    <p>Presets als Startpunkt, darunter Akzent-Farbton, LCD-Farbe, Chassis-Helligkeit und die sechs Instrumentfarben einzeln (Tipp auf Farbpunkt öffnet System-Picker).</p>
+    <p>Pro: volle Kontrolle, Instrumentfarben z. B. für Farbsehschwäche anpassbar. Contra: mehr UI, Kombinationen mit schlechtem Kontrast möglich.</p>
+    <h3>Technik</h3>
+    <p>Dieses Mockup läuft schon so, wie es in der App laufen würde: alle Farben sind Variablen, Akzent als RGB-Triplet (<b>--acc-rgb</b>), Canvas liest sie per getComputedStyle.</p>
+    <h3>Empfehlung</h3>
+    <p><b>B</b>, aber „Anpassen“ standardmäßig eingeklappt. Wer nur ein Preset will, sieht dasselbe wie in A.</p>
+  </div>
+</div>
+<script>
+const PRESETS={
+  blau:{n:'Blau',acc:'#3fa9ff',acc2:'#8fd4ff',lcd:'#5fc2ff',ch:14},
+  bernstein:{n:'Bernstein',acc:'#ffa53a',acc2:'#ffd29a',lcd:'#ffb347',ch:14},
+  lcdgruen:{n:'LCD Grün',acc:'#4fe08a',acc2:'#a8f5c6',lcd:'#7dff9e',ch:12},
+  rot:{n:'Rot',acc:'#ff4f5e',acc2:'#ffa3ab',lcd:'#ff6b6b',ch:13},
+  mono:{n:'Mono',acc:'#c7cbd4',acc2:'#f4f5f7',lcd:'#e6e8ec',ch:10}
+};
+const INST=[['drums','DRUMS','#3fa9ff'],['perc','PERC','#2fd1c4'],['acid','ACID','#ff8a3d'],['cosmic','COSMIC','#b88cff'],['keys','KEYS','#ffd166'],['sample','SAMPLE','#4fd18b']];
+const DEF={preset:'blau',acc:'#3fa9ff',acc2:'#8fd4ff',lcd:'#5fc2ff',ch:14,inst:Object.fromEntries(INST.map(i=>[i[0],i[2]]))};
+let T, V='A', open=false;
+try{T=JSON.parse(localStorage.getItem('dsTheme'))}catch(e){}
+if(!T) T=structuredClone(DEF);
+const $=q=>document.querySelector(q), R=document.documentElement.style;
+const rgb=h=>{h=h.replace('#','');return [0,2,4].map(i=>parseInt(h.substr(i,2),16)).join(',')};
+const hex=(r,g,b)=>'#'+[r,g,b].map(x=>Math.round(x).toString(16).padStart(2,'0')).join('');
+function hsl2hex(h,s,l){s/=100;l/=100;const k=n=>(n+h/30)%12,a=s*Math.min(l,1-l),f=n=>l-a*Math.max(-1,Math.min(k(n)-3,9-k(n),1));return hex(f(0)*255,f(8)*255,f(4)*255)}
+function hueOf(h){const [r,g,b]=rgb(h).split(',').map(x=>x/255),mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn;if(!d)return 0;let x=mx===r?((g-b)/d)%6:mx===g?(b-r)/d+2:(r-g)/d+4;return Math.round((x*60+360)%360)}
+function lum(h){const [r,g,b]=rgb(h).split(',').map(x=>{x/=255;return x<=.03928?x/12.92:Math.pow((x+.055)/1.055,2.4)});return .2126*r+.7152*g+.0722*b}
+
+function apply(){
+  R.setProperty('--acc-rgb',rgb(T.acc)); R.setProperty('--acc-2',T.acc2);
+  R.setProperty('--acc-ink',lum(T.acc)>.35?'#06121c':'#ffffff');
+  R.setProperty('--lcd-rgb',rgb(T.lcd));
+  const c=T.ch; R.setProperty('--chassis',hsl2hex(240,14,c*.55)); R.setProperty('--chassis-2',hsl2hex(240,14,c*.3));
+  R.setProperty('--panel',hsl2hex(240,12,c*.8)); R.setProperty('--inset',hsl2hex(240,12,c*.35));
+  INST.forEach(([k])=>R.setProperty('--c-'+k,T.inst[k]));
+  try{localStorage.setItem('dsTheme',JSON.stringify(T))}catch(e){}
+}
+function grid(){
+  const pat={drums:'10001010',perc:'00100101',acid:'10110010',cosmic:'01000100',keys:'10000001',sample:'00010000'};
+  $('#grid').innerHTML=INST.map(([k,n])=>'<div class="row" style="--tc:var(--c-'+k+')"><b>'+n+'</b>'+[...pat[k]].map((x,i)=>'<i class="'+(x==='1'?'x':'')+(i===2?' p':'')+'"></i>').join('')+'</div>').join('');
+}
+function render(){
+  let h='<div class="sh"><span>Einstellungen</span><span class="sp"></span><button class="peekb" id="peek">VORSCHAU</button><button class="shx">✕</button></div>';
+  h+='<div class="grp">Farben</div><div class="pres">'+Object.entries(PRESETS).map(([k,p])=>
+    '<button class="pr'+(T.preset===k?' on':'')+'" data-p="'+k+'"><strong>'+p.n+'</strong><span class="sw"><i style="background:'+p.acc+'"></i><i style="background:'+p.lcd+'"></i><i style="background:'+hsl2hex(240,14,p.ch*.8)+'"></i></span></button>').join('')
+    +(V==='B'&&T.preset==='eigen'?'<button class="pr on"><strong>Eigene</strong><span class="sw"><i style="background:'+T.acc+'"></i><i style="background:'+T.lcd+'"></i></span></button>':'')+'</div>';
+  if(V==='B'){
+    h+='<div class="grp" style="display:flex;justify-content:space-between;align-items:center;min-height:36px"><span>Anpassen</span><button class="peekb" id="tog" style="height:32px">'+(open?'EINKLAPPEN':'AUFKLAPPEN')+'</button></div>';
+    if(open){
+      h+='<div class="crow"><label>Akzent</label><input type="range" class="hue" min="0" max="359" value="'+hueOf(T.acc)+'" id="hue"><span class="chip" style="background:'+T.acc+'"><input type="color" value="'+T.acc+'" id="accC"></span></div>';
+      h+='<div class="crow"><label>LCD-Schrift</label><input type="range" class="hue" min="0" max="359" value="'+hueOf(T.lcd)+'" id="lhue"><span class="chip" style="background:'+T.lcd+'"><input type="color" value="'+T.lcd+'" id="lcdC"></span></div>';
+      h+='<div class="crow"><label>Chassis</label><input type="range" min="4" max="26" value="'+T.ch+'" id="ch"><span style="font:20px VT323;color:var(--lcd-fg);text-align:right">'+T.ch+'</span></div>';
+      h+='<div class="grp">Instrumente</div><div class="insts">'+INST.map(([k,n])=>'<label class="ins"><i style="background:'+T.inst[k]+'"></i>'+n+'<input type="color" value="'+T.inst[k]+'" data-i="'+k+'"></label>').join('')+'</div>';
+      h+='<div class="acts"><button class="act" id="instDef">Instrumente auf Standard</button></div>';
+    }
+  }
+  h+='<div class="hl">Wirkt sofort. Gilt nur auf diesem Gerät.</div>';
+  const sh=$('#sheet'); sh.innerHTML=h;
+  sh.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{const p=PRESETS[b.dataset.p];Object.assign(T,{preset:b.dataset.p,acc:p.acc,acc2:p.acc2,lcd:p.lcd,ch:p.ch});apply();render();});
+  $('#peek').onclick=()=>$('#dev').classList.toggle('peek');
+  const tg=$('#tog'); if(tg) tg.onclick=()=>{open=!open;render();};
+  const mine=()=>{T.preset='eigen';};
+  const bind=(id,fn)=>{const e=$('#'+id); if(e) e.oninput=()=>{fn(e.value);mine();apply();const s=sh.scrollTop;render();$('#sheet').scrollTop=s;const n=$('#'+id);n&&n.focus();};};
+  bind('hue',v=>{T.acc=hsl2hex(+v,90,62);T.acc2=hsl2hex(+v,90,80);});
+  bind('accC',v=>{T.acc=v;T.acc2=hsl2hex(hueOf(v),90,80);});
+  bind('lhue',v=>{T.lcd=hsl2hex(+v,100,68);});
+  bind('lcdC',v=>{T.lcd=v;});
+  bind('ch',v=>{T.ch=+v;});
+  sh.querySelectorAll('[data-i]').forEach(e=>e.oninput=()=>{T.inst[e.dataset.i]=e.value;apply();e.previousElementSibling.style.background=e.value;});
+  const idf=$('#instDef'); if(idf) idf.onclick=()=>{T.inst=structuredClone(DEF.inst);apply();render();};
+}
+document.querySelectorAll('#mbar [data-v]').forEach(b=>b.onclick=()=>{V=b.dataset.v;if(V==='A'){T.inst=structuredClone(DEF.inst);if(T.preset==='eigen')Object.assign(T,{preset:'blau'},PRESETS.blau);apply();}document.querySelectorAll('#mbar [data-v]').forEach(x=>x.classList.toggle('on',x===b));render();});
+$('#reset').onclick=()=>{T=structuredClone(DEF);apply();render();};
+grid(); apply(); render();
+</script>
+</body>
+</html>
