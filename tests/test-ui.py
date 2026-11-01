@@ -5,12 +5,15 @@ import asyncio, sys
 from playwright.async_api import async_playwright
 OUT=sys.argv[1]; URL=sys.argv[2] if len(sys.argv)>2 else 'http://localhost:8768/index.html'; res=[]
 def ok(n,c,x=''): res.append(('PASS ' if c else 'FAIL ')+n+(' '+str(x) if x else '')); print(res[-1],flush=True)
+from fzscan import FzScan
+fz=FzScan()
 async def main():
   async with async_playwright() as p:
     b=await p.chromium.launch(args=['--autoplay-policy=no-user-gesture-required']); pg=await b.new_page(viewport={'width':390,'height':844},accept_downloads=True); errs=[]
     pg.on('pageerror',lambda e:errs.append(str(e)[:200]))
     await pg.goto(URL,wait_until='domcontentloaded'); await pg.wait_for_timeout(1800)
-    await pg.click('#lcdPatternBtn'); await pg.wait_for_timeout(400)
+    await fz(pg,'Hauptseite')
+    await pg.click('#lcdPatternBtn'); await pg.wait_for_timeout(400); await fz(pg,'Beats')
     rows=await pg.evaluate("document.querySelectorAll('#patternList .pattern-row').length"); ok('Beats-Liste da', rows>0, rows)
     # Standard-Beats (default-beats.json): frisches Profil bekommt alle, jeder lädt fehlerfrei
     nDef=await pg.evaluate("fetch('./default-beats.json').then(r=>r.json()).then(d=>d.patterns.length)")
@@ -24,7 +27,7 @@ async def main():
     h=await pg.evaluate("document.querySelector('#patternList .pattern-row').offsetHeight"); ok('Zeilenhöhe ≥ 56', h>=56, h)
     await pg.click('#patternList .pattern-row:nth-child(2) .prow-top .prow-btn:last-child'); await pg.wait_for_timeout(200)
     ok('⋯ klappt Aktionen auf', await pg.evaluate("document.querySelectorAll('#patternList .pattern-row.open .prow-more .act').length")==5)
-    await pg.screenshot(path=OUT+'/beats_open.png')
+    await pg.screenshot(path=OUT+'/beats_open.png'); await fz(pg,'Beats ⋯')
     # Duplizieren über Menü
     n0=rows; await pg.click('#patternList .pattern-row.open .prow-more .act:first-child'); await pg.wait_for_timeout(500)
     ok('Duplizieren', await pg.evaluate("document.querySelectorAll('#patternList .pattern-row').length")==n0+1)
@@ -93,13 +96,13 @@ async def main():
     q0=await pg.evaluate("document.getElementById('padQuantizeBtn').classList.contains('on')"); await pg.click('#padQuantizeBtn'); q1=await pg.evaluate("document.getElementById('padQuantizeBtn').classList.contains('on')")
     ok('Quantize umschalten', q0!=q1)
     gh=await pg.evaluate("document.getElementById('padGrid').offsetHeight"); ok('Pads füllen Höhe', gh>450, gh)
-    await pg.screenshot(path=OUT+'/pads.png')
+    await pg.screenshot(path=OUT+'/pads.png'); await fz(pg,'Pads')
     # Mixer
     await pg.click('#mixerToggleBtn'); await pg.wait_for_timeout(500)
     r=await pg.evaluate("(()=>{const m=document.querySelector('#mixerMaster .mix-strip').getBoundingClientRect(), c=document.getElementById('mixerChannels').getBoundingClientRect(); return [m.left, c.right]})()")
     ok('Master überlappt keinen Kanal', r[0]>=r[1]-1, r)
     fh=await pg.evaluate("getComputedStyle(document.getElementById('mixerOverlay')).getPropertyValue('--fh')"); ok('Fader-Höhe angepasst', fh.strip()!='', fh)
-    await pg.screenshot(path=OUT+'/mixer.png')
+    await pg.screenshot(path=OUT+'/mixer.png'); await fz(pg,'Mixer')
     # Song
     await pg.click('#songToggleBtn'); await pg.wait_for_timeout(400)
     await pg.click('#arrHelpBtn'); ok('Hilfe klappt auf', await pg.evaluate("document.getElementById('arrHelp').classList.contains('open')"))
@@ -107,12 +110,12 @@ async def main():
     ok('Song AN', await pg.evaluate("document.querySelector('#arrToggle button[data-v=\"1\"]').classList.contains('on')"))
     await pg.click('#arrToggle button[data-v="1"]'); await pg.wait_for_timeout(100)
     ok('Erneut AN tippen bleibt AN', await pg.evaluate("document.querySelector('#arrToggle button[data-v=\"1\"]').classList.contains('on')"))
-    await pg.screenshot(path=OUT+'/song_on.png')
+    await pg.screenshot(path=OUT+'/song_on.png'); await fz(pg,'Song')
     await pg.click('#arrToggle button[data-v="0"]'); await pg.wait_for_timeout(100)
     ok('Song AUS', await pg.evaluate("document.querySelector('#arrToggle button[data-v=\"0\"]').classList.contains('on')"))
     await pg.click('#patternTabBtn'); await pg.wait_for_timeout(200)
     # Kit + eigene Sets
-    await pg.click('#lcdKitBtn'); await pg.wait_for_timeout(300); await pg.screenshot(path=OUT+'/kit.png'); await pg.click('#kitPickerCloseBtn')
+    await pg.click('#lcdKitBtn'); await pg.wait_for_timeout(300); await pg.screenshot(path=OUT+'/kit.png'); await fz(pg,'Kit'); await pg.click('#kitPickerCloseBtn')
     # Sample-Kits vor dem ersten Laden: Größe am Chip (#31), Zahl passt zu den Dateien
     import pathlib as _pl
     sm=await pg.evaluate("__audio.smpChips()")
@@ -147,7 +150,7 @@ async def main():
     o=await pg.evaluate("window.__audio.smpOpt({})")
     ok('Optionen wirken', o['layers'] is False and abs(o['room']-0.4)<1e-6, o)
     ok('Overlay bleibt offen', await pg.evaluate("document.getElementById('kitPickerOverlay').classList.contains('open')"))
-    await pg.screenshot(path=OUT+'/kit_klang.png')
+    await pg.screenshot(path=OUT+'/kit_klang.png'); await fz(pg,'Kit Klang')
     await pg.click(ch+' .ko-reset'); await pg.wait_for_timeout(100)
     o=await pg.evaluate("window.__audio.smpOpt({})"); ok('Zurück auf Standard', o['layers'] is True and o['vari']==50, o)
     await pg.evaluate("window.__audio.smpOpt({vari:20})")
@@ -161,7 +164,7 @@ async def main():
     ok('Ride: Leiste Spielweise mit Fläche/Bell', await pg.evaluate("[...document.querySelectorAll('#artRow button')].map(b=>b.textContent).join(',')")=='FFläche,BBell')
     await pg.click('#artRow button[data-a="1"]'); await pg.click('#bigGrid .bstep >> nth=0'); await pg.wait_for_timeout(100)
     ok('Step zeigt B', await pg.evaluate("document.querySelector('#bigGrid .bstep').dataset.a")=='B')
-    await pg.screenshot(path=OUT+'/ride_bell.png')
+    await pg.screenshot(path=OUT+'/ride_bell.png'); await fz(pg,'Spielweise')
     await pg.click('#bigGrid .bstep >> nth=0'); ok('Gleicher Tipp löscht', await pg.evaluate("document.querySelector('#bigGrid .bstep').dataset.a")=='')
     hh=await pg.evaluate("[...document.querySelectorAll('.ov-row')].findIndex(r=>r.querySelector('.ov-label').textContent==='CH')")
     await pg.click(f'.ov-row[data-idx="{hh}"] .ov-label'); await pg.wait_for_timeout(100)
@@ -176,7 +179,7 @@ async def main():
     await pg.click('#dsRows .ds-row >> nth=0'); await pg.wait_for_timeout(200)
     await pg.click('#dsSeg button[data-m=smp]'); await pg.wait_for_timeout(300)
     ok('Bibliothek: Löschen-Knopf', await pg.is_visible('#dsList .ds-it button'))
-    await pg.screenshot(path=OUT+'/lib_delete.png')
+    await pg.screenshot(path=OUT+'/lib_delete.png'); await fz(pg,'Eigenes Set')
     await pg.click('#dsList .ds-it button'); await pg.wait_for_timeout(400)
     ok('Sample gelöscht', 'tst1' not in await pg.evaluate("__lib.list()"))
     ok('Liste aktualisiert', await pg.evaluate("[...document.querySelectorAll('#dsList .ds-it')].every(e=>!e.textContent.includes('Testsample'))"))
@@ -188,7 +191,7 @@ async def main():
     await pg.evaluate("const i=document.getElementById('sSwing'); i.value=40; i.dispatchEvent(new Event('input',{bubbles:true}))")
     ok('Verstellt: Taste sichtbar', await pg.evaluate("(b=>b.classList.contains('rs')&&!b.classList.contains('def'))(document.getElementById('sSwingV'))"))
     ok('Standard: keine Taste', await pg.evaluate("document.getElementById('sHumV').classList.contains('def')"))
-    await pg.screenshot(path=OUT+'/reset_settings.png')
+    await pg.screenshot(path=OUT+'/reset_settings.png'); await fz(pg,'Einstellungen')
     await pg.click('#sSwingV'); await pg.wait_for_timeout(200)
     ok('Tipp setzt auf Standard', await pg.input_value('#sSwing')=='0' and await pg.evaluate("document.getElementById('sSwingV').classList.contains('def')"))
     await pg.click('#hmToast button'); await pg.wait_for_timeout(200)
@@ -197,11 +200,12 @@ async def main():
     await pg.click('#tbSound'); await pg.wait_for_timeout(300)
     hall='#klRows .srow:has(label:text-is("Hall"))'
     await pg.evaluate("()=>{const r=[...document.querySelectorAll('#klRows .srow')].find(r=>r.querySelector('label').textContent==='Hall'); const i=r.querySelector('input'); i.value=30; i.dispatchEvent(new Event('input',{bubbles:true}));}")
-    await pg.screenshot(path=OUT+'/reset_klang.png')
+    await pg.screenshot(path=OUT+'/reset_klang.png'); await fz(pg,'Klang')
     await pg.click(hall+' b'); await pg.wait_for_timeout(200)
     ok('Laut-Standard je Spur (BD 90)', await pg.evaluate("[...document.querySelectorAll('#klRows .srow')].find(r=>r.querySelector('label').textContent==='Laut').querySelector('input').dataset.def")=='90')
     ok('Klang: Hall auf Standard', await pg.input_value(hall+' input')=='0', await pg.input_value(hall+' input'))
     await pg.click('#klX'); await pg.wait_for_timeout(150)
+    ok('Schrift überall ≥ 11 px (#19)', not fz.bad, fz.bad)
     ok('Keine Fehler', not errs, errs)
     await b.close()
   print(sum(r.startswith('PASS') for r in res),'/',len(res))

@@ -5,6 +5,7 @@ import asyncio, sys
 from playwright.async_api import async_playwright
 URL=sys.argv[1]; OUT=sys.argv[2]
 res=[]
+from fzscan import FzScan
 def ok(n,c,extra=''): res.append(('PASS ' if c else 'FAIL ')+n+(' '+str(extra) if extra else '')); print(res[-1],flush=True)
 # eine Spur allein mit einem Schlag auf Step 0 rendern; liefert Pegel links/rechts in Zeitfenstern
 RENDER="""async(o)=>{ const tr=__T.find(t=>t.id===o.id); __T.forEach(t=>t.solo=(t===tr)); tr.steps=tr.steps.map((_,i)=>i===0?1:0); tr.feel=0;
@@ -19,7 +20,8 @@ async def main():
     pg.on('pageerror',lambda e:errs.append(str(e)[:300])); pg.on('console',lambda m: m.type=='error' and errs.append(m.text[:200]))
     await pg.goto(URL,wait_until='domcontentloaded'); await pg.wait_for_timeout(1500)
     ev=lambda s: pg.evaluate("s=>__ev(s)",s)
-    s=lambda n: pg.screenshot(path=f'{OUT}/{n}.png')
+    fz=FzScan()
+    async def s(n): await pg.screenshot(path=f'{OUT}/{n}.png'); await fz(pg,n)
     await pg.evaluate("Promise.resolve(__ev('initAudio')())"); await pg.wait_for_timeout(300)
     # --- Standard = bisheriger Klang
     d=await ev("({div:fxDelay.div,md:fxDelay.md,fb:fxDelay.fb,lv:fxDelay.lv,sz:fxHall.sz,to:fxHall.to,nfx:masterFx.length})")
@@ -158,6 +160,7 @@ async def main():
     await pg.click('#klRows [data-add]'); await pg.click('#klRows [data-new="limit"]'); await pg.wait_for_timeout(200)
     ok('Master-Effekt Limiter im Signalweg', await ev("FXG.mfxN.length")==1)
     await s('fx_06_master'); await pg.click('#klX')
+    ok('Schrift überall ≥ 11 px (#19)', not fz.bad, fz.bad)
     ok('Keine JS-Fehler', not errs, errs[:3])
     await b.close()
   fails=[r for r in res if r.startswith('FAIL')]

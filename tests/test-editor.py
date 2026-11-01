@@ -5,6 +5,7 @@ import asyncio, sys, json
 from playwright.async_api import async_playwright
 URL=sys.argv[1]; OUT=sys.argv[2]
 res=[]
+from fzscan import FzScan
 def ok(n,c,extra=''): res.append(('PASS ' if c else 'FAIL ')+n+(' '+str(extra) if extra else '')); print(res[-1],flush=True)
 PINCH="""([f,g])=>{const vp=document.getElementById('prView'),r=vp.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;
 const ev=(t,id,x,y)=>vp.dispatchEvent(new PointerEvent(t,{pointerId:id,clientX:x,clientY:y,bubbles:true}));
@@ -17,7 +18,8 @@ async def main():
     pg=await b.new_page(viewport={'width':390,'height':844}); errs=[]
     pg.on('pageerror',lambda e:errs.append(str(e)[:300])); pg.on('console',lambda m: m.type=='error' and errs.append(m.text[:200]))
     await pg.goto(URL,wait_until='domcontentloaded'); await pg.wait_for_timeout(1500)
-    s=lambda n: pg.screenshot(path=f'{OUT}/{n}.png')
+    fz=FzScan()
+    async def s(n): await pg.screenshot(path=f'{OUT}/{n}.png'); await fz(pg,n)
     async def grp(n):
         await pg.click('#grpBtn'); await pg.click(f'#grpMenu button:has-text("{n}")'); await pg.wait_for_timeout(200)
     ev=lambda: pg.evaluate("__T[__sel()].events.map(e=>[e.s,e.n,e.l,+e.v.toFixed(2),!!e.a,!!e.sl])")
@@ -137,6 +139,7 @@ async def main():
     # Drums: Klang-Sheet ohne Reiter
     await grp('DRUMS'); await pg.click('#tbSound'); await pg.wait_for_timeout(300); await s('18_drums_klang')
     ok('Drums: keine Reiter, Tune da', await pg.evaluate("getComputedStyle(document.getElementById('klTabs')).display==='none' && [...document.querySelectorAll('#klRows label')].some(l=>l.textContent==='Tune')"))
+    ok('Schrift überall ≥ 11 px (#19)', not fz.bad, fz.bad)
     ok('Keine Konsolenfehler', not errs, errs)
     await b.close()
   print('\n'+str(sum(1 for r in res if r.startswith('PASS')))+'/'+str(len(res)))
