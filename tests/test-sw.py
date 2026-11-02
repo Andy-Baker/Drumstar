@@ -50,8 +50,13 @@ async def main():
     ok('Erster Start nach Update noch aus dem Cache (alter Stand)', await pg.evaluate("window.__swv===undefined"))
     c=await wait_cache(lambda c: 'sw-v2' in c['idx'])
     ok('Neuer Stand im Cache: index.html und Skript gemeinsam', c and 'sw-v2' in c['idx'] and '__swv=2' in c['main'])
+    await pg.wait_for_timeout(300)
+    vt=await pg.evaluate("($id('appVer')||{}).textContent||''")
+    ok('Versionsnummer zeigt alten Stand + „Update da“', vt.startswith('v') and 't2-' not in vt and 'Update da' in vt, vt)
     errs.clear(); await boot(1)
     ok('Zweiter Start: neue Skripte laufen', await pg.evaluate("window.__swv===2") and not errs, errs[:3])
+    vt=await pg.evaluate("($id('appVer')||{}).textContent||''")
+    ok('Versionsnummer zeigt neuen Stand', vt.startswith('vt2-') and 'Update' not in vt, vt)
     # --- Update scheitert (eine Datei fehlt) → alter, stimmiger Stand bleibt
     idx.write_text(i0.replace('?v=','?v=t3-').replace('</body>','<!-- sw-v3 -->\n</body>'),encoding='utf8'); mainjs.write_text(m0+'\nwindow.__swv=3;\n',encoding='utf8')
     hidden=base.with_suffix('.weg'); base.rename(hidden)

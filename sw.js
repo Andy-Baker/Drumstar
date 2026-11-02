@@ -8,7 +8,7 @@
 //   bei jedem Deploy CACHE hier und alle ?v= in index.html gemeinsam erhöhen (tests/test-sw.py prüft das).
 // - Schriften/Bilder/Samples: Cache zuerst.
 // - Übrige Seiten (Impressum …): stale-while-revalidate. Offline-Fallback nur für Seitenaufrufe.
-const CACHE='mrm44-v90';
+const CACHE='mrm44-v91';
 const OPTIONAL=['./impressum.html','./datenschutz.html','./fonts.css',
   './icons/icon-192.png','./icons/icon-512.png','./icons/logo-drumstar.png',
   './fonts/Rajdhani-Medium.woff','./fonts/Rajdhani-SemiBold.woff','./fonts/Rajdhani-Bold.woff','./fonts/VT323-Regular.woff',
@@ -41,6 +41,7 @@ function checkUpdate(){                // höchstens eine Prüfung gleichzeitig
     const old=await c.match(IDX);
     if(old && await old.text()===await res.clone().text()) return;
     await installApp(c,res);
+    (await self.clients.matchAll()).forEach(cl=>cl.postMessage({type:'update-ready'})); // Seite zeigt „neu laden“ an der Versionsnummer
   })().catch(()=>{}).finally(()=>{ checking=null; });
   return checking;
 }

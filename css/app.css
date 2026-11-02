@@ -390,6 +390,8 @@
   footer.legal-footer{ text-align:center; font-size:11px; letter-spacing:.05em; padding:6px 0 4px; }
   footer.legal-footer a{ color:var(--dim); text-decoration:none; border-bottom:1px solid transparent; transition:color .15s, border-color .15s; }
   footer.legal-footer a:hover, footer.legal-footer a:active{ color:var(--blue-2); border-bottom-color:rgba(63,169,255,.4); }
+  footer.legal-footer #appVer{ color:var(--dim); font-variant-numeric:tabular-nums; }
+  footer.legal-footer #appVer.upd{ color:var(--blue-2); cursor:pointer; }
   footer.legal-footer .sep{ margin:0 7px; opacity:.4; color:var(--dim); }
 
   /* ---------- BOTTOM-TAB-BAR (ersetzt die 5 einzelnen Overlay-Chips im Transport,
