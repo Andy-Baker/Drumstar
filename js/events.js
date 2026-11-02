@@ -198,6 +198,13 @@ function pianoNoise(){
   let seed=12345; for(let i=0;i<len;i++){ seed=(seed*1664525+1013904223)>>>0; d[i]=(seed/4294967296*2-1)*Math.pow(1-i/len,2); } // deterministisch -> Live = Export
   return audioCtx._pnz=buf;
 }
+// Obere Piano-Teiltöne 3..K (Amplitude 1/k^1.2) als eine Wellenform, je Kontext und K zwischengespeichert
+function pianoWave(K){
+  const c=audioCtx._pwv||(audioCtx._pwv={}); if(c[K]) return c[K];
+  const re=new Float32Array(K+1), im=new Float32Array(K+1);
+  for(let k=3;k<=K;k++) im[k]=1/Math.pow(k,1.2);
+  return c[K]=audioCtx.createPeriodicWave(re,im,{disableNormalization:true});
+}
 // Keys-Sounds (pro Spur: tr.sound). def = Reglerwerte beim Umschalten
 const KEY_SOUNDS={
   piano:{name:'PIANO', desc:'Hammer · Saiten · warm', def:{cutoff:0.55, envMod:0.5, decay:0.5, tremolo:0}},
@@ -252,22 +259,23 @@ function pianoVoice(tr,time,n,vel,holdSec){
   lp.frequency.setValueAtTime(open,time); lp.frequency.setTargetAtTime(floor,time+0.02,0.35+T*0.08);
   const amp=audioCtx.createGain(); amp.gain.setValueAtTime(0.0001,time); amp.gain.linearRampToValueAtTime(peak,time+0.003);
   const pan=audioCtx.createStereoPanner(); pan.pan.value=Math.max(-0.45,Math.min(0.45,(n-20)/45)); // tiefe Töne links, hohe rechts
+  // Teiltöne (v90, #48): Grundton und 2. Teilton einzeln, alle höheren zusammen in EINEM Oszillator (PeriodicWave).
+  // Vorher je Teilton ein Oszillator + Gain (bis 11 Paare pro Note, Akkord >100 Knoten) -> am Handy Aussetzer beim Anschlag.
   const oscs=[], K=Math.max(3,Math.min(8,Math.floor(7500/freq)));
-  const part=(f,a,tau1,det,drop)=>{
-    const o=audioCtx.createOscillator(); o.type='sine'; o.frequency.setValueAtTime(f,time); if(det) o.detune.setValueAtTime(det,time);
+  const part=(f,a,tau1,det,drop,wave)=>{
+    const o=audioCtx.createOscillator(); if(wave) o.setPeriodicWave(wave); else o.type='sine';
+    o.frequency.setValueAtTime(f,time); if(det) o.detune.setValueAtTime(det,time);
     const g=audioCtx.createGain(); g.gain.setValueAtTime(a,time);
     // Zweistufiges Ausklingen: schneller Anfangsabfall, dann lange Schwebung
     g.gain.setTargetAtTime(a*drop,time+0.005,tau1); g.gain.setTargetAtTime(0.0001,time+0.1+tau1*2,tau1*6+T*0.35);
     o.connect(g).connect(lp); oscs.push(o);
   };
-  for(let k=1;k<=K;k++){
-    const f=freq*k*Math.sqrt(1+0.0004*k*k); if(f>11000) break;
-    const a=(1/Math.pow(k,1.2))*(k>2?(0.3+v*0.7*(0.45+hard)):1)*(k===2?0.8:1);
-    const tau1=T*0.07/(1+0.5*(k-1));
-    const drop=k===1?0.8:k===2?0.6:0.3; // Grundton fällt kaum ab (sonst Wumms wie eine Bassdrum beim Anschlag)
-    part(f,a,tau1,0,drop);
-    if(k<=3 && freq>130) part(f,a*0.55,tau1*1.1,k===1?-3.5:3.5,drop); // Doppel-/Dreichörigkeit
-  }
+  const tau=k=>T*0.07/(1+0.5*(k-1)), str=k=>Math.sqrt(1+0.0004*k*k); // Saitensteifheit: Teiltöne leicht gespreizt
+  part(freq*str(1),1,tau(1),0,0.8);                 // Grundton fällt kaum ab (sonst Wumms wie eine Bassdrum beim Anschlag)
+  part(freq*2*str(2),0.8/Math.pow(2,1.2),tau(2),0,0.6);
+  if(freq>130) part(freq*str(1),0.55,tau(1)*1.1,-3.5,0.8); // Doppelchörigkeit (Schwebung) nur am Grundton
+  const kTop=Math.min(K,Math.floor(11000/freq));
+  if(kTop>=3) part(freq*str(4),(0.3+v*0.7*(0.45+hard)),tau(4),0,0.3,pianoWave(kTop)); // obere Teiltöne gemeinsam, Spreizung gemittelt
   lp.connect(amp).connect(pan).connect(tr.bus);
   // Hammer: kurzer, leiser Rauschimpuls im Mittenbereich, durch den Tonfilter (vorher hell und laut = klang wie eine Hi-Hat)
   const nz=audioCtx.createBufferSource(); nz.buffer=pianoNoise();

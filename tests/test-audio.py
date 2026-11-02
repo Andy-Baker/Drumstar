@@ -26,6 +26,16 @@ JS="""async ([sound,n,vel,hold])=>{
  let eh=0,et=0; for(let k=1;k<N/2;k++){ const e=re[k]*re[k]+im[k]*im[k]; et+=e; if(k*sr/N>4000) eh+=e; }
  return {nan, peak:pk(0,1.6), before:pk(0.05+hold-0.01,0.05+hold), after:pk(0.05+hold,0.05+hold+0.05),
          fund:[gz(0.055),gz(0.15)], hf:10*Math.log10((eh+1e-12)/(et+1e-12))};}"""
+JS_NODES="""async ()=>{
+ const sr=48000, tr=__T.find(t=>t.id==='piano'), ob=tr.bus, os=tr.sound; tr.sound='piano';
+ const P=BaseAudioContext.prototype, keep={}; let cnt=0;
+ for(const m of ['createOscillator','createGain','createBiquadFilter','createBufferSource','createStereoPanner']){ keep[m]=P[m]; P[m]=function(){cnt++; return keep[m].apply(this,arguments);}; }
+ let mn=1e9, mx=0;
+ for(const n of [-24,-12,0,7,12,24,36]){ const c=new OfflineAudioContext(2,sr*0.2,sr); __setCtx(c); tr.bus=c.destination; cnt=0; __pv(tr,0.01,n,0.85,null); mn=Math.min(mn,cnt); mx=Math.max(mx,cnt); }
+ for(const m in keep) P[m]=keep[m];
+ const c=new OfflineAudioContext(2,sr*0.5,sr); __setCtx(c); tr.bus=c.destination; [12,16,19].forEach(n=>__pv(tr,0.02,n,1.0,null));
+ const b=await c.startRendering(); tr.bus=ob; tr.sound=os; const L=b.getChannelData(0),R=b.getChannelData(1); let pk=0; for(let i=0;i<L.length;i++) pk=Math.max(pk,Math.abs(L[i]+R[i]));
+ return {min:mn, max:mx, chord:pk};}"""
 async def main():
   async with async_playwright() as p:
     b=await p.chromium.launch(args=['--autoplay-policy=no-user-gesture-required','--js-flags=--expose-gc']); pg=await b.new_page(); errs=[]
@@ -43,6 +53,10 @@ async def main():
         drop=20*math.log10((r['fund'][1]+1e-9)/(r['fund'][0]+1e-9))
         ok(f'{sound} n={n}: Grundton nach 100 ms > -3 dB (kein Wumms)', drop>-3, f'{drop:+.1f} dB')
         if sound=='piano': ok(f'piano n={n}: Hochton-Anteil Anschlag < -45 dB (kein Hi-Hat)', r['hf']<-45, f"{r['hf']:.1f} dB")
+    # v90 (#48): Last pro Piano-Note (vorher bis 28 Knoten, Akkord am Handy -> Aussetzer/Plopp beim Anschlag)
+    r=await pg.evaluate(JS_NODES)
+    ok('piano: höchstens 16 Audio-Knoten pro Note', r['max']<=16, f"{r['min']}–{r['max']}")
+    ok('piano: Dur-Akkord v=1 Spitze < 0.75 (kein Anschlag-Stoß in den Master)', r['chord']<0.75, round(r['chord'],3))
     # ---------- Drums ----------
     kits=await pg.evaluate("__audio.kits()"); ids=await pg.evaluate("__audio.drumIds()")
     for kit in kits:
