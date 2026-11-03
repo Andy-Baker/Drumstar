@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="de"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Mixer-Pegel #50</title>
+<style>
+  :root{ --bg:#0a0d12; --panel:#121820; --strip:#0f141b; --line:#1e2733; --tx:#e6e9ef; --dim:#7d8898; --blue:#3fa9ff; --blue2:#5fc2ff;
+         --g:#3fd67a; --y:#ffc247; --r:#ff4b4b; --mono:'JetBrains Mono',ui-monospace,Menlo,monospace; }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ margin:0; background:var(--bg); color:var(--tx); font:14px/1.35 -apple-system,system-ui,sans-serif; }
+  body{ padding:12px 0 24px; }
+  .wrap{ padding:0 16px; }
+  h1{ font-size:17px; margin:0 0 2px; } .sub{ color:var(--dim); font-size:12.5px; margin:0 0 10px; }
+  .seg{ display:flex; background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:3px; gap:3px; margin-bottom:8px; }
+  .seg button{ flex:1; font:inherit; font-size:12.5px; color:var(--dim); background:none; border:0; border-radius:7px; padding:8px 4px; }
+  .seg button.on{ background:#1b2634; color:var(--tx); box-shadow:inset 0 0 0 1px #2c3c50; }
+  .seg.small button{ padding:6px 4px; font-size:12px; }
+  .lbl{ font-size:11px; letter-spacing:.06em; color:var(--dim); text-transform:uppercase; margin:10px 0 4px; }
+  .note{ background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-size:12.5px; color:#b9c2cf; margin-top:10px; }
+  .note b{ color:var(--tx); }
+
+  /* Mixer */
+  #mixer{ display:flex; gap:6px; overflow-x:auto; padding:10px 16px 6px; scrollbar-width:none; }
+  #mixer::-webkit-scrollbar{ display:none; }
+  .strip{ flex:0 0 auto; width:62px; background:var(--strip); border:1px solid var(--line); border-radius:9px; padding:0 0 8px;
+          display:flex; flex-direction:column; align-items:center; position:relative; overflow:hidden; }
+  .strip::before{ content:""; position:absolute; left:0; right:0; top:0; height:3px; background:var(--c); }
+  .strip.master{ width:70px; background:linear-gradient(180deg,#152030,#0d1420); border-color:rgba(95,194,255,.35); position:sticky; right:0; }
+  .name{ font-size:11.5px; font-weight:700; letter-spacing:.05em; margin:9px 0 4px; }
+  .master .name{ color:var(--blue2); }
+
+  .clip{ width:34px; height:13px; border-radius:3px; background:#2a1111; border:1px solid #3a1a1a; margin-bottom:3px;
+         font:700 8.5px/11px var(--mono); color:#5a2a2a; text-align:center; letter-spacing:.06em; cursor:pointer; }
+  .clip.on{ background:var(--r); border-color:#ff8c8c; color:#2b0000; box-shadow:0 0 8px rgba(255,75,75,.75); }
+  .pk{ font:600 10.5px/13px var(--mono); color:var(--dim); height:14px; margin-bottom:3px; cursor:pointer; }
+  .pk.y{ color:var(--y); } .pk.r{ color:var(--r); }
+
+  .frow{ display:flex; gap:5px; align-items:stretch; height:var(--fh,300px); }
+  .scale{ position:relative; width:14px; font:9px/1 var(--mono); color:#5d6878; }
+  .scale span{ position:absolute; right:0; transform:translateY(-50%); }
+  .meter{ width:12px; position:relative; border-radius:2px; overflow:hidden; background:#05070a; box-shadow:inset 0 0 4px #000; }
+  .fill{ position:absolute; left:0; right:0; bottom:0; height:0; }
+  .hold{ position:absolute; left:0; right:0; height:2px; background:#fff; bottom:0; opacity:.9; }
+  .zero{ position:absolute; left:0; right:0; top:0; height:1px; background:rgba(255,255,255,.35); }
+
+  /* A: Cubase – stufenloser Verlauf, Farben fest nach dB-Zone */
+  .vA .fill{ background:linear-gradient(0deg, var(--g) 0%, var(--g) var(--gTop), var(--y) var(--yBot), var(--y) var(--yTop), var(--r) var(--rBot), var(--r) 100%);
+             background-size:100% var(--fh,300px); background-position:bottom; }
+  /* B: Pro Tools – LED-Segmente */
+  .vB .meter{ background:#06080b; }
+  .vB .fill{ background:linear-gradient(0deg, var(--g) 0%, var(--g) var(--gTop), var(--y) var(--yBot), var(--y) var(--yTop), var(--r) var(--rBot), var(--r) 100%);
+             background-size:100% var(--fh,300px); background-position:bottom; }
+  .vB .meter::after{ content:""; position:absolute; inset:0; pointer-events:none;
+             background:repeating-linear-gradient(0deg, transparent 0 4px, #06080b 4px 6px); }
+  /* C: heute */
+  .vC .fill{ background:linear-gradient(0deg, var(--blue) 0%, var(--blue) 77.8%, var(--y) 77.8%, var(--y) 88.9%, var(--r) 88.9%, var(--r) 100%);
+             background-size:100% var(--fh,300px); background-position:bottom; }
+  .vC .meter::after{ content:""; position:absolute; inset:0; pointer-events:none; background:repeating-linear-gradient(180deg, transparent 0 5px, rgba(0,0,0,.55) 5px 6px); }
+  .vC .clip, .vC .pk{ visibility:hidden; }
+  .vC .zero{ top:11.11%; }
+
+  .fwrap{ width:26px; position:relative; }
+  .ftrack{ position:absolute; left:50%; top:0; bottom:0; width:4px; margin-left:-2px; background:#070a0e; border-radius:2px; }
+  input.fader{ -webkit-appearance:none; appearance:none; position:absolute; left:50%; top:50%; width:var(--fh,300px); height:26px; margin:0;
+               transform:translate(-50%,-50%) rotate(-90deg); background:transparent; touch-action:none; }
+  input.fader::-webkit-slider-runnable-track{ height:4px; background:transparent; }
+  input.fader::-webkit-slider-thumb{ -webkit-appearance:none; width:30px; height:16px; margin-top:-6px; border-radius:3px;
+      background:linear-gradient(180deg,#4a4e57,#22242a); border:1px solid rgba(255,255,255,.25); box-shadow:0 2px 3px rgba(0,0,0,.7); }
+  .master input.fader::-webkit-slider-thumb{ background:linear-gradient(180deg,#5fc2ff,#2a7fc7); }
+  input.fader::-moz-range-thumb{ width:30px; height:16px; border-radius:3px; background:#3a3e47; border:1px solid rgba(255,255,255,.25); }
+  .db{ font:11px var(--mono); color:var(--blue2); margin-top:5px; }
+  .reset{ font:inherit; font-size:12px; color:var(--tx); background:#1b2634; border:1px solid #2c3c50; border-radius:8px; padding:7px 10px; }
+  .bar{ display:flex; gap:8px; align-items:center; padding:2px 16px 0; }
+  .legend{ display:flex; gap:10px; font-size:11.5px; color:var(--dim); flex-wrap:wrap; }
+  .legend i{ display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:4px; vertical-align:-1px; }
+</style></head><body>
+<div class="wrap">
+  <h1>Mixer-Pegel · grün / gelb / rot <span style="color:var(--y)">#50</span></h1>
+  <p class="sub">Simulierte Pegel, ohne Ton. Fader bewegen, Szenario wechseln, Varianten vergleichen.</p>
+  <div class="lbl">Variante</div>
+  <div class="seg" id="vSeg">
+    <button data-v="A" class="on">A · Cubase</button><button data-v="B">B · Pro Tools</button><button data-v="C">Heute</button>
+  </div>
+  <div class="lbl">Szenario</div>
+  <div class="seg small" id="sSeg">
+    <button data-s="ok" class="on">Sauber</button><button data-s="hot">Arp zu laut</button><button data-s="master">Master übersteuert</button>
+  </div>
+</div>
+<div id="mixer"></div>
+<div class="bar">
+  <div class="legend"><span><i style="background:var(--g)"></i>bis −12 dB</span><span><i style="background:var(--y)"></i>−12 bis −3</span><span><i style="background:var(--r)"></i>ab −3</span><span><i style="background:var(--r);box-shadow:0 0 6px var(--r)"></i>CLIP &gt; 0 dB</span></div>
+</div>
+<div class="wrap">
+  <div class="note" id="vNote"></div>
+  <div class="note"><b>In allen neuen Varianten:</b> Die <b>CLIP-LED</b> bleibt rot, bis du sie antippst; am Master setzt sie alle zurück. Die <b>Zahl</b> darüber ist die höchste Spitze seit dem letzten Zurücksetzen, ab −3 gelb, über 0 rot. Außerdem wird jetzt jede Spitze gemessen. Heute werden kurze Schläge oft verpasst, und Rot kann nie aufleuchten.</div>
+</div>
+<script>
+"use strict";
+const FLOOR=-48, CEIL=0;                       // neue Skala: 0 dBFS oben, darüber nur die CLIP-LED
+const Z={g:-12, y:-3};
+const pct=db=>Math.max(0,Math.min(1,(db-FLOOR)/(CEIL-FLOOR)));
+const CH=[
+  {n:'DRUMS', c:'#3fa9ff', kind:'drum', lvl:-8},
+  {n:'PERC',  c:'#2ec4b6', kind:'perc', lvl:-14},
+  {n:'MC',    c:'#7bd85c', kind:'perc', lvl:-16},
+  {n:'ARP',   c:'#ff7a2f', kind:'arp',  lvl:-10},
+  {n:'COSMIC',c:'#b07cff', kind:'pad',  lvl:-15},
+  {n:'KEYS',  c:'#ffd166', kind:'keys', lvl:-12},
+];
+const SCN={ ok:{}, hot:{ARP:+12}, master:{DRUMS:+5, ARP:+5, KEYS:+5, COSMIC:+4} };
+let variant='A', scen='ok', strips=[], master;
+const mixer=document.getElementById('mixer');
+function fh(){ return Math.max(220, Math.min(360, innerHeight-330)); }
+function mk(ch,isMaster){
+  const s=document.createElement('div'); s.className='strip'+(isMaster?' master':''); s.style.setProperty('--c',ch.c||'#5fc2ff');
+  s.innerHTML=`<div class="name">${ch.n}</div><div class="clip">CLIP</div><div class="pk">−∞</div>
+    <div class="frow"><div class="scale"></div><div class="meter"><div class="fill"></div><div class="hold"></div><div class="zero"></div></div>
+    <div class="fwrap"><div class="ftrack"></div><input class="fader" type="range" min="-60" max="6" step="0.1" value="0"></div></div>
+    <div class="db">0.0dB</div>`;
+  const o={ch, el:s, clipEl:s.querySelector('.clip'), pkEl:s.querySelector('.pk'), fill:s.querySelector('.fill'), hold:s.querySelector('.hold'),
+           fader:s.querySelector('.fader'), dbEl:s.querySelector('.db'), sm:FLOOR, holdDb:FLOOR, holdT:0, max:-Infinity, clip:false, gain:0};
+  o.fader.addEventListener('input',()=>{ o.gain=+o.fader.value; o.dbEl.textContent=(o.gain>0?'+':'')+o.gain.toFixed(1)+'dB'; });
+  o.clipEl.onclick=o.pkEl.onclick=()=>{ (isMaster?[...strips,master]:[o]).forEach(x=>{ x.clip=false; x.max=-Infinity; }); };
+  const sc=s.querySelector('.scale'); [0,-3,-6,-12,-24,-48].forEach(d=>{ const e=document.createElement('span'); e.textContent=d===0?'0':-d; e.style.top=((1-pct(d))*100)+'%'; sc.appendChild(e); });
+  mixer.appendChild(s); return o;
+}
+CH.forEach(c=>strips.push(mk(c,false))); master=mk({n:'MASTER'},true);
+function layout(){
+  const h=fh(); document.documentElement.style.setProperty('--fh',h+'px');
+  const gTop=pct(Z.g)*100, yTop=pct(Z.y)*100;
+  document.documentElement.style.setProperty('--gTop',gTop+'%'); document.documentElement.style.setProperty('--yBot',gTop+'%');
+  document.documentElement.style.setProperty('--yTop',yTop+'%'); document.documentElement.style.setProperty('--rBot',yTop+'%');
+}
+layout(); addEventListener('resize',layout);
+// Simulierte Quellen (Spitzenpegel in dB pro Frame), 128 BPM
+const BPM=128, s16=60/BPM/4; let rnd=7;
+const rand=()=>((rnd=(rnd*1103515245+12345)&0x7fffffff)/0x7fffffff);
+function srcDb(ch,t){
+  const st=Math.floor(t/s16), ph=(t%s16)/s16, beat=st%4===0;
+  let a;
+  switch(ch.kind){
+    case 'drum': a=(beat?1:(st%2?0.25:0.5))*Math.exp(-ph*5); break;
+    case 'perc': a=(st%2?0.7:0.35)*Math.exp(-ph*7); break;
+    case 'arp':  a=0.75*Math.exp(-ph*2.5)+0.12; break;
+    case 'pad':  a=0.6+0.15*Math.sin(t*1.7); break;
+    case 'keys': a=(st%8<1?1:0.55)*Math.exp(-((t%(s16*8))/(s16*8))*2)+0.1; break;
+  }
+  return ch.lvl+20*Math.log10(Math.max(1e-4,a))+(rand()-0.5)*1.2+((SCN[scen]||{})[ch.n]||0);
+}
+function draw(o,db,now){
+  if(db>0){ o.clip=true; }
+  o.max=Math.max(o.max,db);
+  o.sm = db>o.sm ? db : Math.max(FLOOR, o.sm-0.9);           // Anstieg sofort, Abfall ~ 50 dB/s
+  if(db>o.holdDb || now-o.holdT>1.5){ o.holdDb=Math.max(db,o.sm); o.holdT=now; }
+  const ceil = variant==='C' ? 6 : 0, floor=FLOOR;
+  const p=v=>Math.max(0,Math.min(1,(v-floor)/(ceil-floor)));
+  const shown = variant==='C' ? Math.min(0,o.sm) : o.sm;       // heute: Byte-Daten, bei 0 dB gekappt
+  o.fill.style.height=(p(shown)*100)+'%';
+  o.hold.style.bottom=`calc(${p(variant==='C'?Math.min(0,o.holdDb):o.holdDb)*100}% - 1px)`;
+  o.clipEl.classList.toggle('on',o.clip);
+  const m=o.max; o.pkEl.textContent= m===-Infinity||m<FLOOR ? '−∞' : (m>0?'+':'')+m.toFixed(1);
+  o.pkEl.className='pk'+(m>0?' r':m>Z.y?' y':'');
+}
+const t0=performance.now()/1000;
+function loop(){
+  const now=performance.now()/1000, t=now-t0; let pow=0;
+  strips.forEach(o=>{ const db=srcDb(o.ch,t)+o.gain; draw(o,db,now); pow+=Math.pow(10,db/10); });
+  const mdb=10*Math.log10(pow)+2+master.gain; draw(master,mdb,now);
+  requestAnimationFrame(loop);
+}
+const NOTES={A:'<b>A · Cubase:</b> durchgehender Balken; die Farbe hängt an der Höhe: grün, ab −12 gelb, ab −3 rot. Die Skala links hat Marken bei 0 · 3 · 6 · 12 · 24 · 48 dB. Ruhig und gut lesbar.',
+             B:'<b>B · Pro Tools:</b> gleiche Farben, aber als einzelne LED-Segmente wie bei einem Hardware-Pult. Wirkt technischer, die einzelnen Segmente sind am Handy etwas unruhiger.',
+             C:'<b>Heute (v92):</b> blau/gelb/rot, Skala bis +6 dB. Weil die Pegel bei 0 dB gekappt eingelesen werden, kommt der Balken nie über die weiße Linie, und Übersteuerung bleibt unsichtbar (siehe „Master übersteuert“).'};
+function setV(v){ variant=v; document.body.className='v'+v; mixer.className='v'+v; document.querySelectorAll('#vSeg button').forEach(b=>b.classList.toggle('on',b.dataset.v===v)); document.getElementById('vNote').innerHTML=NOTES[v];
+  document.querySelectorAll('.scale').forEach(s=>s.style.visibility=v==='C'?'hidden':'visible'); }
+document.querySelectorAll('#vSeg button').forEach(b=>b.onclick=()=>setV(b.dataset.v));
+document.querySelectorAll('#sSeg button').forEach(b=>b.onclick=()=>{ scen=b.dataset.s; document.querySelectorAll('#sSeg button').forEach(x=>x.classList.toggle('on',x===b)); });
+setV('A'); loop();
+</script>
+</body></html>
