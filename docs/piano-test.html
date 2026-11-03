@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="de"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Piano-Test</title>
+<style>
+  :root{ --bg:#0e1116; --card:#171b22; --line:#262c36; --tx:#e6e9ef; --dim:#8a93a3; --blue:#3fa9ff; --yel:#ffd166; --red:#ff6b6b; --grn:#4cd97b; }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body{ margin:0; background:var(--bg); color:var(--tx); font:15px/1.4 -apple-system,system-ui,sans-serif; padding:16px 16px 40px; }
+  h1{ font-size:18px; margin:0 0 4px; } p{ margin:0 0 12px; color:var(--dim); font-size:13px; }
+  .row{ background:var(--card); border:1px solid var(--line); border-radius:12px; padding:10px 12px; margin:8px 0; display:flex; align-items:center; gap:8px; }
+  .row .l{ flex:1; min-width:0; } .row b{ display:block; } .row small{ color:var(--dim); font-size:12px; }
+  .row.ref{ border-color:#3b3420; }
+  button{ font:inherit; font-size:13px; color:var(--tx); background:#1f2631; border:1px solid #2e3746; border-radius:9px; padding:10px 0; width:56px; }
+  button:active{ background:var(--blue); color:#000; }
+  .opt{ display:flex; gap:8px; margin:12px 0 4px; flex-wrap:wrap; }
+  .opt label{ background:var(--card); border:1px solid var(--line); border-radius:9px; padding:8px 10px; font-size:13px; }
+  #st{ font-size:12px; color:var(--dim); margin-top:14px; } #st.err{ color:var(--red); }
+</style></head><body>
+<h1>Piano-Test <span style="color:var(--yel)">#48</span></h1>
+<p>Jede Zeile ist das echte Piano aus der App, bei dem ein Baustein abgeschaltet ist. Tippe <b>Tief</b>, <b>Hoch</b> und <b>Akkord</b> und merke dir die Buchstaben, bei denen das Plopp weg ist.</p>
+<div class="opt">
+  <label><input type="checkbox" id="optComp" checked> Master-Kompressor wie in der App</label>
+</div>
+<div id="rows"></div>
+<div id="st">lädt …</div>
+<script>
+"use strict";
+var audioCtx=null, comp=null;
+const VARIANTS=[
+  {k:'A', n:'Original', d:'so wie in der App', r:[]},
+  {k:'B', n:'ohne Hammer', d:'kein Rausch-Impuls beim Anschlag', r:[['nz.start(time);','']]},
+  {k:'C', n:'ohne Filter-Bewegung', d:'Klang wird nach dem Anschlag nicht weicher', r:[['lp.frequency.setTargetAtTime(floor,time+0.02,0.35+T*0.08);','']]},
+  {k:'D', n:'ohne Schwebung', d:'keine verstimmte zweite Saite', r:[['if(freq>130) part(','if(false) part(']]},
+  {k:'E', n:'ohne obere Obertöne', d:'nur Grundton + 2. Teilton', r:[['if(kTop>=3) part(','if(false) part(']]},
+  {k:'F', n:'weicher Einsatz', d:'15 ms statt 3 ms Einblenden', r:[['amp.gain.linearRampToValueAtTime(peak,time+0.003);','amp.gain.linearRampToValueAtTime(peak,time+0.015);']]},
+  {k:'G', n:'ohne Anfangsabfall', d:'Teiltöne fallen nicht erst schnell ab', r:[['g.gain.setTargetAtTime(a*drop,time+0.005,tau1);','']]},
+  {k:'H', n:'alles aus (B–G)', d:'nur noch nackte Sinustöne', r:'ALL'},
+  {k:'R', n:'Rhodes', d:'Vergleich: hier hörst du nichts', rhodes:true, r:[]},
+];
+const NEED={'js/voices.js':['noteFreq','arpDecaySeconds'], 'js/events.js':['pianoNoise','pianoWave','rhodesEnvAt','rhodesVoice','pianoVoice']};
+function extract(src,name){            // Funktionsquelltext per Klammerzählung aus der echten Datei holen
+  const i=src.indexOf('function '+name+'('); if(i<0) throw new Error(name+' nicht gefunden');
+  let j=src.indexOf('{',i), d=0;
+  for(;j<src.length;j++){ const c=src[j]; if(c==='{') d++; else if(c==='}' && --d===0) break; }
+  return src.slice(i,j+1);
+}
+let PV_SRC='', fns={};
+async function load(){
+  const st=document.getElementById('st');
+  try{
+    const ver=await fetch('../index.html',{cache:'no-store'}).then(r=>r.text()).then(t=>(t.match(/\?v=(\d+)/)||[])[1]);
+    for(const [file,names] of Object.entries(NEED)){
+      const src=await fetch('../'+file,{cache:'no-store'}).then(r=>{ if(!r.ok) throw new Error(file+' '+r.status); return r.text(); });
+      for(const n of names){ const s=extract(src,n); if(n==='pianoVoice') PV_SRC=s; else (0,eval)(s); }
+    }
+    (0,eval)(PV_SRC.replace('function pianoVoice(','function pianoVoiceOrig('));
+    const all=VARIANTS.filter(v=>Array.isArray(v.r)).flatMap(v=>v.r);
+    for(const v of VARIANTS){
+      const reps=v.r==='ALL'?all:v.r; let s=PV_SRC;
+      for(const [a,b] of reps){ if(!s.includes(a)) throw new Error('Variante '+v.k+': Stelle im Code nicht gefunden'); s=s.split(a).join(b); }
+      fns[v.k]=(0,eval)('('+s+')');
+    }
+    st.textContent='Piano-Code aus der App geladen (v'+(ver||'?')+'). Ton an, Stummschalter am iPhone aus.';
+  }catch(e){ st.textContent='Fehler: '+e.message; st.className='err'; }
+}
+function ctx(){
+  if(!audioCtx){ audioCtx=new (window.AudioContext||window.webkitAudioContext)(); comp=audioCtx.createDynamicsCompressor(); const m=audioCtx.createGain(); m.gain.value=0.85; m.connect(comp); comp.connect(audioCtx.destination); comp._in=m; }
+  if(audioCtx.state!=='running') audioCtx.resume();
+  return audioCtx;
+}
+function play(v,what){
+  const c=ctx(); const useComp=document.getElementById('optComp').checked;
+  const tr={id:'piano', sound:v.rhodes?'rhodes':'piano', rootNote:0, cutoff:v.rhodes?0.5:0.55, envMod:v.rhodes?0.45:0.5, decay:v.rhodes?0.55:0.5, tremolo:v.rhodes?0.35:0, vol:0.8,
+            bus: useComp?comp._in:c.destination};
+  const f=v.rhodes?fns.A:fns[v.k], t=c.currentTime+0.06, hold=0.9;
+  const notes=what==='tief'?[0]:what==='hoch'?[24]:[12,16,19];
+  notes.forEach(n=>f(tr,t,n,0.85,hold));
+}
+const rows=document.getElementById('rows');
+VARIANTS.forEach(v=>{
+  const d=document.createElement('div'); d.className='row'+(v.rhodes?' ref':'');
+  d.innerHTML=`<div class="l"><b>${v.k} · ${v.n}</b><small>${v.d}</small></div>`;
+  [['Tief','tief'],['Hoch','hoch'],['Akkord','akk']].forEach(([l,w])=>{ const b=document.createElement('button'); b.textContent=l; b.onclick=()=>{ if(fns.A) play(v,w); }; d.appendChild(b); });
+  rows.appendChild(d);
+});
+load();
+</script>
+</body></html>
