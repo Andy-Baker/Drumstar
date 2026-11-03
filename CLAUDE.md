@@ -36,5 +36,5 @@ Einzige Quelle für „was noch“ sind die Issues (Labels: `aufgabe`, `idee`, `
 - Der Nutzer pflegt nichts selbst, kann aber jederzeit in GitHub nachtragen.
 
 ## Ablage
-- Mockups: `docs/mockups/` (neue Mockups direkt dort). Ältere, schon umgesetzte Mockups liegen nur noch im Claude-Projekt als Archiv.
+- Mockups: `docs/mockups/` (neue Mockups direkt dort). Dem Nutzer Mockups und Testseiten **immer als klickbaren Link** nennen: `[Name](https://andy-baker.github.io/Drumstar/docs/…)`, auch direkt nach dem Push (Pages braucht ~1 min). Ältere, schon umgesetzte Mockups liegen nur noch im Claude-Projekt als Archiv.
 - Entscheidungen, Verworfenes, Lektionen: `DECISIONS.md`. Änderungshistorie: Git-Log + `CHANGES-*.md`.
