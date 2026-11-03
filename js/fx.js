@@ -248,11 +248,10 @@ let micWorkletReady=null, useMicWorklet=false;
 function initAudio(){
   if(workletReady) return workletReady;
   audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-  comp = audioCtx.createDynamicsCompressor();
+  const outStage=makeOutStage(audioCtx); comp=outStage.inp;
   master = audioCtx.createGain(); master.gain.value=0.85;
-  comp.connect(audioCtx.destination);
   masterAnalyser=audioCtx.createAnalyser(); masterAnalyser.fftSize=2048;
-  comp.connect(masterAnalyser); // Master-Meter = echter Ausgang (nach Master-Effekten und Kompressor), dort wird übersteuert
+  outStage.tap.connect(masterAnalyser); // Master-Meter: klassisch nach dem Kompressor, sauber vor dem Schutz-Limiter
   noiseBuf = makeNoise(2);
 
   // ---- Effekt-Busse (Hall, Delay, Drums-Gruppe, Master-Effekte): buildFxBuses()

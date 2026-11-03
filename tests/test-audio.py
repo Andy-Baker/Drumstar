@@ -179,6 +179,17 @@ async def main():
     x,sr,st,pc=await acid([{'s':0,'n':0},{'s':4,'n':0,'a':1}],0.5,0.35)
     a=np.abs(x[int(0.05*sr):int((0.05+st)*sr)]).max(); b2=np.abs(x[int((0.05+4*st)*sr):int((0.05+5*st)*sr)]).max(); acc=20*math.log10(b2/a)
     ok('Acid: Accent lauter (≥ +2 dB)', acc>=2, f'{acc:+.1f} dB')
+    # ---------- Ausgang (#51): ?ausgang=sauber = Schutz-Limiter statt Kompressor, gemerkt, Decke < 0 dBFS
+    base=URL.split('?')[0]; RJ="""async ()=>{ await __ev('initAudio()'); __T.forEach(t=>{ t.vol=1; t.muted=false; }); __ev('masterVol=1');
+      const b=await __ev('renderPatternToWav()'); let pk=0; for(const ch of [b.getChannelData(0),b.getChannelData(1)]) for(const v of ch) pk=Math.max(pk,Math.abs(v));
+      return {pk, mode:__ev('OUT_MODE'), ver:document.getElementById('appVer').textContent}; }"""
+    await pg.goto(base+'?ausgang=sauber',wait_until='domcontentloaded'); await pg.wait_for_timeout(1500); r=await pg.evaluate(RJ)
+    ok('Ausgang sauber: aktiv und unten angezeigt', r['mode']=='sauber' and 'sauber' in r['ver'], r['ver'])
+    ok('Ausgang sauber: Spitze < 0 dBFS bei vollen Fadern', r['pk']<1.0, f"{20*math.log10(r['pk']+1e-9):+.2f} dBFS")
+    await pg.goto(base,wait_until='domcontentloaded'); await pg.wait_for_timeout(1000)
+    ok('Ausgang: Wahl wird gemerkt', await pg.evaluate("__ev('OUT_MODE')")=='sauber')
+    await pg.goto(base+'?ausgang=klassisch',wait_until='domcontentloaded'); await pg.wait_for_timeout(1000)
+    ok('Ausgang: zurück auf klassisch', await pg.evaluate("__ev('OUT_MODE')")=='klassisch')
     ok('Keine Fehler', not errs, errs)
     await b.close()
   print(sum(r.startswith('PASS') for r in res),'/',len(res))

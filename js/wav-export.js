@@ -48,9 +48,8 @@ async function renderPatternToWav(){
     try{ await offlineCtx.audioWorklet.addModule(URL.createObjectURL(new Blob([FM_WORKLET_SRC],{type:'application/javascript'}))); useWorklet=true; }
     catch(e){ console.warn('Export: Worklet nicht ladbar, nutze nativen Pfad', e); useWorklet=false; }
   }
-  comp=offlineCtx.createDynamicsCompressor();
+  comp=makeOutStage(offlineCtx).inp; // gleicher Ausgang wie live (#51)
   master=offlineCtx.createGain(); master.gain.value=masterVol;
-  comp.connect(offlineCtx.destination);
   noiseBuf=makeNoise(2);
   buildFxBuses(); // gleicher Aufbau wie live: Hall, Delay, Gruppen (Drums, Perc), Master-Effekte
 
