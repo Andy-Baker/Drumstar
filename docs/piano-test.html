@@ -17,7 +17,7 @@
   #st{ font-size:12px; color:var(--dim); margin-top:14px; } #st.err{ color:var(--red); }
 </style></head><body>
 <h1>Piano-Test <span style="color:var(--yel)">#48</span></h1>
-<p>Jede Zeile ist das echte Piano aus der App, bei dem ein Baustein abgeschaltet ist. Tippe <b>Tief</b>, <b>Hoch</b> und <b>Akkord</b> und merke dir die Buchstaben, bei denen das Plopp weg ist.</p>
+<p>Seit v92 ohne Hammer-Rauschen (#48: war die Ursache). Jede Zeile ist das echte Piano aus der App, bei dem ein Baustein abgeschaltet ist. Tippe <b>Tief</b>, <b>Hoch</b> und <b>Akkord</b> und merke dir die Buchstaben, bei denen das Plopp weg ist.</p>
 <div class="opt">
   <label><input type="checkbox" id="optComp" checked> Master-Kompressor wie in der App</label>
 </div>
@@ -28,16 +28,15 @@
 var audioCtx=null, comp=null;
 const VARIANTS=[
   {k:'A', n:'Original', d:'so wie in der App', r:[]},
-  {k:'B', n:'ohne Hammer', d:'kein Rausch-Impuls beim Anschlag', r:[['nz.start(time);','']]},
   {k:'C', n:'ohne Filter-Bewegung', d:'Klang wird nach dem Anschlag nicht weicher', r:[['lp.frequency.setTargetAtTime(floor,time+0.02,0.35+T*0.08);','']]},
   {k:'D', n:'ohne Schwebung', d:'keine verstimmte zweite Saite', r:[['if(freq>130) part(','if(false) part(']]},
   {k:'E', n:'ohne obere Obertöne', d:'nur Grundton + 2. Teilton', r:[['if(kTop>=3) part(','if(false) part(']]},
   {k:'F', n:'weicher Einsatz', d:'15 ms statt 3 ms Einblenden', r:[['amp.gain.linearRampToValueAtTime(peak,time+0.003);','amp.gain.linearRampToValueAtTime(peak,time+0.015);']]},
   {k:'G', n:'ohne Anfangsabfall', d:'Teiltöne fallen nicht erst schnell ab', r:[['g.gain.setTargetAtTime(a*drop,time+0.005,tau1);','']]},
-  {k:'H', n:'alles aus (B–G)', d:'nur noch nackte Sinustöne', r:'ALL'},
+  {k:'H', n:'alles aus (C–G)', d:'nur noch nackte Sinustöne', r:'ALL'},
   {k:'R', n:'Rhodes', d:'Vergleich: hier hörst du nichts', rhodes:true, r:[]},
 ];
-const NEED={'js/voices.js':['noteFreq','arpDecaySeconds'], 'js/events.js':['pianoNoise','pianoWave','rhodesEnvAt','rhodesVoice','pianoVoice']};
+const NEED={'js/voices.js':['noteFreq','arpDecaySeconds'], 'js/events.js':['pianoWave','rhodesEnvAt','rhodesVoice','pianoVoice']};
 function extract(src,name){            // Funktionsquelltext per Klammerzählung aus der echten Datei holen
   const i=src.indexOf('function '+name+'('); if(i<0) throw new Error(name+' nicht gefunden');
   let j=src.indexOf('{',i), d=0;

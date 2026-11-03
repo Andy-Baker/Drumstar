@@ -3,7 +3,7 @@ Browser-Drum-Machine/Sequencer, Vanilla JS + Web Audio: `index.html` (Markup), `
 
 ## Regeln
 - Kein Framework, kein Build. Plain HTML/CSS/JS; was im Repo liegt, läuft so. Mehrere Dateien ja, ES-Module/TypeScript vorerst nein (siehe DECISIONS.md).
-- Bei jedem Deploy `CACHE` in `sw.js` erhöhen (aktuell `mrm44-v91`) und alle `?v=` an den js/css-Links in `index.html` auf dieselbe Nummer setzen (`tests/test-sw.py` prüft das).
+- Bei jedem Deploy `CACHE` in `sw.js` erhöhen (aktuell `mrm44-v92`) und alle `?v=` an den js/css-Links in `index.html` auf dieselbe Nummer setzen (`tests/test-sw.py` prüft das).
 - Skript-Dateien: Reihenfolge = `<script>`-Liste in `index.html`. Code, der beim Laden läuft (oberste Ebene), darf nur Funktionen aus derselben oder früheren Dateien aufrufen bzw. als Wert übergeben — Hoisting gilt nur innerhalb einer Datei. Start-Aufrufe gehören nach `js/main.js` (wird zuletzt geladen). Neue Datei: in `index.html` eintragen, sonst nichts (der Service Worker liest die Liste von dort).
 - UI: erst interaktives Mockup (HTML), dann Umbau. Design braucht Platz; dunkles Chassis, blaue Controls, Instrumentfarben (Acid orange, Cosmic lila, Piano gelb, Sample grün, Drums blau, Perc türkis).
 - Versionen über Git-Commits/Tags, nicht über Datei-Suffixe.

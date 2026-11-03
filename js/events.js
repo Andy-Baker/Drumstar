@@ -192,12 +192,6 @@ function triggerCosmicArpStep(time, tr, degreeSemis, velocity, modPos, lenSteps,
   [lp,rp,filter,subGain,shimmerGain,amp].forEach(n=>{ /* Nodes are released with their oscillator graph. */ });
 }
 // ---- PIANO: additive Teiltöne, nach oben schneller abklingend, Härte = Anschlag-Helligkeit ----
-function pianoNoise(){
-  if(audioCtx._pnz) return audioCtx._pnz;
-  const len=Math.floor(audioCtx.sampleRate*0.06), buf=audioCtx.createBuffer(1,len,audioCtx.sampleRate), d=buf.getChannelData(0);
-  let seed=12345; for(let i=0;i<len;i++){ seed=(seed*1664525+1013904223)>>>0; d[i]=(seed/4294967296*2-1)*Math.pow(1-i/len,2); } // deterministisch -> Live = Export
-  return audioCtx._pnz=buf;
-}
 // Obere Piano-Teiltöne 3..K (Amplitude 1/k^1.2) als eine Wellenform, je Kontext und K zwischengespeichert
 function pianoWave(K){
   const c=audioCtx._pwv||(audioCtx._pwv={}); if(c[K]) return c[K];
@@ -277,10 +271,7 @@ function pianoVoice(tr,time,n,vel,holdSec){
   const kTop=Math.min(K,Math.floor(11000/freq));
   if(kTop>=3) part(freq*str(4),(0.3+v*0.7*(0.45+hard)),tau(4),0,0.3,pianoWave(kTop)); // obere Teiltöne gemeinsam, Spreizung gemittelt
   lp.connect(amp).connect(pan).connect(tr.bus);
-  // Hammer: kurzer, leiser Rauschimpuls im Mittenbereich, durch den Tonfilter (vorher hell und laut = klang wie eine Hi-Hat)
-  const nz=audioCtx.createBufferSource(); nz.buffer=pianoNoise();
-  const nb=audioCtx.createBiquadFilter(); nb.type='bandpass'; nb.frequency.value=Math.min(2500,500+freq*1.5); nb.Q.value=1.2;
-  const ng=audioCtx.createGain(); ng.gain.value=(0.02+0.1*v*(0.4+hard))*peak/0.1; nz.connect(nb).connect(ng).connect(lp); nz.start(time);
+  // Kein Hammer-Rauschen mehr (v92, #48): lag bei 2,5–5 kHz, wo Handy-Lautsprecher am lautesten sind -> Plopp/Hi-Hat bei jedem Anschlag
   oscs.forEach(o=>o.start(time));
   const voice={amp,oscs,t0:time,
     rel(at){ const now=Math.max(time,at!=null?at:audioCtx.currentTime); try{ amp.gain.cancelScheduledValues(now); amp.gain.setValueAtTime(Math.max(0.0001,peak*Math.min(1,(now-time)/0.003)),now); amp.gain.setTargetAtTime(0.0001,now,0.11); oscs.forEach(o=>{ try{o.stop(now+0.8);}catch(e){} }); }catch(e){} }};
