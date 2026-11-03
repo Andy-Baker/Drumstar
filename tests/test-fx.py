@@ -153,6 +153,18 @@ async def main():
     ok('Mixer: alle Kanäle gleich hoch', len(r['h'])==1, r['h'])
     ok('Mixer: keine Drehregler mehr im Kanal', await pg.evaluate("!document.querySelector('#mixerChannels .knob-dial')"))
     ok('Mixer: Effekt-Punkte am ACID-Knopf', await pg.evaluate("[...document.querySelectorAll('#mixerChannels .mix-strip')].find(s=>s.querySelector('.mix-name')&&s.querySelector('.mix-name').textContent==='ARP').querySelectorAll('.mx-dots i.on').length")==3)
+    # v93 (#50): Pegel grün/gelb/rot, CLIP-LED rastet ein, Spitzenwert, Zurücksetzen per Tippen
+    r=await pg.evaluate("""(()=>{ const s=[...document.querySelectorAll('#mixerChannels .mix-strip')].find(x=>x.querySelector('.mix-name')&&x.querySelector('.mix-name').textContent==='ARP');
+      const tr=__T.find(t=>t.id==='arp'), m=tr._mixMeter, fake=v=>({fftSize:4,getFloatTimeDomainData(b){b.set([0,v,-v*0.5,0]);}});
+      updateMeter(m,fake(0.5)); const ok1=!m.clipEl.classList.contains('on') && m.pkEl.textContent==='-6.0';
+      updateMeter(m,fake(1.5)); const clip=m.clipEl.classList.contains('on'), txt=m.pkEl.textContent, red=m.pkEl.classList.contains('r');
+      updateMeter(m,fake(0.1)); const latched=m.clipEl.classList.contains('on');
+      m.clipEl.click(); updateMeter(m,fake(0.1)); const reset=!m.clipEl.classList.contains('on') && m.pkEl.textContent==='-20.0';
+      return {ok1,clip,txt,red,latched,reset,marks:s.querySelectorAll('.mix-scale span').length}; })()""")
+    ok('Mixer: Spitzenwert in dB (−6,0 bei 0,5)', r['ok1'], r)
+    ok('Mixer: Übersteuerung > 0 dBFS → CLIP-LED + roter Spitzenwert', r['clip'] and r['red'] and r['txt']=='+3.5', r['txt'])
+    ok('Mixer: CLIP-LED bleibt an, bis man sie antippt', r['latched'] and r['reset'])
+    ok('Mixer: Skala mit 6 Marken', r['marks']==6, r['marks'])
     await s('fx_05_mixer')
     await pg.click('#mixerChannels .mix-grp'); await pg.wait_for_timeout(300)
     ok('Mixer: Gruppe aufklappen zeigt BD', await pg.evaluate("[...document.querySelectorAll('#mixerChannels .mix-name')].some(e=>e.textContent==='BD')"))

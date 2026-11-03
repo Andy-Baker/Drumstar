@@ -41,16 +41,33 @@ function dbLabel(v){
 let mxGrpOpen={drums:false,perc:false}, mxGrpMeters={}, mxRetMeters={};
 const MX_ICO='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4v16M12 4v16M19 4v16"/><circle cx="5" cy="14" r="2" fill="currentColor"/><circle cx="12" cy="8" r="2" fill="currentColor"/><circle cx="19" cy="15" r="2" fill="currentColor"/></svg>';
 const mxDots=L=>'<span class="mx-dots">'+Array.from({length:FX_MAX},(_,i)=>'<i class="'+(L&&L[i]?(L[i].on?'on':'by'):'')+'"></i>').join('')+'</span>';
+// Skala −48 … 0 dBFS (oben). Zonen wie Pro Tools/Cubase: grün < −12, gelb −12…−3, rot ab −3; > 0 dBFS = CLIP-LED.
+const METER_FLOOR_DB=-48, METER_CEIL_DB=0, METER_YEL_DB=-12, METER_RED_DB=-3, METER_MARKS=[0,-3,-6,-12,-24,-48];
+const METER_FALL=26, METER_HOLD=1.5; // Abfall in dB/s, Spitzen-Strich bleibt 1,5 s stehen
+function dbToMeterPct(db){ return Math.min(100, Math.max(0, (db-METER_FLOOR_DB)/(METER_CEIL_DB-METER_FLOOR_DB)*100)); }
+// CLIP/Spitzenwert überleben den Neuaufbau des Mixers (mixerRebuild), Schlüssel = Kanal
+const MX_CLIP={};
+function mxClipState(k){ return MX_CLIP[k]||(MX_CLIP[k]={clip:false,max:-Infinity}); }
 function mxStrip(o){ // o: {cls,color,name,sub,head,vol,label,onVol,mute,solo,chip,set,dots,parent}
   const strip=document.createElement('div'); strip.className='mix-strip '+(o.cls||'');
   const tag=document.createElement('div'); tag.className='mix-strip-tag'; tag.style.background=o.color; strip.appendChild(tag);
   const head=document.createElement('div'); head.className='mix-head'; head.innerHTML=o.head||('<div class="mix-name">'+o.name+'</div>'+(o.sub?'<div class="mix-sub">'+o.sub+'</div>':'')); strip.appendChild(head);
+  // Pegel (v93, #50, Mockup issue-50.html B): CLIP-LED + höchste Spitze über dem Meter, Skala links daneben
+  const st=mxClipState(o.key||o.name||o.label);
+  const clipRow=document.createElement('div'); clipRow.className='mix-cliprow';
+  const clipEl=document.createElement('button'); clipEl.className='mix-clip'; clipEl.textContent='CLIP'; clipEl.setAttribute('aria-label',o.label+': Übersteuerung zurücksetzen');
+  const pkEl=document.createElement('button'); pkEl.className='mix-pk'; pkEl.setAttribute('aria-label',o.label+': Spitzenwert zurücksetzen');
+  const rst=()=>{ if(o.cls==='master-strip') Object.values(MX_CLIP).forEach(x=>{ x.clip=false; x.max=-Infinity; }); else { st.clip=false; st.max=-Infinity; } };
+  clipEl.addEventListener('click',rst); pkEl.addEventListener('click',rst);
+  clipRow.append(clipEl,pkEl); strip.appendChild(clipRow);
   const faderRow=document.createElement('div'); faderRow.className='mix-fader-row';
+  const scale=document.createElement('div'); scale.className='mix-scale'; scale.setAttribute('aria-hidden','true');
+  METER_MARKS.forEach(d=>{ const e=document.createElement('span'); e.textContent=d===0?'0':-d; e.style.top=(100-dbToMeterPct(d))+'%'; scale.appendChild(e); });
   const meter=document.createElement('div'); meter.className='mix-meter';
   const meterMask=document.createElement('div'); meterMask.className='mix-meter-mask'; meterMask.style.height='100%';
   const meterZero=document.createElement('div'); meterZero.className='mix-meter-zero';
   const meterPeak=document.createElement('div'); meterPeak.className='mix-meter-peakhold';
-  meter.append(meterMask,meterZero,meterPeak); faderRow.appendChild(meter);
+  meter.append(meterMask,meterZero,meterPeak); faderRow.append(scale,meter);
   const faderWrap=document.createElement('div'); faderWrap.className='mix-fader-wrap';
   const faderTrack=document.createElement('div'); faderTrack.className='mix-fader-track';
   const fader=document.createElement('input'); fader.type='range'; fader.className='mix-fader'; fader.min='0'; fader.max='1'; fader.step='0.01'; fader.value=o.vol;
@@ -64,31 +81,31 @@ function mxStrip(o){ // o: {cls,color,name,sub,head,vol,label,onVol,mute,solo,ch
   strip.appendChild(btns);
   const set=document.createElement('button'); set.className='mix-set'; set.setAttribute('aria-label',o.label+' Einstellungen'); set.innerHTML=MX_ICO+(o.dots!==undefined?mxDots(o.dots):''); set.addEventListener('click',o.set); strip.appendChild(set);
   o.parent.appendChild(strip);
-  return { el:strip, fader, mute:muteBtn, solo:soloBtn, meter:{ meterMask, meterPeak, dbReadout:db, fader, peakHoldVal:0, smoothVal:0 } };
+  return { el:strip, fader, mute:muteBtn, solo:soloBtn, meter:{ meterMask, meterPeak, clipEl, pkEl, st, dbReadout:db, fader, sm:METER_FLOOR_DB, holdDb:METER_FLOOR_DB, holdT:0, shown:'' } };
 }
 function buildMixerChannels(){
   const ch=mixerChannels, ms=document.getElementById('mixerMaster'); ch.innerHTML=''; ms.innerHTML='';
   TRACKS.forEach(tr=>{ tr._mixFaderEl=null; tr._mixMeter=null; tr._mixMuteBtn=null; tr._mixSoloBtn=null; tr._mixPanKnob=null; tr._mixEqKnobs=null; });
   mxGrpMeters={}; const done={};
   const grpStrip=k=>{ const G=grps[k], D=GRP_DEF[k], op=mxGrpOpen[k];
-    const g=mxStrip({cls:'grp-strip grp-'+k+(op?' open':''),color:D.color,label:'Gruppe '+D.n,vol:G.vol,parent:ch,
+    const g=mxStrip({key:'grp:'+k,cls:'grp-strip grp-'+k+(op?' open':''),color:D.color,label:'Gruppe '+D.n,vol:G.vol,parent:ch,
       head:'<button class="mix-grp" aria-expanded="'+op+'" aria-label="'+D.n+'-Kanäle '+(op?'zuklappen':'aufklappen')+'">'+D.ab+'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button><div class="mix-sub">'+(op?'Gruppe':D.ids.length+' Spuren')+'</div>',
       onVol:v=>{ G.vol=v; grpUpdate(k); }, mute:{on:G.muted,fn:e=>{ G.muted=!G.muted; e.currentTarget.classList.toggle('on',G.muted); grpUpdate(k); }},
       set:()=>openFxRoot('grp',k), dots:G.fx});
     g.el.querySelector('.mix-grp').onclick=()=>{ mxGrpOpen[k]=!op; buildMixerChannels(); };
     mxGrpMeters[k]=g.meter; };
   TRACKS.forEach(tr=>{ const k=trGrp(tr); if(k&&!done[k]){ done[k]=1; grpStrip(k); } if(k&&!mxGrpOpen[k]) return;
-    const r=mxStrip({cls:k?'in-grp in-'+k:'',color:tr.color,name:tr.short||tr.id.toUpperCase(),label:tr.name,vol:tr.vol,parent:ch,
+    const r=mxStrip({key:'tr:'+tr.id,cls:k?'in-grp in-'+k:'',color:tr.color,name:tr.short||tr.id.toUpperCase(),label:tr.name,vol:tr.vol,parent:ch,
       onVol:v=>setTrackVol(tr,v), mute:{on:tr.muted,fn:()=>toggleTrackMute(tr)}, solo:{on:tr.solo,fn:()=>toggleTrackSolo(tr)},
       set:()=>openKanal(tr), dots:tr.fx||[]});
     tr._mixFaderEl=r.fader; tr._mixMeter=r.meter; tr._mixMuteBtn=r.mute; tr._mixSoloBtn=r.solo; });
   const sep=document.createElement('div'); sep.className='mix-sep'; ch.appendChild(sep);
   mxRetMeters={};
   [['hall',fxHall,'Hall'],['delay',fxDelay,'Delay']].forEach(([k,p,n])=>{
-    const r=mxStrip({cls:'ret-strip',color:'#1c4666',name:n.toUpperCase(),label:n,vol:p.lv,parent:ch,chip:FX_SEND[k].chip(p).replace(' PP',''),
+    const r=mxStrip({key:'ret:'+k,cls:'ret-strip',color:'#1c4666',name:n.toUpperCase(),label:n,vol:p.lv,parent:ch,chip:FX_SEND[k].chip(p).replace(' PP',''),
       onVol:v=>{ p.lv=v; k==='hall'?fxHallUpdate():fxDelayUpdate(); }, set:()=>openFxRoot('send',k)});
     mxRetMeters[k]=r.meter; });
-  const m=mxStrip({cls:'master-strip',color:'#5fc2ff',name:'MASTER',label:'Master',vol:masterVol,parent:ms,
+  const m=mxStrip({key:'master',cls:'master-strip',color:'#5fc2ff',name:'MASTER',label:'Master',vol:masterVol,parent:ms,
     onVol:v=>setMasterVol(v), mute:{on:masterMuted,fn:()=>setMasterMuted(!masterMuted)}, set:()=>openFxRoot('master'), dots:masterFx});
   mixerMasterFaderEl=m.fader; window._masterMeter=m.meter; masterMuteBtnEl=m.mute;
   refreshSoloVisuals&&refreshSoloVisuals();
@@ -111,51 +128,33 @@ buildMixerChannels();
 // Strich (fällt langsam ab, klassisches Mixer-Verhalten). Läuft NUR während
 // das Mixer-Overlay offen ist (spart CPU/Akku) — startet erneut bei jedem Öffnen.
 let mixerMeterRAF=null;
-// WICHTIG: Puffer muss mind. so groß wie analyser.fftSize (256) sein — vorher
-// war er nur 128 groß, wodurch getByteTimeDomainData() nur die halbe
-// Zeitfenster-Breite füllte und kurze Transienten (Drum-Hits) unzuverlässig
-// erfasst wurden ("seltsames" Pegelverhalten, Treffer wurden mal erfasst,
-// mal komplett verpasst).
-const meterByteBuf=new Uint8Array(256);
+// Pegel (v93, #50): Float-Daten über den ganzen Analyser-Puffer. Vorher Byte-Daten (bei ±1,0 gekappt -> Rot/Übersteuerung
+// nie sichtbar) und nur 256 von 2048 Werten (kurze Spitzen verpasst).
+const meterBufs={};
 function readPeak(analyser){
   if(!analyser) return 0;
-  analyser.getByteTimeDomainData(meterByteBuf);
-  let peak=0;
-  for(let i=0;i<meterByteBuf.length;i++){
-    const dev=Math.abs(meterByteBuf[i]-128)/128;
-    if(dev>peak) peak=dev;
-  }
-  return peak; // 0..1
+  const n=analyser.fftSize, buf=meterBufs[n]||(meterBufs[n]=new Float32Array(n));
+  analyser.getFloatTimeDomainData(buf);
+  let peak=0; for(let i=0;i<n;i++){ const a=buf[i]<0?-buf[i]:buf[i]; if(a>peak) peak=a; }
+  return peak; // linear, 1.0 = 0 dBFS, darüber = Übersteuerung
 }
-// Rechnet einen linearen Pegel (0..1, 1.0 = digitales Vollausschlag/0dBFS) in
-// eine Meter-Füllhöhe (0..100%) um, kalibriert auf eine echte dB-Skala von
-// -48dB (unten, 0%) bis +6dB (oben, 100%) — die weiße "Null"-Linie im CSS
-// sitzt exakt bei 11.11% von oben, weil das rechnerisch genau 0dB entspricht
-// ((6-0)/(6-(-48))=6/54). Vorher wurde der Rohpegel mit einem frei erfundenen
-// Faktor (×140) hochskaliert, ohne dass die eingezeichnete Linie dazu passte —
-// optisch "ging es ungefähr", war aber keine echte dB-Referenz.
-const METER_FLOOR_DB=-48, METER_CEIL_DB=6;
-function ampToMeterPct(peak){
-  if(peak<=0.0001) return 0;
-  const db=20*Math.log10(peak);
-  return Math.min(100, Math.max(0, (db-METER_FLOOR_DB)/(METER_CEIL_DB-METER_FLOOR_DB)*100));
-}
+let meterT=0, meterDt=0;
 function updateMeter(m, analyser){
-  const peak=readPeak(analyser);
-  const pct=ampToMeterPct(peak);
-  // Angriff/Abfall-Ballistik statt Rohwert 1:1 anzuzeigen: ohne das sprang der
-  // Balken bei jedem rAF-Tick unvermittelt zwischen "Treffer erwischt" und
-  // "Treffer verpasst" hin und her (Perkussion ist kurz genug, dass ein
-  // einzelner Analyser-Schnappschuss pro Frame sie leicht verfehlt) — wirkte
-  // dadurch ruckartig/unruhig statt wie ein reguläres VU-/Peak-Meter.
-  // Sofortiger Anstieg (Attack), sanfter Abfall (Release) behebt das.
-  m.smoothVal = pct>m.smoothVal ? pct : m.smoothVal*0.80;
-  m.meterMask.style.height=(100-m.smoothVal)+'%';
-  m.peakHoldVal = m.smoothVal>m.peakHoldVal ? m.smoothVal : m.peakHoldVal*0.97;
-  m.meterPeak.style.top=(100-m.peakHoldVal)+'%';
+  const pk=readPeak(analyser), db=pk>1e-5?20*Math.log10(pk):-120, st=m.st, now=meterT;
+  if(pk>1) st.clip=true;
+  if(db>st.max) st.max=db;
+  // Sofortiger Anstieg, gleichmäßiger Abfall in dB (wie ein Peak-Meter am Pult)
+  m.sm = db>m.sm ? db : Math.max(METER_FLOOR_DB, m.sm-METER_FALL*meterDt);
+  if(db>=m.holdDb || now-m.holdT>METER_HOLD){ m.holdDb=Math.max(db,m.sm); m.holdT=now; }
+  m.meterMask.style.height=(100-dbToMeterPct(m.sm))+'%';
+  m.meterPeak.style.top=(100-dbToMeterPct(m.holdDb))+'%';
+  m.clipEl.classList.toggle('on',st.clip);
+  const t=st.max<METER_FLOOR_DB?'−∞':(st.max>0?'+':'')+st.max.toFixed(1);
+  if(t!==m.shown){ m.shown=t; m.pkEl.textContent=t; m.pkEl.classList.toggle('r',st.max>0); m.pkEl.classList.toggle('y',st.max>METER_RED_DB&&st.max<=0); }
 }
 function mixerMeterLoop(){
   if(!mixerOverlay.classList.contains('open')){ mixerMeterRAF=null; return; }
+  const t=performance.now()/1000; meterDt=meterT?Math.min(0.1,t-meterT):0; meterT=t;
   TRACKS.forEach(tr=>{ if(tr._mixMeter) updateMeter(tr._mixMeter, tr.analyser); });
   GRP_KEYS.forEach(k=>{ if(mxGrpMeters[k]&&FXG.g&&FXG.g[k]) updateMeter(mxGrpMeters[k], FXG.g[k].an); });
   if(mxRetMeters.hall) updateMeter(mxRetMeters.hall, FXG.revAn); if(mxRetMeters.delay) updateMeter(mxRetMeters.delay, FXG.dlAn);

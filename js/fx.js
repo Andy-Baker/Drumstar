@@ -80,11 +80,11 @@ function buildFxBuses(){ const c=audioCtx;
   FXG.revIn=c.createGain(); FXG.revConv=c.createConvolver(); FXG.revConv.buffer=createImpulseResponse(fxHall.sz,2.8); FXG.revSz=fxHall.sz;
   FXG.revLp=c.createBiquadFilter(); FXG.revLp.type='lowpass'; FXG.revLp.frequency.value=fxHallTone(); FXG.revOut=c.createGain(); FXG.revOut.gain.value=fxHall.lv;
   FXG.revIn.connect(FXG.revConv); FXG.revConv.connect(FXG.revLp); FXG.revLp.connect(FXG.revOut); FXG.revOut.connect(master);
-  FXG.revAn=c.createAnalyser(); FXG.revAn.fftSize=256; FXG.revOut.connect(FXG.revAn);
+  FXG.revAn=c.createAnalyser(); FXG.revAn.fftSize=2048; FXG.revOut.connect(FXG.revAn);
   reverbInputNode=FXG.revIn; reverbConvolver=FXG.revConv;
   // Delay-Bus
   FXG.dlIn=c.createGain(); FXG.dlOut=c.createGain(); FXG.dlOut.gain.value=fxDelay.lv; FXG.dlOut.connect(master);
-  FXG.dlAn=c.createAnalyser(); FXG.dlAn.fftSize=256; FXG.dlOut.connect(FXG.dlAn);
+  FXG.dlAn=c.createAnalyser(); FXG.dlAn.fftSize=2048; FXG.dlOut.connect(FXG.dlAn);
   fxDelayBuild(); delayInputNode=FXG.dlIn; delayOutputGain=FXG.dlOut;
   padDelaySendGain=c.createGain(); padDelaySendGain.gain.value=padDelayAmount; padDelaySendGain.connect(FXG.dlIn);
   // Gruppen: Eingang → Effekte → Laut (+Meter) → Master
@@ -251,8 +251,8 @@ function initAudio(){
   comp = audioCtx.createDynamicsCompressor();
   master = audioCtx.createGain(); master.gain.value=0.85;
   comp.connect(audioCtx.destination);
-  masterAnalyser=audioCtx.createAnalyser(); masterAnalyser.fftSize=256;
-  master.connect(masterAnalyser);
+  masterAnalyser=audioCtx.createAnalyser(); masterAnalyser.fftSize=2048;
+  comp.connect(masterAnalyser); // Master-Meter = echter Ausgang (nach Master-Effekten und Kompressor), dort wird übersteuert
   noiseBuf = makeNoise(2);
 
   // ---- Effekt-Busse (Hall, Delay, Drums-Gruppe, Master-Effekte): buildFxBuses()
