@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rhythmen pro Spur (#14)</title>
+<link rel="stylesheet" href="../../fonts.css">
+<style>
+/* Mockup zu Issue #14: Die echte App (../../index.html) läuft im Rahmen. Zur Laufzeit kommt
+   rechts in der Spurleiste (Würfel · Leeren · Rückgängig) ein Knopf „Rhythmen“ dazu (Variante A)
+   bzw. der Würfel bekommt eine Auswahl (Variante B). Laden/Würfeln wirkt wirklich auf die Spur,
+   Rückgängig = der bestehende Knopf. Gespeichertes lebt hier nur im Speicher des Mockups. */
+:root{color-scheme:dark;--bg:#050507;--blue:#3fa9ff;--blue-2:#8fd4ff;--white:#f4f5f7;--dim:#7d818c;--metal:#c7cbd4}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--white);font-family:'Rajdhani',system-ui,sans-serif}
+#mbar{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:calc(6px + env(safe-area-inset-top,0px)) 10px 6px;background:repeating-linear-gradient(135deg,#0b1622 0 8px,#0d1a28 8px 16px);border-bottom:1px dashed rgba(63,169,255,.45);font:700 11px 'JetBrains Mono',monospace;color:var(--blue-2)}
+#mbar .sp{flex:1}
+#mbar button{height:28px;padding:0 10px;border-radius:6px;border:1px solid rgba(63,169,255,.45);background:rgba(63,169,255,.12);font:700 11px 'JetBrains Mono',monospace;color:var(--blue-2);cursor:pointer}
+#mbar button.on{background:var(--blue);color:#042c53}
+#stage{position:fixed;top:calc(42px + env(safe-area-inset-top,0px));left:0;right:0;bottom:0;display:flex;justify-content:center;align-items:flex-start;gap:28px;overflow:auto}
+.ph{display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;width:100%}
+.ph h4{display:none;margin:0;font:700 11px 'Rajdhani';letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.ph h4 b{color:var(--blue-2)}
+iframe{border:0;width:100%;height:100%;background:#050507;display:block}
+#side{display:none;width:320px;font-size:14px;color:var(--metal);line-height:1.45;padding-top:26px}
+#side h3{font:700 11px 'Rajdhani';letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin:16px 0 6px}
+#side p{margin:0 0 8px} #side b{color:var(--white)} #side ol{margin:0 0 8px;padding-left:18px}
+@media (min-width:900px) and (min-height:900px){
+  #stage{padding:14px 0}
+  .ph{width:auto;height:auto}
+  .ph h4{display:block}
+  iframe{width:390px;height:844px;border-radius:30px;border:8px solid #1a1e26;box-shadow:0 30px 80px rgba(0,0,0,.75);box-sizing:content-box}
+  #side{display:block}
+}
+</style>
+</head>
+<body>
+<div id="mbar">
+  <span>#14 Rhythmen</span>
+  <button data-v="A" class="on">A · eigener Knopf</button>
+  <button data-v="B">B · im Würfel</button>
+  <span class="sp"></span>
+</div>
+<div id="stage">
+  <div class="ph"><h4 id="hR">Vorschlag · <b>A</b></h4><iframe id="fR" src="../../index.html" title="App mit Vorschlag"></iframe></div>
+  <div id="side">
+    <h3>Was das ist</h3>
+    <p>Die <b>echte App</b> mit einem Zusatz in der Leiste unter dem Raster (Würfel · Leeren · Rückgängig). Laden und Würfeln ändern die Spur wirklich – mit Play hörbar, Rückgängig wie gewohnt.</p>
+    <h3>Variante A · eigener Knopf</h3>
+    <p>Neuer Knopf <b>Rhythmen</b> (Stapel-Symbol) öffnet ein Sheet für die gewählte Spur: oben <b>Speichern</b> und <b>Zufällig laden</b>, darunter <b>Eigene</b> und <b>Vorlagen</b> mit Mini-Raster. Antippen = einsetzen. Der Würfel bleibt wie heute.</p>
+    <h3>Variante B · im Würfel</h3>
+    <p>Kein neuer Knopf. Der Würfel fragt: <b>Neu erzeugen</b> (wie heute) · <b>Aus Bibliothek</b> · <b>Bibliothek …</b> (dasselbe Sheet). Kostet beim heutigen Würfeln einen Tipp mehr.</p>
+    <h3>Gemeinsame Regeln</h3>
+    <ol>
+      <li>Bereich wie bei Würfel/Leeren: <b>diese Seite</b> oder <b>alle Seiten</b>; kürzere Rhythmen werden wiederholt.</li>
+      <li>Gespeichert werden Anschläge mit Stärke (Ghost/Normal/Akzent) und Spielweise (Hi-Hat zu/offen, Ride Bell).</li>
+      <li>Bibliothek gilt für alle Beats, nicht pro Pattern.</li>
+    </ol>
+    <h3>Zur Entscheidung</h3>
+    <p>1. A oder B?<br>2. Rhythmus <b>pro Spur</b> (Snare-Rhythmen nur für Snare) oder <b>für alle Drum-Spuren</b> nutzbar?<br>3. Melodiespuren (Acid/Cosmic/Keys) gleich mit – Noten mitspeichern, beim Laden in die Tonart verschieben?<br>4. Vorlagen mitliefern (wie hier) oder nur eigene?</p>
+  </div>
+</div>
+<script>
+const IC={
+  lib:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="9" width="16" height="11" rx="2"/><path d="M6 6h12M8 3h8"/><path d="M8 14.5h1.5M11.5 14.5h1M15 14.5h1"/></svg>',
+  save:'<svg viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/></svg>',
+  dice:'<svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9" r="1" fill="currentColor"/><circle cx="15" cy="15" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>',
+  more:'<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="19" cy="12" r="1.5" fill="currentColor"/></svg>',
+  spark:'<svg viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5L18 18M6 18l2.5-2.5M15.5 8.5L18 6"/></svg>'
+};
+// Vorlagen: . = aus, g = Ghost, x = Normal, X = Akzent, o = offen (Hi-Hat) / Bell (Ride)
+const T={
+  bd:[['Four on the Floor','X...x...X...x...'],['Rock','x.......x.x.....'],['Breakbeat','x.........x..x..'],['Half-Time','x...........x...'],['Two-Step','x.....x...x.....'],['Trap','x......x..x....x']],
+  sd:[['Backbeat','....X.......X...'],['Backbeat + Ghosts','..g.X..g.g..X.g.'],['Half-Time','........X.......'],['Breakbeat','....X..g.g..X..g']],
+  ch:[['Achtel','x.x.x.x.x.x.x.x.'],['Sechzehntel','xgxgxgxgxgxgxgxg'],['Offbeat','..x...x...x...x.'],['Disco (offen auf und)','x.o.x.o.x.o.x.o.']],
+  rd:[['Achtel','x.x.x.x.x.x.x.x.'],['Bell auf 1 und 3','o.x.x.x.o.x.x.x.'],['Jazz','x..xx..xx..xx..x']],
+  _perc:[['Clave 3-2','x..x..x...x.x...'],['Tresillo','x..x..x.x..x..x.'],['Offbeat','..x...x...x...x.'],['Achtel','x.x.x.x.x.x.x.x.']]
+};
+const own={}; // Spur-ID → [{n,c}]  (nur im Mockup-Speicher)
+let variant='A';
+const fR=document.getElementById('fR');
+
+function hook(){
+  const w=fR.contentWindow, d=fR.contentDocument; if(!d||!d.getElementById('trackActions')||w.__rh) return;
+  const E=s=>w.eval(s); // Zugriff auf let/const der App
+  const st=d.createElement('style'); st.textContent=`
+  #rhBtn svg{width:24px;height:24px}
+  #rhSheet{max-height:82vh}
+  #rhSheet .rh-list{overflow:auto;display:flex;flex-direction:column;gap:6px;padding-bottom:4px}
+  .rh-row{display:flex;align-items:center;gap:10px;min-height:52px;padding:6px 6px 6px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.08);background:#15171e;cursor:pointer}
+  .rh-row:active{transform:scale(.985)}
+  .rh-row .nm{flex:1;min-width:0;font:700 15px 'Rajdhani',sans-serif;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rh-row .nm small{display:block;font:600 11px 'JetBrains Mono',monospace;color:var(--dim)}
+  .rh-mini{display:grid;grid-template-columns:repeat(16,7px);gap:2px;flex-shrink:0}
+  .rh-mini i{height:16px;border-radius:2px;background:rgba(255,255,255,.07)}
+  .rh-mini i:nth-child(4n+1){background:rgba(255,255,255,.13)}
+  .rh-mini i.on{background:var(--rc)} .rh-mini i.o{background:transparent;box-shadow:inset 0 0 0 2px var(--rc)}
+  .rh-row .mo{width:40px;height:40px;border-radius:9px;border:0;background:none;color:var(--dim);display:flex;align-items:center;justify-content:center;cursor:pointer}
+  .rh-row .mo svg,.rh-pop svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .rh-empty{font-size:13px;color:var(--dim);padding:8px 2px}
+  .rh-pop{position:fixed;z-index:80;min-width:220px;background:#15171e;border:1px solid rgba(63,169,255,.45);border-radius:12px;padding:6px;box-shadow:0 14px 40px #000c;display:flex;flex-direction:column;gap:4px}
+  .rh-pop button{min-height:46px;display:flex;align-items:center;gap:10px;padding:0 12px;border:0;border-radius:8px;background:none;color:var(--blue-2);font:700 15px 'Rajdhani',sans-serif;text-align:left;cursor:pointer}
+  .rh-pop button:hover{background:rgba(63,169,255,.12)} .rh-pop button.del{color:#ff9a76}
+  .rh-pop small{display:block;font:600 11px 'Rajdhani';color:var(--dim)}
+  #trackActions.rhB #rhBtn{display:none}`;
+  d.head.appendChild(st);
+
+  // Knopf (Variante A) nach "Rückgängig"
+  const btn=d.createElement('button'); btn.id='rhBtn'; btn.className='ib'; btn.title='Rhythmen'; btn.setAttribute('aria-label','Rhythmen'); btn.innerHTML=IC.lib;
+  d.getElementById('taUndoBtn').after(btn);
+  // Sheet
+  const sh=d.createElement('div'); sh.className='sheet'; sh.id='rhSheet';
+  sh.innerHTML='<div class="sh"><span id="rhT"></span><button class="shx" aria-label="Schließen">✕</button></div>'+
+    '<div class="acts"><button class="act" id="rhSave">'+IC.save+'Speichern</button><button class="act" id="rhRand">'+IC.dice+'Zufällig laden</button></div>'+
+    '<div class="hl" id="rhScope"></div><div class="rh-list" id="rhList"></div>';
+  d.body.appendChild(sh);
+  const oc=w.closeSheets; w.closeSheets=function(){ oc(); sh.classList.remove('open'); };
+  sh.querySelector('.shx').onclick=()=>w.closeSheets();
+
+  const tr=()=>E('TRACKS[activeTrackIdx]');
+  const isMel=t=>t.type==='arp';
+  const list=t=>(T[t.id]||(t.isSample||isMel(t)?[]:T._perc)).map(([n,c])=>({n,c,f:1}));
+  const cap=t=>t.name.charAt(0)+t.name.slice(1).toLowerCase();
+  // Spur → Code
+  function grab(t){
+    const [a,b]=E('taRange()'); let c='';
+    for(let s=a;s<b;s++){ const v=t.steps[s]; c+= !v?'.': (t.notes&&t.notes[s]&&(t.id==='ch'||t.id==='rd'))?'o': v>=E('VEL_ACCENT')?'X': v>=E('VEL_NORMAL')?'x':'g'; }
+    return c;
+  }
+  // Code → Spur (wiederholt bis zum Bereichsende)
+  function put(t,c,name){
+    if(isMel(t)){ w.hmToast('Mockup: Melodiespuren noch offen (Frage 3)'); return; }
+    E('taSnapshot()'); const [a,b]=E('taRange()');
+    for(let s=a;s<b;s++){ const ch=c[(s-a)%c.length];
+      t.steps[s]= ch==='.'?0 : ch==='X'?E('VEL_ACCENT') : ch==='g'?E('VEL_GHOST') : E('VEL_NORMAL');
+      if(t.notes) t.notes[s]= ch==='o'?1:0; }
+    w.refreshTrackStepVisuals(t); w.hmToast('„'+name+'“ eingesetzt',true);
+  }
+  function mini(c,col){ let h='<div class="rh-mini" style="--rc:'+col+'">'; for(let i=0;i<16;i++){ const ch=c[i]||'.'; h+='<i class="'+(ch==='.'?'':ch==='o'?'o':'on')+'" style="'+(ch==='g'?'opacity:.4':ch==='X'?'':'opacity:.8')+'"></i>'; } return h+'</div>'; }
+  function render(){
+    const t=tr(), L=d.getElementById('rhList'); d.getElementById('rhT').textContent='Rhythmen · '+cap(t);
+    d.getElementById('rhScope').textContent='Einsetzen in: '+(E('taScope')==='all'||E('totalPages()')===1?'alle Seiten':'diese Seite')+' (Umschalter unter dem Raster)';
+    const mine=own[t.id]||[], tpl=list(t); let h='<div class="grp">Eigene</div>';
+    h+= mine.length? mine.map((r,i)=>row(r,'m'+i,t)).join('') : '<div class="rh-empty">Noch nichts gespeichert. „Speichern“ legt den Rhythmus dieser Spur ab.</div>';
+    h+='<div class="grp">Vorlagen</div>'+(tpl.length? tpl.map((r,i)=>row(r,'t'+i,t)).join('') : '<div class="rh-empty">Für diese Spur gibt es keine Vorlagen.</div>');
+    L.innerHTML=h;
+    L.querySelectorAll('.rh-row').forEach(el=>el.onclick=e=>{ const r=pick(el.dataset.k,t); if(e.target.closest('.mo')) return more(e,el.dataset.k,t); put(t,r.c,r.n); w.closeSheets(); });
+  }
+  const pick=(k,t)=>k[0]==='m'?own[t.id][+k.slice(1)]:list(t)[+k.slice(1)];
+  function row(r,k,t){ const bars=Math.max(1,Math.round(r.c.length/16)); return '<div class="rh-row" data-k="'+k+'">'+mini(r.c,t.color)+'<div class="nm">'+r.n+'<small>'+bars+(bars>1?' Takte':' Takt')+'</small></div>'+(r.f?'':'<button class="mo" aria-label="Mehr">'+IC.more+'</button>')+'</div>'; }
+  function pop(x,y,items){
+    d.querySelectorAll('.rh-pop').forEach(p=>p.remove());
+    const p=d.createElement('div'); p.className='rh-pop'; d.body.appendChild(p);
+    items.forEach(([ic,l,s,fn,cls])=>{ const b=d.createElement('button'); if(cls) b.className=cls; b.innerHTML=ic+'<span>'+l+(s?'<small>'+s+'</small>':'')+'</span>'; b.onclick=ev=>{ ev.stopPropagation(); p.remove(); fn(); }; p.appendChild(b); });
+    const W=w.innerWidth,H=w.innerHeight, r=p.getBoundingClientRect();
+    p.style.left=Math.max(8,Math.min(W-r.width-8,x))+'px'; p.style.top=Math.max(8,Math.min(H-r.height-8,y))+'px';
+    setTimeout(()=>d.addEventListener('pointerdown',function f(ev){ if(!p.contains(ev.target)){ p.remove(); d.removeEventListener('pointerdown',f,true);} },true),0);
+  }
+  function more(e,k,t){ e.stopPropagation(); const i=+k.slice(1);
+    pop(e.clientX-200,e.clientY+10,[
+      ['<svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>','Umbenennen','',()=>{ const n=w.prompt('Name',own[t.id][i].n); if(n){ own[t.id][i].n=n; render(); } }],
+      ['<svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>','Löschen','',()=>{ own[t.id].splice(i,1); render(); },'del']]);
+  }
+  function randLoad(){ const t=tr(), all=(own[t.id]||[]).concat(list(t)); if(!all.length){ w.hmToast('Keine Rhythmen für diese Spur'); return; } const r=all[Math.floor(Math.random()*all.length)]; put(t,r.c,r.n); }
+  function openSh(){ render(); w.openSheet('rhSheet'); }
+  btn.onclick=openSh;
+  d.getElementById('rhRand').onclick=()=>{ randLoad(); w.closeSheets(); };
+  d.getElementById('rhSave').onclick=()=>{ const t=tr(), c=grab(t); if(!/[^.]/.test(c)){ w.hmToast('Spur ist leer – nichts zu speichern'); return; }
+    const n=w.prompt('Name für den Rhythmus', cap(t)+' '+((own[t.id]||[]).length+1)); if(!n) return; (own[t.id]=own[t.id]||[]).unshift({n,c}); render(); w.hmToast('„'+n+'“ gespeichert'); };
+
+  // Variante B: Würfel fragt nach
+  const dice=d.getElementById('taRandBtn');
+  dice.addEventListener('click',e=>{
+    if(variant!=='B' || dice.__pass) return;
+    e.stopImmediatePropagation(); const r=dice.getBoundingClientRect();
+    pop(r.left,r.bottom+6,[
+      [IC.spark,'Neu erzeugen','wie bisher',()=>{ dice.__pass=1; dice.click(); dice.__pass=0; }],
+      [IC.dice,'Aus Bibliothek','eigene + Vorlagen dieser Spur',randLoad],
+      [IC.lib,'Bibliothek …','speichern, auswählen',openSh]]);
+  },true);
+  w.__rh={setVariant(v){ d.getElementById('trackActions').classList.toggle('rhB',v==='B'); }};
+  w.__rh.setVariant(variant);
+}
+fR.addEventListener('load',()=>{ const t=setInterval(()=>{ try{ hook(); if(fR.contentWindow.__rh) clearInterval(t); }catch(e){} },300); });
+document.querySelectorAll('#mbar [data-v]').forEach(b=>b.onclick=()=>{
+  variant=b.dataset.v; document.querySelectorAll('#mbar [data-v]').forEach(x=>x.classList.toggle('on',x===b));
+  document.getElementById('hR').innerHTML='Vorschlag · <b>'+variant+'</b>';
+  if(fR.contentWindow.__rh) fR.contentWindow.__rh.setVariant(variant);
+});
+const fitTop=()=>document.getElementById('stage').style.top=document.getElementById('mbar').offsetHeight+'px'; addEventListener('resize',fitTop); fitTop();
+</script>
+</body>
+</html>
