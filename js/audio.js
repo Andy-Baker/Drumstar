@@ -9,20 +9,18 @@ let delayInputNode=null, delayNode=null, delayFeedbackGain=null, delayOutputGain
 let padDelaySendGain=null, padDelayAmount=0; // gemeinsamer Delay-Send-Regler für alle Live-Pads
 let currentTrackBus=null;
 
-// Ausgang (v94, #51): „klassisch“ = bisheriger DynamicsCompressor mit Standardwerten (−24 dB, 12:1, komprimiert fast immer),
-// „sauber“ = nur Schutz-Limiter knapp unter 0 dB, der normalerweise nichts tut. Wahl per ?ausgang=sauber|klassisch, gemerkt.
-const OUT_MODE=(()=>{ try{ const q=new URLSearchParams(location.search).get('ausgang');
-  if(q==='sauber'||q==='klassisch') localStorage.setItem('ds_ausgang',q);
-  return localStorage.getItem('ds_ausgang')==='sauber'?'sauber':'klassisch'; }catch(e){ return 'klassisch'; } })();
-// Baut die Ausgangsstufe in Kontext c (live und WAV-Export gleich). inp = Eingang (wird zu `comp`), tap = Abgriff fürs Master-Meter.
+// Ausgang (v95, #51): feste Notbremse hinter den Master-Effekten, live und im WAV-Export gleich. Der Kompressor ist ein sichtbarer Master-Effekt.
+// Notbremse = WaveShaper statt DynamicsCompressor: keine Verzögerung (der Kompressor schaut 6 ms voraus) und garantierte Decke
+// (ein DynamicsCompressor ließ bei harten Spitzen noch über 0 dB durch). Bis BRAKE_KNEE exakt unverändert (lineare Kurve), darüber weich
+// (tanh) bis höchstens BRAKE_DB. Eingang wird ÷4 skaliert, damit auch Spitzen bis +12 dBFS auf der Kurve liegen.
+const BRAKE_DB=-0.3, BRAKE_KNEE=-1.5;
+let brakeCurve=null;
 function makeOutStage(c){
-  if(OUT_MODE!=='sauber'){ const k=c.createDynamicsCompressor(); k.connect(c.destination); return {inp:k, tap:k}; }
-  const g=c.createGain(), l=c.createDynamicsCompressor();
-  l.threshold.value=-1; l.knee.value=0; l.ratio.value=20; l.attack.value=0.001; l.release.value=0.06;
-  // DynamicsCompressor hebt automatisch an (~+0,6 dB bei −1 dB/20:1) -> danach wieder absenken: unter der Schwelle neutral, Decke < 0 dBFS
-  const trim=c.createGain(); trim.gain.value=Math.pow(10,-0.8/20);
-  g.connect(l); l.connect(trim); trim.connect(c.destination);
-  return {inp:g, tap:g}; // Meter vor dem Limiter: CLIP-LED zeigt, wann er eingreifen müsste
+  if(!brakeCurve){ const N=16385, T=Math.pow(10,BRAKE_KNEE/20), C=Math.pow(10,BRAKE_DB/20); brakeCurve=new Float32Array(N);
+    for(let j=0;j<N;j++){ const x=(j/(N-1)*2-1)*4, a=Math.abs(x); brakeCurve[j]=Math.sign(x)*(a<=T?a:T+(C-T)*Math.tanh((a-T)/(C-T))); } }
+  const g=c.createGain(), pre=c.createGain(), ws=c.createWaveShaper(); pre.gain.value=0.25; ws.curve=brakeCurve; ws.oversample='none';
+  g.connect(pre); pre.connect(ws); ws.connect(c.destination);
+  return {inp:g, tap:g}; // Master-Meter vor der Notbremse: CLIP zeigt, wann sie eingreift
 }
 
 // Erzeugt eine synthetische Hall-Impulsantwort: Rauschen mit exponentiellem

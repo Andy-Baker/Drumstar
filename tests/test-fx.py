@@ -24,10 +24,10 @@ async def main():
     async def s(n): await pg.screenshot(path=f'{OUT}/{n}.png'); await fz(pg,n)
     await pg.evaluate("Promise.resolve(__ev('initAudio')())"); await pg.wait_for_timeout(300)
     # --- Standard = bisheriger Klang
-    d=await ev("({div:fxDelay.div,md:fxDelay.md,fb:fxDelay.fb,lv:fxDelay.lv,sz:fxHall.sz,to:fxHall.to,nfx:masterFx.length})")
+    d=await ev("({div:fxDelay.div,md:fxDelay.md,fb:fxDelay.fb,lv:fxDelay.lv,sz:fxHall.sz,to:fxHall.to,mfx:masterFx.map(f=>f.t+':'+fxPreName(FXDEF[f.t].pre,f.p))})")
     ok('Delay-Standard wie bisher (1/4, mono, 34 %, 85 %)', d['div']=='4' and d['md']=='mono' and abs(d['fb']-.34)<1e-6 and abs(d['lv']-.85)<1e-6, d)
     ok('Hall-Standard wie bisher (2,4 s, offen)', abs(d['sz']-2.4)<1e-6 and d['to']==1, d)
-    ok('Keine Master-Effekte als Standard', d['nfx']==0)
+    ok('Master ab Werk: nur Kompressor „Drumstar“ (= bisheriger Klang, #51)', d['mfx']==['comp:Drumstar'], d['mfx'])
     ok('EQ neutral = nicht im Signalweg', await ev("__T.every(t=>t._eqIn===false)"))
     await ev("(()=>{const t=__T.find(x=>x.id==='arp'); t.eqMidGain=6; eqApply(t);})()")
     ok('EQ verändert = im Signalweg', await ev("__T.find(x=>x.id==='arp')._eqIn===true"))
@@ -144,6 +144,24 @@ async def main():
     ok('Notenwert per LCD-Liste', await ev("fxDelay.div")=='8d')
     ok('Zeitleiste zeigt Echos', await pg.evaluate("document.querySelectorAll('#fxTl .m').length")>=3)
     await s('fx_04_delay'); await pg.click('#klX'); await pg.wait_for_timeout(300)
+    # --- Master-Kette (#51, v95): Kompressor sichtbar ab Werk, alte Beats bekommen ihn, Notbremse im Ausgang
+    r=await pg.evaluate("""(async()=>{ const nb=nbDefault.masterFx||[]; const d=collectPatternData('t',null);
+      const a=JSON.parse(JSON.stringify(d)); delete a.mfxV; a.masterFx=[{t:'limit',on:true,p:{ce:-1,gn:0}}]; await applyPatternData(a); const old=masterFx.map(f=>f.t+':'+fxPreName(FXDEF[f.t].pre,f.p));
+      const b=JSON.parse(JSON.stringify(d)); b.mfxV=2; b.masterFx=[]; await applyPatternData(b); const neu=masterFx.length;
+      const c=JSON.parse(JSON.stringify(d)); delete c.mfxV; c.masterFx=[{t:'comp',on:true,p:{th:-20,ra:3,at:10,mk:2}}]; await applyPatternData(c); const lc=masterFx[1]?masterFx[1].p:null;
+      await applyPatternData(d);
+      return {def:nb.map(f=>f.t), save:d.mfxV, old, neu, lc}; })()""")
+    ok('Master: ab Werk Kompressor in der Kette', r['def']==['comp'], r['def'])
+    ok('Master: gespeichert mit mfxV 2', r['save']==2, r['save'])
+    ok('Master: alter Beat bekommt „Drumstar“ vor seinen Effekten', r['old']==['comp:Drumstar','limit:Sicher'], r['old'])
+    ok('Master: neuer Beat ohne Kompressor bleibt ohne', r['neu']==0, r['neu'])
+    ok('Master: alter eigener Kompressor behält Knie 6 / Release 150', r['lc'] and r['lc'].get('kn')==6 and r['lc'].get('re')==150, r['lc'])
+    await ev("(masterFx=mfxDefault(), fxMasterRebuild(), 1)")
+    await pg.click('#mixerToggleBtn'); await pg.wait_for_timeout(500); await pg.click('#mixerMaster .mix-set'); await pg.wait_for_timeout(500)
+    r=await pg.evaluate("({lamp:!!document.querySelector('#klRows [data-brake]'), gr:document.querySelectorAll('#klRows .fxgr[data-gr]').length, txt:document.querySelector('#klRows .fxchain').innerText})")
+    ok('Master: Ausgang mit Notbremsen-Lampe', r['lamp'] and 'Schutz' in r['txt'], r['txt'][-60:])
+    ok('Master: Kompressor-Zeile mit Absenkungs-Anzeige', r['gr']==1, r['gr'])
+    await pg.click('#klX'); await pg.wait_for_timeout(300); await pg.click('#mixerToggleBtn'); await pg.wait_for_timeout(300)
     # --- Mixer
     await pg.click('#mixerToggleBtn'); await pg.wait_for_timeout(600)
     r=await pg.evaluate("(()=>{const ss=[...document.querySelectorAll('#mixerChannels .mix-strip, #mixerMaster .mix-strip')]; return {n:ss.map(s=>s.querySelector('.mix-name,.mix-grp').textContent.trim()), h:[...new Set(ss.map(s=>Math.round(s.getBoundingClientRect().height)))]};})()")
@@ -174,7 +192,7 @@ async def main():
     await pg.click('#klX'); await pg.wait_for_timeout(300)
     await pg.click('#mixerMaster .mix-set'); await pg.wait_for_timeout(300)
     await pg.click('#klRows [data-add]'); await pg.click('#klRows [data-new="limit"]'); await pg.wait_for_timeout(200)
-    ok('Master-Effekt Limiter im Signalweg', await ev("FXG.mfxN.length")==1)
+    ok('Master-Effekt Limiter im Signalweg (hinter dem Kompressor)', await ev("masterFx.map(f=>f.t).join()==='comp,limit' && FXG.mfxN.length===2"), await ev("masterFx.map(f=>f.t)"))
     await s('fx_06_master'); await pg.click('#klX')
     ok('Schrift überall ≥ 11 px (#19)', not fz.bad, fz.bad)
     ok('Keine JS-Fehler', not errs, errs[:3])

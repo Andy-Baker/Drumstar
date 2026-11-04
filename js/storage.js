@@ -50,7 +50,7 @@ function collectPatternData(name, id){
     })),
     harmony: JSON.parse(JSON.stringify(harmony)), // v62: Akkordfolge + Tonart (optional, ältere Pattern: Standard-Vorlage)
     acidAuto: { shape: autoShape, bars: autoBars, depth: autoDepth },
-    fxHall: Object.assign({},fxHall), fxDelay: Object.assign({},fxDelay), masterFx: fxSave(masterFx), grps: Object.fromEntries(GRP_KEYS.map(k=>[k,Object.assign({vol:grps[k].vol,muted:grps[k].muted,fx:fxSave(grps[k].fx)},Object.fromEntries(EQ_KEYS.map(q=>[q,grps[k][q]])))])),
+    fxHall: Object.assign({},fxHall), fxDelay: Object.assign({},fxDelay), masterFx: fxSave(masterFx), mfxV: 2, grps: Object.fromEntries(GRP_KEYS.map(k=>[k,Object.assign({vol:grps[k].vol,muted:grps[k].muted,fx:fxSave(grps[k].fx)},Object.fromEntries(EQ_KEYS.map(q=>[q,grps[k][q]])))])),
     fill: {
       lengthSteps: fillLengthSteps,
       everyN: fillEveryN,

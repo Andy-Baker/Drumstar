@@ -106,15 +106,26 @@ const EQF0=20,EQF1=20000, eqFx=f=>Math.log(f/EQF0)/Math.log(EQF1/EQF0), eqXf=x=>
 function eqMini(tr){ const N=40, fr=new Float32Array(N).map((_,i)=>eqXf(i/(N-1))), c=eqCurve(tr,fr);
   return '<svg class="fxmini" viewBox="0 0 64 22" aria-hidden="true"><line x1="0" y1="11" x2="64" y2="11"/><polyline points="'+[...c].map((d,i)=>(i/(N-1)*64).toFixed(1)+','+(11-Math.max(-12,Math.min(12,d))*.8).toFixed(1)).join(' ')+'"/></svg>'; }
 // Effektkette: Übersicht (an/aus, Preset). owner = Spur oder null (Master)
-function fxChainHTML(owner){ const L=owner?owner.fx||(owner.fx=[]):masterFx, master=!owner, grp=!master&&owner.grp, types=Object.keys(FXDEF).filter(k=>(master||grp||!FXDEF[k].master)&&!L.some(f=>f.t===k));
+function fxChainHTML(owner){ const L=owner?owner.fx||(owner.fx=[]):masterFx, master=!owner, grp=!master&&owner.grp, ok=fxOwnKey(owner), types=Object.keys(FXDEF).filter(k=>(master||grp||!FXDEF[k].master)&&!L.some(f=>f.t===k));
   let h='<div class="fxchain'+(fxUI.order?' ord':'')+'"><div class="fxterm"><b>'+(master?'Mix':fxShort(owner))+'</b>'+(master?'alle Spuren':grp?GRP_DEF[owner.k].ids.length+' Spuren':'Klang')+'</div>';
   if(!master){ const on=owner.eqOn!==false; h+='<div class="fxslot fixed'+(on?'':' byp')+'"><button class="fxnode" data-eqpw aria-label="EQ '+(on?'ausschalten':'einschalten')+'"></button><div class="fxsr" data-eqopen role="button"><span class="n">EQ</span><span class="v">'+(on?eqMini(owner):'aus')+'</span>'+FXI.go+'<span class="fixl">fest</span></div></div>'; }
   L.forEach((f,i)=>{ const d=FXDEF[f.t], pn=fxPreName(d.pre,f.p);
-    h+='<div class="fxslot'+(f.on?'':' byp')+'"><button class="fxnode" data-pw="'+f.id+'" aria-label="'+d.n+' '+(f.on?'ausschalten':'einschalten')+'"></button><div class="fxsr" data-sl="'+f.id+'" role="button"><span class="n">'+d.n+'</span><span class="v">'+(f.on?(pn!=='Eigene'?pn:d.sum(f.p)):'aus')+'</span>'+FXI.go+
+    h+='<div class="fxslot'+(f.on?'':' byp')+'"><button class="fxnode" data-pw="'+f.id+'" aria-label="'+d.n+' '+(f.on?'ausschalten':'einschalten')+'"></button><div class="fxsr" data-sl="'+f.id+'" role="button"><span class="n">'+d.n+'</span>'+(d.build.toString().includes('red:')?'<span class="fxgr" data-gr="'+ok+':'+f.id+'"></span>':'')+'<span class="v">'+(f.on?(pn!=='Eigene'?pn:d.sum(f.p)):'aus')+'</span>'+FXI.go+
        '<span class="mv"><button data-mv="'+f.id+'" data-d="-1" '+(i===0?'disabled':'')+' aria-label="Nach oben">'+FXI.up+'</button><button data-mv="'+f.id+'" data-d="1" '+(i===L.length-1?'disabled':'')+' aria-label="Nach unten">'+FXI.dn+'</button></span></div></div>'; });
   if(L.length<FX_MAX && !fxUI.order && types.length){ h+='<button class="fxadd" data-add>'+FXI.plus+'Effekt hinzufügen<small>'+L.length+' von '+FX_MAX+'</small></button>';
     h+='<div class="fxpick'+(fxUI.pick?' open':'')+'">'+types.map(k=>'<button data-new="'+k+'">'+FXDEF[k].n+'<small>'+FXDEF[k].w+'</small></button>').join('')+'</div>'; }
-  return h+'<div class="fxterm"><b>'+(master?'Ausgang':grp?'Gruppe':'Kanal')+'</b>'+(master?'Lautsprecher':grp?'Laut → Master':'Mixer')+'</div></div>'; }
+  return h+'<div class="fxterm"><b>'+(master?'Ausgang':grp?'Gruppe':'Kanal')+'</b>'+(master?'Lautsprecher · Schutz −0,3 dB<i class="fxbrake" data-brake title="Notbremse: leuchtet, wenn sie eingreift"></i>':grp?'Laut → Master':'Mixer')+'</div></div>'; }
+// Absenkung von Kompressor/Limiter und Notbremsen-Lampe live anzeigen (v95, #51), solange das Klang-Fenster solche Anzeigen enthält
+const fxOwnKey=o=>!o?'m':o.grp?'g.'+o.k:'t.'+o.id;
+function fxNodeOf(key,id){ const [a,b]=key.split('.'), L=a==='m'?FXG.mfxN:a==='g'?(FXG.g&&FXG.g[b]?FXG.g[b].n:[]):((TRACKS.find(t=>t.id===b)||{})._fxN||[]); return (L||[]).find(n=>n.id===id); }
+let fxGrRAF=0, fxBrakeT=-9;
+function fxGrLoop(){ const box=$id('klRows'), els=box?box.querySelectorAll('[data-gr]'):[], lamps=box?box.querySelectorAll('[data-brake]'):[];
+  if(!$id('klSheet').classList.contains('open') || (!els.length && !lamps.length)){ fxGrRAF=0; return; }
+  els.forEach(e=>{ const [k,id]=e.dataset.gr.split(':'), n=fxNodeOf(k,+id), r=n&&n.red?-n.red.reduction:0, t=r>0.1?'−'+fxDe(r,1):'';
+    if(e.classList.contains('fxgrbar')) e.style.setProperty('--gr',Math.min(100,r/20*100)+'%'); else if(e.textContent!==t) e.textContent=t; });
+  if(lamps.length && masterAnalyser){ const now=performance.now(); if(readPeak(masterAnalyser)>Math.pow(10,BRAKE_KNEE/20)) fxBrakeT=now; lamps.forEach(l=>l.classList.toggle('on',now-fxBrakeT<250)); }
+  fxGrRAF=requestAnimationFrame(fxGrLoop); }
+function fxGrStart(){ if(!fxGrRAF) fxGrRAF=requestAnimationFrame(fxGrLoop); }
 const fxOrdBtn=L=>L.length>1?'<button class="fxtbtn'+(fxUI.order?' on':'')+'" data-ord>'+(fxUI.order?'Fertig':'Ordnen')+'</button>':'';
 function fxRebuildOwner(o){ if(!audioCtx) return; if(!o) fxMasterRebuild(); else if(o.grp) grpFxRebuild(o.k); else trFxRebuild(o); }
 function fxBindChain(root,owner){ const L=owner?owner.fx:masterFx, find=id=>L.find(f=>f.id===+id), done=()=>{ fxRebuildOwner(owner); renderKlang(); mixerRebuild(); };
@@ -137,7 +148,7 @@ function mixFxBody(tr,box){ const arp=tr.type==='arp';
   [['hall','reverbAmount','sendGain'],['delay','delaySend','delaySendGain']].forEach(([k,prop,node])=>{
     const r=soundRow(FX_SEND[k].n,0,100,(tr[prop]||0)*100,Math.round((tr._def[prop]||0)*100),v=>v,v=>{ tr[prop]=v/100; if(tr[node]) tr[node].gain.value=tr[prop]; });
     const lab=r.querySelector('label'); lab.classList.add('fxlk'); lab.innerHTML=FX_SEND[k].n+FXI.go; lab.setAttribute('role','button'); lab.onclick=()=>klPush({v:'send',k}); sb.appendChild(r); });
-  const eb=fxSec(box,'Effekte',fxOrdBtn(tr.fx||[])); eb.innerHTML=fxChainHTML(tr); fxBindChain(eb.parentNode,tr);
+  const eb=fxSec(box,'Effekte',fxOrdBtn(tr.fx||[])); eb.innerHTML=fxChainHTML(tr); fxBindChain(eb.parentNode,tr); fxGrStart();
   const g=document.createElement('div'); g.className='fxcard'+(fxUI.grv?' open':''); g.innerHTML='<button class="fxch" aria-expanded="'+fxUI.grv+'"><span>Groove</span><span class="sum">'+(fxUI.grv?'':'Feel '+((tr.feel||0)>0?'+':'')+(tr.feel||0)+' ms')+'</span>'+FXI.dn+'</button><div class="fxcb"></div>';
   g.querySelector('.fxch').onclick=()=>{ fxUI.grv=!fxUI.grv; renderKlang(); };
   g.querySelector('.fxcb').appendChild(soundRow('Feel',-30,30,tr.feel||0,0,v=>(v>0?'+':'')+v+'ms',v=>tr.feel=v)); box.appendChild(g); }
@@ -146,18 +157,19 @@ function fxRenderView(box,v){ FXH={}; fxHid=0; const T=t=>$id('klT').textContent
   if(v.v==='kanal'){ T('Kanal · '+fxTrName(tr)); mixFxBody(tr,box); return; }
   if(v.v==='master'){ T('Master');
     box.appendChild(soundRow('Laut',0,100,masterVol*100,85,v=>v,v=>setMasterVol(v/100)));
-    const eb=fxSec(box,'Effekte · ganzer Mix',fxOrdBtn(masterFx)); eb.innerHTML=fxChainHTML(null); fxBindChain(eb.parentNode,null); return; }
+    const eb=fxSec(box,'Effekte · ganzer Mix',fxOrdBtn(masterFx)); eb.innerHTML=fxChainHTML(null); fxBindChain(eb.parentNode,null); fxGrStart(); return; }
   if(v.v==='grp'){ const k=GRP_DEF[klArg]?klArg:'drums', G=grps[k], D=GRP_DEF[k]; T('Gruppe · '+D.n);
     box.appendChild(soundRow('Laut',0,100,G.vol*100,100,v=>v,v=>{ G.vol=v/100; grpUpdate(k); mixerSyncGroup(k); }));
-    const eb=fxSec(box,'Effekte · ganze Gruppe',fxOrdBtn(G.fx)); eb.innerHTML=fxChainHTML(G); fxBindChain(eb.parentNode,G);
+    const eb=fxSec(box,'Effekte · ganze Gruppe',fxOrdBtn(G.fx)); eb.innerHTML=fxChainHTML(G); fxBindChain(eb.parentNode,G); fxGrStart();
     const n=document.createElement('div'); n.className='kl-note'; n.textContent='Fasst '+D.ids.map(i=>i.toUpperCase()).join(', ')+' zusammen. Im Mixer klappt „'+D.ab+'“ die einzelnen Kanäle auf.'; box.appendChild(n); return; }
   if(v.v==='dev'){ const o=v.o, L=o?o.fx:masterFx, f=L.find(x=>x.id===v.id); if(!f){ klBackFn(); return; } const d=FXDEF[f.t], up=()=>fxUpd(o,f);
     T(d.n+' · '+(o?fxShort(o):'Master'));
     h+='<div class="fxdevtop"><button class="fxpwr'+(f.on?' on':'')+'" data-pwd aria-label="An/Aus">'+FXI.pw+'</button>'+fxLsel('Preset',d.pre.map(x=>[x[0],x[0]]),fxPreName(d.pre,f.p),n=>{ Object.assign(f.p,d.pre.find(x=>x[0]===n)[1]); up(); renderKlang(); },{custom:'Eigene'})+'</div>';
     const def=d.pre[0][1];
     d.ps.forEach(ps=>{ h+=ps.sel?fxLsel(ps.l,ps.sel,f.p[ps.k],x=>{ f.p[ps.k]=x; up(); renderKlang(); }):fxRow(ps,f.p[ps.k],def[ps.k],x=>{ f.p[ps.k]=x; up(); fxSoft(); }); });
+    if(d.build.toString().includes('red:')) h+='<div class="fxgrrow"><span>Absenkung</span><i class="fxgrbar" data-gr="'+fxOwnKey(o)+':'+f.id+'"></i><b data-gr="'+fxOwnKey(o)+':'+f.id+'"></b></div>';
     h+='<div class="fxfoot"><button class="fxfb" data-hold>'+FXI.ear+'Ohne vergleichen</button><button class="fxfb dng" data-rm>'+FXI.trash+'Entfernen</button></div>';
-    box.innerHTML=h; fxBind(box);
+    box.innerHTML=h; fxBind(box); fxGrStart();
     box.querySelector('[data-pwd]').onclick=()=>{ f.on=!f.on; fxRebuildOwner(o); renderKlang(); mixerRebuild(); };
     box.querySelector('[data-rm]').onclick=()=>{ const i=L.indexOf(f); L.splice(i,1); fxRebuildOwner(o); klView.pop(); renderKlang(); mixerRebuild(); hmToast(d.n+' entfernt',true,()=>{ L.splice(i,0,f); fxRebuildOwner(o); renderKlang(); mixerRebuild(); }); };
     fxHold(box.querySelector('[data-hold]'),st=>{ f._byp=st; fxRebuildOwner(o); }); return; }

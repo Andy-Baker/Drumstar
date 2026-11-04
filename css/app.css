@@ -1291,6 +1291,15 @@ html,body{min-height:100%;height:100%;}
 .fxterm{position:relative;display:flex;align-items:center;gap:8px;min-height:32px;font-size:13px;color:var(--dim)}
 .fxterm:before{content:'';position:absolute;left:-19px;width:8px;height:8px;border-radius:2px;background:var(--panel);border:2px solid var(--blue-dim)}
 .fxterm b{font-weight:600;color:var(--metal)}
+/* v95 (#51): Absenkung von Kompressor/Limiter, Notbremsen-Lampe im Ausgang */
+.fxgr{font:600 12px 'JetBrains Mono',monospace;color:#ffc247;margin-left:auto;padding-right:8px}
+.fxgr:empty{display:none}
+.fxbrake{width:11px;height:11px;border-radius:50%;background:#2b1a0a;border:1px solid #3d2a12;margin-left:auto;flex:none}
+.fxbrake.on{background:#ff9a2e;border-color:#ffc27a;box-shadow:0 0 9px rgba(255,154,46,.9)}
+.fxgrrow{display:flex;align-items:center;gap:10px;margin:12px 0 4px;font-size:14px;color:var(--dim)}
+.fxgrrow .fxgrbar{flex:1;height:10px;background:#06080b;border-radius:2px;position:relative;overflow:hidden;--gr:0%}
+.fxgrrow .fxgrbar:after{content:'';position:absolute;right:0;top:0;bottom:0;width:var(--gr);background:#ffc247}
+.fxgrrow b{font:600 12px 'JetBrains Mono',monospace;color:#ffc247;min-width:48px;text-align:right}
 .fxslot{position:relative;margin:3px 0;border-radius:9px;background:var(--panel-inset);border:1px solid rgba(255,255,255,.06);transition:transform .17s ease}
 .fxnode{position:absolute;left:-21px;top:17px;width:12px;height:12px;border-radius:50%;background:var(--blue);box-shadow:0 0 8px var(--blue),0 0 0 3px var(--panel);border:0;padding:0;cursor:pointer}
 .fxnode:after{content:'';position:absolute;inset:-14px}

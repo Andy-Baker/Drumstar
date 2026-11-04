@@ -179,17 +179,23 @@ async def main():
     x,sr,st,pc=await acid([{'s':0,'n':0},{'s':4,'n':0,'a':1}],0.5,0.35)
     a=np.abs(x[int(0.05*sr):int((0.05+st)*sr)]).max(); b2=np.abs(x[int((0.05+4*st)*sr):int((0.05+5*st)*sr)]).max(); acc=20*math.log10(b2/a)
     ok('Acid: Accent lauter (≥ +2 dB)', acc>=2, f'{acc:+.1f} dB')
-    # ---------- Ausgang (#51): ?ausgang=sauber = Schutz-Limiter statt Kompressor, gemerkt, Decke < 0 dBFS
-    base=URL.split('?')[0]; RJ="""async ()=>{ await __ev('initAudio()'); __T.forEach(t=>{ t.vol=1; t.muted=false; }); __ev('masterVol=1');
-      const b=await __ev('renderPatternToWav()'); let pk=0; for(const ch of [b.getChannelData(0),b.getChannelData(1)]) for(const v of ch) pk=Math.max(pk,Math.abs(v));
-      return {pk, mode:__ev('OUT_MODE'), ver:document.getElementById('appVer').textContent}; }"""
-    await pg.goto(base+'?ausgang=sauber',wait_until='domcontentloaded'); await pg.wait_for_timeout(1500); r=await pg.evaluate(RJ)
-    ok('Ausgang sauber: aktiv und unten angezeigt', r['mode']=='sauber' and 'sauber' in r['ver'], r['ver'])
-    ok('Ausgang sauber: Spitze < 0 dBFS bei vollen Fadern', r['pk']<1.0, f"{20*math.log10(r['pk']+1e-9):+.2f} dBFS")
-    await pg.goto(base,wait_until='domcontentloaded'); await pg.wait_for_timeout(1000)
-    ok('Ausgang: Wahl wird gemerkt', await pg.evaluate("__ev('OUT_MODE')")=='sauber')
-    await pg.goto(base+'?ausgang=klassisch',wait_until='domcontentloaded'); await pg.wait_for_timeout(1000)
-    ok('Ausgang: zurück auf klassisch', await pg.evaluate("__ev('OUT_MODE')")=='klassisch')
+    # ---------- Master (#51, v95): sichtbarer Kompressor „Drumstar“ = alter versteckter Kompressor, Notbremse am Ausgang
+    MJ="""async (lvl)=>{ const sr=48000, N=sr*2;
+     const mk=async(build)=>{ const c=new OfflineAudioContext(2,N,sr), b=c.createBuffer(2,N,sr);
+       for(let ch=0;ch<2;ch++){ const d=b.getChannelData(ch); let s=7; for(let i=0;i<N;i++){ s=(s*1664525+1013904223)>>>0; const t=i/sr, ph=(t*8)%1;
+         d[i]=lvl*(Math.exp(-ph*6)*Math.sin(2*Math.PI*(60+90*Math.exp(-ph*30))*t)*0.9+0.15*((s/4294967296)*2-1)*Math.exp(-ph*20)+0.08*Math.sin(2*Math.PI*220*t)); } }
+       const src=c.createBufferSource(); src.buffer=b; build(c,src); src.start(0); return await c.startRendering(); };
+     const old=await mk((c,src)=>{ const k=c.createDynamicsCompressor(); src.connect(k); k.connect(c.destination); });
+     const neu=await mk((c,src)=>{ const n=FXDEF.comp.build(c); n.u(FXDEF.comp.pre[0][1]); src.connect(n.i); n.o.connect(makeOutStage(c).inp); });
+     const dry=await mk((c,src)=>src.connect(c.destination)), brk=await mk((c,src)=>src.connect(makeOutStage(c).inp));
+     const cmp=(x,y)=>{ let m=0,p=0; for(let ch=0;ch<2;ch++){ const a=x.getChannelData(ch), b=y.getChannelData(ch); for(let i=0;i<a.length;i++){ m=Math.max(m,Math.abs(a[i]-b[i])); p=Math.max(p,Math.abs(b[i])); } } return [m,p]; };
+     return {comp:cmp(old,neu)[0], brk:cmp(dry,brk), pre:FXDEF.comp.pre[0][0]}; }"""
+    r=await pg.evaluate(MJ,0.7)
+    ok('Master: Preset „Drumstar“ ist das erste Kompressor-Preset', r['pre']=='Drumstar', r['pre'])
+    ok('Master: „Drumstar“ + Notbremse klingt wie der alte versteckte Kompressor (Abweichung < −100 dB)', r['comp']<1e-5, f"{20*math.log10(r['comp']+1e-12):.0f} dB")
+    ok('Notbremse: unter −1,5 dBFS unverändert', r['brk'][0]<1e-5, f"{20*math.log10(r['brk'][0]+1e-12):.0f} dB")
+    r=await pg.evaluate(MJ,1.4)
+    ok('Notbremse: hält +3 dBFS-Spitzen unter −0,29 dBFS', r['brk'][1]<10**(-0.29/20), f"{20*math.log10(r['brk'][1]):+.2f} dBFS")
     ok('Keine Fehler', not errs, errs)
     await b.close()
   print(sum(r.startswith('PASS') for r in res),'/',len(res))

@@ -28,17 +28,20 @@ const FXDEF={
    sum:p=>({lowpass:'TP',highpass:'HP',bandpass:'BP'})[p.ty]+' '+fxHz(fxEx(40,16000,p.fr)),
    build(c){ const f=c.createBiquadFilter(); return {i:f,o:f,u(p){ f.type=p.ty; fxSet(f.frequency,fxEx(40,16000,p.fr),c); fxSet(f.Q,.5+p.q*16,c); }}; }},
  comp:{n:'Kompressor',ab:'KOMP',w:'Dynamik bändigen',rank:2,
-   ps:[{k:'th',l:'Schwelle',a:-40,b:0,s:1,f:v=>Math.round(v)+' dB'},{k:'ra',l:'Stärke',a:1,b:20,s:.5,f:v=>fxDe(v,1)+':1'},{k:'at',l:'Attack',a:1,b:80,s:1,f:v=>Math.round(v)+' ms'},{k:'mk',l:'Aufholen',a:0,b:18,s:.5,f:fxDb}],
-   pre:[['Sanft',{th:-18,ra:2.5,at:20,mk:3}],['Punch',{th:-24,ra:4,at:30,mk:6}],['Platt',{th:-34,ra:12,at:3,mk:12}]],
+   ps:[{k:'th',l:'Schwelle',a:-40,b:0,s:1,f:v=>Math.round(v)+' dB'},{k:'ra',l:'Stärke',a:1,b:20,s:.5,f:v=>fxDe(v,1)+':1'},{k:'at',l:'Attack',a:1,b:80,s:1,f:v=>Math.round(v)+' ms'},{k:'re',l:'Release',a:30,b:600,s:10,f:v=>Math.round(v)+' ms'},{k:'mk',l:'Aufholen',a:0,b:18,s:.5,f:fxDb}],
+   // v95 (#51): „Drumstar“ = bisher unsichtbarer Ausgangs-Kompressor (Web-Audio-Standardwerte, Knie 30). Web Audio hebt bei jedem Kompressor
+   // automatisch an (0,6 × Absenkung bei 0 dB), „Aufholen“ kommt obendrauf. kn = Knie (ohne Regler).
+   pre:[['Drumstar',{th:-24,ra:12,at:3,re:250,kn:30,mk:0}],['Sanft',{th:-18,ra:2.5,at:20,re:150,kn:6,mk:3}],['Punch',{th:-24,ra:4,at:30,re:150,kn:6,mk:6}],['Platt',{th:-34,ra:12,at:3,re:150,kn:6,mk:12}]],
+   legacy:{th:-18,ra:2.5,at:20,re:150,kn:6,mk:3}, // fehlende Felder älterer Speicherstände = Klang vor v95
    sum:p=>Math.round(p.th)+' dB '+fxDe(p.ra,0)+':1',
-   build(c){ const k=c.createDynamicsCompressor(),g=c.createGain(); k.knee.value=6; k.release.value=.15; k.connect(g);
-     return {i:k,o:g,u(p){ fxSet(k.threshold,p.th,c); fxSet(k.ratio,p.ra,c); fxSet(k.attack,p.at/1000,c); fxSet(g.gain,Math.pow(10,p.mk/20),c); }}; }},
+   build(c){ const k=c.createDynamicsCompressor(),g=c.createGain(); k.connect(g);
+     return {i:k,o:g,red:k,u(p){ fxSet(k.threshold,p.th,c); fxSet(k.ratio,p.ra,c); fxSet(k.attack,p.at/1000,c); fxSet(k.release,(p.re!=null?p.re:150)/1000,c); fxSet(k.knee,p.kn!=null?p.kn:6,c); fxSet(g.gain,Math.pow(10,p.mk/20),c); }}; }},
  limit:{n:'Limiter',ab:'LIM',w:'Spitzen abfangen',rank:3,master:1,
    ps:[{k:'ce',l:'Decke',a:-12,b:0,s:.5,f:fxDb},{k:'gn',l:'Lauter',a:0,b:12,s:.5,f:fxDb}],
    pre:[['Sicher',{ce:-1,gn:0}],['Laut',{ce:-1,gn:6}],['Sehr laut',{ce:-.5,gn:10}]],
    sum:p=>'Decke '+fxDe(p.ce,1),
    build(c){ const g=c.createGain(),k=c.createDynamicsCompressor(); k.knee.value=0; k.ratio.value=20; k.attack.value=.002; k.release.value=.08; g.connect(k);
-     return {i:g,o:k,u(p){ fxSet(g.gain,Math.pow(10,p.gn/20),c); fxSet(k.threshold,p.ce,c); }}; }}
+     return {i:g,o:k,red:k,u(p){ fxSet(g.gain,Math.pow(10,p.gn/20),c); fxSet(k.threshold,p.ce,c); }}; }}
 };
 // Sends: Standard = bisheriger Klang (Hall 2,4 s offen, Delay 1/4 mono 34 %)
 const FX_SEND={
@@ -56,7 +59,10 @@ const EQ_PS=[{k:'eqLc',l:'Tiefen-Filter',a:0,b:1,s:.005,f:v=>v<.005?'aus':fxHz(e
 const fxPreName=(pre,p)=>{ const x=pre.find(x=>Object.keys(x[1]).every(k=>Math.abs((typeof x[1][k]==='number'?x[1][k]:0)-(typeof p[k]==='number'?p[k]:0))<1e-6 && (typeof x[1][k]!=='string'||x[1][k]===p[k]))); return x?x[0]:'Eigene'; };
 let fxHall=Object.assign({},FX_SEND.hall.pre[0][1]), fxDelay=Object.assign({},FX_SEND.delay.pre[0][1]), masterFx=[];
 let fxUid=0; const fxNew=(t,pi)=>({id:++fxUid,t,on:true,p:Object.assign({},FXDEF[t].pre[pi||0][1])});
-const fxClean=list=>(list||[]).filter(f=>f&&FXDEF[f.t]).slice(0,FX_MAX).map(f=>({id:++fxUid,t:f.t,on:f.on!==false,p:Object.assign({},FXDEF[f.t].pre[0][1],f.p||{})}));
+const fxClean=list=>(list||[]).filter(f=>f&&FXDEF[f.t]).slice(0,FX_MAX).map(f=>({id:++fxUid,t:f.t,on:f.on!==false,p:Object.assign({},FXDEF[f.t].legacy||FXDEF[f.t].pre[0][1],f.p||{})}));
+// Master ab Werk (v95, #51): sichtbarer Bus-Kompressor „Drumstar“ = bisheriger Klang
+const mfxDefault=()=>[fxNew('comp',0)];
+masterFx=mfxDefault();
 const fxSave=list=>(list||[]).map(f=>({t:f.t,on:f.on,p:Object.assign({},f.p)}));
 // Gruppen (Busse): Spuren → Gruppe (Effekte → Laut) → Master. ids = ARR_GROUPS
 const GRP_DEF={drums:{n:'Drums',ab:'DRUMS',ids:['bd','sd','ch','oh','lt','ht','cy','rd'],color:'#2a5a86'},
@@ -153,6 +159,7 @@ function fxLoadTrack(tr,sv){ tr.eqOn=sv.eqOn!==false; tr.eqLc=sv.eqLc||0; tr.eqM
   if(tr.bus) eqApply(tr,true); if(typeof mixerRebuild==='function') mixerRebuild(); }
 function fxLoadGlobal(d){ fxHall=Object.assign({},FX_SEND.hall.pre[0][1],d.fxHall||{}); fxDelay=Object.assign({},FX_SEND.delay.pre[0][1],d.fxDelay||{});
   if(!FX_NV.some(n=>n[0]===fxDelay.div)) fxDelay.div='4'; masterFx=fxClean(d.masterFx);
+  if(!(d.mfxV>=2)) masterFx=[fxNew('comp',0)].concat(masterFx).slice(0,FX_MAX); // vor v95 lief der Kompressor unsichtbar am Ausgang -> gleich klingen lassen
   const sg=d.grps||(d.grpDrums?{drums:d.grpDrums}:{}); // vor v80 gab es nur die Drums-Gruppe (ohne Effekte)
   GRP_KEYS.forEach(k=>{ const v=sg[k]||{}; const G=grps[k]=Object.assign(grpNew(k),{vol:v.vol!=null?v.vol:1,muted:!!v.muted,fx:fxClean(v.fx)}); EQ_KEYS.forEach(q=>{ if(v[q]!=null) G[q]=v[q]; }); });
   if(audioCtx&&FXG.dlIn){ fxMasterRebuild(); fxHallUpdate(); fxDelayUpdate(); GRP_KEYS.forEach(grpFxRebuild); grpUpdate(); } if(typeof mixerRebuild==='function') mixerRebuild(); }
@@ -251,7 +258,7 @@ function initAudio(){
   const outStage=makeOutStage(audioCtx); comp=outStage.inp;
   master = audioCtx.createGain(); master.gain.value=0.85;
   masterAnalyser=audioCtx.createAnalyser(); masterAnalyser.fftSize=2048;
-  outStage.tap.connect(masterAnalyser); // Master-Meter: klassisch nach dem Kompressor, sauber vor dem Schutz-Limiter
+  outStage.tap.connect(masterAnalyser); // Master-Meter nach den Master-Effekten, vor der Notbremse
   noiseBuf = makeNoise(2);
 
   // ---- Effekt-Busse (Hall, Delay, Drums-Gruppe, Master-Effekte): buildFxBuses()

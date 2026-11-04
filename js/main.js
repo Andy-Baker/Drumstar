@@ -9,7 +9,7 @@ restoreLastOpenedOrSeed().then(restoreLastSong);
 (function(){
   const el=$id('appVer'); if(!el) return;
   const m=(document.querySelector('script[src*="?v="]')||{}).src; const v=m&&(m.match(/[?&]v=([^&]+)/)||[])[1];
-  el.textContent=(v?'v'+v:'')+(OUT_MODE==='sauber'?' · Ausgang sauber':'');
+  el.textContent=v?'v'+v:'';
   if(navigator.serviceWorker) navigator.serviceWorker.addEventListener('message',e=>{
     if(!e.data || e.data.type!=='update-ready') return;
     el.textContent=(v?'v'+v+' · ':'')+'Update da, antippen'; el.classList.add('upd'); el.setAttribute('role','button');
