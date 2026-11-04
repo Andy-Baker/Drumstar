@@ -197,7 +197,7 @@ TRACKS.forEach((tr,idx)=>{
 // Zeigt an, welche Spuren durch aktive Solo-Schaltung(en) gerade stummgeschaltet
 // sind (alle nicht-solierten, sobald mindestens eine Spur soliert ist).
 function refreshSoloVisuals(){
-  const anySolo=TRACKS.some(t=>t.solo); syncTbMS();
+  const anySolo=TRACKS.some(t=>t.solo); syncTbMS(); if(typeof mixerSyncGrpSolo==='function') mixerSyncGrpSolo();
   TRACKS.forEach(tr=>{
     tr._ovRow.classList.toggle('solo-dim', anySolo && !tr.solo); tr._ovRow.classList.toggle('solo', !!tr.solo);
   });

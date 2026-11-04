@@ -38,7 +38,12 @@ function dbLabel(v){
 // Mixer (v79, Mockup effekte-mockup.html v7): alle Kanäle gleich hoch; sichtbar nur Fader, Meter, M/S und ein Knopf,
 // der die Kanal-Einstellungen öffnet (= Klang → Mix & FX). Drums laufen über eine Gruppe (zugeklappt),
 // Hall/Delay scrollen am Ende mit, nur der Master steht fest.
-let mxGrpOpen={drums:false,perc:false}, mxGrpMeters={}, mxRetMeters={};
+let mxGrpOpen={drums:false,perc:false}, mxGrpMeters={}, mxRetMeters={}, mxGrpSolo={};
+// Solo am Gruppenkanal (v96): soliert alle Spuren der Gruppe; leuchtet, wenn alle soliert sind. Nutzt das normale Spur-Solo (tr.solo).
+const grpTracks=k=>TRACKS.filter(t=>trGrp(t)===k);
+function grpSoloOn(k){ const L=grpTracks(k); return L.length>0 && L.every(t=>t.solo); }
+function toggleGrpSolo(k){ const on=!grpSoloOn(k); grpTracks(k).forEach(t=>{ t.solo=on; if(t._mixSoloBtn) t._mixSoloBtn.classList.toggle('on',on); }); refreshSoloVisuals(); }
+function mixerSyncGrpSolo(){ Object.keys(mxGrpSolo).forEach(k=>{ if(mxGrpSolo[k]) mxGrpSolo[k].classList.toggle('on',grpSoloOn(k)); }); }
 const MX_ICO='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4v16M12 4v16M19 4v16"/><circle cx="5" cy="14" r="2" fill="currentColor"/><circle cx="12" cy="8" r="2" fill="currentColor"/><circle cx="19" cy="15" r="2" fill="currentColor"/></svg>';
 const mxDots=L=>'<span class="mx-dots">'+Array.from({length:FX_MAX},(_,i)=>'<i class="'+(L&&L[i]?(L[i].on?'on':'by'):'')+'"></i>').join('')+'</span>';
 // Skala −48 … 0 dBFS (oben). Zonen wie Pro Tools/Cubase: grün < −12, gelb −12…−3, rot ab −3; > 0 dBFS = CLIP-LED.
@@ -86,14 +91,14 @@ function mxStrip(o){ // o: {cls,color,name,sub,head,vol,label,onVol,mute,solo,ch
 function buildMixerChannels(){
   const ch=mixerChannels, ms=document.getElementById('mixerMaster'); ch.innerHTML=''; ms.innerHTML='';
   TRACKS.forEach(tr=>{ tr._mixFaderEl=null; tr._mixMeter=null; tr._mixMuteBtn=null; tr._mixSoloBtn=null; tr._mixPanKnob=null; tr._mixEqKnobs=null; });
-  mxGrpMeters={}; const done={};
+  mxGrpMeters={}; mxGrpSolo={}; const done={};
   const grpStrip=k=>{ const G=grps[k], D=GRP_DEF[k], op=mxGrpOpen[k];
     const g=mxStrip({key:'grp:'+k,cls:'grp-strip grp-'+k+(op?' open':''),color:D.color,label:'Gruppe '+D.n,vol:G.vol,parent:ch,
       head:'<button class="mix-grp" aria-expanded="'+op+'" aria-label="'+D.n+'-Kanäle '+(op?'zuklappen':'aufklappen')+'">'+D.ab+'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button><div class="mix-sub">'+(op?'Gruppe':D.ids.length+' Spuren')+'</div>',
-      onVol:v=>{ G.vol=v; grpUpdate(k); }, mute:{on:G.muted,fn:e=>{ G.muted=!G.muted; e.currentTarget.classList.toggle('on',G.muted); grpUpdate(k); }},
+      onVol:v=>{ G.vol=v; grpUpdate(k); }, mute:{on:G.muted,fn:e=>{ G.muted=!G.muted; e.currentTarget.classList.toggle('on',G.muted); grpUpdate(k); }}, solo:{on:grpSoloOn(k),fn:()=>toggleGrpSolo(k)},
       set:()=>openFxRoot('grp',k), dots:G.fx});
     g.el.querySelector('.mix-grp').onclick=()=>{ mxGrpOpen[k]=!op; buildMixerChannels(); };
-    mxGrpMeters[k]=g.meter; };
+    mxGrpMeters[k]=g.meter; mxGrpSolo[k]=g.solo; };
   TRACKS.forEach(tr=>{ const k=trGrp(tr); if(k&&!done[k]){ done[k]=1; grpStrip(k); } if(k&&!mxGrpOpen[k]) return;
     const r=mxStrip({key:'tr:'+tr.id,cls:k?'in-grp in-'+k:'',color:tr.color,name:tr.short||tr.id.toUpperCase(),label:tr.name,vol:tr.vol,parent:ch,
       onVol:v=>setTrackVol(tr,v), mute:{on:tr.muted,fn:()=>toggleTrackMute(tr)}, solo:{on:tr.solo,fn:()=>toggleTrackSolo(tr)},

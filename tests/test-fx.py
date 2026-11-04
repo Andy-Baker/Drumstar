@@ -183,6 +183,17 @@ async def main():
     ok('Mixer: Übersteuerung > 0 dBFS → CLIP-LED + roter Spitzenwert', r['clip'] and r['red'] and r['txt']=='+3.5', r['txt'])
     ok('Mixer: CLIP-LED bleibt an, bis man sie antippt', r['latched'] and r['reset'])
     ok('Mixer: Skala mit 6 Marken', r['marks']==6, r['marks'])
+    # v96: Solo am Gruppenkanal
+    r=await pg.evaluate("""(()=>{ const g=document.querySelector('#mixerChannels .grp-strip.grp-drums .mix-solo'); if(!g) return {ok:false};
+      g.click(); const allOn=grpTracks('drums').every(t=>t.solo) && !TRACKS.filter(t=>trGrp(t)!=='drums').some(t=>t.solo), lit=g.classList.contains('on');
+      const one=grpTracks('drums')[0]; toggleTrackSolo(one); const partOff=!g.classList.contains('on');
+      toggleTrackSolo(one); const back=g.classList.contains('on');
+      g.click(); const clear=!TRACKS.some(t=>t.solo) && !g.classList.contains('on');
+      return {ok:true, allOn, lit, partOff, back, clear, perc:!!document.querySelector('#mixerChannels .grp-strip.grp-perc .mix-solo')}; })()""")
+    ok('Mixer: Gruppen-Solo soliert alle Drum-Spuren und leuchtet', r.get('ok') and r['allOn'] and r['lit'], r)
+    ok('Mixer: Gruppen-Solo erlischt, wenn eine Spur nicht mehr soliert ist', r.get('partOff') and r.get('back'), r)
+    ok('Mixer: Gruppen-Solo erneut tippen hebt alles auf', r.get('clear'), r)
+    ok('Mixer: Perc-Gruppe hat auch Solo', r.get('perc'), r)
     await s('fx_05_mixer')
     await pg.click('#mixerChannels .mix-grp'); await pg.wait_for_timeout(300)
     ok('Mixer: Gruppe aufklappen zeigt BD', await pg.evaluate("[...document.querySelectorAll('#mixerChannels .mix-name')].some(e=>e.textContent==='BD')"))
