@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="de"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Tempo erkennen #53</title>
+<link rel="stylesheet" href="../../fonts.css">
+<style>
+  :root{ --bg:#0a0c10; --panel:#14171d; --card:#181b22; --line:#232a35; --tx:#e9edf3; --dim:#7f8898; --blue:#3fa9ff; --blue2:#5fc2ff;
+         --lcdbg:#05070a; --lcdfg:#7fd0ff; --g:#3fd67a; --y:#ffc247; --r:#ff4b4b; --rec:#ff5a5a;
+         --lcd:'VT323',ui-monospace,monospace; --mono:'JetBrains Mono',ui-monospace,monospace; --ui:'Rajdhani',-apple-system,system-ui,sans-serif; }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ margin:0; background:var(--bg); color:var(--tx); font:15px/1.35 var(--ui); }
+  body{ padding:14px 16px 40px; max-width:520px; margin:0 auto; }
+  h1{ font-size:19px; margin:0 0 2px; letter-spacing:.02em; } .sub{ color:var(--dim); font-size:13.5px; margin:0 0 10px; }
+  .lbl{ font-size:12px; letter-spacing:.1em; color:var(--blue2); text-transform:uppercase; font-weight:700; margin:12px 0 5px; }
+  .seg{ display:flex; background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:3px; gap:3px; }
+  .seg button{ flex:1; font:600 13.5px var(--ui); color:var(--dim); background:none; border:0; border-radius:7px; padding:8px 3px; line-height:1.15; }
+  .seg button.on{ background:#1b2634; color:var(--tx); box-shadow:inset 0 0 0 1px #2c3c50; }
+  .note{ font-size:13.5px; color:#b9c2cf; margin-top:10px; } .note b{ color:var(--tx); }
+  .uic{ width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex:none; }
+
+  /* Telefon-Rahmen = Tempo-Overlay wie in der App */
+  .phone{ margin-top:12px; border:1px solid #1d222b; border-radius:18px; padding:14px; background:linear-gradient(180deg,#101318,#0b0d11); }
+  .head{ display:flex; align-items:center; justify-content:space-between; padding-bottom:12px; border-bottom:1px solid rgba(255,255,255,.06); min-height:52px; }
+  .head h2{ margin:0; font-size:18px; letter-spacing:.06em; }
+  .x{ width:44px; height:44px; border-radius:9px; border:1px solid rgba(255,255,255,.12); background:var(--panel); color:var(--blue2); font-size:15px; }
+  .screen{ position:relative; background:var(--lcdbg); border-radius:12px; padding:22px 10px 16px; text-align:center; margin-top:16px; box-shadow:inset 0 2px 8px rgba(0,0,0,.7); }
+  .num{ font-family:var(--lcd); font-size:clamp(58px,18vw,84px); color:var(--lcdfg); text-shadow:0 0 16px rgba(95,194,255,.6); line-height:1; }
+  .num.listen{ color:#ff9a9a; text-shadow:0 0 16px rgba(255,90,90,.55); }
+  .num.dim{ opacity:.45; }
+  .unit{ font-size:13px; letter-spacing:.2em; color:var(--blue); margin-top:4px; }
+  .lcdtag{ position:absolute; left:12px; top:9px; font:600 11px var(--mono); letter-spacing:.08em; color:#4d6175; }
+  .lcdtag.rec{ color:var(--rec); } .lcdtag.rec::before{ content:"● "; animation:blink 1s steps(2) infinite; }
+  .beat{ position:absolute; right:12px; top:10px; width:10px; height:10px; border-radius:50%; background:#18232e; }
+  .beat.on{ background:var(--lcdfg); box-shadow:0 0 10px var(--lcdfg); }
+  @keyframes blink{ 50%{ opacity:.2; } }
+  .meter{ height:6px; margin:12px 18px 0; background:#0c1218; border-radius:3px; overflow:hidden; position:relative; }
+  .meter i{ position:absolute; left:0; top:0; bottom:0; width:0; background:linear-gradient(90deg,var(--g) 0 70%,var(--y) 70% 90%,var(--r) 90%); background-size:var(--mw,300px) 100%; }
+  .prog{ height:3px; margin:6px 18px 0; background:#0c1218; border-radius:2px; overflow:hidden; } .prog i{ display:block; height:100%; width:0; background:#4d6175; }
+  .stat{ font:12px var(--mono); color:var(--dim); margin-top:8px; min-height:16px; }
+  .row{ display:flex; align-items:center; justify-content:center; gap:14px; margin-top:22px; }
+  .pm{ width:52px; height:52px; border-radius:12px; background:var(--panel); border:1px solid rgba(255,255,255,.1); color:var(--blue2); font-size:24px; }
+  .round{ width:100px; height:100px; border-radius:50%; flex:none; font:700 16px var(--ui); letter-spacing:.08em; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; }
+  .tap{ background:radial-gradient(circle at 35% 30%,#1a3d5c,#0c1e2e); border:2px solid rgba(63,169,255,.5); box-shadow:0 0 26px rgba(63,169,255,.4); color:var(--blue2); }
+  .hear{ background:radial-gradient(circle at 35% 30%,#3a1d22,#1c0d10); border:2px solid rgba(255,90,90,.45); box-shadow:0 0 20px rgba(255,90,90,.25); color:#ff9a9a; }
+  .hear.on{ border-color:var(--rec); box-shadow:0 0 30px rgba(255,90,90,.6); animation:pulse 1.2s ease-in-out infinite; }
+  .hear .uic{ width:22px; height:22px; }
+  @keyframes pulse{ 50%{ box-shadow:0 0 12px rgba(255,90,90,.3); } }
+  .slider{ width:100%; margin-top:20px; accent-color:var(--blue); height:28px; }
+  .wide{ width:100%; margin-top:12px; display:flex; align-items:center; justify-content:center; gap:8px; min-height:46px; font:600 13px var(--ui); letter-spacing:.04em; color:var(--dim); border:1px solid rgba(255,255,255,.12); background:var(--panel); border-radius:9px; }
+  .wide.recw{ color:#ff9a9a; border-color:rgba(255,90,90,.4); background:rgba(255,90,90,.07); }
+  .wide.recw.on{ color:#fff; background:rgba(255,90,90,.22); border-color:var(--rec); }
+  .wide.on{ background:rgba(63,169,255,.15); color:var(--blue2); border-color:rgba(63,169,255,.55); }
+
+  /* Ergebnis-Karte */
+  .res{ display:none; margin-top:14px; border-radius:14px; border:1px solid rgba(63,169,255,.3); background:linear-gradient(180deg,#121621,#0d0f15); padding:12px; }
+  .res.open{ display:block; }
+  .res .top{ display:flex; align-items:baseline; gap:10px; }
+  .res .big{ font:44px/1 var(--lcd); color:var(--lcdfg); } .res .dec{ font:12px var(--mono); color:var(--dim); }
+  .conf{ margin-left:auto; font:600 12px var(--mono); padding:3px 8px; border-radius:6px; }
+  .conf.h{ color:#9ff0bd; background:rgba(63,214,122,.13); } .conf.m{ color:#ffd98a; background:rgba(255,194,71,.13); } .conf.l{ color:#ff9a9a; background:rgba(255,75,75,.13); }
+  .alt{ display:flex; gap:8px; margin-top:10px; }
+  .alt button{ flex:1; min-height:42px; border-radius:8px; border:1px solid rgba(255,255,255,.12); background:var(--panel); color:var(--tx); font:600 14px var(--ui); }
+  .alt button small{ display:block; color:var(--dim); font:11px var(--mono); }
+  .alt button.on{ border-color:rgba(63,169,255,.6); background:rgba(63,169,255,.13); }
+  .acts{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px; }
+  .acts button{ min-height:46px; border-radius:9px; border:1px solid rgba(255,255,255,.12); background:var(--panel); color:var(--tx); font:600 14px var(--ui); display:flex; align-items:center; justify-content:center; gap:7px; }
+  .acts .pri{ grid-column:1/-1; background:#1d4f7a; border-color:#3fa9ff; color:#fff; font-size:15px; }
+  .acts button.on{ border-color:rgba(63,169,255,.6); color:var(--blue2); background:rgba(63,169,255,.12); }
+  .toast{ position:fixed; left:50%; bottom:24px; transform:translateX(-50%); background:#1b2634; border:1px solid #2c3c50; padding:10px 14px; border-radius:10px; font-size:14px; opacity:0; transition:opacity .2s; pointer-events:none; max-width:90vw; }
+  .toast.show{ opacity:1; }
+  .err{ color:#ff9a9a; }
+</style></head><body>
+
+<h1>Tempo erkennen #53</h1>
+<p class="sub">Interaktiv mit echter Erkennung: Radio laufen lassen, „Hören“ tippen. Mikrofon-Freigabe nötig.</p>
+
+<div class="lbl">Variante</div>
+<div class="seg" id="varSeg">
+  <button data-v="A" class="on">A · Runder Knopf neben TAP</button>
+  <button data-v="B">B · Breiter Knopf unten</button>
+</div>
+
+<div class="phone">
+  <div class="head"><h2>TEMPO</h2><button class="x">✕</button></div>
+  <div class="screen">
+    <span class="lcdtag" id="tag">MANUELL</span><span class="beat" id="beat"></span>
+    <div class="num" id="num">128</div>
+    <div class="unit">BPM</div>
+    <div id="lv" style="display:none"><div class="meter"><i id="mtr"></i></div><div class="prog"><i id="prg"></i></div></div>
+    <div class="stat" id="stat"></div>
+  </div>
+
+  <div class="row" id="rowA">
+    <button class="pm" id="minus">−</button>
+    <button class="round tap" id="tap">TAP</button>
+    <button class="round hear" id="hearA"><svg class="uic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span>HÖREN</span></button>
+    <button class="pm" id="plus">+</button>
+  </div>
+
+  <input class="slider" id="sld" type="range" min="60" max="200" value="128">
+
+  <button class="wide recw" id="hearB" style="display:none"><svg class="uic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span>Tempo erkennen · Musik übers Mikro hören</span></button>
+
+  <div class="res" id="res">
+    <div class="top"><span class="big" id="rBig">–</span><span class="dec" id="rDec"></span><span class="conf" id="rConf"></span></div>
+    <div class="alt" id="alt"></div>
+    <div class="acts">
+      <button id="aCheck"><svg class="uic" viewBox="0 0 24 24"><path d="M9 3h6l3 18H6z"/><path d="M12 17l5-11"/></svg>Mitklicken</button>
+      <button id="aAgain"><svg class="uic" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 3-6.2M4 4v4h4"/></svg>Nochmal</button>
+      <button id="aPlay"><svg class="uic" viewBox="0 0 24 24"><path d="M7 5l12 7-12 7z"/></svg>Aufnahme hören</button>
+      <button id="aKeep"><svg class="uic" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Als Sample</button>
+      <button class="pri" id="aTake">Übernehmen</button>
+    </div>
+  </div>
+
+  <button class="wide" id="click"><svg class="uic" viewBox="0 0 24 24"><path d="M9 3h6l3 18H6z"/><path d="M12 17l5-11"/></svg>Klick · betont die 1</button>
+</div>
+
+<div class="note" id="note"></div>
+<div class="note">
+  <b>Ablauf:</b> Hören tippen → Transport stoppt, Mikro hört bis 15 s mit, Zahl zählt live (rot), stoppt früher, wenn der Wert 4 s stabil ist. Erneut tippen = abbrechen bzw. sofort auswerten.<br>
+  <b>Ergebnis:</b> ½ / ×2 gegen Verdopplungsfehler (typisch bei Hip-Hop/DnB). <b>Mitklicken</b> spielt einen Klick im erkannten Takt – Radio daneben laufen lassen und vergleichen. <b>Als Sample</b> legt die Aufnahme in die Sample-Bibliothek (im Mockup nur Anzeige).<br>
+  <b>Technik:</b> alles im Browser, Spectral Flux (FFT 1024) + Autokorrelation mit Kammfilter, Bereich 60–200 BPM. Echo-/Rauschunterdrückung aus.
+</div>
+<div class="toast" id="toast"></div>
+
+<!-- ===== Erkennung (wird in der App js/… übernommen; testbar mit node) ===== -->
+<script id="bpmcore">
+// Onset-Hüllkurve per Spectral Flux, Tempo per Autokorrelation.
+function bpmFft(re, im){ // in-place radix-2
+  const n=re.length;
+  for(let i=1,j=0;i<n;i++){ let b=n>>1; for(;j&b;b>>=1) j^=b; j^=b; if(i<j){ let t=re[i]; re[i]=re[j]; re[j]=t; t=im[i]; im[i]=im[j]; im[j]=t; } }
+  for(let len=2;len<=n;len<<=1){
+    const a=-2*Math.PI/len, wr=Math.cos(a), wi=Math.sin(a);
+    for(let i=0;i<n;i+=len){ let cr=1, ci=0;
+      for(let k=0;k<len/2;k++){ const p=i+k, q=p+len/2;
+        const tr=re[q]*cr-im[q]*ci, ti=re[q]*ci+im[q]*cr;
+        re[q]=re[p]-tr; im[q]=im[p]-ti; re[p]+=tr; im[p]+=ti;
+        const nr=cr*wr-ci*wi; ci=cr*wi+ci*wr; cr=nr; } } }
+}
+function BpmDetector(sr){
+  const N=1024, H=512, win=new Float32Array(N);
+  for(let i=0;i<N;i++) win[i]=0.5-0.5*Math.cos(2*Math.PI*i/N);
+  const kMax=Math.min(N/2, Math.round(8000*N/sr));          // nur bis 8 kHz
+  const buf=new Float32Array(N); let fill=0;
+  const re=new Float32Array(N), im=new Float32Array(N), prev=new Float32Array(N/2);
+  const env=[]; const fr=sr/H;
+  function frame(){
+    for(let i=0;i<N;i++){ re[i]=buf[i]*win[i]; im[i]=0; }
+    bpmFft(re,im); let f=0;
+    for(let k=1;k<kMax;k++){ const m=Math.log1p(1000*Math.hypot(re[k],im[k])); const d=m-prev[k]; if(d>0) f+=d; prev[k]=m; }
+    env.push(f);
+  }
+  return {
+    fr, env,
+    push(x){ let i=0; while(i<x.length){ const n=Math.min(N-fill, x.length-i); buf.set(x.subarray(i,i+n), fill); fill+=n; i+=n;
+        if(fill===N){ frame(); buf.copyWithin(0,H); fill=N-H; } } },
+    seconds(){ return env.length/fr; },
+    estimate(){ return bpmEstimate(env, fr); }
+  };
+}
+function bpmEstimate(envIn, fr, lo=60, hi=200){
+  const n=envIn.length; if(n<fr*3) return null;
+  // Gleitenden Mittelwert (±0,15 s) abziehen, positiv halten, normieren
+  const w=Math.round(fr*0.15), e=new Float32Array(n); let s=0, c=0;
+  const cs=new Float64Array(n+1); for(let i=0;i<n;i++) cs[i+1]=cs[i]+envIn[i];
+  for(let i=0;i<n;i++){ const a=Math.max(0,i-w), b=Math.min(n,i+w+1); const v=envIn[i]-(cs[b]-cs[a])/(b-a); e[i]=v>0?v:0; s+=e[i]; }
+  const mean=s/n||1; for(let i=0;i<n;i++) e[i]/=mean;
+  const maxL=Math.ceil(60*fr/lo*8)+2, acf=new Float32Array(Math.min(maxL, n-1));
+  for(let L=1;L<acf.length;L++){ let t=0; for(let i=0;i+L<n;i++) t+=e[i]*e[i+L]; acf[L]=t/(n-L); }
+  const at=L=>{ const i=Math.floor(L), f=L-i; if(i+1>=acf.length) return 0; return acf[i]*(1-f)+acf[i+1]*f; };
+  const score=(b,K=4)=>{ const L=60*fr/b; let v=0;
+    for(let k=1;k<=K;k++) v+=at(L*k)/(K>4?Math.sqrt(k):k); // Kamm über Vielfache der Periode
+    v+=0.5*at(L/2);                                        // Achtel stützen das Viertel
+    const p=Math.log2(b/120); return v*Math.exp(-0.5*(p/1.1)**2); }; // sanfte Vorliebe Richtung 120
+  let best=lo, bv=-1; const all=[];
+  for(let b=lo;b<=hi;b+=0.5){ const v=score(b); all.push(v); if(v>bv){ bv=v; best=b; } }
+  const coarse=best; let fv=-1;                          // Feinwert: längerer Kamm, nur um die Grobwahl herum
+  for(let b=coarse-1.5;b<=coarse+1.5;b+=0.05){ const v=score(b,8); if(v>fv){ fv=v; best=b; } }
+  all.sort((a,b)=>a-b); const med=all[all.length>>1]||1e-9;
+  const conf=Math.max(0,Math.min(1,(bv/med-1)/1.2));
+  // Phase: letzter Schlag (Frame-Index) im erkannten Raster
+  const P=60*fr/best; let bp=0, bs=-1; const from=Math.max(0,n-Math.round(fr*8));
+  for(let ph=0;ph<P;ph+=0.5){ let t=0; for(let x=from+ph;x<n;x+=P) t+=e[Math.round(x)]||0; if(t>bs){ bs=t; bp=ph; } }
+  let last=from+bp; while(last+P<n) last+=P;
+  return { bpm:best, conf, lastFrame:last, period:P };
+}
+if(typeof module!=='undefined') module.exports={BpmDetector,bpmEstimate};
+</script>
+
+<script>
+const $=id=>document.getElementById(id);
+let bpm=128, variant='A', ctx=null, stream=null, proc=null, src=null, det=null, rec=[], recLen=0;
+let listening=false, startT=0, hist=[], raf=0, result=null, chosen=0, checkTimer=null, playSrc=null, captureT0=0;
+const MAXS=15, MINS=6;
+function toast(t){ const el=$('toast'); el.textContent=t; el.classList.add('show'); clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove('show'),2200); }
+function setBpm(v){ bpm=Math.min(200,Math.max(60,Math.round(v))); $('num').textContent=bpm; $('sld').value=bpm; }
+$('minus').onclick=()=>setBpm(bpm-1); $('plus').onclick=()=>setBpm(bpm+1); $('sld').oninput=e=>setBpm(+e.target.value);
+let taps=[]; $('tap').onclick=()=>{ const t=performance.now(); if(taps.length&&t-taps[taps.length-1]>2000) taps=[]; taps.push(t); if(taps.length>8) taps.shift();
+  if(taps.length>1) setBpm(60000*(taps.length-1)/(t-taps[0])); $('tag').textContent='TAP'; };
+$('click').onclick=e=>{ e.currentTarget.classList.toggle('on'); toast('Klick wie bisher (im Mockup ohne Funktion)'); };
+
+document.querySelectorAll('#varSeg button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#varSeg button').forEach(x=>x.classList.toggle('on',x===b)); variant=b.dataset.v;
+  $('hearA').style.display=variant==='A'?'':'none'; $('hearB').style.display=variant==='B'?'':'none';
+  $('note').innerHTML=variant==='A'
+    ? '<b>A:</b> Hören gleichwertig neben TAP – beide Wege zum Tempo an einer Stelle. Reihe wird enger (− TAP HÖREN +).'
+    : '<b>B:</b> TAP-Reihe bleibt wie heute, Erkennen als breiter Knopf darunter (wie der Klick-Schalter).';
+});
+document.querySelector('#varSeg button').click();
+$('hearA').onclick=$('hearB').onclick=()=>listening?stopListen(true):startListen();
+
+function uiListening(on){
+  $('hearA').classList.toggle('on',on); $('hearB').classList.toggle('on',on);
+  $('hearA').querySelector('span').textContent=on?'STOPP':'HÖREN';
+  $('hearB').querySelector('span').textContent=on?'Stopp · jetzt auswerten':'Tempo erkennen · Musik übers Mikro hören';
+  $('lv').style.display=on?'':'none'; $('tag').className='lcdtag'+(on?' rec':''); $('tag').textContent=on?'HÖRT MIT':'MANUELL';
+  $('num').classList.toggle('listen',on);
+}
+async function startListen(){
+  stopCheck(); $('res').classList.remove('open'); result=null;
+  try{
+    ctx=ctx||new (window.AudioContext||window.webkitAudioContext)(); await ctx.resume();
+    stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});
+  }catch(err){ $('stat').innerHTML='<span class="err">Mikro: '+(err.name==='NotAllowedError'?'Zugriff abgelehnt':err.name||'nicht verfügbar')+'</span>'; return; }
+  det=BpmDetector(ctx.sampleRate); rec=[]; recLen=0; hist=[]; captureT0=0;
+  src=ctx.createMediaStreamSource(stream); proc=ctx.createScriptProcessor(2048,1,1);
+  const mute=ctx.createGain(); mute.gain.value=0;
+  proc.onaudioprocess=ev=>{ if(!listening) return; const x=ev.inputBuffer.getChannelData(0);
+    if(!captureT0) captureT0=ev.playbackTime-x.length/ctx.sampleRate;
+    const c=new Float32Array(x); rec.push(c); recLen+=c.length; det.push(c);
+    let pk=0; for(let i=0;i<c.length;i++){ const a=Math.abs(c[i]); if(a>pk) pk=a; } proc._pk=Math.max(pk,(proc._pk||0)*0.85); };
+  src.connect(proc); proc.connect(mute); mute.connect(ctx.destination);
+  listening=true; startT=performance.now(); uiListening(true); $('num').classList.add('dim'); $('num').textContent='--'; $('stat').textContent='Musik laufen lassen…';
+  let lastEst=0;
+  const loop=()=>{ if(!listening) return; const t=(performance.now()-startT)/1000;
+    $('prg').style.width=Math.min(100,t/MAXS*100)+'%';
+    const db=20*Math.log10((proc._pk||1e-6)); $('mtr').style.width=Math.max(0,Math.min(100,(db+48)/48*100))+'%';
+    if(t-lastEst>1 && det.seconds()>=4){ lastEst=t; const r=det.estimate();
+      if(r){ hist.push(r.bpm); $('num').classList.remove('dim'); $('num').textContent=Math.round(r.bpm);
+        $('stat').textContent='Sicherheit '+Math.round(r.conf*100)+' % · '+t.toFixed(0)+' s';
+        const h=hist.slice(-4); if(t>=MINS && h.length===4 && Math.max(...h)-Math.min(...h)<=1.2 && r.conf>.35){ stopListen(true); return; } } }
+    if(db<-55 && t>3) $('stat').textContent='Sehr leise – Handy näher ans Radio';
+    if(t>=MAXS){ stopListen(true); return; }
+    raf=requestAnimationFrame(loop); };
+  raf=requestAnimationFrame(loop);
+}
+function stopListen(evaluate){
+  listening=false; cancelAnimationFrame(raf);
+  try{ src.disconnect(); proc.disconnect(); }catch(e){} if(stream) stream.getTracks().forEach(t=>t.stop()); stream=null;
+  uiListening(false); $('num').classList.remove('dim');
+  const r=evaluate&&det?det.estimate():null;
+  if(!r){ setBpm(bpm); $('stat').textContent='Zu kurz – mindestens 3 s hören'; return; }
+  result=r; result.t0=captureT0; $('stat').textContent=''; $('tag').textContent='ERKANNT';
+  $('num').textContent=Math.round(r.bpm); showResult(1);
+}
+function showResult(mul){
+  chosen=mul; const b=result.bpm*mul;
+  $('rBig').textContent=Math.round(b); $('rDec').textContent=b.toFixed(1).replace('.',',')+' BPM';
+  const c=result.conf, cl=c>.6?'h':c>.3?'m':'l'; $('rConf').className='conf '+cl; $('rConf').textContent='Sicherheit '+(cl==='h'?'hoch':cl==='m'?'mittel':'gering');
+  const opts=[[.5,'½'],[1,'erkannt'],[2,'×2']].filter(([m])=>result.bpm*m>=55&&result.bpm*m<=210);
+  $('alt').innerHTML=opts.map(([m,l])=>`<button data-m="${m}" class="${m===mul?'on':''}">${Math.round(result.bpm*m)}<small>${l}</small></button>`).join('');
+  $('alt').querySelectorAll('button').forEach(x=>x.onclick=()=>{ showResult(+x.dataset.m); if(checkTimer){ stopCheck(); startCheck(); } });
+  $('num').textContent=Math.round(b); $('res').classList.add('open');
+}
+// Mitklicken: Klick im erkannten Raster, phasenrichtig fortgesetzt
+function clickAt(t,acc){ const o=ctx.createOscillator(), g=ctx.createGain(); o.frequency.value=acc?1800:1200;
+  g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(.6,t+.002); g.gain.exponentialRampToValueAtTime(.0001,t+.05);
+  o.connect(g); g.connect(ctx.destination); o.start(t); o.stop(t+.06); }
+function startCheck(){
+  const per=60/(result.bpm*chosen), H=512, sr=ctx.sampleRate;
+  let next=result.t0+(result.lastFrame*H+512)/sr; while(next<ctx.currentTime+.05) next+=per;
+  let i=0; $('aCheck').classList.add('on');
+  const tick=()=>{ while(next<ctx.currentTime+.2){ clickAt(next,i%4===0); const d=next-ctx.currentTime; setTimeout(()=>{ $('beat').classList.add('on'); setTimeout(()=>$('beat').classList.remove('on'),90); },Math.max(0,d*1000)); next+=per; i++; } };
+  tick(); checkTimer=setInterval(tick,50);
+}
+function stopCheck(){ clearInterval(checkTimer); checkTimer=null; $('aCheck').classList.remove('on'); }
+$('aCheck').onclick=()=>checkTimer?stopCheck():startCheck();
+$('aAgain').onclick=()=>startListen();
+$('aTake').onclick=()=>{ stopCheck(); setBpm(result.bpm*chosen); $('res').classList.remove('open'); $('tag').textContent='ÜBERNOMMEN'; toast('Tempo '+bpm+' übernommen'); };
+$('aPlay').onclick=()=>{ if(playSrc){ try{playSrc.stop();}catch(e){} playSrc=null; $('aPlay').classList.remove('on'); return; }
+  const ab=ctx.createBuffer(1,recLen,ctx.sampleRate), d=ab.getChannelData(0); let o=0; rec.forEach(c=>{ d.set(c,o); o+=c.length; });
+  playSrc=ctx.createBufferSource(); playSrc.buffer=ab; playSrc.connect(ctx.destination); playSrc.start(); $('aPlay').classList.add('on');
+  playSrc.onended=()=>{ playSrc=null; $('aPlay').classList.remove('on'); }; };
+$('aKeep').onclick=()=>toast('Aufnahme ('+(recLen/ctx.sampleRate).toFixed(1)+' s) → Sample-Bibliothek · im Mockup nur Anzeige');
+</script>
+</body></html>
