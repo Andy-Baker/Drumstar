@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="de"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Master-Kette #51</title>
+<link rel="stylesheet" href="../../fonts.css">
+<style>
+  :root{ --bg:#0a0c10; --panel:#14171d; --card:#181b22; --row:#07080b; --line:#232a35; --tx:#e9edf3; --dim:#7f8898; --blue:#3fa9ff; --blue2:#5fc2ff;
+         --g:#3fd67a; --y:#ffc247; --r:#ff4b4b; --lcd:'VT323',ui-monospace,monospace; --mono:'JetBrains Mono',ui-monospace,monospace; --ui:'Rajdhani',-apple-system,system-ui,sans-serif; }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ margin:0; background:var(--bg); color:var(--tx); font:15px/1.35 var(--ui); }
+  body{ padding:14px 16px 40px; max-width:520px; margin:0 auto; }
+  h1{ font-size:19px; margin:0 0 2px; letter-spacing:.02em; } .sub{ color:var(--dim); font-size:13.5px; margin:0 0 10px; }
+  .lbl{ font-size:12px; letter-spacing:.1em; color:var(--blue2); text-transform:uppercase; font-weight:700; margin:12px 0 5px; }
+  .seg{ display:flex; background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:3px; gap:3px; }
+  .seg button{ flex:1; font:600 13.5px var(--ui); color:var(--dim); background:none; border:0; border-radius:7px; padding:8px 3px; line-height:1.15; }
+  .seg button.on{ background:#1b2634; color:var(--tx); box-shadow:inset 0 0 0 1px #2c3c50; }
+  .card{ background:var(--card); border:1px solid #20252e; border-radius:14px; padding:12px 14px; margin-top:10px; }
+  .note{ font-size:13.5px; color:#b9c2cf; } .note b{ color:var(--tx); }
+
+  /* Master-Meter (wie im Mixer, hier waagerecht) */
+  .mm{ display:flex; align-items:center; gap:10px; }
+  .mm .nm{ font-weight:700; letter-spacing:.06em; color:var(--blue2); font-size:13px; width:58px; }
+  .bar{ flex:1; height:14px; position:relative; border-radius:2px; overflow:hidden; background:#06080b; }
+  .bar .f{ position:absolute; left:0; top:0; bottom:0; width:0;
+     background:linear-gradient(90deg,var(--g) 0,var(--g) 75%,var(--y) 75%,var(--y) 93.75%,var(--r) 93.75%,var(--r) 100%); background-size:var(--bw,300px) 100%; }
+  .bar::after{ content:""; position:absolute; inset:0; background:repeating-linear-gradient(90deg,transparent 0 4px,#06080b 4px 6px); }
+  .bar .h{ position:absolute; top:0; bottom:0; width:2px; background:#fff; z-index:2; }
+  .clip{ font:700 11px/14px var(--mono); width:40px; height:17px; border-radius:3px; background:#2a1111; border:1px solid #3a1a1a; color:#5a2a2a; text-align:center; letter-spacing:.04em; padding:0; }
+  .clip.on{ background:var(--r); border-color:#ff8c8c; color:#2b0000; box-shadow:0 0 8px rgba(255,75,75,.75); }
+  .pk{ font:600 12px var(--mono); color:var(--dim); width:42px; text-align:right; } .pk.y{ color:var(--y); } .pk.r{ color:var(--r); }
+  .scale{ display:flex; justify-content:space-between; font:11px var(--mono); color:#5d6878; margin:3px 108px 0 68px; }
+
+  /* Kette */
+  .chain{ position:relative; padding-left:26px; }
+  .chain::before{ content:""; position:absolute; left:8px; top:12px; bottom:12px; width:2px; background:linear-gradient(#1d5f93,#1d5f93); }
+  .node{ position:relative; display:flex; align-items:baseline; gap:8px; padding:8px 0; font-size:15px; }
+  .node::before{ content:""; position:absolute; left:-24px; top:11px; width:14px; height:14px; border:2px solid #3f7aa6; border-radius:3px; background:var(--card); }
+  .node .s{ color:var(--dim); }
+  .fx{ position:relative; display:flex; align-items:center; gap:10px; background:var(--row); border-radius:12px; padding:12px 14px; margin:6px 0; cursor:pointer; }
+  .fx::before{ content:""; position:absolute; left:-25px; top:50%; margin-top:-8px; width:16px; height:16px; border-radius:50%; background:var(--blue); box-shadow:0 0 8px rgba(63,169,255,.6); }
+  .fx.off::before{ background:#1b2632; box-shadow:inset 0 0 0 2px #3f7aa6; }
+  .fx.off .n, .fx.off .p{ opacity:.45; }
+  .fx .n{ flex:1; font-weight:600; font-size:16px; } .fx .p{ font:20px var(--lcd); color:var(--blue2); }
+  .fx .gr{ font:600 12px var(--mono); color:var(--y); width:54px; text-align:right; }
+  .fx .chev{ color:var(--dim); }
+  .fx.sel{ box-shadow:inset 0 0 0 1px #2f5f86; }
+  .fx.fixed{ cursor:default; background:#0c0e12; border:1px dashed #2a3442; }
+  .fx.fixed::before{ background:#2a3442; box-shadow:none; border-radius:3px; }
+  .fx.fixed .n{ font-size:15px; color:#c4ccd8; } .fx.fixed .p{ font-size:18px; color:var(--dim); }
+  .lamp{ width:12px; height:12px; border-radius:50%; background:#2b1a0a; border:1px solid #3d2a12; flex:none; }
+  .lamp.on{ background:#ff9a2e; border-color:#ffc27a; box-shadow:0 0 9px rgba(255,154,46,.9); }
+  .tiny{ font-size:12px; color:var(--dim); }
+
+  /* Gerät */
+  .dev-h{ display:flex; align-items:center; gap:10px; }
+  .dev-h .t{ flex:1; font-weight:700; font-size:17px; }
+  .sw{ width:48px; height:28px; border-radius:14px; background:#1b2632; border:1px solid #2c3c50; position:relative; padding:0; }
+  .sw::after{ content:""; position:absolute; top:3px; left:3px; width:20px; height:20px; border-radius:50%; background:#53606f; transition:.15s; }
+  .sw.on{ background:rgba(63,169,255,.25); border-color:var(--blue); } .sw.on::after{ left:23px; background:var(--blue2); }
+  .chips{ display:flex; gap:6px; flex-wrap:wrap; margin:10px 0 4px; }
+  .chips button{ font:600 13.5px var(--ui); color:var(--dim); background:#10141a; border:1px solid #263142; border-radius:8px; padding:7px 10px; }
+  .chips button.on{ color:#04121e; background:var(--blue); border-color:var(--blue); }
+  .prm{ display:grid; grid-template-columns:92px 1fr 64px; align-items:center; gap:8px; margin:8px 0; font-size:14.5px; }
+  .prm input{ width:100%; accent-color:var(--blue); }
+  .prm b{ font:19px var(--lcd); color:var(--blue2); text-align:right; font-weight:400; }
+  .grm{ display:flex; align-items:center; gap:8px; margin-top:10px; font-size:13.5px; color:var(--dim); }
+  .grm .gb{ flex:1; height:10px; background:#06080b; border-radius:2px; position:relative; overflow:hidden; }
+  .grm .gb i{ position:absolute; right:0; top:0; bottom:0; width:0; background:var(--y); }
+  .grm b{ font:600 12px var(--mono); color:var(--y); width:54px; text-align:right; }
+  .why{ font-size:12.5px; color:var(--dim); margin-top:6px; }
+</style></head><body>
+<h1>Master-Kette <span style="color:var(--y)">#51</span></h1>
+<p class="sub">Simulierte Pegel, ohne Ton. Kompressor und Limiter sind sichtbare Master-Effekte, am Ende sitzt die feste Notbremse.</p>
+
+<div class="lbl">Variante · Wo die Notbremse steht</div>
+<div class="seg" id="vSeg"><button data-v="A" class="on">A · im Ausgang</button><button data-v="B">B · eigene Zeile</button><button data-v="C">C · nur CLIP</button></div>
+<div class="lbl">Ausprobieren</div>
+<div class="seg" id="sSeg"><button data-s="def" class="on">Ab Werk</button><button data-s="hot">Zu laut,<br>kein Limiter</button><button data-s="loud">Knallen<br>lassen</button><button data-s="dyn">Dynamik<br>erhalten</button></div>
+
+<div class="card">
+  <div class="mm"><span class="nm">MASTER</span><div class="bar" id="mBar"><div class="f"></div><div class="h"></div></div><button class="clip" id="mClip">CLIP</button><span class="pk" id="mPk">−∞</span></div>
+  <div class="scale"><span>48</span><span>24</span><span>12</span><span>6</span><span>3</span><span>0</span></div>
+  <div class="tiny" style="margin-top:6px">Im Mixer ist das der Master-Kanal. Gemessen wird nach deinen Effekten und vor der Notbremse.</div>
+</div>
+
+<div class="card">
+  <div class="lbl" style="margin-top:0">Effekte · ganzer Mix</div>
+  <div class="chain" id="chain"></div>
+</div>
+
+<div class="card" id="dev"></div>
+<div class="card note" id="vNote"></div>
+<div class="card note"><b>Ab Werk:</b> Der Bus-Kompressor ist an, mit genau den Werten, die bisher unsichtbar liefen („Drumstar“). Alle Beats klingen also wie heute. Ein Limiter ist ab Werk nicht dabei, du setzt ihn bei Bedarf ein. <b>Alte Beats</b> bekommen den Kompressor beim Laden automatisch, damit sie gleich klingen.</div>
+
+<script>
+"use strict";
+const FLOOR=-48;
+const COMP_PRE={Drumstar:{th:-24,ra:12,at:3,re:250,mk:0,kn:15}, Sanft:{th:-18,ra:2.5,at:20,re:150,mk:3}, Punch:{th:-24,ra:4,at:30,re:150,mk:6}, Platt:{th:-34,ra:12,at:3,re:150,mk:12}};
+const LIM_PRE={Sicher:{ce:-1,gn:0}, Laut:{ce:-1,gn:6}, 'Sehr laut':{ce:-0.5,gn:10}};
+const S={ v:'A', fader:0, comp:{on:true,pre:'Drumstar',p:{...COMP_PRE.Drumstar}}, lim:{on:false,pre:'Sicher',p:{...LIM_PRE.Sicher}}, sel:'comp',
+          quiet:0, grC:0, grL:0, brake:0, brakeT:-9, sm:FLOOR, hold:FLOOR, holdT:0, max:-Infinity, clip:false, nBrake:0 };
+const SCN={ def:()=>{ S.fader=0; S.comp={on:true,pre:'Drumstar',p:{...COMP_PRE.Drumstar}}; S.lim={on:false,pre:'Sicher',p:{...LIM_PRE.Sicher}}; },
+            hot:()=>{ S.fader=9; S.comp={on:false,pre:'Drumstar',p:{...COMP_PRE.Drumstar}}; S.lim={on:false,pre:'Sicher',p:{...LIM_PRE.Sicher}}; },
+            loud:()=>{ S.fader=2; S.comp={on:true,pre:'Platt',p:{...COMP_PRE.Platt}}; S.lim={on:true,pre:'Laut',p:{...LIM_PRE.Laut}}; S.sel='lim'; },
+            dyn:()=>{ S.fader=-2; S.comp={on:true,pre:'Sanft',p:{...COMP_PRE.Sanft}}; S.lim={on:true,pre:'Sicher',p:{...LIM_PRE.Sicher}}; } };
+const fmt=(v,d=1)=>(v>0?'+':'')+v.toFixed(d).replace('.',',');
+function chain(){
+  const c=document.getElementById('chain'), C=S.comp, L=S.lim;
+  const fixed=S.v==='B'?`<div class="fx fixed"><span class="n">Notbremse</span><span class="p">−0,3 dB · fest</span><span class="lamp" id="lampB"></span></div>`:'';
+  c.innerHTML=`<div class="node"><b>Mix</b><span class="s">alle Spuren</span></div>
+   <div class="fx ${C.on?'':'off'} ${S.sel==='comp'?'sel':''}" data-d="comp"><span class="n">Kompressor</span><span class="gr" id="grC"></span><span class="p">${C.pre}</span><span class="chev">›</span></div>
+   <div class="fx ${L.on?'':'off'} ${S.sel==='lim'?'sel':''}" data-d="lim"><span class="n">Limiter</span><span class="gr" id="grL"></span><span class="p">${L.on?L.pre:'aus'}</span><span class="chev">›</span></div>
+   ${fixed}
+   <div class="node"><b>Ausgang</b><span class="s">Lautsprecher${S.v==='A'?' · Schutz −0,3 dB':''}</span>${S.v==='A'?'<span class="lamp" id="lampA" style="margin-left:auto"></span>':''}</div>`;
+  c.querySelectorAll('.fx[data-d]').forEach(e=>e.onclick=()=>{ S.sel=e.dataset.d; chain(); dev(); });
+}
+function dev(){
+  const d=document.getElementById('dev'), isC=S.sel==='comp', X=isC?S.comp:S.lim, P=isC?COMP_PRE:LIM_PRE;
+  const ps=isC?[['th','Schwelle',-40,0,1,v=>Math.round(v)+' dB'],['ra','Stärke',1,20,.5,v=>v.toFixed(1).replace('.',',')+':1'],['at','Attack',1,80,1,v=>Math.round(v)+' ms'],['re','Release',30,600,10,v=>Math.round(v)+' ms'],['mk','Aufholen',0,18,.5,v=>fmt(v)+' dB']]
+              :[['ce','Decke',-12,0,.5,v=>fmt(v)+' dB'],['gn','Lauter',0,12,.5,v=>fmt(v)+' dB']];
+  d.innerHTML=`<div class="dev-h"><span class="t">${isC?'Kompressor':'Limiter'}</span><span class="tiny">${X.on?'an':'aus'}</span><button class="sw ${X.on?'on':''}" id="sw" aria-label="an/aus"></button></div>
+   <div class="chips">${Object.keys(P).map(k=>`<button class="${X.pre===k?'on':''}" data-p="${k}">${k}</button>`).join('')}</div>
+   ${ps.map(([k,l,a,b,s,f])=>`<div class="prm"><span>${l}</span><input type="range" min="${a}" max="${b}" step="${s}" value="${X.p[k]}" data-k="${k}"><b id="pv_${k}">${f(X.p[k])}</b></div>`).join('')}
+   <div class="grm"><span>Absenkung</span><div class="gb"><i id="grBar"></i></div><b id="grTxt">0,0 dB</b></div>
+   <div class="why">${isC?'„Drumstar“ = die bisher unsichtbaren Werte (Schwelle −24 dB, 12:1, 3 ms, 250 ms, weiches Knie). Er senkt die Spitzen stark ab, und Web Audio hebt danach automatisch alles wieder an (bei Drumstar ca. +13 dB): Der Mix wird dichter, die Drums knallen. Ausschalten = mehr Dynamik, weniger Punch.':'„Lauter“ treibt den Mix gegen die Decke: mehr Lautheit, weniger Spitzen. Die Decke bleibt unter 0 dB.'}</div>`;
+  d.querySelector('#sw').onclick=()=>{ X.on=!X.on; S.quiet=performance.now()/1000+.4; chain(); dev(); };
+  d.querySelectorAll('.chips button').forEach(b=>b.onclick=()=>{ X.pre=b.dataset.p; X.p={...P[b.dataset.p]}; if(!isC) X.on=true; chain(); dev(); });
+  d.querySelectorAll('.prm input').forEach(i=>i.oninput=()=>{ const k=i.dataset.k, f=ps.find(x=>x[0]===k)[5]; X.p[k]=+i.value; X.pre='Eigene';
+     document.getElementById('pv_'+k).textContent=f(X.p[k]); d.querySelectorAll('.chips button').forEach(b=>b.classList.remove('on')); chain(); });
+}
+// Simulation: Spitzenpegel des Mixes pro Frame (128 BPM), statische Kennlinie + Attack/Release
+const s16=60/128/4; let rnd=3; const rand=()=>((rnd=(rnd*1103515245+12345)&0x7fffffff)/0x7fffffff);
+function mixDb(t){ const st=Math.floor(t/s16), ph=(t%s16)/s16;
+  const kick=st%4===0?Math.exp(-ph*4):0, snare=st%8===4?0.85*Math.exp(-ph*5):0, hat=0.28*Math.exp(-ph*9), bed=0.22+0.05*Math.sin(t*1.3);
+  return -1+20*Math.log10(Math.max(1e-4,kick+snare+hat+bed))+(rand()-.5)*.8+S.fader; }
+function compGain(x,p){ const knee=p.kn||3, o=x-p.th; let red=0;            // „Drumstar“: weiches Knie wie der Web-Audio-Standard
+  if(o>knee) red=(o)*(1-1/p.ra); else if(o>-knee) red=((o+knee)**2/(4*knee))*(1-1/p.ra); return red; }
+let last=performance.now()/1000; const t0=last;
+function frame(){
+  const now=performance.now()/1000, dt=Math.min(.05,now-last); last=now; let x=mixDb(now-t0);
+  const C=S.comp, L=S.lim;
+  if(C.on){ const tgt=compGain(x,C.p), tau=(tgt>S.grC?C.p.at:C.p.re)/1000; S.grC+=(tgt-S.grC)*(1-Math.exp(-dt/Math.max(.001,tau))); x=x-S.grC+C.p.mk+0.6*compGain(0,C.p); } // Web Audio hebt automatisch an (0,6 × Absenkung bei 0 dB) else S.grC=0;
+  if(L.on){ const y=x+L.p.gn, tgt=Math.max(0,y-L.p.ce); S.grL = tgt>S.grL?tgt:S.grL+(tgt-S.grL)*(1-Math.exp(-dt/.08)); x=y-S.grL; } else S.grL=0;
+  // Meter vor der Notbremse
+  if(now>S.quiet){ if(x>0) S.clip=true; S.max=Math.max(S.max,x); } // kurz nach Umschalten nicht werten (Einschwingen)
+  S.sm = x>S.sm?x:Math.max(FLOOR,S.sm-26*dt); if(x>=S.hold||now-S.holdT>1.5){ S.hold=Math.max(x,S.sm); S.holdT=now; }
+  if(x>-0.3){ S.brakeT=now; }
+  const pct=v=>Math.max(0,Math.min(1,(v-FLOOR)/(-FLOOR)))*100, bar=document.getElementById('mBar');
+  bar.style.setProperty('--bw',bar.clientWidth+'px'); bar.querySelector('.f').style.width=pct(S.sm)+'%'; bar.querySelector('.h').style.left=`calc(${pct(S.hold)}% - 1px)`;
+  document.getElementById('mClip').classList.toggle('on',S.clip);
+  const pk=document.getElementById('mPk'); pk.textContent=S.max<FLOOR?'−∞':fmt(S.max); pk.className='pk'+(S.max>0?' r':S.max>-3?' y':'');
+  const lampOn=now-S.brakeT<0.25; ['lampA','lampB'].forEach(id=>{ const e=document.getElementById(id); if(e) e.classList.toggle('on',lampOn); });
+  const grC=document.getElementById('grC'), grL=document.getElementById('grL');
+  if(grC) grC.textContent=C.on&&S.grC>.05?'−'+S.grC.toFixed(1).replace('.',','):''; if(grL) grL.textContent=L.on&&S.grL>.05?'−'+S.grL.toFixed(1).replace('.',','):'';
+  const g=S.sel==='comp'?S.grC:S.grL, gb=document.getElementById('grBar'), gt=document.getElementById('grTxt');
+  if(gb){ gb.style.width=Math.min(100,g/20*100)+'%'; gt.textContent=(g>0.05?'−':'')+g.toFixed(1).replace('.',',')+' dB'; }
+  requestAnimationFrame(frame);
+}
+document.getElementById('mClip').onclick=document.getElementById('mPk').onclick=()=>{ S.clip=false; S.max=-Infinity; };
+const NOTES={A:'<b>A · im Ausgang:</b> Die Notbremse steht als Teil des Ausgangs am Ende der Kette, mit einer Lampe, die kurz orange aufleuchtet, wenn sie eingreift. Unaufdringlich, aber man weiß, dass sie da ist.',
+             B:'<b>B · eigene Zeile:</b> Die Notbremse steht als feste, gestrichelte Zeile in der Kette. Sie lässt sich nicht verschieben oder ausschalten und hat ebenfalls eine Lampe. Am deutlichsten, kostet aber eine Zeile Platz.',
+             C:'<b>C · nur CLIP:</b> In der Kette ist die Notbremse nicht zu sehen. Man merkt sie nur an der CLIP-LED am Master. Am aufgeräumtesten, aber dann ist sie wieder halb versteckt.'};
+function setV(v){ S.v=v; document.querySelectorAll('#vSeg button').forEach(b=>b.classList.toggle('on',b.dataset.v===v)); document.getElementById('vNote').innerHTML=NOTES[v]; chain(); }
+document.querySelectorAll('#vSeg button').forEach(b=>b.onclick=()=>setV(b.dataset.v));
+document.querySelectorAll('#sSeg button').forEach(b=>b.onclick=()=>{ SCN[b.dataset.s](); S.quiet=performance.now()/1000+.4; S.clip=false; S.max=-Infinity; document.querySelectorAll('#sSeg button').forEach(x=>x.classList.toggle('on',x===b)); chain(); dev(); });
+S.quiet=performance.now()/1000+.6; setV('A'); dev(); frame();
+</script>
+</body></html>
