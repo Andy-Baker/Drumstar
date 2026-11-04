@@ -517,7 +517,7 @@ seSaveBtn.addEventListener('click', async ()=>{
 // ---- Öffnen/Schließen — öffnet mit dem übergebenen Bibliothekseintrag (oder leer für ein
 // neues Sample) und erkennt bestehende Zuweisungen automatisch (Spur/Pads, die diesen
 // Eintrag bereits nutzen, sind beim Öffnen schon als Chip markiert). ----
-async function openSampleEditor({sampleId=null, forTrack=false, forPad=null}={}){
+async function openSampleEditor({sampleId=null, forTrack=false, forPad=null, buffer=null, label=''}={}){
   closeAllOverlays();
   seEditingId=sampleId;
   if(sampleId){
@@ -536,6 +536,11 @@ async function openSampleEditor({sampleId=null, forTrack=false, forPad=null}={})
       seStatus.textContent=(entry.name||'Sample')+' geladen — '+seOriginalBuffer.duration.toFixed(1)+'s';
       seStatus.classList.remove('err');
     }
+  } else if(buffer){ // fertige Aufnahme von außen (Tempo erkennen, #53) = neues Sample
+    seOriginalBuffer=buffer; seWorkingBuffer=buffer; seTrimStart=0; seTrimEnd=buffer.duration;
+    seLoopStart=seLoopEnd=null; seLoopBuf=null; sePlayMode='oneshot'; seOverlap=false;
+    seStatus.textContent=(label||'Aufnahme')+' — '+buffer.duration.toFixed(1)+'s';
+    seStatus.classList.remove('err');
   } else {
     seOriginalBuffer=null; seWorkingBuffer=null; seTrimStart=0; seTrimEnd=0;
     seLoopStart=seLoopEnd=null; seLoopBuf=null; sePlayMode='oneshot'; seOverlap=false;

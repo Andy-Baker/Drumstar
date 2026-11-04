@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>MRM-44 — Mobile Rhythm Machine</title>
 <link rel="stylesheet" href="./fonts.css">
-<link rel="stylesheet" href="./css/app.css?v=96">
+<link rel="stylesheet" href="./css/app.css?v=97">
 
 
 <!-- Drumstar PWA -->
@@ -65,18 +65,38 @@
           <button id="tempoOverlayCloseBtn" aria-label="Schließen">✕</button>
         </div>
         <div id="tempoOverlayScreen">
+          <span id="tdTag"></span><span id="tdBeat"></span>
           <div id="tempoOverlayNum" class="lcd" role="button" tabindex="0" aria-label="Tempo direkt eingeben">128</div>
           <input id="tempoOverlayNumInput" type="number" inputmode="numeric" pattern="[0-9]*" min="60" max="200" step="1">
           <div id="tempoOverlayUnit">BPM</div>
+          <div id="tdLv" hidden><div id="tdMeter"><i id="tdMtr"></i></div><div id="tdProg"><i id="tdPrg"></i></div></div>
+          <div id="tdStat"></div>
         </div>
         <div id="tempoOverlayRow">
           <button id="tempoOverlayMinus" aria-label="Tempo verringern">−</button>
           <div id="tempoOverlayTap">TAP</div>
+          <button id="tempoOverlayHear" aria-label="Tempo übers Mikro erkennen"><svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span>HÖREN</span></button>
           <button id="tempoOverlayPlus" aria-label="Tempo erhöhen">+</button>
         </div>
         <div id="tempoOverlayTapFeedback"></div>
         <input id="tempoOverlaySlider" type="range" min="60" max="200" value="128">
         <div id="tempoOverlaySliderRange"><span>60</span><span>200</span></div>
+        <div id="tdRes" hidden>
+          <div id="tdTop"><span id="tdBig">–</span><span id="tdDec"></span><span id="tdConf"></span></div>
+          <div id="tdAlt"></div>
+          <div class="td-acts">
+            <button id="tdCheck"><svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l3 18H6z"/><path d="M12 17l5-11"/></svg>Mitklicken</button>
+            <button id="tdAgain"><svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 3-6.2M4 4v4h4"/></svg>Nochmal</button>
+            <button id="tdTake" class="td-pri">Übernehmen</button>
+          </div>
+          <div id="tdRecRow" hidden>
+            <div id="tdRecInfo"></div>
+            <div class="td-acts">
+              <button id="tdPlay"><svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5l12 7-12 7z"/></svg>Anhören</button>
+              <button id="tdKeep"><svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Als Sample</button>
+            </div>
+          </div>
+        </div>
         <div id="tempoOverlayHint">Zahl antippen zum direkten Eingeben</div>
         <button id="tempoClickToggle"><svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l3 18H6z"/><path d="M12 17l5-11"/></svg>Klick · betont die 1</button>
       </div>
@@ -513,26 +533,27 @@
       </div>
 </div>
 
-<script src="./js/base.js?v=96"></script>
-<script src="./js/audio.js?v=96"></script>
-<script src="./js/fx.js?v=96"></script>
-<script src="./js/voices.js?v=96"></script>
-<script src="./js/events.js?v=96"></script>
-<script src="./js/kits.js?v=96"></script>
-<script src="./js/tracks.js?v=96"></script>
-<script src="./js/controls.js?v=96"></script>
-<script src="./js/harmony.js?v=96"></script>
-<script src="./js/editor.js?v=96"></script>
-<script src="./js/sheets.js?v=96"></script>
-<script src="./js/sample-track.js?v=96"></script>
-<script src="./js/wav-export.js?v=96"></script>
-<script src="./js/mixer.js?v=96"></script>
-<script src="./js/sample-editor.js?v=96"></script>
-<script src="./js/storage.js?v=96"></script>
-<script src="./js/beats.js?v=96"></script>
-<script src="./js/pianoroll.js?v=96"></script>
-<script src="./js/scheduler.js?v=96"></script>
-<script src="./js/main.js?v=96"></script>
+<script src="./js/base.js?v=97"></script>
+<script src="./js/audio.js?v=97"></script>
+<script src="./js/fx.js?v=97"></script>
+<script src="./js/voices.js?v=97"></script>
+<script src="./js/events.js?v=97"></script>
+<script src="./js/kits.js?v=97"></script>
+<script src="./js/tracks.js?v=97"></script>
+<script src="./js/controls.js?v=97"></script>
+<script src="./js/harmony.js?v=97"></script>
+<script src="./js/editor.js?v=97"></script>
+<script src="./js/sheets.js?v=97"></script>
+<script src="./js/sample-track.js?v=97"></script>
+<script src="./js/wav-export.js?v=97"></script>
+<script src="./js/mixer.js?v=97"></script>
+<script src="./js/sample-editor.js?v=97"></script>
+<script src="./js/storage.js?v=97"></script>
+<script src="./js/beats.js?v=97"></script>
+<script src="./js/pianoroll.js?v=97"></script>
+<script src="./js/scheduler.js?v=97"></script>
+<script src="./js/tempo-detect.js?v=97"></script>
+<script src="./js/main.js?v=97"></script>
 
 <script>
 // Drumstar PWA service worker

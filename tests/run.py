@@ -26,8 +26,8 @@ def free_port():
     s = socket.socket(); s.bind(('127.0.0.1', 0)); p = s.getsockname()[1]; s.close(); return p
 
 def main():
-    pick = sys.argv[1:] or ['audio', 'ui', 'editor', 'fx', 'walkthrough', 'sw']
-    if pick == ['schnell']: pick = ['ui', 'editor', 'fx', 'walkthrough', 'sw']
+    pick = sys.argv[1:] or ['audio', 'ui', 'editor', 'fx', 'walkthrough', 'sw', 'tempo']
+    if pick == ['schnell']: pick = ['ui', 'editor', 'fx', 'walkthrough', 'sw', 'tempo']
     tmp = pathlib.Path(tempfile.mkdtemp(prefix='drumstar-test-'))
     site = tmp / 'site'
     shutil.copytree(ROOT, site, ignore=shutil.ignore_patterns('.git', 'tests'))
@@ -48,7 +48,8 @@ def main():
                     'editor': [script, url, str(out)],
                     'fx': [script, url, str(out)],
                     'walkthrough': [script, 'X', url, str(out)],
-                    'sw': [script, url, str(out), str(site)]}.get(name, [script, url])
+                    'sw': [script, url, str(out), str(site)],
+                    'tempo': [script, url, str(out)]}.get(name, [script, url])
             print(f'\n=== {name} ===', flush=True)
             results[name] = subprocess.call([sys.executable] + args) == 0
     finally:
