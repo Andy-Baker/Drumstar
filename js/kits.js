@@ -373,7 +373,7 @@ function smpPlay(kid, tr, time, velocity, choked, vid){
   g.gain.value=gv;
   src.connect(g); g.connect(getBus()); g.connect(smpRoom(grpIn(tr)));
   src.start(time, s.off, s.dur);
-  if(choked){ const h=choked>0.06 ? choked : 0.06; g.gain.setValueAtTime(gv,time+h); g.gain.linearRampToValueAtTime(0.0001,time+h+0.04); src.stop(time+h+0.05); } // choked: true = kurz, Zahl = Sekunden bis zum Abgreifen
+  if(choked){ const h=typeof choked==='number' ? Math.max(0.06,choked) : 0.06; g.gain.setValueAtTime(gv,time+h); g.gain.linearRampToValueAtTime(0.0001,time+h+0.04); src.stop(time+h+0.05); } // choked: true = kurz, Zahl = Sekunden bis zum Abgreifen
   if(vid==='oh' || vid==='hl') lastOpenSample={src,g}; // offene/lockere Hi-Hat: nächster Hi-Hat-Schlag würgt ab
   return true;
 }
