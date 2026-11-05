@@ -164,9 +164,8 @@ async def main():
       ok(f'{kit}: Crash Kurz still ab 0,1 s, 1/16 klingt noch', e(xs['cy1'],0.11,0.14)<e(xs['cy2'],0.11,0.14)-15, f"{e(xs['cy1'],0.11,0.14):.0f} / {e(xs['cy2'],0.11,0.14):.0f} dB")
       ok(f'{kit}: Crash 1/16 gegriffen nach einem Step, 1/8 klingt noch', e(xs['cy2'],0.21,0.28)<e(xs['cy3'],0.21,0.28)-15, f"{e(xs['cy2'],0.21,0.28):.0f} / {e(xs['cy3'],0.21,0.28):.0f} dB")
       ok(f'{kit}: Crash 1/8 gegriffen nach zwei Steps, frei klingt weiter', e(xs['cy3'],0.36,0.6)<e(xs['cy'],0.36,0.6)-15 and all(np.isfinite(v).all() for v in xs.values()), f"{e(xs['cy3'],0.36,0.6):.0f} / {e(xs['cy'],0.36,0.6):.0f} dB")
-      d=[e(xs[k],0,0.04)-e(xs['cy'],0,0.04) for k in ['cy2','cy3']]; pk=lambda q:db(np.abs(q).max())
-      ok(f'{kit}: Anschlag 1/16 und 1/8 wie frei', max(map(abs,d))<1.5, ' / '.join(f'{v:+.1f}' for v in d)+' dB')
-      ok(f'{kit}: Kurz: Spitze wie frei (Hüllkurve kurz wie Fill-Choke)', abs(pk(xs['cy1'])-pk(xs['cy']))<3, f"{pk(xs['cy1'])-pk(xs['cy']):+.1f} dB")
+      d=[e(xs[k],0,0.04)-e(xs['cy'],0,0.04) for k in ['cy1','cy2','cy3']]
+      ok(f'{kit}: Anschlag in allen Stufen wie frei', max(map(abs,d))<1.5, ' / '.join(f'{v:+.1f}' for v in d)+' dB')
     await pg.evaluate("__audio.smpOpt({rr:true,vari:50})")
     await pg.evaluate("__audio.smpLoad('rusty')")
     await pg.evaluate("__audio.smpOpt({rr:false,vari:0})")  # ohne Zufall: Round Robin/Variation ließen den Vergleich flackern (~25 % FAIL)

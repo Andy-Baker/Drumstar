@@ -414,52 +414,42 @@ function triggerTrack(tr, time, velocity, art){
   const kp=artSynth(tr, art|0, KITS[kid].voices[tr.id]);
   VOICE_FNS[tr.id](time, tr.vol, tr.tune, velocity, kp);
 }
-// "Choked" Crash: nutzt exakt dieselben Klang-Parameter des aktuellen Kits,
-// aber mit stark verkürzter Ausklingzeit — simuliert das Abstoppen mit der
-// Hand statt das Becken frei ausklingen zu lassen. Funktioniert für beide
-// Crash-Engines (klassisches FM und die 6-Oszillator-Technik).
+// "Choked" Crash: derselbe Crash des aktuellen Kits, mit der Hand abgestoppt
+// statt frei ausklingend. Funktioniert für beide Crash-Engines (FM und
+// 6-Oszillator) und Sample-Kits.
 //
 // Wichtig: Das trockene Signal allein reicht nicht — ist auf der Crash-Spur
 // Hall oder Delay aufgedreht, würde der Nachhall unabhängig vom Choke normal
 // weiterklingen und den Stopp-Effekt komplett überdecken. Deshalb werden die
 // Send-Gains dieser Spur für die Dauer des Chokes kurz "geduckt" (runter und
 // wieder hoch), unabhängig davon, wie Hall/Delay eingestellt sind.
-// hold (#56): 0 = kurz (wie bisher, auch im Fill), sonst Sekunden bis zum Abgreifen (1/16 bzw. 1/8 des Tempos).
-// Beim späten Greifen klingt das Becken normal an und wird dann über eine eigene Gain-Stufe vor dem Spur-Bus
-// ausgeblendet; der Hall darf hier natürlich nachklingen (wie am echten Becken im Raum).
+// hold (#56): 0 = kurz (auch im Fill: nach 60 ms gegriffen, Sends geduckt), sonst Sekunden bis zum Abgreifen
+// (1/16 bzw. 1/8 des Tempos). Das Becken klingt immer voll an und wird über eine eigene Gain-Stufe vor dem
+// Spur-Bus ausgeblendet (Samples: smpPlay mit choked=Sekunden); beim späten Greifen klingt der Hall nach.
 function triggerChokedCrash(time, tr, velocity, hold){
   currentTrackBus = tr.bus || master;
   const ovc=drumSet.voices.cy;
   if(ovc && ovc.t==='smp' && playDrumSample(tr, time, velocity)) return;
-  if(hold>0){
-    const ck=voiceKitId('cy'); if(KITS[ck].samples && smpPlay(ck, tr, time, velocity, hold)) return;
-    const cut=audioCtx.createGain(); cut.connect(tr.bus || master); currentTrackBus=cut;
-    cut.gain.setValueAtTime(1, time+hold); cut.gain.linearRampToValueAtTime(0.0001, time+hold+0.04);
-    const kp=KITS[ck].voices.cy;
-    if(kp.engine==='sixosc') playMetallicSix(time, tr.vol, tr.tune, velocity, kp, 'cymbal');
-    else playCrash(time, tr.vol, tr.tune, velocity, kp);
-    currentTrackBus = tr.bus || master;
-    return;
+  if(!(hold>0)){ // Kurz: Hall/Delay-Sends kurz ducken, sonst überdeckt der Nachhall den Stopp
+    const duckHold=0.11, duckRelease=0.09; // Sekunden: wie lange stumm, wie schnell zurück zur normalen Stärke
+    const duckLead=0.006; // Send muss VOR dem Anschlag unten sein — Faltungshall lässt sich danach nicht mehr "zurückrufen"
+    [tr.sendGain, tr.delaySendGain].forEach(g=>{
+      if(!g) return;
+      const normalLevel=g.gain.value;
+      if(normalLevel<=0) return;
+      g.gain.cancelScheduledValues(time-duckLead);
+      g.gain.setValueAtTime(normalLevel, Math.max(0,time-duckLead-0.001));
+      g.gain.linearRampToValueAtTime(0.0001, time-duckLead);
+      g.gain.setValueAtTime(0.0001, time+duckHold);
+      g.gain.linearRampToValueAtTime(normalLevel, time+duckHold+duckRelease);
+    });
   }
-  const kp=KITS[voiceKitId('cy')].voices.cy;
-  const choked=Object.assign({}, kp, { ampDecay:0.085, noiseDecay:0.06 });
-
-  const duckHold=0.11, duckRelease=0.09; // Sekunden: wie lange stumm, wie schnell zurück zur normalen Stärke
-  const duckLead=0.006; // Send muss VOR dem eigentlichen Anschlag schon unten sein — sonst hat der
-                          // laute Anfangs-Transient dem Hall-Convolver schon genug Energie mitgegeben,
-                          // und Faltungshall lässt sich danach nicht mehr "zurückrufen".
-  [tr.sendGain, tr.delaySendGain].forEach(g=>{
-    if(!g) return;
-    const normalLevel=g.gain.value;
-    if(normalLevel<=0) return; // nichts zu ducken, wenn der Send eh aus ist
-    g.gain.cancelScheduledValues(time-duckLead);
-    g.gain.setValueAtTime(normalLevel, Math.max(0,time-duckLead-0.001));
-    g.gain.linearRampToValueAtTime(0.0001, time-duckLead);       // schon VOR dem Anschlag auf null
-    g.gain.setValueAtTime(0.0001, time+duckHold);
-    g.gain.linearRampToValueAtTime(normalLevel, time+duckHold+duckRelease); // danach normal für folgende Hits
-  });
-
-  { const ck=voiceKitId('cy'); if(KITS[ck].samples && smpPlay(ck, tr, time, velocity, true)) return; }
-  if(choked.engine==='sixosc') playMetallicSix(time, tr.vol, tr.tune, velocity, choked, 'cymbal');
-  else playCrash(time, tr.vol, tr.tune, velocity, choked);
+  const h=hold>0 ? Math.max(0.06,hold) : 0.06; // Zeit bis zum Abgreifen; Anschlag bleibt in jeder Stufe voll
+  const ck=voiceKitId('cy'); if(KITS[ck].samples && smpPlay(ck, tr, time, velocity, h)) return;
+  const cut=audioCtx.createGain(); cut.connect(tr.bus || master); currentTrackBus=cut;
+  cut.gain.setValueAtTime(1, time+h); cut.gain.linearRampToValueAtTime(0.0001, time+h+0.04);
+  const kp=KITS[ck].voices.cy;
+  if(kp.engine==='sixosc') playMetallicSix(time, tr.vol, tr.tune, velocity, kp, 'cymbal');
+  else playCrash(time, tr.vol, tr.tune, velocity, kp);
+  currentTrackBus = tr.bus || master;
 }
