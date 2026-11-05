@@ -36,6 +36,7 @@ Zusammengeführt am 28.10.2026 aus DECISIONS-2/-3, ARCHITECTURE-11/-12 und ROADM
   - Kit-Wechsel: Noten ohne passende Stimme im neuen Kit werden gemerkt (nicht gelöscht) und kommen beim Zurückwechseln wieder; gespeichert wird nur, was hörbar ist.
   - Höchstens 16 Stimmen pro Kit.
   - Umgesetzt in v72 (Schritt 1): Ride als neue Drum-Zeile (Fläche/Bell), Hi-Hat mit Zu/Locker/Pedal. Spielweise liegt im sonst leeren `tr.notes[s]` der Drum-Spuren (zieht überall mit). Offene Hi-Hat bleibt vorerst eigene Zeile (Synth-Kits, Fill, Mixer, eigene Sets hängen an `oh`). Noch offen (Schritt 2): Issue #2.
+  - Crash bekommt doch Spielweisen (5.11., #56): Crash · Kurz · 1/16 · 1/8 = frei ausklingen bzw. mit der Hand abstoppen, Greifzeit folgt dem Tempo. Beim späten Greifen klingt der Hall weiter (wie im Raum), nur „Kurz“ duckt die Sends.
   - „Locker“ = halb offen. Studio hat keine halb offene Aufnahme → offene Hi-Hat abgedämpft.
 
 **Effekte** (30.10., Mockup `docs/mockups/effekte-mockup.html`, Issue #16/#35)

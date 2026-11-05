@@ -155,6 +155,17 @@ async def main():
       xc,_=await exp(kit,{'ch':{0:3}}); xl,_=await exp(kit,{'hl':{0:3}}); xp,_=await exp(kit,{'hf':{0:3}})
       ok(f'{kit}: Hi-Hat locker klingt länger als zu', tail(xl,sr,0.15,0.4)>tail(xc,sr,0.15,0.4)+4, f'{tail(xc,sr,0.15,0.4):.0f} → {tail(xl,sr,0.15,0.4):.0f} dB')
       ok(f'{kit}: Hi-Hat Pedal leiser als zu', db(np.abs(xp).max())<db(np.abs(xc).max()), f'{db(np.abs(xc).max()):.0f} → {db(np.abs(xp).max()):.0f} dB')
+    # ---------- Crash abstoppen (#56): Kurz < 1/16 < 1/8 < frei, Greifzeit nach Tempo (100 BPM: 1 Step = 0,15 s) ----------
+    await pg.evaluate("__audio.smpOpt({rr:false,vari:0})")
+    for kit in ['rock','real808','studio']:
+      xs={k:(await exp(kit,{k:{0:3}}))[0] for k in ['cy','cy1','cy2','cy3']}
+      o=int(np.argmax(np.abs(xs['cy'])>np.abs(xs['cy']).max()*0.05))  # Anschlag (alle Stufen starten gleich)
+      e=lambda q,t0,t1:db(np.sqrt((q[o+int(t0*sr):o+int(t1*sr)]**2).mean())+1e-12)
+      ok(f'{kit}: Crash Kurz still ab 0,1 s, 1/16 klingt noch', e(xs['cy1'],0.11,0.14)<e(xs['cy2'],0.11,0.14)-15, f"{e(xs['cy1'],0.11,0.14):.0f} / {e(xs['cy2'],0.11,0.14):.0f} dB")
+      ok(f'{kit}: Crash 1/16 gegriffen nach einem Step, 1/8 klingt noch', e(xs['cy2'],0.21,0.28)<e(xs['cy3'],0.21,0.28)-15, f"{e(xs['cy2'],0.21,0.28):.0f} / {e(xs['cy3'],0.21,0.28):.0f} dB")
+      ok(f'{kit}: Crash 1/8 gegriffen nach zwei Steps, frei klingt weiter', e(xs['cy3'],0.36,0.6)<e(xs['cy'],0.36,0.6)-15 and all(np.isfinite(v).all() for v in xs.values()), f"{e(xs['cy3'],0.36,0.6):.0f} / {e(xs['cy'],0.36,0.6):.0f} dB")
+      ok(f'{kit}: Anschlag bei allen Stufen gleich laut', max(abs(e(xs[k],0,0.04)-e(xs['cy'],0,0.04)) for k in ['cy1','cy2','cy3'])<1.5)
+    await pg.evaluate("__audio.smpOpt({rr:true,vari:50})")
     await pg.evaluate("__audio.smpLoad('rusty')")
     await pg.evaluate("__audio.smpOpt({rr:false,vari:0})")  # ohne Zufall: Round Robin/Variation ließen den Vergleich flackern (~25 % FAIL)
     x,_=await exp('rusty',{'hl':{0:3},'ch':{1:3}}); y,_=await exp('rusty',{'hl':{0:3}}); z,_=await exp('rusty',{'ch':{1:3},'bd':{0:1}})  # 1 Step bei 100 BPM = 0,15 s

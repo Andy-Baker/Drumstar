@@ -3,7 +3,7 @@
 // UI: GROSSES EDIT-GRID (4x4 = 16 Steps des aktiven Tracks)
 // =========================================================================
 let stepBrush=VEL_NORMAL;
-const stepArt={ch:0, rd:0}; // gewählte Spielweise beim Setzen, pro Spur
+const stepArt={ch:0, rd:0, cy:0}; // gewählte Spielweise beim Setzen, pro Spur
 const bigGrid=document.getElementById('bigGrid');
 const bigCells=[];
 const bigCellNums=[];
@@ -57,7 +57,7 @@ function renderEditorArea(tr){
   if(!isArp){ $id('prPreview').style.display='none'; $id('taRoll').style.display='none'; return; }
   $id('prPreview').style.display='flex'; $id('taRoll').style.display=''; prDrawPreview(tr);
 }
-// Leiste „Spielweise“ unter der Stärke — nur für Spuren mit Spielweisen (Hi-Hat, Ride)
+// Leiste „Spielweise“ unter der Stärke — nur für Spuren mit Spielweisen (Hi-Hat, Ride, Crash)
 function artRender(tr){
   const row=$id('artRow'), L=ART[tr.id];
   if(!L){ row.style.display='none'; row.innerHTML=''; return; }

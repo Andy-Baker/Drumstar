@@ -207,7 +207,9 @@ Object.values(KITS).forEach(k=>{ if(k.samples) k.voices=KITS.rock.voices; });
 // tr.notes[s] als Spielweise (0 = Standard). v = Sample-Stimme im Sample-Kit. Zieht automatisch mit beim
 // Kopieren, Undo, Song-Clips, Länge ändern, Speichern und Beats.
 const ART={ ch:[{k:'Z',n:'Zu',v:'ch'},{k:'L',n:'Locker',v:'hl'},{k:'P',n:'Pedal',v:'hf'}],
-            rd:[{k:'F',n:'Fläche',v:'rd'},{k:'B',n:'Bell',v:'rb'}] };
+            rd:[{k:'F',n:'Fläche',v:'rd'},{k:'B',n:'Bell',v:'rb'}],
+            // Crash (#56): frei ausklingen oder mit der Hand abstoppen — sofort, nach 1/16 oder nach 1/8 (tempoabhängig)
+            cy:[{k:'C',n:'Crash',v:'cy'},{k:'K',n:'Kurz',v:'cy'},{k:'S',n:'1/16',v:'cy',st:1},{k:'A',n:'1/8',v:'cy',st:2}] };
 function artOf(tr,a){ const L=ART[tr.id]; return L ? (L[a|0]||L[0]) : null; }
 function artLetter(tr,abs){ const L=ART[tr.id]; if(!L || !(tr.steps[abs]>0)) return ''; const a=tr.notes?tr.notes[abs]|0:0; return a>0&&L[a]?L[a].k:''; }
 function artSynth(tr,a,kp){ // Synth-Kits: Spielweise über die Parameter des Kits
@@ -371,7 +373,7 @@ function smpPlay(kid, tr, time, velocity, choked, vid){
   g.gain.value=gv;
   src.connect(g); g.connect(getBus()); g.connect(smpRoom(grpIn(tr)));
   src.start(time, s.off, s.dur);
-  if(choked){ g.gain.setValueAtTime(gv,time+0.06); g.gain.linearRampToValueAtTime(0.0001,time+0.1); src.stop(time+0.11); }
+  if(choked){ const h=choked>0.06 ? choked : 0.06; g.gain.setValueAtTime(gv,time+h); g.gain.linearRampToValueAtTime(0.0001,time+h+0.04); src.stop(time+h+0.05); } // choked: true = kurz, Zahl = Sekunden bis zum Abgreifen
   if(vid==='oh' || vid==='hl') lastOpenSample={src,g}; // offene/lockere Hi-Hat: nächster Hi-Hat-Schlag würgt ab
   return true;
 }
@@ -406,6 +408,7 @@ function triggerTrack(tr, time, velocity, art){
   if(tr.isSample){ playSample(time, tr.vol, tr.tune, velocity); return; }
   const ov=drumSet.voices[tr.id];
   if(ov && ov.t==='smp' && playDrumSample(tr, time, velocity)) return;
+  if(tr.id==='cy' && art>0){ const C=ART.cy[art]; triggerChokedCrash(time, tr, velocity, C&&C.st ? C.st*stepDuration() : 0); return; }
   const kid=voiceKitId(tr.id), A=artOf(tr,art);
   if(KITS[kid].samples && smpPlay(kid, tr, time, velocity, false, A?A.v:tr.id)) return;
   const kp=artSynth(tr, art|0, KITS[kid].voices[tr.id]);
@@ -421,10 +424,23 @@ function triggerTrack(tr, time, velocity, art){
 // weiterklingen und den Stopp-Effekt komplett überdecken. Deshalb werden die
 // Send-Gains dieser Spur für die Dauer des Chokes kurz "geduckt" (runter und
 // wieder hoch), unabhängig davon, wie Hall/Delay eingestellt sind.
-function triggerChokedCrash(time, tr, velocity){
+// hold (#56): 0 = kurz (wie bisher, auch im Fill), sonst Sekunden bis zum Abgreifen (1/16 bzw. 1/8 des Tempos).
+// Beim späten Greifen klingt das Becken normal an und wird dann über eine eigene Gain-Stufe vor dem Spur-Bus
+// ausgeblendet; der Hall darf hier natürlich nachklingen (wie am echten Becken im Raum).
+function triggerChokedCrash(time, tr, velocity, hold){
   currentTrackBus = tr.bus || master;
   const ovc=drumSet.voices.cy;
   if(ovc && ovc.t==='smp' && playDrumSample(tr, time, velocity)) return;
+  if(hold>0){
+    const ck=voiceKitId('cy'); if(KITS[ck].samples && smpPlay(ck, tr, time, velocity, hold)) return;
+    const cut=audioCtx.createGain(); cut.connect(tr.bus || master); currentTrackBus=cut;
+    cut.gain.setValueAtTime(1, time+hold); cut.gain.linearRampToValueAtTime(0.0001, time+hold+0.04);
+    const kp=KITS[ck].voices.cy;
+    if(kp.engine==='sixosc') playMetallicSix(time, tr.vol, tr.tune, velocity, kp, 'cymbal');
+    else playCrash(time, tr.vol, tr.tune, velocity, kp);
+    currentTrackBus = tr.bus || master;
+    return;
+  }
   const kp=KITS[voiceKitId('cy')].voices.cy;
   const choked=Object.assign({}, kp, { ampDecay:0.085, noiseDecay:0.06 });
 

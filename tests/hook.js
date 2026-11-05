@@ -77,7 +77,9 @@ window.__audio.exportPattern=async function(kit,pat,bpmv,vol){
     if(!t.muted){ t.steps=t.steps.map(()=>0); if(t.notes) t.notes=t.notes.map(()=>0); } t.feel=0; t.reverbAmount=0; t.delaySend=0;
     if(t.sendGain) t.sendGain.gain.value=0; if(t.delaySendGain) t.delaySendGain.gain.value=0; });
   // Schlüssel = Spur oder Sample-Stimme einer Spielweise (hl/hf → Hi-Hat, rb → Ride)
+  // Spielweisen ohne eigene Stimme: Spur-ID + Nummer (cy1 = Crash Kurz, cy2 = 1/16, cy3 = 1/8)
   const sv=[]; for(const id in pat){ let tid=id, a=0; for(const k in ART){ const i=ART[k].findIndex(x=>x.v===id); if(i>0){ tid=k; a=i; } }
+    const m=/^([a-z]{2})(\d)$/.exec(id); if(m && ART[m[1]]){ tid=m[1]; a=+m[2]; }
     const t=TRACKS.find(x=>x.id===tid); for(const s in pat[id]){ t.steps[+s]=V[pat[id][s]]; t.notes[+s]=a; } if(vol!=null){ sv.push([t,t.vol]); t.vol=vol; } }
   const b=await renderPatternToWav(); sv.forEach(([t,v])=>t.vol=v); if(window.gc) gc(); // Offline-Kontexte sofort freigeben (sonst läuft der Testbrowser voll)
   const L=b.getChannelData(0), R=b.getChannelData(1), x=new Float32Array(L.length);
