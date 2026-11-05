@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="de"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Klaviatur-Leiste #57</title>
+<title>Klaviatur-Leiste #57 v2</title>
 <link rel="stylesheet" href="../../fonts.css">
 <style>
   :root{ --bg:#0a0c10; --panel:#14171d; --line:#232a35; --tx:#e9edf3; --dim:#7f8898; --blue:#3fa9ff; --blue2:#5fc2ff; --lcdbg:#05070a; --c:#ffd23f;
@@ -16,9 +16,10 @@
   .seg button small{ display:block; font-size:11px; font-weight:500; }
   .seg button.on{ background:#1b2634; color:var(--tx); box-shadow:inset 0 0 0 1px #2c3c50; }
   .cmp{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+  .cmp button small{ display:block; font-size:11px; font-weight:500; color:var(--dim); }
   .cmp button{ background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:6px 6px 4px; color:var(--dim); font:600 13px var(--ui); }
   .cmp button.on{ border-color:rgba(63,169,255,.6); color:var(--tx); background:rgba(63,169,255,.08); }
-  .cmp canvas{ width:100%; height:150px; display:block; border-radius:6px; margin-bottom:4px; }
+  .cmp canvas{ width:100%; height:170px; display:block; border-radius:6px; margin-bottom:4px; }
   .opts{ display:grid; grid-template-columns:96px 1fr; gap:6px 8px; align-items:center; font-size:13px; color:var(--dim); }
   .chips{ display:flex; gap:6px; flex-wrap:wrap; }
   .chip{ height:34px; padding:0 10px; border-radius:8px; border:1px solid rgba(255,255,255,.12); background:var(--panel); color:var(--dim); font:600 13px var(--ui); }
@@ -32,151 +33,146 @@
   .inst i{ width:9px; height:9px; border-radius:50%; background:var(--c); box-shadow:0 0 8px var(--c); }
   .inst small{ font:11px var(--mono); color:var(--dim); }
   .sp{ flex:1; }
-  .roll{ height:440px; position:relative; border-radius:10px; overflow:hidden; background:#0a0a0d; touch-action:none; }
+  .roll{ height:460px; position:relative; border-radius:10px; overflow:hidden; background:#0a0a0d; touch-action:none; }
   .roll canvas{ position:absolute; inset:0; width:100%; height:100%; }
   .hint{ font:12px var(--mono); color:#4d6175; text-align:center; }
   .note{ font-size:13.5px; color:#b9c2cf; margin-top:10px; } .note b{ color:var(--tx); }
   ul{ padding-left:18px; margin:6px 0; } li{ margin:4px 0; }
 </style></head><body>
-<h1>Klaviatur-Leiste in der Piano Roll #57</h1>
-<p class="sub">Die Leiste links (heute nur Notennamen) als angedeutete Klaviatur. Varianten antippen, unten im Editor ausprobieren: <b>Taste antippen = Ton hören</b>, im Raster nach oben/unten wischen.</p>
+<h1>Klaviatur-Leiste in der Piano Roll #57 · v2</h1>
+<p class="sub"><b>Entschieden:</b> C · Dezent, 48 px, Name nur bei C, Ton beim Antippen. <b>Neu:</b> Varianten, wie die Tonart sichtbar wird, und Zoom per Pinch (nur die Höhe, die Tasten bleiben 48 px breit).</p>
 
-<div class="lbl">Vergleich</div>
+<div class="lbl">Tonart-Darstellung</div>
 <div class="cmp" id="cmp">
-  <button data-v="0"><canvas></canvas>Heute</button>
-  <button data-v="A" class="on"><canvas></canvas>A · Echt</button>
-  <button data-v="B"><canvas></canvas>B · Streifen</button>
-  <button data-v="C"><canvas></canvas>C · Dezent</button>
+  <button data-t="dim"><canvas></canvas>Bisher<br><small>abgedunkelt</small></button>
+  <button data-t="edge" class="on"><canvas></canvas>1 · Kante<br><small>Streifen</small></button>
+  <button data-t="dot"><canvas></canvas>2 · Punkte<br><small>auf Tasten</small></button>
+  <button data-t="rows"><canvas></canvas>3 · Zeilen<br><small>Raster getönt</small></button>
 </div>
 
-<div class="lbl">Einstellungen</div>
+<div class="lbl">Zum Ausprobieren</div>
 <div class="opts">
-  <span>Breite</span><div class="seg" id="wSeg"><button data-w="36">36 px <small>wie heute</small></button><button data-w="48" class="on">48 px</button><button data-w="60">60 px</button></div>
-  <span>Notennamen</span><div class="seg" id="nSeg"><button data-n="c">nur C</button><button data-n="w" class="on">weiße Tasten</button><button data-n="all">alle</button></div>
-  <span>Im Raster</span><div class="chips"><button class="chip on" id="oBlk">Schwarze Zeilen dunkler</button><button class="chip on" id="oKey">Tonart markieren</button></div>
-  <span>Zeilenhöhe</span><input type="range" id="zoom" min="10" max="36" value="22">
+  <span>Tonart</span><div class="seg" id="kSeg"><button data-k="9,m" class="on">A-Moll</button><button data-k="4,M">E-Dur</button><button data-k="2,m">D-Moll</button><button data-k="-1">aus</button></div>
   <span>Spur</span><div class="seg" id="iSeg"><button data-i="piano" class="on">Piano</button><button data-i="acid">Acid</button><button data-i="cosmic">Cosmic</button></div>
+  <span>Zoom</span><input type="range" id="zoom" min="10" max="44" value="22">
 </div>
 
 <div class="phone">
   <div class="bar">
     <button class="ib" aria-label="Zurück"><svg class="uic" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
-    <div class="inst"><i></i><span id="iName">PIANO</span><small>A-Moll</small></div>
+    <div class="inst"><i></i><span id="iName">PIANO</span><small id="kName">A-Moll</small></div>
     <span class="sp"></span>
     <button class="ib" aria-label="Klang"><svg class="uic" viewBox="0 0 24 24"><path d="M5 4v16M12 4v16M19 4v16"/></svg></button>
   </div>
   <div class="roll" id="roll"><canvas id="cv"></canvas></div>
-  <div class="hint" id="hint">Taste antippen · wischen zum Scrollen</div>
+  <div class="hint" id="hint">Taste antippen = Ton · wischen = scrollen · zwei Finger = Zoom</div>
 </div>
 
 <div class="lbl">Varianten</div>
 <ul class="note">
-  <li><b>A · Echt:</b> wie ein Klavier von der Seite: weiße Tasten unterschiedlich hoch (C, E, F, H schmaler als D, G, A), schwarze Tasten kürzer darüber. Bekannt aus Cubase/FL Studio.</li>
-  <li><b>B · Streifen:</b> jede Zeile eine Taste, hell/dunkel. Am klarsten bei kleiner Zeilenhöhe, Namen immer genau in ihrer Zeile.</li>
-  <li><b>C · Dezent:</b> Form wie A, aber in Chassis-Farben, leuchtet nicht so hell neben dem dunklen Raster. C und Grundton in Instrumentfarbe.</li>
-  <li><b>Für alle:</b> Antippen spielt den Ton (heute nicht), Tasten von Tönen außerhalb der Tonart blasser, wenn „Tonart markieren“ an ist.</li>
-  <li><b>Offen:</b> Variante, Breite (breiter = weniger Platz fürs Raster), Notennamen, Vorhören an/aus.</li>
+  <li><b>Bisher:</b> Fremdtöne nur etwas dunkler – auf der dunklen Klaviatur kaum zu sehen.</li>
+  <li><b>1 · Kante:</b> Leuchtstreifen in Instrumentfarbe an der Tastenkante zum Raster, je Zeile genau auf Höhe der Note. Grundton breiter und heller.</li>
+  <li><b>2 · Punkte:</b> Punkt auf jeder Taste der Tonleiter, Grundton als größerer Punkt. Fremdtöne ohne Punkt.</li>
+  <li><b>3 · Zeilen:</b> Tonleiter-Zeilen im Raster leicht in Instrumentfarbe getönt, Grundton stärker, Fremdtöne dunkel. Tasten bleiben neutral.</li>
+  <li><b>Zoom:</b> zwei Finger auseinander/zusammen = Zeilenhöhe, Tastenbreite bleibt. Am Rechner: Strg + Mausrad.</li>
 </ul>
 
 <script>
-const KEY=9, SCALE=[0,2,3,5,7,8,10], BLACK=[1,3,6,8,10], NN=['C','C#','D','D#','E','F','F#','G','G#','A','A#','H'];
+const BLACK=[1,3,6,8,10], NN=['C','C#','D','D#','E','F','F#','G','G#','A','A#','H'];
+const SC={m:[0,2,3,5,7,8,10], M:[0,2,4,5,7,9,11]};
 const INST={piano:{n:'PIANO',c:'#ffd23f'},acid:{n:'ACID',c:'#ff8a3d'},cosmic:{n:'COSMIC',c:'#b07cff'}};
-let V='A', KW=48, names='w', oBlk=true, oKey=true, rh=22, inst='piano', sy=0, press=null;
+const KW=48; let T='edge', KEY=9, SCALE=SC.m, rh=22, inst='piano', sy=0, press=null;
 const LO=24, HI=96, STEPS=32;
 const NOTES=[[0,2,57],[2,2,60],[4,4,64],[8,2,62],[10,2,60],[12,4,57],[16,3,55],[19,1,57],[20,4,60],[24,2,59],[26,2,55],[28,4,57],[0,8,45],[8,8,41],[16,8,43],[24,8,45]];
 const $=id=>document.getElementById(id);
-const pc=m=>((m%12)+12)%12, isB=m=>BLACK.includes(pc(m)), inS=m=>SCALE.includes((pc(m)-KEY+12)%12);
+const pc=m=>((m%12)+12)%12, isB=m=>BLACK.includes(pc(m));
+const inS=m=>KEY<0||SCALE.includes((pc(m)-KEY+12)%12), isRoot=m=>KEY>=0&&pc(m)===KEY;
 const nm=m=>NN[pc(m)]+(Math.floor(m/12)-1);
+const hex=(c,a)=>{ const n=parseInt(c.slice(1),16); return `rgba(${n>>16},${n>>8&255},${n&255},${a})`; };
 
-// Klaviatur in Spalte [0,kw] zeichnen; y(m)=Oberkante der Zeile von m
-function keys(cx, v, kw, H, y, rh, lo, hi, opt){
-  const col=INST[inst].c, small=rh<13;
-  const dim=m=>opt.key&&!inS(m);
-  if(v==='0'){ // heute: nur Namen
-    cx.fillStyle='#0a0a0d'; cx.fillRect(0,0,kw,H);
-    for(let m=lo;m<=hi;m++){ const r=pc(m)===0, show=rh>=18||r; if(!show) continue;
-      cx.fillStyle=r?col:(inS(m)?'#7f8898':'#3a3d45'); cx.font=(r?'700 ':'')+'11px JetBrains Mono, monospace'; cx.textAlign='right'; cx.textBaseline='middle'; cx.fillText(nm(m),kw-5,y(m)+rh/2); }
-    return; }
-  if(v==='B'){
-    for(let m=lo;m<=hi;m++){ const b=isB(m), Y=y(m);
-      cx.fillStyle=b?(dim(m)?'#1d2027':'#2a2e37'):(dim(m)?'#9aa1ab':'#d9dee6'); cx.fillRect(0,Y,kw,rh);
-      cx.fillStyle=(pc(m)===0||pc(m)===5)?'rgba(0,0,0,.55)':'rgba(0,0,0,.22)'; cx.fillRect(0,Y+rh-((pc(m)===0||pc(m)===5)?1.5:1),kw,(pc(m)===0||pc(m)===5)?1.5:1);
-      if(press===m){ cx.fillStyle=col; cx.globalAlpha=.85; cx.fillRect(0,Y,kw,rh); cx.globalAlpha=1; }
-      label(cx,m,kw-4,Y+rh/2,b?'#8a93a3':'#2a2e36',col,rh); }
-    return; }
-  // A und C: echte Tastenform
-  const pal=v==='A'?{w:'#e4e8ee',wd:'#a7aeb8',sep:'rgba(0,0,0,.35)',b:'#14161b',bd:'#24272e',bh:'rgba(255,255,255,.08)',lw:'#2a2e36',lb:'#8a93a3'}
-                   :{w:'#262a33',wd:'#1b1e25',sep:'rgba(0,0,0,.6)',b:'#08090c',bd:'#0f1115',bh:'rgba(255,255,255,.05)',lw:'#8a93a3',lb:'#5a6170'};
+// Klaviatur C · Dezent in [0,kw], y(m) = Oberkante der Zeile
+function keys(cx, t, kw, H, y, rh, lo, hi){
+  const col=INST[inst].c, on=KEY>=0;
+  const pal={w:'#262a33',wd:'#1a1c22',sep:'rgba(0,0,0,.6)',b:'#08090c',bd:'#08090c',bh:'rgba(255,255,255,.05)'};
+  const dim=m=>t==='dim'&&on&&!inS(m);
   cx.fillStyle='#000'; cx.fillRect(0,0,kw,H);
   for(let m=lo;m<=hi;m++){ if(isB(m)) continue;
     const top=isB(m+1)?y(m+1)+rh/2:y(m), bot=isB(m-1)?y(m-1)+rh/2:y(m)+rh;
     cx.fillStyle=press===m?col:(dim(m)?pal.wd:pal.w); cx.fillRect(0,top,kw,bot-top);
-    cx.fillStyle=pal.sep; cx.fillRect(0,bot-1,kw,1);
-    if(v==='A'&&press!==m){ const g=cx.createLinearGradient(kw-6,0,kw,0); g.addColorStop(0,'rgba(0,0,0,0)'); g.addColorStop(1,'rgba(0,0,0,.18)'); cx.fillStyle=g; cx.fillRect(kw-6,top,6,bot-top); }
-    label(cx,m,kw-4,y(m)+rh/2,pal.lw,col,rh,press===m); }
+    cx.fillStyle=pal.sep; cx.fillRect(0,bot-1,kw,1); }
   const bw=Math.round(kw*.6);
   for(let m=lo;m<=hi;m++){ if(!isB(m)) continue; const Y=y(m);
-    cx.fillStyle=press===m?col:(dim(m)?pal.bd:pal.b); cx.fillRect(0,Y+.5,bw,rh-1);
-    if(press!==m){ cx.fillStyle=pal.bh; cx.fillRect(bw-3,Y+1.5,2,rh-3); }
-    if(names==='all'&&rh>=16) label(cx,m,bw-4,Y+rh/2,pal.lb,col,rh,press===m,true); }
+    cx.fillStyle=press===m?col:pal.b; cx.fillRect(0,Y+.5,bw,rh-1);
+    if(press!==m){ cx.fillStyle=pal.bh; cx.fillRect(bw-3,Y+1.5,2,rh-3); } }
+  // Tonart je Zeile
+  if(on) for(let m=lo;m<=hi;m++){ if(!inS(m)) continue; const Y=y(m), r=isRoot(m);
+    if(t==='edge'){ const w=r?5:3; cx.fillStyle=hex(col,r?1:.6); cx.fillRect(kw-w,Y+1,w,rh-2); if(r){ cx.shadowColor=col; cx.shadowBlur=6; cx.fillRect(kw-w,Y+1,w,rh-2); cx.shadowBlur=0; } }
+    if(t==='dot'){ const x=isB(m)?bw-8:kw-9, rad=Math.min(r?4:2.6,rh/4); cx.fillStyle=hex(col,r?1:.75); cx.beginPath(); cx.arc(x,Y+rh/2,rad,0,7); cx.fill(); } }
+  // Name nur bei C (und Grundton in Farbe)
+  for(let m=lo;m<=hi;m++){ if(pc(m)!==0) continue; const Y=y(m);
+    cx.font='700 '+(rh<14?'9':'10')+'px JetBrains Mono, monospace'; cx.textAlign='right'; cx.textBaseline='middle';
+    cx.fillStyle=press===m?'#111':(isRoot(m)?col:'#8a93a3'); cx.fillText(nm(m), kw-(t==='edge'?8:t==='dot'?15:5), Y+rh/2); }
 }
-function label(cx,m,x,yc,c,col,rh,pressed,force){
-  const r=pc(m)===0, root=pc(m)===KEY;
-  const show=force||r||(names==='w'&&!isB(m)&&rh>=14)||(names==='all'&&rh>=14&&!isB(m));
-  if(!show) return;
-  cx.font=((r||root)?'700 ':'')+(rh<14?'9':'10')+'px JetBrains Mono, monospace'; cx.textAlign='right'; cx.textBaseline='middle';
-  cx.fillStyle=pressed?'#111':(r&&V!=='B'&&V!=='A'?col:(root&&V==='C'?col:c)); cx.fillText(nm(m),x,yc);
+function rows(cx,t,x0,W,y,rh,lo,hi,H){
+  const col=INST[inst].c, on=KEY>=0;
+  for(let m=lo;m<=hi;m++){ const Y=y(m); if(Y>H||Y+rh<0) continue;
+    let bg=isB(m)?'rgba(0,0,0,.35)':null;
+    if(on&&!inS(m)) bg=t==='dim'?'rgba(0,0,0,.45)':'rgba(0,0,0,.5)';
+    if(on&&t==='rows'&&inS(m)) bg=hex(col,isRoot(m)?.16:.07);
+    else if(on&&isRoot(m)) bg=hex(col,.07);
+    if(bg){ cx.fillStyle=bg; cx.fillRect(x0,Y,W-x0,rh); }
+    if(press===m){ cx.fillStyle=hex(col,.14); cx.fillRect(x0,Y,W-x0,rh); }
+    cx.fillStyle='rgba(255,255,255,.03)'; cx.fillRect(x0,Y+rh-1,W-x0,1); }
 }
-// ---- Haupt-Editor ----
 const cv=$('cv'), roll=$('roll');
 function draw(){
   const r=roll.getBoundingClientRect(), d=devicePixelRatio||1; cv.width=r.width*d; cv.height=r.height*d; const cx=cv.getContext('2d'); cx.setTransform(d,0,0,d,0,0);
-  const W=r.width, H=r.height, rows=HI-LO+1, total=rows*rh; sy=Math.max(0,Math.min(total-H,sy));
+  const W=r.width, H=r.height, total=(HI-LO+1)*rh; sy=Math.max(0,Math.min(total-H,sy));
   const y=m=>(HI-m)*rh-sy, sw=(W-KW)/STEPS, col=INST[inst].c;
   cx.fillStyle='#0a0a0d'; cx.fillRect(0,0,W,H);
-  for(let m=LO;m<=HI;m++){ const Y=y(m); if(Y>H||Y+rh<0) continue;
-    let bg=null; if(oBlk&&isB(m)) bg='rgba(0,0,0,.35)'; if(oKey&&!inS(m)) bg='rgba(0,0,0,.45)'; if(pc(m)===0) bg='color-mix(in srgb,'+col+' 7%,transparent)';
-    if(bg){ cx.fillStyle=bg; cx.fillRect(KW,Y,W-KW,rh); }
-    if(press===m){ cx.fillStyle=col; cx.globalAlpha=.12; cx.fillRect(KW,Y,W-KW,rh); cx.globalAlpha=1; }
-    cx.fillStyle='rgba(255,255,255,.03)'; cx.fillRect(KW,Y+rh-1,W-KW,1); }
+  rows(cx,T,KW,W,y,rh,LO,HI,H);
   for(let s=1;s<STEPS;s++){ cx.fillStyle=s%16===0?'rgba(255,255,255,.16)':s%4===0?'rgba(255,255,255,.07)':'rgba(255,255,255,.03)'; cx.fillRect(KW+s*sw,0,1,H); }
   for(const [s,l,m] of NOTES){ const Y=y(m); if(Y>H||Y+rh<0) continue; cx.fillStyle=col; rr(cx,KW+s*sw+1,Y+1,l*sw-2,rh-2,3); cx.fill(); }
-  keys(cx,V,KW,H,y,rh,LO,HI,{key:oKey});
-  cx.fillStyle='rgba(255,255,255,.08)'; cx.fillRect(KW,0,1,H);
+  keys(cx,T,KW,H,y,rh,LO,HI);
+  $('zoom').value=rh;
 }
 function rr(cx,x,y,w,h,r){ r=Math.min(r,h/2,w/2); cx.beginPath(); cx.moveTo(x+r,y); cx.arcTo(x+w,y,x+w,y+h,r); cx.arcTo(x+w,y+h,x,y+h,r); cx.arcTo(x,y+h,x,y,r); cx.arcTo(x,y,x+w,y,r); cx.closePath(); }
 function thumbs(){
   document.querySelectorAll('#cmp button').forEach(b=>{ const c=b.querySelector('canvas'), r=c.getBoundingClientRect(), d=devicePixelRatio||1;
     c.width=r.width*d; c.height=r.height*d; const cx=c.getContext('2d'); cx.setTransform(d,0,0,d,0,0);
-    const h=13, hi=72, y=m=>(hi-m)*h; cx.fillStyle='#0a0a0d'; cx.fillRect(0,0,r.width,r.height);
-    const kw=Math.min(r.width*.62,KW*.9), sv=V; V=b.dataset.v; const sp=press; press=null;
-    keys(cx,b.dataset.v,kw,r.height,y,h,hi-12,hi,{key:oKey}); V=sv; press=sp;
-    for(let m=hi-12;m<=hi;m++){ if(oBlk&&isB(m)){ cx.fillStyle='rgba(0,0,0,.35)'; cx.fillRect(kw,y(m),r.width-kw,h); } }
-    cx.fillStyle=INST[inst].c; rr(cx,kw+6,y(64)+1,18,h-2,2); cx.fill(); rr(cx,kw+14,y(69)+1,14,h-2,2); cx.fill(); rr(cx,kw+2,y(60)+1,10,h-2,2); cx.fill();
+    const h=12, hi=KEY>=0?60+KEY+3:72, y=m=>(hi-m)*h, kw=Math.min(r.width*.55,42), sp=press; press=null;
+    cx.fillStyle='#0a0a0d'; cx.fillRect(0,0,r.width,r.height);
+    rows(cx,b.dataset.t,kw,r.width,y,h,hi-13,hi,r.height); keys(cx,b.dataset.t,kw,r.height,y,h,hi-13,hi); press=sp;
+    cx.fillStyle=INST[inst].c; rr(cx,kw+5,y(64)+1,16,h-2,2); cx.fill(); rr(cx,kw+12,y(69)+1,14,h-2,2); cx.fill();
   });
 }
-// ---- Ton ----
 let ac=null;
 function tone(m){ ac=ac||new (window.AudioContext||window.webkitAudioContext)(); if(ac.state!=='running') ac.resume();
   const t=ac.currentTime, o=ac.createOscillator(), g=ac.createGain(), lp=ac.createBiquadFilter(); o.type=inst==='acid'?'sawtooth':inst==='cosmic'?'square':'triangle';
   o.frequency.value=440*Math.pow(2,(m-69)/12); lp.frequency.value=inst==='piano'?3500:1400;
   g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(.25,t+.01); g.gain.exponentialRampToValueAtTime(.001,t+.9);
   o.connect(lp).connect(g).connect(ac.destination); o.start(t); o.stop(t+1); }
-function keyAt(x,yy){ const m=HI-Math.floor((yy+sy)/rh), f=((yy+sy)/rh)%1;
-  if(V==='B'||V==='0'||!isB(m)||x<KW*.6) return m; return f<.5?m+1:m-1; }
-let drag=null;
+function keyAt(x,yy){ const m=HI-Math.floor((yy+sy)/rh), f=((yy+sy)/rh)%1; if(!isB(m)||x<KW*.6) return m; return f<.5?m+1:m-1; }
+// Zeiger: 1 Finger = Taste/Scrollen, 2 Finger = Zoom (nur Höhe)
+const ptr=new Map(); let drag=null, pinch=null;
+function zoomTo(nrh, cy){ nrh=Math.max(10,Math.min(44,nrh)); const k=nrh/rh; sy=(sy+cy)*k-cy; rh=nrh; draw(); }
 roll.addEventListener('pointerdown',e=>{ const r=roll.getBoundingClientRect(), x=e.clientX-r.left, yy=e.clientY-r.top;
-  if(x<KW){ press=keyAt(x,yy); tone(press); $('hint').textContent=nm(press)+(inS(press)?' · in A-Moll':' · nicht in A-Moll'); draw(); }
-  else drag={y:e.clientY, sy}; roll.setPointerCapture(e.pointerId); });
-roll.addEventListener('pointermove',e=>{ if(drag){ sy=drag.sy-(e.clientY-drag.y); draw(); } });
-roll.addEventListener('pointerup',()=>{ drag=null; if(press!=null){ setTimeout(()=>{ press=null; draw(); },160); } });
-roll.addEventListener('wheel',e=>{ sy+=e.deltaY; draw(); e.preventDefault(); },{passive:false});
+  roll.setPointerCapture(e.pointerId); ptr.set(e.pointerId,{y:yy});
+  if(ptr.size===2){ const [a,b]=[...ptr.values()]; pinch={d:Math.max(20,Math.abs(a.y-b.y)), rh, cy:(a.y+b.y)/2}; drag=null; press=null; draw(); return; }
+  if(x<KW){ press=keyAt(x,yy); tone(press); $('hint').textContent=nm(press)+(KEY<0?'':inS(press)?(isRoot(press)?' · Grundton':' · in der Tonart'):' · nicht in der Tonart'); draw(); }
+  else drag={y:yy, sy}; });
+roll.addEventListener('pointermove',e=>{ const r=roll.getBoundingClientRect(), yy=e.clientY-r.top; if(!ptr.has(e.pointerId)) return; ptr.get(e.pointerId).y=yy;
+  if(pinch&&ptr.size===2){ const [a,b]=[...ptr.values()], d=Math.max(20,Math.abs(a.y-b.y)); const k=pinch.rh*d/pinch.d; zoomTo(k,pinch.cy); return; }
+  if(drag){ sy=drag.sy-(yy-drag.y); draw(); } });
+const up=e=>{ ptr.delete(e.pointerId); if(ptr.size<2) pinch=null; drag=null; if(press!=null) setTimeout(()=>{ press=null; draw(); },160); };
+roll.addEventListener('pointerup',up); roll.addEventListener('pointercancel',up);
+roll.addEventListener('wheel',e=>{ e.preventDefault(); const r=roll.getBoundingClientRect();
+  if(e.ctrlKey) zoomTo(rh*(e.deltaY<0?1.08:1/1.08), e.clientY-r.top); else { sy+=e.deltaY; draw(); } },{passive:false});
 function seg(id,fn){ $(id).addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; [...$(id).children].forEach(x=>x.classList.toggle('on',x===b)); fn(b.dataset); all(); }); }
-seg('cmp',d=>V=d.v); seg('wSeg',d=>KW=+d.w); seg('nSeg',d=>names=d.n);
+seg('cmp',d=>T=d.t);
+seg('kSeg',d=>{ if(d.k==='-1'){ KEY=-1; $('kName').textContent='ohne Tonart'; return; } const [k,q]=d.k.split(','); KEY=+k; SCALE=SC[q]; $('kName').textContent=NN[KEY].replace('H','H')+(q==='m'?'-Moll':'-Dur'); });
 seg('iSeg',d=>{ inst=d.i; document.documentElement.style.setProperty('--c',INST[inst].c); $('iName').textContent=INST[inst].n; });
-$('oBlk').onclick=()=>{ oBlk=!oBlk; $('oBlk').classList.toggle('on',oBlk); all(); };
-$('oKey').onclick=()=>{ oKey=!oKey; $('oKey').classList.toggle('on',oKey); all(); };
-$('zoom').oninput=e=>{ const mid=sy+roll.clientHeight/2, k=+e.target.value/rh; rh=+e.target.value; sy=mid*k-roll.clientHeight/2; draw(); };
+$('zoom').oninput=e=>zoomTo(+e.target.value, roll.clientHeight/2);
 function all(){ draw(); thumbs(); }
 addEventListener('resize',all);
 sy=(HI-66)*rh; all();
