@@ -56,7 +56,8 @@ function updateRecStatus(){
 }
 
 async function ensureMicStream(){
-  if(micStream) return micStream;
+  // Android beendet den Mikro-Track manchmal (Hintergrund, Rechte) → dann neu holen statt Stille aufzunehmen
+  if(micStream && micStream.getAudioTracks().some(t=>t.readyState==='live')) return micStream;
   micStream = await navigator.mediaDevices.getUserMedia({
     audio:{ echoCancellation:false, noiseSuppression:false, autoGainControl:false }
   });

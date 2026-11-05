@@ -31,6 +31,27 @@ CORE_JS="""(bpm)=>{ const sr=48000, sec=10, n=sr*sec, x=new Float32Array(n), bea
   for(let b=0;b*beat<sec;b++){ const t=b*beat; hit(t,55,0.12,0.8); hit(t+beat/2,0,0.03,0.25,1); if(b%2) hit(t,200,0.08,0.5,1); }
   const d=BpmDetector(sr); for(let i=0;i<n;i+=128) d.push(x.subarray(i,i+128)); return d.estimate().bpm; }"""
 
+# Wie oben, aber wie übers Handy-Mikro: Bass weg (Hochpass 180 Hz), Hall, leise,
+# Rauschen 10 dB unter der Musik. Daran ist die alte Erkennung (bis v97) gescheitert.
+PHONE_JS="""([bpm,snr,kind])=>{ const sr=48000, sec=12, n=sr*sec, x=new Float32Array(n), beat=60/bpm; let seed=11;
+  const rnd=()=>((seed=seed*16807%2147483647)/2147483647)*2-1;
+  const hit=(t,f,dec,a,nz)=>{ const s=Math.round((t+0.004*rnd())*sr); for(let i=0;i<sr*0.3&&s+i<n;i++){ if(s+i<0) continue; const tt=i/sr,e=Math.exp(-tt/dec)*a; x[s+i]+=e*(nz?rnd():Math.sin(2*Math.PI*f*tt*(1+2*Math.exp(-tt*30)))); } };
+  const tone=(t,f,dur,a)=>{ const s=Math.round(t*sr); for(let i=0;i<sr*dur&&s+i<n;i++){ const tt=i/sr; x[s+i]+=a*Math.min(1,tt/.01)*Math.exp(-tt*3)*(Math.sin(2*Math.PI*f*tt)+.5*Math.sin(4*Math.PI*f*tt)+.3*Math.sin(6*Math.PI*f*tt)); } };
+  const ch=[[220,277,330],[196,247,294],[175,220,262],[196,247,294]];
+  for(let b=0;b*beat<sec;b++){ const t=b*beat, p=b%4, c=ch[(b>>2)%4];
+    if(kind==='house'){ hit(t,50,0.12,0.9); hit(t+beat/2,0,0.04,0.3,1); if(p%2) hit(t,190,0.07,0.5,1); tone(t+beat/2,c[0]/2,beat/2,.25); }
+    if(kind==='rock'){ if(p%2===0) hit(t,55,0.12,0.9); if(p%2) hit(t,190,0.08,0.7,1); hit(t,0,0.02,0.2,1); hit(t+beat/2,0,0.02,0.15,1); tone(t,c[0],beat/2,.12); tone(t+beat/2,c[1],beat/2,.1); }
+    if(kind==='hiphop'){ if(p===0){ hit(t,50,0.15,0.9); hit(t+beat*.75,50,0.15,0.6); } if(p===2) hit(t+beat/2,50,0.15,0.7); if(p%2) hit(t,190,0.08,0.8,1); hit(t,0,0.02,0.2,1); hit(t+beat*.31,0,0.02,0.12,1); if(p===0) for(const f of c) tone(t,f*2,beat*4,.05); } }
+  // Hochpass 2. Ordnung 180 Hz (zweimal), Hall, Pegel, Rauschen
+  const hp=(x)=>{ const w=2*Math.PI*180/sr, co=Math.cos(w), al=Math.sin(w)/(2*0.707), a0=1+al, b0=(1+co)/2/a0, b1=-(1+co)/a0, a1=-2*co/a0, a2=(1-al)/a0; let x1=0,x2=0,y1=0,y2=0;
+    for(let i=0;i<x.length;i++){ const v=b0*x[i]+b1*x1+b0*x2-a1*y1-a2*y2; x2=x1; x1=x[i]; y2=y1; y1=v; x[i]=v; } };
+  hp(x); hp(x);
+  const y=new Float32Array(n); const taps=[]; for(let k=0;k<300;k++){ const d=Math.round(sr*(0.008+0.45*Math.pow((rnd()+1)/2,1.5))); taps.push([d,0.3*rnd()*Math.exp(-d/sr/0.15)]); }
+  for(let i=0;i<n;i++){ let v=x[i]; for(const [d,g] of taps) if(i>=d) v+=g*x[i-d]; y[i]=v; }
+  let rms=0; for(let i=0;i<n;i++) rms+=y[i]*y[i]; rms=Math.sqrt(rms/n); const g=0.03/rms, nz=0.03/Math.pow(10,snr/20)*Math.sqrt(3);
+  for(let i=0;i<n;i++) y[i]=y[i]*g+nz*rnd();
+  const d=BpmDetector(sr); for(let i=0;i<n;i+=128) d.push(y.subarray(i,i+128)); const r=d.estimate(); return [r.bpm, r.conf]; }"""
+
 async def main():
   wav=os.path.join(tempfile.mkdtemp(prefix='drumstar-tempo-'),'beat.wav'); make_wav(wav)
   async with async_playwright() as p:
@@ -43,6 +64,10 @@ async def main():
       v=await pg.evaluate(CORE_JS,t); ok(f'Erkennung synthetisch {t}', abs(v-t)<=1, round(v,2))
     for t in (72,170): # Ränder: halbes/doppeltes Tempo erlaubt (dafür ½ / ×2)
       v=await pg.evaluate(CORE_JS,t); ok(f'Erkennung synthetisch {t} (oder ½/×2)', min(abs(v-t),abs(2*v-t),abs(v/2-t))<=1, round(v,2))
+    for kind,t in (('house',124),('rock',110),('hiphop',92),('house',132)):
+      v,c=await pg.evaluate(PHONE_JS,[t,10,kind]); ok(f'Handy-Mikro {kind} {t} (Rauschen −10 dB)', abs(v-t)<=1.5, (round(v,2),round(c,2)))
+    # Mic-Tap-Worklet liefert Kontext-Frames (für phasenrichtiges Mitklicken)
+    ok('Latenz-Ausgleich vorhanden', await pg.evaluate("(initAudio(), typeof tdLatency==='function' && tdLatency()>=0)"))
     await pg.click('#tempoControl'); await pg.wait_for_timeout(300)
     r=await pg.evaluate("""(()=>{ const row=document.getElementById('tempoOverlayRow'), o=document.getElementById('tempoOverlay');
       const bs=[...row.children].map(e=>e.getBoundingClientRect()); return {ids:[...row.children].map(e=>e.id).join(),

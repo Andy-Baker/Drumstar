@@ -249,6 +249,21 @@ class MicRecorderProcessor extends AudioWorkletProcessor {
   }
 }
 registerProcessor('mic-recorder', MicRecorderProcessor);
+// Tempo erkennen: Blöcke zu 1024 Samples bündeln, mit Kontext-Frame des ersten
+// Samples (für phasenrichtiges Mitklicken)
+class MicTapProcessor extends AudioWorkletProcessor {
+  constructor(){ super(); this.b=new Float32Array(1024); this.n=0; this.f=0; }
+  process(inputs){
+    const ch = inputs[0] && inputs[0][0];
+    if(ch && ch.length){
+      if(!this.n) this.f=currentFrame;
+      this.b.set(ch, this.n); this.n+=ch.length;
+      if(this.n>=1024){ this.port.postMessage({f:this.f, d:this.b.slice(0,this.n)}); this.n=0; }
+    }
+    return true;
+  }
+}
+registerProcessor('mic-tap', MicTapProcessor);
 `;
 let micWorkletReady=null, useMicWorklet=false;
 

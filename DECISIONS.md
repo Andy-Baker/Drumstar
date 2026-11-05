@@ -81,6 +81,8 @@ Zusammengeführt am 28.10.2026 aus DECISIONS-2/-3, ARCHITECTURE-11/-12 und ROADM
 - Native `<select>` mit `<optgroup>` funktioniert auf Android.
 - Mockups, die dem Nutzer als einzelne Datei geschickt werden, brauchen eingebettete Schriften (sonst Ersatzschrift in der Handy-Vorschau).
 - Manifest-Änderungen (z. B. `orientation`) greifen in der installierten App oft erst nach Neu-Hinzufügen zum Homescreen.
+- Tempo erkennen (v98): Saubere synthetische Beats beweisen nichts. Log-Kompression je FFT-Bin mit fester Verstärkung (`log1p(1000·|X|)`) macht jedes Grundrauschen zu vollen Ausschlägen (Log-Schwankung von Rauschen hängt nicht vom Pegel ab) → übers Handy-Mikro Zufallstempo. Erst Bänder mitteln, dann dB relativ zum Pegel mit Boden. Prüfen mit echter Musik + Handy-Simulation: `python3 tests/tempo-bench.py`.
+- Mitklicken/Phase vom Mikro: Eingangs-, Basis- und Ausgangs-Latenz abziehen (Android zusammen oft 0,1–0,3 s), Zeitstempel aus dem Worklet (`currentFrame`), nicht `currentTime` beim Eintreffen der Nachricht.
 
 ## Bekannte Einschränkungen
 - iOS-Stummschalter kann Web Audio stumm halten; Gerätetasten regeln nur die Systemausgabe.
