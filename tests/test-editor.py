@@ -29,6 +29,27 @@ async def main():
     ok('Spur-Zeile: nur ein Klang-Button', await pg.evaluate("!document.getElementById('tbSynth') && !!document.getElementById('tbSound').offsetParent"))
     await pg.click('#prPv'); await pg.wait_for_timeout(500); await s('01_editor_empty')
     ok('Editor offen', await pg.evaluate("document.getElementById('prWin').classList.contains('open')"))
+    # Klaviatur-Leiste (#57): Tasten statt Namen, 48 px, Name nur bei C, Tonart-Zeilen getönt
+    kb=await pg.evaluate("""(()=>{ const L=document.getElementById('prLbl'), col=document.getElementById('prLblCol');
+      const w=L.querySelectorAll('.pkl.w').length, b=L.querySelectorAll('.pkl.b').length, names=[...L.querySelectorAll('.pkn')].map(e=>e.textContent);
+      const row=document.querySelector('#prCv .prr:not(.rt):not(.ox)'), bg=row?getComputedStyle(row).backgroundColor:'';
+      return {w,b,names,cw:col.getBoundingClientRect().width,bg}; })()""")
+    ok('Klaviatur: Tasten da', kb['w']>=5, kb)
+    ok('Klaviatur: 48 px breit', abs(kb['cw']-48)<1, kb['cw'])
+    ok('Klaviatur: Namen nur bei C', len(kb['names'])>=1 and all(n.startswith('C') and not n.startswith('C#') for n in kb['names']), kb['names'])
+    ok('Tonart-Zeilen getönt', kb['bg'] not in ('','rgba(0, 0, 0, 0)','transparent'), kb['bg'])
+    w0=await pg.evaluate("document.getElementById('prLblCol').getBoundingClientRect().width")
+    hh=await pg.evaluate("prV(prTr).rh")
+    await pg.evaluate(PINCH,[1,0.6]); await pg.wait_for_timeout(150)
+    w1=await pg.evaluate("document.getElementById('prLblCol').getBoundingClientRect().width"); h1=await pg.evaluate("prV(prTr).rh")
+    k1=await pg.evaluate("Math.round(document.querySelector('#prLbl .pkl.w').getBoundingClientRect().width)")
+    ok('Pinch: Tastenbreite bleibt, Höhe zoomt', w1==w0 and k1==48 and h1!=hh, (w0,w1,k1,hh,h1))
+    pv=await pg.evaluate("""(()=>{ let got=null; const o=window.pitchPreview; window.pitchPreview=(t,n,v)=>{ got=n; };
+      const k=document.querySelector('#prLbl .pkl.w'), r=k.getBoundingClientRect();
+      k.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,clientX:r.right-4,clientY:r.top+r.height/2,pointerId:21}));
+      window.pitchPreview=o; return [got, +k.dataset.n, k.classList.contains('on')]; })()""")
+    ok('Taste antippen spielt Ton', pv[0] is not None and pv[0]==pv[1] and pv[2], pv)
+    await pg.evaluate("prV(prTr).fit=true; prRender()"); await pg.wait_for_timeout(200)
     ok('Zoom 100%', (await pg.text_content('#prZoomL')).strip()=='100%', await pg.text_content('#prZoomL'))
     vb=await pg.locator('#prView').bounding_box()
     # Tippen: Note setzen (Step 3)

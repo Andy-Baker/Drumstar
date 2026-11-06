@@ -133,6 +133,28 @@ function prRender(){
   requestAnimationFrame(()=>{ if(!prIsOpen()) return; if(prMode==='play') prBuildKb(); else { if(prV(tr).fit || !prV(tr).cw) prFitView(false); prRenderGrid(); } prRenderChrome(); });
 }
 // ---- Raster ----
+// Klaviatur-Leiste (#57, Mockup docs/mockups/issue-57.html v2: C · Dezent, Tonart = Zeilen getönt):
+// eine Taste je Zeile; weiße reichen halb in eine direkt benachbarte schwarze Zeile, schwarze 60 % breit
+// darüber; Name nur bei C (Grundton in Instrumentfarbe). Breite fest 48 px, Höhe zoomt mit v.rh.
+function prKeysHtml(tr,v){
+  const pc=n=>(((9+tr.rootNote+n)%12)+12)%12, rt=n=>(((n%12)+12)%12)===0, R=prR, h=v.rh;
+  let w='', b='', t='';
+  R.forEach((n,i)=>{ const y=i*h;
+    if(prWhite(tr,n)){
+      const up=i>0&&R[i-1]===n+1&&!prWhite(tr,n+1), dn=i<R.length-1&&R[i+1]===n-1&&!prWhite(tr,n-1);
+      w+='<div class="pkl w" data-n="'+n+'" style="top:'+(y-(up?h/2:0))+'px;height:'+(h+(up?h/2:0)+(dn?h/2:0))+'px"></div>';
+    } else b+='<div class="pkl b" data-n="'+n+'" style="top:'+(y+.5)+'px;height:'+(h-1)+'px"></div>';
+    if(pc(n)===0) t+='<div class="pkn'+(rt(n)?' rt':'')+'" style="top:'+y+'px;height:'+h+'px'+(prWhite(tr,n)?'':';right:40%')+'">'+pitchNoteName(tr,n)+'</div>';
+  });
+  return w+b+t;
+}
+$id('prLblCol').addEventListener('pointerdown',e=>{
+  const tr=prTr; if(!tr || !prR) return; e.preventDefault();
+  let k=e.target.closest('.pkl'), n;
+  if(k) n=+k.dataset.n; else { const i=Math.floor((e.clientY-prLbl.getBoundingClientRect().top)/prV(tr).rh); if(i<0||i>=prR.length) return; n=prR[i]; k=prLbl.querySelector('.pkl[data-n="'+n+'"]'); }
+  pitchPreview(tr,n,.85);
+  if(k){ k.classList.add('on'); setTimeout(()=>k.classList.remove('on'),180); }
+});
 function prRenderGrid(){
   const tr=prTr, v=prV(tr); prR=prRows(tr); prClamp(v);
   const L=PATTERN_LENGTH, W=L*v.cw, H=prR.length*v.rh; prCv.style.width=W+'px'; prCv.style.height=H+'px';
@@ -140,8 +162,7 @@ function prRenderGrid(){
   prR.forEach((n,i)=>{ const rt=(((n%12)+12)%12)===0; h+='<div class="prr'+(rt?' rt':'')+(!prScaleOnly&&!pitchInScale(n,tr)?' ox':'')+'" style="top:'+(i*v.rh)+'px;height:'+v.rh+'px"></div>'; });
   for(let c=1;c<L;c++){ if(v.cw<10 && c%4) continue; h+='<div class="prv'+(c%16===0?' bar':c%4===0?' b':'')+'" style="left:'+(c*v.cw)+'px"></div>'; }
   prCv.innerHTML=h+'<div id="prNotes"></div>';
-  let l=''; prR.forEach((n,i)=>{ const rt=(((n%12)+12)%12)===0, show=v.rh>=18||rt; l+='<div class="'+(rt?'rt':'')+(!pitchInScale(n,tr)?' ox':'')+'" style="top:'+(i*v.rh)+'px;height:'+v.rh+'px">'+(show?pitchNoteName(tr,n):'')+'</div>'; });
-  prLbl.innerHTML=l; prLbl.style.height=H+'px';
+  prLbl.innerHTML=prKeysHtml(tr,v); prLbl.style.height=H+'px';
   let r=''; for(let c=0;c<L;c+=4) r+='<span class="'+(c%16?'sub':'')+'" style="left:'+(c*v.cw)+'px">'+(c%16?'':(c/16+1))+'</span>';
   $id('prRIn').innerHTML=r; $id('prRIn').style.width=W+'px';
   const hb=$id('prHmB'); if(hmOn(tr)){ hb.style.display='block'; hb.textContent='HARMONIE · '+HM_MODES.find(m=>m.id===tr.harm.mode).n.toUpperCase(); } else hb.style.display='none';
