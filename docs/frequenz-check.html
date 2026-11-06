@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Frequenz-Check</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: eine Spalte wie ein Messgerät — Readout oben, Tests, Klangbeispiele, dann großer Vergleichs-Plot auf gemeinsamer log-Achse */
+:root{
+  --bg:#0f1317; --panel:#161b21; --panel2:#1c232a; --line:#2a333c; --fg:#e5e9ed; --muted:#8b97a4;
+  --amber:#f2a93b; --cyan:#5ec6d4; --you:#ff6f8e; --spk:#a7b3c0; --warn:#f2c94c;
+  --f-disp:"Barlow Condensed","Arial Narrow",sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 var(--f-body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+.wrap{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+h1{font:600 2.2rem/1 var(--f-disp);letter-spacing:.01em;margin:0;text-wrap:balance}
+h2{font:600 1.35rem/1.1 var(--f-disp);margin:0;letter-spacing:.02em}
+p{margin:0}
+.muted{color:var(--muted)}
+.small{font-size:.86rem}
+.lab{font:500 .72rem var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.warn{border:1px solid color-mix(in srgb,var(--warn) 45%,transparent);background:color-mix(in srgb,var(--warn) 9%,transparent);
+  padding:10px 12px;border-radius:6px;font-size:.88rem}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.readout{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.freq{font:600 3.6rem/1 var(--f-disp);font-variant-numeric:tabular-nums;color:var(--amber);min-width:5ch}
+.note{font:500 1rem var(--f-mono);color:var(--muted)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+button{font:500 .92rem var(--f-body);color:var(--fg);background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:10px 14px;cursor:pointer;touch-action:manipulation}
+button:hover{border-color:var(--muted)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+button.primary{background:var(--amber);color:#1a1206;border-color:var(--amber);font-weight:600}
+button.big{font:600 1.3rem var(--f-disp);letter-spacing:.03em;padding:14px 18px;flex:1;min-width:140px}
+button.hot{background:var(--you);border-color:var(--you);color:#24060d}
+button[disabled]{opacity:.4;cursor:default}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{font:500 .8rem var(--f-mono);padding:7px 9px}
+input[type=range]{width:100%;accent-color:var(--amber);height:28px}
+.field{display:flex;flex-direction:column;gap:4px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.test{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.res{font:600 1.7rem/1 var(--f-disp);font-variant-numeric:tabular-nums;color:var(--you)}
+.demos{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.demos button{text-align:left;display:flex;flex-direction:column;gap:2px}
+.demos small{font:400 .75rem var(--f-mono);color:var(--muted)}
+#chartBox{width:100%;min-width:0}
+#chart text{font-family:var(--f-mono)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.8rem;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+ul{margin:0;padding-left:1.1em;display:flex;flex-direction:column;gap:6px}
+#runBox[hidden]{display:none}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:6px">
+    <span class="lab">Drumstar · Testwerkzeug</span>
+    <h1>Frequenz-Check</h1>
+    <p class="muted">Was gibt dein Handy-Lautsprecher wirklich wieder? Ton abspielen, Grenzen per Sweep finden und mit Gehör, Musik und anderen Lautsprechern vergleichen.</p>
+  </header>
+
+  <div class="warn">Leise anfangen. Hohe Töne über 10 kHz hört man schlechter und dreht dann gern zu laut auf. Mit Kopfhörern Lautstärke deutlich runter.</div>
+
+  <section class="card" aria-label="Tongenerator">
+    <div class="readout">
+      <span class="freq" id="fOut">1.000 Hz</span>
+      <span class="note" id="nOut">C6 · Sinus</span>
+    </div>
+    <div class="field">
+      <label class="lab" for="fSlider">Frequenz (logarithmisch)</label>
+      <input type="range" id="fSlider" min="0" max="1000" value="566">
+    </div>
+    <div class="chips" id="presets"></div>
+    <div class="row">
+      <button class="primary big" id="playBtn">Ton an</button>
+      <div class="field" style="flex:1;min-width:160px">
+        <label class="lab" for="vol">Lautstärke <span id="volOut">25</span>%</label>
+        <input type="range" id="vol" min="0" max="100" value="25">
+      </div>
+    </div>
+  </section>
+
+  <section class="card" aria-label="Grenzen testen">
+    <div style="display:flex;flex-direction:column;gap:4px">
+      <h2>Grenzen testen</h2>
+      <p class="muted small">Ein Sinus fährt langsam durch den Bereich. Tippe, sobald du den Ton selbst hörst (unten) bzw. sobald er verschwindet (oben). Schnarren oder Gehäuse-Klappern zählt nicht, nur der Ton.</p>
+    </div>
+    <div class="grid2">
+      <div class="test">
+        <span class="lab">Untere Grenze · 20 Hz → 1 kHz</span>
+        <span class="res" id="resLow">–</span>
+        <button id="startLow">Sweep starten</button>
+      </div>
+      <div class="test">
+        <span class="lab">Obere Grenze · 6 kHz → 20 kHz</span>
+        <span class="res" id="resHigh">–</span>
+        <button id="startHigh">Sweep starten</button>
+      </div>
+    </div>
+    <div id="runBox" hidden class="row">
+      <button class="big hot" id="markBtn">Jetzt hörbar</button>
+      <button id="abortBtn">Abbrechen</button>
+    </div>
+    <div class="row"><button id="resetBtn" class="small">Ergebnisse löschen</button>
+      <span class="muted small">Tipp: einmal mit Lautsprecher, einmal mit Kopfhörer. Die Differenz ist das Handy, nicht dein Ohr.</span></div>
+  </section>
+
+  <section class="card" aria-label="Musik-Check">
+    <div style="display:flex;flex-direction:column;gap:4px">
+      <h2>Musik-Check</h2>
+      <p class="muted small">Typische Drumstar-Klänge. Ein reiner 808-Sub oder ein E1 als Sinus liegen unter dem, was ein Handy abstrahlt. Mit Obertönen ergänzt das Gehirn den fehlenden Grundton (Residualton), deshalb klingt die verzerrte Variante plötzlich nach Bass.</p>
+    </div>
+    <div class="demos">
+      <button data-demo="kick"><span>808 Kick, rein</span><small>Sinus 150 → 48 Hz</small></button>
+      <button data-demo="kickd"><span>808 Kick, verzerrt</span><small>gleich + Obertöne</small></button>
+      <button data-demo="bass"><span>Bass E1, Sinus</span><small>41 Hz Grundton</small></button>
+      <button data-demo="bassr"><span>Bass E1, Säge</span><small>41 Hz + Obertöne</small></button>
+      <button data-demo="sub60"><span>Sub 60 Hz</span><small>Sinus, 1,5 s</small></button>
+      <button data-demo="hat"><span>Hi-Hat</span><small>Rauschen ab 7 kHz</small></button>
+    </div>
+  </section>
+
+  <section class="card" aria-label="Vergleich">
+    <div style="display:flex;flex-direction:column;gap:4px">
+      <h2>Vergleich</h2>
+      <p class="muted small">Gemeinsame log-Achse 20 Hz – 20 kHz. Nach deinen Sweeps wird abgedunkelt, was dein Handy nicht hörbar wiedergibt. Lautsprecherwerte sind typische Bereiche (ca. −10 dB), einzelne Modelle weichen ab.</p>
+    </div>
+    <div class="legend">
+      <span><i style="background:var(--cyan)"></i>Gehör</span>
+      <span><i style="background:var(--amber)"></i>Musik</span>
+      <span><i style="background:var(--spk)"></i>Wiedergabe</span>
+      <span><i style="background:var(--you)"></i>Dein Test</span>
+    </div>
+    <div id="chartBox"><svg id="chart" role="img" aria-label="Frequenzbereiche im Vergleich"></svg></div>
+  </section>
+
+  <section class="card" aria-label="Hinweise">
+    <h2>Einordnung</h2>
+    <ul class="small">
+      <li>Das Ohr ist zwischen 2 und 5 kHz am empfindlichsten. Ein 50-Hz-Ton braucht rund 40 dB mehr Pegel, um gleich laut zu wirken.</li>
+      <li>Handy-Lautsprecher fallen meist unter 300–500 Hz steil ab. Kick- und Bass-Grundtöne kommen dort nur als Obertöne an.</li>
+      <li>Android und Hersteller-Klangprofile (Dolby, „Adaptive Sound“) verbiegen den Frequenzgang. Für faire Werte Klangeffekte aus.</li>
+      <li>Für Drumstar heißt das: Mixe nie nur am Handy-Lautsprecher, und gib Bass-Stimmen etwas Sättigung, damit sie auch auf kleinen Speakern tragen.</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+const FMIN=20,FMAX=20000,LR=Math.log10(FMAX/FMIN);
+const NOTES=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const de=(n,d=0)=>n.toLocaleString('de-DE',{maximumFractionDigits:d,minimumFractionDigits:0});
+const fmt=f=>f>=1000?de(f/1000,f>=10000?1:2)+' kHz':de(f,f<100?1:0)+' Hz';
+const noteName=f=>{const m=Math.round(69+12*Math.log2(f/440));return NOTES[((m%12)+12)%12]+(Math.floor(m/12)-1)};
+const s2f=v=>FMIN*Math.pow(FMAX/FMIN,v/1000);
+const f2s=f=>Math.round(Math.log(f/FMIN)/Math.log(FMAX/FMIN)*1000);
+
+/* ---------- Audio ---------- */
+let A=null,master=null,tone=null,sweep=null,raf=0;
+let volume=0.25;
+const gainFor=v=>Math.pow(v,2)*0.6;
+function ac(){
+  if(!A){A=new (window.AudioContext||window.webkitAudioContext)();master=A.createGain();master.gain.value=gainFor(volume);master.connect(A.destination);}
+  if(A.state==='suspended')A.resume();
+  return A;
+}
+function startTone(f){
+  const a=ac();stopTone(true);
+  const t=a.currentTime,o=a.createOscillator(),g=a.createGain();
+  o.type='sine';o.frequency.setValueAtTime(f,t);
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(1,t+0.04);
+  o.connect(g).connect(master);o.start(t);
+  tone={o,g};return tone;
+}
+function stopTone(fast){
+  if(!tone)return;const {o,g}=tone,t=A.currentTime,d=fast?0.015:0.05;
+  g.gain.cancelScheduledValues(t);g.gain.setValueAtTime(g.gain.value,t);g.gain.linearRampToValueAtTime(0,t+d);o.stop(t+d+0.02);
+  tone=null;
+}
+
+/* ---------- State ---------- */
+let curF=1000,playing=false;
+let res={low:null,high:null};
+try{const s=JSON.parse(localStorage.getItem('freqcheck.v1')||'null');if(s)res=Object.assign(res,s)}catch(e){}
+function save(){try{localStorage.setItem('freqcheck.v1',JSON.stringify(res))}catch(e){}}
+
+function show(f){
+  $('fOut').textContent=fmt(f);
+  $('nOut').textContent=noteName(f)+' · Sinus';
+  setCursor(playing||sweep?f:null);
+}
+
+/* ---------- Generator UI ---------- */
+const PRE=[30,40,50,60,80,100,150,200,300,500,1000,2000,4000,8000,10000,12000,14000,16000,18000];
+PRE.forEach(f=>{const b=document.createElement('button');b.textContent=f>=1000?(f/1000)+'k':f;b.setAttribute('aria-label',fmt(f));
+  b.onclick=()=>{setF(f);if(!playing)togglePlay()};$('presets').appendChild(b)});
+function setF(f){curF=f;$('fSlider').value=f2s(f);if(tone&&!sweep)tone.o.frequency.setTargetAtTime(f,A.currentTime,0.01);show(f)}
+$('fSlider').addEventListener('input',e=>setF(s2f(+e.target.value)));
+function togglePlay(){
+  if(sweep)endSweep(false);
+  playing=!playing;
+  if(playing)startTone(curF);else stopTone();
+  $('playBtn').textContent=playing?'Ton aus':'Ton an';show(curF);
+}
+$('playBtn').onclick=togglePlay;
+$('vol').addEventListener('input',e=>{volume=e.target.value/100;$('volOut').textContent=e.target.value;
+  if(master)master.gain.setTargetAtTime(gainFor(volume),A.currentTime,0.02)});
+
+/* ---------- Sweeps ---------- */
+function startSweep(mode){
+  if(playing){playing=false;$('playBtn').textContent='Ton an'}
+  const [f0,f1,dur]=mode==='low'?[20,1000,26]:[6000,20000,26];
+  const a=ac();const tn=startTone(f0);
+  const t0=a.currentTime+0.04;tn.o.frequency.setValueAtTime(f0,t0);tn.o.frequency.exponentialRampToValueAtTime(f1,t0+dur);
+  sweep={mode,f0,f1,dur,t0};
+  $('runBox').hidden=false;$('markBtn').textContent=mode==='low'?'Jetzt hörbar':'Jetzt weg';
+  $('startLow').disabled=$('startHigh').disabled=true;
+  cancelAnimationFrame(raf);tick();
+}
+function sweepF(){const p=Math.min(1,Math.max(0,(A.currentTime-sweep.t0)/sweep.dur));return {f:sweep.f0*Math.pow(sweep.f1/sweep.f0,p),p}}
+function tick(){
+  if(!sweep)return;const {f,p}=sweepF();curF=f;$('fSlider').value=f2s(f);show(f);
+  if(p>=1){endSweep(true);return}
+  raf=requestAnimationFrame(tick);
+}
+function endSweep(reachedEnd,marked){
+  if(!sweep)return;const m=sweep.mode;
+  if(marked!=null)res[m]=Math.round(marked);
+  else if(reachedEnd&&m==='high')res.high=20000;
+  sweep=null;cancelAnimationFrame(raf);stopTone();
+  $('runBox').hidden=true;$('startLow').disabled=$('startHigh').disabled=false;
+  save();renderRes();show(curF);draw();
+}
+$('startLow').onclick=()=>startSweep('low');
+$('startHigh').onclick=()=>startSweep('high');
+$('markBtn').onclick=()=>{if(sweep)endSweep(false,sweepF().f)};
+$('abortBtn').onclick=()=>endSweep(false);
+$('resetBtn').onclick=()=>{res={low:null,high:null};save();renderRes();draw()};
+function renderRes(){
+  $('resLow').textContent=res.low?fmt(res.low):'–';
+  $('resHigh').textContent=res.high?(res.high>=20000?'≥ 20 kHz':fmt(res.high)):'–';
+}
+
+/* ---------- Musik-Demos ---------- */
+function env(g,t,peak,dec){g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(peak,t+0.005);g.gain.exponentialRampToValueAtTime(0.0008,t+dec)}
+function shaper(k){const n=1024,c=new Float32Array(n);for(let i=0;i<n;i++){const x=i/(n-1)*2-1;c[i]=Math.tanh(k*x)/Math.tanh(k)}const s=A.createWaveShaper();s.curve=c;s.oversample='4x';return s}
+const DEMOS={
+  kick(d){const t=A.currentTime+0.01,o=A.createOscillator(),g=A.createGain();o.frequency.setValueAtTime(150,t);o.frequency.exponentialRampToValueAtTime(48,t+0.12);env(g,t,1,1.3);
+    let n=o.connect(g);if(d){const s=shaper(9),p=A.createGain();p.gain.value=0.55;n=n.connect(s).connect(p)}n.connect(master);o.start(t);o.stop(t+1.4);flash(48)},
+  kickd(){DEMOS.kick(true)},
+  bass(r){const t=A.currentTime+0.01,o=A.createOscillator(),g=A.createGain();o.type=r?'sawtooth':'sine';o.frequency.value=41.2;
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(r?0.5:1,t+0.02);g.gain.setValueAtTime(r?0.5:1,t+1.3);g.gain.linearRampToValueAtTime(0,t+1.6);
+    let n=o;if(r){const lp=A.createBiquadFilter();lp.type='lowpass';lp.frequency.value=1400;n=n.connect(lp)}n.connect(g).connect(master);o.start(t);o.stop(t+1.7);flash(41.2)},
+  bassr(){DEMOS.bass(true)},
+  sub60(){const t=A.currentTime+0.01,o=A.createOscillator(),g=A.createGain();o.frequency.value=60;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(1,t+0.03);g.gain.setValueAtTime(1,t+1.4);g.gain.linearRampToValueAtTime(0,t+1.5);o.connect(g).connect(master);o.start(t);o.stop(t+1.6);flash(60)},
+  hat(){const t=A.currentTime+0.01,len=A.sampleRate*0.4,b=A.createBuffer(1,len,A.sampleRate),d=b.getChannelData(0);for(let i=0;i<len;i++)d[i]=Math.random()*2-1;
+    const s=A.createBufferSource();s.buffer=b;const hp=A.createBiquadFilter();hp.type='highpass';hp.frequency.value=7000;const g=A.createGain();env(g,t,0.8,0.12);
+    s.connect(hp).connect(g).connect(master);s.start(t);s.stop(t+0.4);flash(10000)}
+};
+let flashT=0;
+function flash(f){setCursor(f);clearTimeout(flashT);flashT=setTimeout(()=>setCursor(playing||sweep?curF:null),1400)}
+document.querySelectorAll('[data-demo]').forEach(b=>b.onclick=()=>{ac();if(sweep)endSweep(false);DEMOS[b.dataset.demo]()});
+
+/* ---------- Chart ---------- */
+const GROUPS=[
+ {name:'Gehör',col:'--cyan',rows:[['Junges Gehör',20,20000],['Mit ca. 40 Jahren',20,15000],['Mit ca. 60 Jahren',20,11000]]},
+ {name:'Frequenzbänder',col:'--amber',rows:[['Sub-Bass',20,60],['Bass',60,250],['Mitten',250,4000],['Präsenz',4000,6000],['Brillanz / Luft',6000,20000]]},
+ {name:'Instrumente',col:'--amber',rows:[['808-Sub',30,60],['Kick, Grundton',45,100],['Bass, Grundtöne E1–E4',41,330],['Snare, Körper + Teppich',150,10000],['Gesang, Grundton',85,1100],['Hi-Hat / Becken',3000,16000]]},
+ {name:'Wiedergabe',col:'--spk',rows:[['Handy-Lautsprecher',350,16000],['Laptop',150,18000],['Kleine Bluetooth-Box',80,18000],['Kopfhörer / In-Ear',20,20000],['Regalboxen',50,20000],['Mit Subwoofer',25,20000],['MP3 128 kbit/s',20,16000]]}
+];
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const NS='http://www.w3.org/2000/svg';
+function el(tag,attrs,parent,text){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(text!=null)e.textContent=text;parent&&parent.appendChild(e);return e}
+let X=null,cursorEl=null,cursorLab=null,chartH=0;
+function tq(f){const k=f/1000;return 3.64*Math.pow(k,-0.8)-6.5*Math.exp(-0.6*Math.pow(k-3.3,2))+1e-3*Math.pow(k,4)}
+function draw(){
+  const svg=$('chart'),W=Math.max(300,$('chartBox').clientWidth);
+  svg.innerHTML='';
+  const pl=4,pr=10,pw=W-pl-pr;X=f=>pl+Math.log10(f/FMIN)/LR*pw;
+  const C={fg:css('--fg'),mu:css('--muted'),ln:css('--line'),you:css('--you'),bg:css('--bg'),p2:css('--panel2'),cy:css('--cyan')};
+  // Empfindlichkeits-Panel
+  const ph=110,top=18;let y=0;
+  el('text',{x:pl,y:12,fill:C.mu,'font-size':10.5},svg,'EMPFINDLICHKEIT DES OHRS (Hörschwelle invertiert)');
+  const sy=v=>top+ph-(Math.max(0,Math.min(110,v))/110)*ph;
+  let d='',fill='';
+  for(let i=0;i<=200;i++){const f=FMIN*Math.pow(FMAX/FMIN,i/200),v=100-tq(f);d+=(i?'L':'M')+X(f).toFixed(1)+' '+sy(v).toFixed(1)}
+  fill=d+`L${X(FMAX)} ${top+ph}L${X(FMIN)} ${top+ph}Z`;
+  const ticks=[20,50,100,200,500,1000,2000,5000,10000,20000];
+  ticks.forEach(f=>el('line',{x1:X(f),x2:X(f),y1:top,y2:top+ph,stroke:C.ln,'stroke-width':1},svg));
+  el('path',{d:fill,fill:C.cy,'fill-opacity':.14},svg);
+  el('path',{d,fill:'none',stroke:C.cy,'stroke-width':2},svg);
+  const pk=3300;el('circle',{cx:X(pk),cy:sy(100-tq(pk)),r:3.5,fill:C.cy},svg);
+  const anchor=X(pk)>W-120?'end':'middle';
+  el('text',{x:X(pk),y:sy(100-tq(pk))-8,fill:C.fg,'font-size':10.5,'text-anchor':anchor},svg,'am empfindlichsten 2–5 kHz');
+  el('text',{x:X(28)+2,y:top+ph-8,fill:C.mu,'font-size':10},svg,'Bass braucht viel Pegel');
+  y=top+ph+16;
+  ticks.forEach((f,i)=>el('text',{x:X(f),y,fill:C.mu,'font-size':10.5,'text-anchor':i===0?'start':i===ticks.length-1?'end':'middle'},svg,f>=1000?(f/1000)+'k':f));
+  y+=10;
+  const gridTop=y;
+  // Gruppen
+  const rows=[];
+  const all=GROUPS.slice();
+  if(res.low||res.high)all.push({name:'Dein Test',col:'--you',rows:[['Dein Handy, gehört',res.low||FMIN,res.high||FMAX]]});
+  all.forEach(g=>{
+    y+=18;el('text',{x:pl,y,fill:css(g.col),'font-size':11,'font-weight':500,'letter-spacing':'.06em'},svg,g.name.toUpperCase());
+    y+=6;
+    g.rows.forEach(r=>rows.push({g,r,y:(y+=30)-30}));
+  });
+  chartH=y+10;
+  const grid=el('g',{},svg);
+  ticks.forEach(f=>el('line',{x1:X(f),x2:X(f),y1:gridTop,y2:chartH,stroke:C.ln,'stroke-width':1},grid));
+  rows.forEach(({g,r,y:ry})=>{
+    const [lab,a,b]=r,col=css(g.col);
+    el('text',{x:pl,y:ry+11,fill:C.fg,'font-size':11.5},svg,lab);
+    el('text',{x:W-pr,y:ry+11,fill:C.mu,'font-size':10.5,'text-anchor':'end'},svg,fmt(a)+' – '+fmt(b));
+    el('rect',{x:X(FMIN),y:ry+16,width:pw,height:8,rx:2,fill:C.p2},svg);
+    el('rect',{x:X(a),y:ry+16,width:Math.max(2,X(b)-X(a)),height:8,rx:2,fill:col},svg);
+  });
+  // Abdunkeln außerhalb deines Bereichs
+  if(res.low||res.high){
+    const yo=0;
+    if(res.low&&res.low>FMIN){const w=X(res.low)-X(FMIN);el('rect',{x:X(FMIN),y:yo,width:w,height:chartH,fill:C.bg,'fill-opacity':.62},svg);
+      el('line',{x1:X(res.low),x2:X(res.low),y1:yo,y2:chartH,stroke:C.you,'stroke-width':1.5,'stroke-dasharray':'4 3'},svg);
+      if(w>70)el('text',{x:X(FMIN)+w/2,y:gridTop+12,fill:C.you,'font-size':10,'text-anchor':'middle'},svg,'fehlt');}
+    if(res.high&&res.high<FMAX){const w=X(FMAX)-X(res.high);el('rect',{x:X(res.high),y:yo,width:w,height:chartH,fill:C.bg,'fill-opacity':.62},svg);
+      el('line',{x1:X(res.high),x2:X(res.high),y1:yo,y2:chartH,stroke:C.you,'stroke-width':1.5,'stroke-dasharray':'4 3'},svg);}
+  }
+  // Cursor
+  cursorEl=el('line',{y1:top,y2:chartH,stroke:C.you,'stroke-width':2,visibility:'hidden'},svg);
+  cursorLab=el('text',{y:top-6,fill:C.you,'font-size':10.5,'text-anchor':'middle',visibility:'hidden'},svg);
+  svg.setAttribute('viewBox',`0 0 ${W} ${chartH}`);svg.setAttribute('width',W);svg.setAttribute('height',chartH);
+  setCursor(playing||sweep?curF:null);
+}
+function setCursor(f){
+  if(!cursorEl)return;
+  if(f==null){cursorEl.setAttribute('visibility','hidden');cursorLab.setAttribute('visibility','hidden');return}
+  const x=X(Math.max(FMIN,Math.min(FMAX,f)));
+  cursorEl.setAttribute('x1',x);cursorEl.setAttribute('x2',x);cursorEl.setAttribute('visibility','visible');
+}
+new ResizeObserver(()=>draw()).observe($('chartBox'));
+renderRes();setF(1000);
+document.fonts&&document.fonts.ready.then(draw);
+})();
+</script>
+</body>
+</html>
