@@ -35,6 +35,7 @@ async def main():
       const row=document.querySelector('#prCv .prr:not(.rt):not(.ox)'), bg=row?getComputedStyle(row).backgroundColor:'';
       return {w,b,names,cw:col.getBoundingClientRect().width,bg}; })()""")
     ok('Klaviatur: Tasten da', kb['w']>=5, kb)
+    ok('Klaviatur: schwarze Tasten ab Werk (#59)', kb['b']>=3, kb['b'])
     ok('Klaviatur: 48 px breit', abs(kb['cw']-48)<1, kb['cw'])
     ok('Klaviatur: Namen nur bei C', len(kb['names'])>=1 and all(n.startswith('C') and not n.startswith('C#') for n in kb['names']), kb['names'])
     ok('Tonart-Zeilen getönt', kb['bg'] not in ('','rgba(0, 0, 0, 0)','transparent'), kb['bg'])
@@ -127,8 +128,10 @@ async def main():
     ok('Skala Dorisch', await pg.evaluate("__T[__sel()].scale")=='dorian')
     await pg.click('#klX'); await pg.wait_for_timeout(250)
     await pg.click('#prTop [data-pa=opt]'); await pg.wait_for_timeout(350); await s('10_opt')
+    ok('Nur Skalentöne ab Werk aus (#59): alle Töne', await pg.evaluate("document.querySelectorAll('#prCv .prr').length")>60, await pg.evaluate("document.querySelectorAll('#prCv .prr').length"))
+    await pg.click('#prShRows .pr-orow:nth-of-type(2) button:has-text("AN")'); await pg.wait_for_timeout(150)
+    ok('Nur Skalentöne an -> weniger Zeilen', await pg.evaluate("document.querySelectorAll('#prCv .prr').length")<60, await pg.evaluate("document.querySelectorAll('#prCv .prr').length"))
     await pg.click('#prShRows .pr-orow:nth-of-type(2) button:has-text("AUS")'); await pg.wait_for_timeout(150)
-    ok('Nur Skalentöne aus -> mehr Zeilen', await pg.evaluate("document.querySelectorAll('#prCv .prr').length")>60, await pg.evaluate("document.querySelectorAll('#prCv .prr').length"))
     await pg.click('#prShX'); await pg.wait_for_timeout(250); await s('11_chromatic')
     # Cosmic + Harmonie: gestrichelt, anfassen = umwandeln
     await pg.click('#prIBtn'); await pg.click('#prMenu button:has-text("COSMIC")'); await pg.wait_for_timeout(300)

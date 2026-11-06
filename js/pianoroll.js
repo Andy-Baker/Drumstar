@@ -9,7 +9,7 @@
 // =========================================================================
 const prWin=document.getElementById('prWin'), prView=$id('prView'), prCv=$id('prCv'), prLbl=$id('prLbl'), prVel=$id('prVel');
 const prKb=document.getElementById('prKb'), prLive=new Map(), prSust=[];
-let prTr=null, prSel=null, prG=null, prScaleOnly=true, prVD=null, prFollow=true, prPhStep=-1;
+let prTr=null, prSel=null, prG=null, prScaleOnly=false, prVD=null, prFollow=true, prPhStep=-1;
 let prMode='edit', prBars=false, prVp=true, prSus=false, prRec=false, prRecSnap=false, prKbFirst=0, prKbLast=0;
 const PR_LO=-24, PR_HI=48;
 const prLandMQ=matchMedia('(orientation:landscape) and (max-height:700px)');
@@ -37,7 +37,7 @@ function prFitView(all){
   let lo, hi;
   if(idx.length){ lo=Math.min.apply(null,idx); hi=Math.max.apply(null,idx); }
   else { const c=prR.indexOf(isPoly(tr)?12:0); lo=hi=c<0?Math.floor(prR.length/2):c; }
-  const minRows=prLandOn()?7:9, span=Math.max(hi-lo+3,minRows);
+  const minRows=prLandOn()?9:13, span=Math.max(hi-lo+3,minRows);
   v.rh=prVH()/span; prClamp(v);
   v.sy=((lo+hi+1)/2)*v.rh-prVH()/2; prClamp(v); v.fit=false;
 }

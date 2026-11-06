@@ -14,7 +14,7 @@ Ablauf: Repo wird in einen Temp-Ordner kopiert, dort in js/*.js (Datei mit der H
 Dateien bleiben unverändert. Screenshots landen in tests/out/ (nicht im Git).
 Kein Hörtest: Klang und Last am Gerät beurteilen.
 """
-import pathlib, shutil, socket, subprocess, sys, tempfile, time
+import pathlib, re, shutil, socket, subprocess, sys, tempfile, time
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 TESTS = pathlib.Path(__file__).resolve().parent
@@ -24,6 +24,20 @@ HOOK_TO = HOOK_FROM + "\n" + (pathlib.Path(__file__).resolve().parent / "hook.js
 
 def free_port():
     s = socket.socket(); s.bind(('127.0.0.1', 0)); p = s.getsockname()[1]; s.close(); return p
+
+def check_version():
+    """Ausgelieferter Stand (origin/main) vs. Arbeitsstand: geänderte App-Dateien brauchen eine neue CACHE-Nummer,
+    sonst behält das Handy den alten Cache (passiert bei v99: Crash und Klaviatur beide als v99)."""
+    git = lambda *a: subprocess.run(['git', '-C', str(ROOT)] + list(a), capture_output=True, text=True)
+    if git('rev-parse', '--verify', '-q', 'origin/main').returncode: print('Version: origin/main unbekannt, übersprungen'); return True
+    app = ['index.html', 'js', 'css', 'fonts.css', 'manifest.webmanifest']
+    changed = git('diff', '--name-only', 'origin/main', '--', *app).stdout.split()
+    if not changed: print('Version: keine App-Änderung gegenüber origin/main'); return True
+    num = lambda t: (re.search(r"const CACHE='mrm44-v(\d+)'", t) or [None, None])[1]
+    old, new = num(git('show', 'origin/main:sw.js').stdout), num((ROOT / 'sw.js').read_text(encoding='utf8'))
+    ok = old is not None and new is not None and int(new) > int(old)
+    print(('PASS' if ok else 'FAIL') + f' Version: App geändert ({len(changed)} Dateien), CACHE v{old} → v{new}' + ('' if ok else ' – CACHE in sw.js und ?v= erhöhen!'))
+    return ok
 
 def main():
     pick = sys.argv[1:] or ['audio', 'ui', 'editor', 'fx', 'walkthrough', 'sw', 'tempo']
@@ -39,7 +53,7 @@ def main():
     srv = subprocess.Popen([sys.executable, '-m', 'http.server', str(port), '--bind', '127.0.0.1'],
                            cwd=site, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     time.sleep(0.8)
-    results = {}
+    results = {'version': check_version()}
     try:
         for name in pick:
             out = OUT / name; out.mkdir(parents=True, exist_ok=True)

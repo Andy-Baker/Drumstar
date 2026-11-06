@@ -28,6 +28,7 @@ Zusammengeführt am 28.10.2026 aus DECISIONS-2/-3, ARCHITECTURE-11/-12 und ROADM
 **Klang & Instrumente**
 - Samples bleiben in den Drums erlaubt (Drum-Rack-Prinzip: Pad = Container für Synth oder Sample). Ein ausgebauter Sampler ist ein zweites Werkzeug.
 - Pro Spur eigener Grundton und eigene Skala.
+- Piano Roll (6.11., #59): „Nur Skalentöne“ ab Werk aus, damit die Klaviatur-Leiste schwarze Tasten zeigt; Fremdtöne als dunkle Zeilen. Schalter bleibt in den Optionen.
 - Cosmic klingt gut und bleibt so; Performance auf dem Handy spürbar, läuft aber.
 - Realistische Drums über Samples statt Synthese: Studio Kit (SM Drums, Public Domain), mindestens 4 Lautstärke-Layer je Stimme (= 4 Velocity-Stufen), Round Robin. Nur frei lizenzierte Bibliotheken (Public Domain/CC0; CC-BY mit Nennung), kein CC-BY-SA. Kits laden erst bei Auswahl. Im Hörtest übernommen: Studio 67, Hybrid, Rusty, Vintage 73; verworfen: Besen (Swirly, Kick klingt nach Snare). Mehrmikrofon-Bibliotheken nur zeitlich ausgerichtet und polaritätskorrigiert mischen.
 - Kits mit variabler Stimmenzahl (Mockup `docs/mockups/kit-stimmen-mockup.html`, entschieden 28.10.):
@@ -78,6 +79,7 @@ Zusammengeführt am 28.10.2026 aus DECISIONS-2/-3, ARCHITECTURE-11/-12 und ROADM
 - Messung Cosmic: eine Note ≈ 1,4× ein Kick-Schlag (≈ 12 neue Knoten pro Note). Wirksam wäre nur Stimmen-Wiederverwendung (Klang könnte sich ändern) → vorerst nicht gewünscht.
 - CSS: Flex-Items in scrollenden Containern mit `min-height` brauchen `flex-shrink:0`; gleiche Spezifität → spätere Regel gewinnt; Fixed-Elemente in einem Element mit `z-index` kommen nicht über Geschwister außerhalb (Sheets deshalb außerhalb von `#panelContent`).
 - JS: Funktionsdeklarationen sind hoisted, `const`-Hilfen nicht. Seit der Aufteilung (v89) gilt Hoisting nur innerhalb einer Datei: Code auf oberster Ebene, der eine Funktion aus einer späteren Datei aufruft oder als Wert übergibt (`addEventListener('click',f)`), wirft beim Laden `ReferenceError`.
+- Cache-Nummer nie zweimal ausliefern (v99 ging für Crash und Klaviatur raus → Handy behielt die erste v99). `tests/run.py` vergleicht jetzt mit `origin/main`: App-Dateien geändert ohne höhere `CACHE`-Nummer = FAIL.
 - Mehrere Skriptdateien + Service Worker: Ohne `?v=` an den Links nimmt Chromium beim Neuladen Skripte evtl. aus dem Speicher-Cache, obwohl der Service Worker schon die neuen hat → neue index.html mit alten Skripten.
 - Native `<select>` mit `<optgroup>` funktioniert auf Android.
 - Mockups, die dem Nutzer als einzelne Datei geschickt werden, brauchen eingebettete Schriften (sonst Ersatzschrift in der Handy-Vorschau).
