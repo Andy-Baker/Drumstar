@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="de"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Hörprobe Samples #60 #61</title>
+<link rel="stylesheet" href="../../fonts.css">
+<style>
+  :root{ --bg:#0a0c10; --panel:#14171d; --line:#232a35; --tx:#e9edf3; --dim:#7f8898; --blue:#3fa9ff; --blue2:#5fc2ff;
+         --perc:#2bc4b4; --kb:#8be86a; --mono:'JetBrains Mono',ui-monospace,monospace; --ui:'Rajdhani',-apple-system,system-ui,sans-serif; }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ margin:0; background:var(--bg); color:var(--tx); font:15px/1.35 var(--ui); }
+  body{ padding:14px 16px 48px; max-width:560px; margin:0 auto; }
+  h1{ font-size:20px; margin:0 0 2px; } .sub{ color:var(--dim); font-size:13.5px; margin:0 0 6px; }
+  h2{ font-size:13px; letter-spacing:.1em; text-transform:uppercase; color:var(--c,var(--blue2)); margin:20px 0 6px; display:flex; align-items:center; gap:8px; }
+  h2 i{ width:9px; height:9px; border-radius:50%; background:var(--c); box-shadow:0 0 8px var(--c); }
+  .card{ background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:10px; margin-bottom:8px; }
+  .src{ display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin:0 0 7px; }
+  .src b{ font-size:15px; } .src small{ font:11px var(--mono); color:var(--dim); text-align:right; }
+  .row{ display:flex; flex-wrap:wrap; gap:6px; }
+  button.p{ flex:1 1 calc(50% - 6px); min-height:46px; display:flex; align-items:center; gap:8px; padding:6px 10px; border-radius:9px;
+    background:#16161c; border:1px solid rgba(255,255,255,.1); color:var(--tx); font:600 14px var(--ui); text-align:left; }
+  button.p svg{ flex:none; width:16px; height:16px; fill:var(--c,var(--blue2)); }
+  button.p.on{ border-color:var(--c); background:color-mix(in srgb,var(--c) 14%,#16161c); }
+  .note{ font-size:13px; color:#b9c2cf; margin:6px 0 0; } .note b{ color:var(--tx); }
+  .tag{ display:inline-block; font:10.5px var(--mono); padding:1px 6px; border-radius:5px; background:#1b2634; color:var(--blue2); margin-left:4px; vertical-align:1px; }
+  .tag.warn{ background:#3a2a10; color:#ffb547; }
+  .seq{ display:flex; gap:6px; margin-top:8px; }
+  .seq button{ flex:1; min-height:44px; border-radius:9px; background:#10202b; border:1px solid #1f4058; color:var(--blue2); font:700 13px var(--ui); letter-spacing:.06em; }
+  .seq button.on{ background:var(--blue); color:#001; }
+</style></head><body>
+<h1>Hörprobe: echte Samples</h1>
+<p class="sub">Alle Kandidaten sind <b>CC0</b> (dürfen in die App). Lautstärke angeglichen, Stille vorne abgeschnitten. Am besten mit Kopfhörer <i>und</i> Handy-Lautsprecher anhören.</p>
+
+<div id="app"></div>
+
+<script>
+const D='../hoerprobe/';
+const S=[
+ {h:'Schellenkranz',c:'--perc',src:[
+   {n:'VCSL Tamburin 1',l:'Versilian · CC0',s:[['Schlag','vcsl-tamb1-schlag'],['Schütteln','vcsl-tamb1-schuetteln'],['Wirbel','vcsl-tamb1-wirbel']]},
+   {n:'VCSL Tamburin 2',l:'Versilian · CC0',s:[['Schlag','vcsl-tamb2-schlag']]},
+   {n:'Virtuosity Drums',l:'VSCO 2 Pro · CC0',s:[['Schütteln (10 Varianten)','vd-tamb-schuetteln']]}],
+  note:'VCSL hat Schlag + Wirbel + Schütteln, Virtuosity nur Schütteln, dafür 10 Varianten und 4 Mikros.'},
+ {h:'Bongos',c:'--perc',src:[
+   {n:'VCSL / Virtuosity',l:'identische Aufnahme · CC0',s:[['Hoch (Macho)','vcsl-bongo-hoch'],['Tief (Hembra)','vcsl-bongo-tief'],['Hoch gedämpft','vcsl-bongo-hoch-gedaempft']]}],
+  note:'3 Lautstärken × 2 Varianten, offen + gedämpft, dazu Wirbel. In Virtuosity dieselben Aufnahmen mit 4 Mikros.'},
+ {h:'Congas',c:'--perc',src:[
+   {n:'VCSL',l:'Versilian · CC0',s:[['Quinto offen','vcsl-quinto-offen'],['Conga offen','vcsl-conga-offen'],['Conga gedämpft','vcsl-conga-gedaempft'],['Tumba offen','vcsl-tumba-offen']]},
+   {n:'Virtuosity Drums',l:'VSCO 2 Pro · CC0',s:[['Conga offen','vd-conga-offen'],['Conga gedämpft','vd-conga-gedaempft'],['Tumba offen','vd-tumba-offen']]}],
+  note:'Virtuosity: 8 Varianten pro Schlag, Tumba mit 4 Lautstärken. VCSL: 3 Trommeln. <b>Slap fehlt bei beiden.</b>'},
+ {h:'Timbales',c:'--perc',src:[
+   {n:'Virtuosity Drums',l:'Karoryfer · CC0',s:[['Hoch laut','vd-timbal-hoch-laut'],['Hoch leise','vd-timbal-hoch-leise'],['Tief laut','vd-timbal-tief-laut']]}],
+  note:'13″ + 14″, 4–5 Lautstärken × 4 Varianten, 24 bit. <b>Rimshot/Cáscara fehlen</b> – CC0-Einzelschlag „Rimshot“ von Sassaby (Freesound) als Ergänzung.'},
+ {h:'Kontrabass',c:'--kb',src:[
+   {n:'VSCO 2 CE Solo-Kontrabass',l:'Versilian · CC0',s:[['Pizz E1','vsco-kb-pizz-e1'],['Pizz A1 leise','vsco-kb-pizz-a1-leise'],['Arco A1','vsco-kb-arco-a1']]},
+   {n:'Karoryfer Meatbass',l:'Otto Rubner 1958 · CC0',s:[['Pizz A1','meat-kb-pizz-a1'],['Arco A1','meat-kb-arco-a1']]}],
+  note:'Meatbass: Pizz 4 Lautstärken × 4 Varianten (3 Oktaven), Arco 5 Lautstärken, Auf-/Abstrich. VSCO: Pizz, Arco mit/ohne Vibrato, Spiccato, Tremolo.'},
+ {h:'Streicher',c:'--kb',src:[
+   {n:'VSCO 2 CE Sections',l:'Versilian · CC0',s:[['Violinen A3','vsco-violinen-a3'],['Bratschen D3','vsco-bratschen-d3'],['Celli A2','vsco-celli-a2'],['Violinen Pizz','vsco-violinen-pizz-a3'],['Celli Pizz','vsco-celli-pizz-a2'],['Solo-Violine A4','vsco-solovioline-a4']]}],
+  note:'Gruppen (Ensemble) Violinen, Bratschen, Celli: Legato-Sustain mit Vibrato, Pizz, Spiccato, Tremolo; 2–3 Lautstärken, Töne in Terz-/Quart-Abständen.'}
+];
+const PLAY='<svg viewBox="0 0 16 16"><path d="M4 2l10 6-10 6z"/></svg>';
+let ac, buf={}, cur=null, curBtn=null;
+async function load(id){ if(buf[id]) return buf[id]; const r=await fetch(D+id+'.mp3'); return buf[id]=await ac.decodeAudioData(await r.arrayBuffer()); }
+async function play(id,btn,t=0,vel=1){
+  ac=ac||new (window.AudioContext||window.webkitAudioContext)(); if(ac.state!=='running') await ac.resume();
+  const b=await load(id), s=ac.createBufferSource(), g=ac.createGain(); s.buffer=b; g.gain.value=vel; s.connect(g).connect(ac.destination);
+  if(btn){ if(cur) try{cur.stop()}catch(e){} cur=s; curBtn&&curBtn.classList.remove('on'); curBtn=btn; btn.classList.add('on'); s.onended=()=>btn.classList.remove('on'); }
+  s.start(ac.currentTime+t); return s; }
+const app=document.getElementById('app');
+for(const sec of S){
+  const h=document.createElement('h2'); h.style.setProperty('--c',`var(${sec.c})`); h.innerHTML='<i></i>'+sec.h; app.appendChild(h);
+  for(const src of sec.src){ const c=document.createElement('div'); c.className='card'; c.style.setProperty('--c',`var(${sec.c})`);
+    c.innerHTML=`<div class="src"><b>${src.n}</b><small>${src.l}</small></div><div class="row"></div>`;
+    for(const [lab,id] of src.s){ const b=document.createElement('button'); b.className='p'; b.innerHTML=PLAY+lab; b.onclick=()=>play(id,b); c.querySelector('.row').appendChild(b); }
+    app.appendChild(c); }
+  const n=document.createElement('p'); n.className='note'; n.innerHTML=sec.note; app.appendChild(n);
+}
+// Kurzer Groove zum Einordnen: Tumbao-artig mit Congas + Bongos + Tamburin, 100 BPM
+const g=document.createElement('div'); g.className='seq';
+const grooves={ 'GROOVE VCSL':{c:'vcsl-conga-offen',m:'vcsl-conga-gedaempft',t:'vcsl-tumba-offen',b:'vcsl-bongo-hoch',sh:'vcsl-tamb1-schuetteln'},
+               'GROOVE VIRTUOSITY':{c:'vd-conga-offen',m:'vd-conga-gedaempft',t:'vd-tumba-offen',b:'vcsl-bongo-hoch',sh:'vd-tamb-schuetteln'} };
+let gsrc=[];
+for(const k in grooves){ const b=document.createElement('button'); b.textContent=k; b.onclick=async()=>{
+  gsrc.forEach(s=>{try{s.stop()}catch(e){}}); gsrc=[]; if(b.classList.contains('on')){ b.classList.remove('on'); return; }
+  g.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
+  ac=ac||new (window.AudioContext||window.webkitAudioContext)(); const G=grooves[k]; await Promise.all(Object.values(G).map(load));
+  const st=60/100/4, pat=[ // 16tel: [step, sample, vel]
+    [0,'m',.6],[2,'b',.5],[4,'m',.5],[6,'c',.9],[7,'c',.8],[8,'m',.6],[10,'b',.6],[12,'m',.5],[14,'t',1],[15,'t',.9]];
+  for(let bar=0;bar<4;bar++){ for(const [s,id,v] of pat) gsrc.push(await play(G[id],null,.1+(bar*16+s)*st,v));
+    for(let s=0;s<16;s+=2) gsrc.push(await play(G.sh,null,.1+(bar*16+s)*st,s%4?.35:.6)); }
+  setTimeout(()=>b.classList.remove('on'),(.1+64*st)*1000+800); };
+  g.appendChild(b); }
+const gh=document.createElement('h2'); gh.style.setProperty('--c','var(--blue2)'); gh.innerHTML='<i></i>Im Zusammenspiel';
+app.insertBefore(g,app.children[0]); app.insertBefore(gh,g);
+</script>
+</body></html>
