@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="de"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Orgel-Hörvergleich #4</title>
+<style>
+  :root{ --bg:#0e1116; --card:#171b22; --line:#262c36; --tx:#e6e9ef; --dim:#8a93a3; --blue:#3fa9ff; --yel:#ffd166; --red:#ff6b6b; }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body{ margin:0; background:var(--bg); color:var(--tx); font:15px/1.4 -apple-system,system-ui,sans-serif; padding:16px 16px 40px; max-width:640px; margin-inline:auto; }
+  h1{ font-size:18px; margin:0 0 4px; } h2{ font-size:13px; letter-spacing:.08em; color:var(--yel); margin:22px 0 4px; }
+  p{ margin:0 0 12px; color:var(--dim); font-size:13px; }
+  .bar{ display:flex; gap:8px; flex-wrap:wrap; margin:10px 0 4px; align-items:center; }
+  .bar .lb{ font-size:11px; color:var(--dim); letter-spacing:.06em; min-width:64px; }
+  .seg{ display:flex; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+  .seg button{ border:0; border-radius:0; width:auto; padding:8px 11px; background:var(--card); flex-direction:row; }
+  .seg button.on{ background:rgba(63,169,255,.22); color:var(--blue); }
+  .seg button small{ color:var(--dim); font-size:11px; margin-left:4px; }
+  .tg{ background:var(--card); border:1px solid var(--line); border-radius:10px; padding:8px 10px; font-size:13px; display:flex; align-items:center; gap:6px; }
+  .tg input{ accent-color:var(--blue); }
+  .row{ background:var(--card); border:1px solid var(--line); border-radius:12px; padding:10px 12px; margin:8px 0; }
+  .row.cur{ border-color:#3b3420; }
+  .row .l b{ display:block; } .row .l small{ color:var(--dim); font-size:12px; }
+  .row .k{ display:inline-block; min-width:22px; color:var(--yel); }
+  .btns{ display:grid; grid-template-columns:repeat(5,1fr); gap:6px; margin-top:8px; }
+  button{ font:inherit; font-size:12px; color:var(--tx); background:#1f2631; border:1px solid #2e3746; border-radius:9px; padding:9px 0; display:flex; flex-direction:column; align-items:center; gap:2px; }
+  button svg{ width:20px; height:16px; stroke:currentColor; fill:none; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
+  button:active, button.hit{ background:rgba(63,169,255,.35); color:#fff; }
+  #st{ font-size:12px; color:var(--dim); margin-top:14px; } #st.err{ color:var(--red); }
+  .q{ font-size:12px; color:var(--dim); border-top:1px solid var(--line); margin-top:22px; padding-top:10px; }
+  /* Klang-Sheet-Vorschau */
+  .sheet{ background:#12161d; border:1px solid var(--line); border-radius:16px; padding:12px; margin-top:8px; }
+  .sheet .grp{ font-size:11px; letter-spacing:.08em; color:var(--dim); margin:10px 0 6px; }
+  .sheet .grp:first-child{ margin-top:0; }
+  .iseg{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
+  .iseg button{ padding:10px 0; font-weight:600; letter-spacing:.06em; }
+  .iseg button.on{ background:rgba(255,209,102,.16); border-color:rgba(255,209,102,.5); color:var(--yel); }
+  .srow{ display:grid; grid-template-columns:84px 1fr; align-items:center; gap:10px; margin:8px 0; font-size:13px; }
+  .srow input[type=range]{ width:100%; accent-color:var(--blue); }
+  .db{ display:flex; gap:4px; align-items:flex-end; height:46px; }
+  .db i{ flex:1; border-radius:3px 3px 0 0; background:rgba(63,169,255,.55); }
+  .db i.w{ background:rgba(230,233,239,.55); } .db i.b{ background:rgba(140,100,60,.75); }
+  .note{ font-size:11px; color:var(--dim); margin-top:6px; }
+</style></head><body>
+<h1>Orgel-Hörvergleich <span style="color:var(--yel)">#4</span></h1>
+<p>Dritter Keys-Sound „Orgel“. P und R sind das echte Piano bzw. Rhodes aus der App (zum Lautstärke-Vergleich, Code live aus <code>js/events.js</code>). A–D sind Vorschläge für die Orgel. Am besten über Handy-Lautsprecher <b>und</b> Kopfhörer anhören. „Halten“ = 3 s Akkord, damit man das Leslie hört.</p>
+
+<div class="bar"><span class="lb">REGISTER</span><div class="seg" id="regSeg"></div></div>
+<div class="bar"><span class="lb">LESLIE</span><div class="seg" id="lslSeg"><button data-s="0">aus</button><button data-s="1" class="on">langsam</button><button data-s="2">schnell</button></div></div>
+<div class="bar"><span class="lb">ANSCHLAG</span><div class="seg" id="velSeg"><button data-v="0.4">leise</button><button data-v="0.75" class="on">mittel</button><button data-v="1.1">laut</button></div></div>
+<div class="bar">
+  <label class="tg"><input type="checkbox" id="optComp" checked> Master-Kompressor</label>
+  <label class="tg"><input type="checkbox" id="optPhone"> Handy-Lautsprecher simulieren</label>
+</div>
+<p style="margin-top:6px">Leslie während „Halten“ umschalten: Rotoren beschleunigen bzw. bremsen hörbar (wie am Original).</p>
+
+<h2>ORGEL</h2><div id="rowsO"></div>
+<h2>ZUM VERGLEICH</h2><div id="rowsK"></div>
+
+<h2>SO KÖNNTE DAS KLANG-SHEET AUSSEHEN</h2>
+<div class="sheet">
+  <div class="grp">INSTRUMENT</div>
+  <div class="iseg"><button>PIANO</button><button>RHODES</button><button class="on">ORGEL</button></div>
+  <div class="grp">KLANG · ORGEL</div>
+  <div class="srow"><span>Register</span><div class="db" id="dbView"></div></div>
+  <div class="srow"><span>Ton</span><input type="range" min="0" max="100" value="50" id="shTon"></div>
+  <div class="srow"><span>Perkussion</span><input type="range" min="0" max="100" value="50" id="shPerc"></div>
+  <div class="srow"><span>Ausklang</span><input type="range" min="0" max="100" value="25" id="shRel"></div>
+  <div class="srow"><span>Leslie</span><div class="seg" id="shLsl"><button data-s="0">aus</button><button data-s="1" class="on">langsam</button><button data-s="2">schnell</button></div></div>
+  <div class="note">Register = 9 Zugriegel als Balken (16′ … 1′, Farben wie am Original). Antippen wechselt die Vorlage; „Ton“ = Helligkeit (Filter), „Perkussion“ = Klopfer am Anfang (Variante B/C), Leslie = Rotor. Die Regler hier steuern die Zeilen oben mit.</div>
+</div>
+
+<div id="st">lädt …</div>
+<div class="q">Bitte zurückmelden (Kommentar in Issue #4 reicht): welcher Buchstabe, welches Register als Standard, Leslie ab Werk an oder aus, und ob die Orgel auf den Anschlag reagieren soll (echte Orgel: nein).</div>
+<script>
+"use strict";
+var audioCtx=null; let chain=null;
+// ---------------- Vorschlag Orgel (so käme er nach js/events.js) ----------------
+// Zugriegel: 16′ 5⅓′ 8′ 4′ 2⅔′ 2′ 1⅗′ 1⅓′ 1′ = Teiltöne 1 3 2 4 6 8 10 12 16 über dem 16′-Ton (Oszillator läuft auf freq/2)
+const DB_H=[1,3,2,4,6,8,10,12,16];
+const REGS={
+  floete:{name:'Flöte', db:'008400000'},
+  jazz:{name:'Jazz', db:'888000000'},
+  gospel:{name:'Gospel', db:'888800000'},
+  voll:{name:'Voll', db:'888888888'},
+};
+// Eine PeriodicWave je Register (je Kontext zwischengespeichert) -> EIN Oszillator pro Note für alle Zugriegel
+function organWave(reg){
+  const c=audioCtx._owv||(audioCtx._owv={}); if(c[reg]) return c[reg];
+  const re=new Float32Array(17), im=new Float32Array(17), d=REGS[reg].db;
+  for(let i=0;i<9;i++){ const s=+d[i]; if(s>0) im[DB_H[i]]+=Math.pow(10,(s-8)*3/20); } // eine Raste = 3 dB
+  return c[reg]=audioCtx.createPeriodicWave(re,im); // normalisiert: Register sind etwa gleich laut
+}
+// Combo-Orgel (D): hohler, heller Ton (ungerade Teiltöne, 8′+4′)
+function comboWave(){
+  const c=audioCtx._owv||(audioCtx._owv={}); if(c._combo) return c._combo;
+  const re=new Float32Array(33), im=new Float32Array(33);
+  for(let k=1;k<=31;k+=2) im[k*1]+=1/k;            // 8′ Rechteck-ähnlich (Teiltöne relativ zu freq)
+  for(let k=1;k<=15;k+=2) im[k*2]+=0.45/k;         // 4′
+  return c._combo=audioCtx.createPeriodicWave(re,im);
+}
+// opt: {reg, perc, click, combo, velSens}
+function organVoice(tr,time,n,vel,holdSec,opt){
+  const freq=noteFreq(tr.rootNote+n+12);
+  const tone=tr.cutoff!=null?tr.cutoff:0.5, percAmt=tr.envMod!=null?tr.envMod:0.5;
+  const v=Math.max(0.05,Math.min(1.2,vel));
+  const lvl=opt.velSens?(0.55+0.45*Math.min(1,v)):1;           // echte Orgel: kein Anschlag
+  const peak=Math.max(0.0001,Math.min(0.12,tr.vol*0.065*lvl*(opt.combo?0.6:1)));  // Dauerton: leiser als Piano-Spitze; Combo ist obertonreicher
+  const rel=0.02+arpDecaySeconds(tr.decay!=null?tr.decay:0.25)*0.25;
+  const o=audioCtx.createOscillator();
+  if(opt.combo){ o.setPeriodicWave(comboWave()); o.frequency.setValueAtTime(freq,time); }
+  else { o.setPeriodicWave(organWave(opt.reg)); o.frequency.setValueAtTime(freq/2,time); }
+  const lp=audioCtx.createBiquadFilter(); lp.type='lowpass'; lp.Q.value=0.3;
+  lp.frequency.setValueAtTime(Math.min(16000,1200+tone*tone*11000+freq*2),time);
+  const amp=audioCtx.createGain(); amp.gain.setValueAtTime(0.0001,time);
+  if(opt.click){ amp.gain.linearRampToValueAtTime(peak*1.35,time+0.0012); amp.gain.setTargetAtTime(peak,time+0.0012,0.006); } // Klick = harter Einsatz mit kurzem Überschwinger, ohne Rauschen
+  else amp.gain.linearRampToValueAtTime(peak,time+0.008);
+  o.connect(lp).connect(amp);
+  const oscs=[o];
+  if(opt.perc && percAmt>0.02){ // Hammond-Perkussion: 2⅔′ (3. Teilton), klingt schnell ab
+    const p=audioCtx.createOscillator(), pg=audioCtx.createGain(); p.type='sine'; p.frequency.setValueAtTime(Math.min(12000,freq*3),time);
+    pg.gain.setValueAtTime(peak*1.6*percAmt,time); pg.gain.setTargetAtTime(0.0001,time+0.002,0.06+percAmt*0.14);
+    p.connect(pg).connect(amp); oscs.push(p);
+  }
+  amp.connect(tr._org||tr.bus);
+  oscs.forEach(x=>x.start(time));
+  const voice={amp,oscs,t0:time,
+    rel(at){ const now=Math.max(time+0.01,at!=null?at:audioCtx.currentTime); try{ amp.gain.cancelScheduledValues(now); amp.gain.setValueAtTime(peak,now); amp.gain.setTargetAtTime(0.0001,now,rel/4); oscs.forEach(x=>{ try{x.stop(now+rel*2+0.05);}catch(e){} }); }catch(e){} }};
+  o.onended=()=>{ try{ amp.disconnect(); }catch(e){} };
+  if(holdSec!=null) voice.rel(time+holdSec); else oscs.forEach(x=>{ try{x.stop(time+12);}catch(e){} }); // Vorschau ohne Loslassen: Notbremse
+  return voice;
+}
+// Leslie EINMAL pro Spur (nicht pro Note): Horn (hoch) mit Doppler + Panorama + Lautstärke, Trommel (tief) langsamer.
+// Geschwindigkeit wechselt mit Trägheit: Horn ~0,7 s, Trommel ~2,5 s. Konstant ~16 Knoten pro Spur, egal wie viele Noten.
+const LSL_HZ=[[0,0],[0.8,0.68],[6.6,5.9]];
+function leslieBuild(out){
+  const c=audioCtx, inp=c.createGain(), dry=c.createGain();
+  const hp=c.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=800;
+  const lp=c.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=800;
+  const dH=c.createDelay(0.02); dH.delayTime.value=0.004;
+  const gH=c.createGain(), pH=c.createStereoPanner(), gD=c.createGain(), pD=c.createStereoPanner();
+  const lH=c.createOscillator(), lD=c.createOscillator();
+  const mDel=c.createGain(), mAmpH=c.createGain(), mPanH=c.createGain(), mAmpD=c.createGain(), mPanD=c.createGain();
+  mDel.gain.value=0.0007; mAmpH.gain.value=0.22; mPanH.gain.value=0.7; mAmpD.gain.value=0.12; mPanD.gain.value=-0.35;
+  lH.connect(mDel).connect(dH.delayTime); lH.connect(mAmpH).connect(gH.gain); lH.connect(mPanH).connect(pH.pan);
+  lD.connect(mAmpD).connect(gD.gain); lD.connect(mPanD).connect(pD.pan);
+  inp.connect(hp).connect(dH).connect(gH).connect(pH).connect(out);
+  inp.connect(lp).connect(gD).connect(pD).connect(out);
+  inp.connect(dry); // „aus“: trocken
+  lH.start(); lD.start();
+  const L={inp,dry,out,lH,lD,hp,lp,mode:-1,
+    set(s,instant){ const t=c.currentTime, [fh,fd]=LSL_HZ[s];
+      if(s===0){ try{hp.disconnect();lp.disconnect();}catch(e){} dry.connect(out); }
+      else if(L.mode<=0){ try{dry.disconnect();}catch(e){} hp.connect(dH); lp.connect(gD); }
+      if(s>0){ if(instant||L.mode<=0){ lH.frequency.setValueAtTime(fh,t); lD.frequency.setValueAtTime(fd,t); }
+               else { lH.frequency.setTargetAtTime(fh,t,0.25); lD.frequency.setTargetAtTime(fd,t,0.9); } }
+      L.mode=s; }};
+  try{hp.disconnect();lp.disconnect();}catch(e){} L.set(1,true);
+  return L;
+}
+// Combo-Vibrato (D): nur Tonhöhe, pro Spur
+function vibBuild(out){
+  const c=audioCtx, inp=c.createGain(), d=c.createDelay(0.02), l=c.createOscillator(), m=c.createGain();
+  d.delayTime.value=0.005; l.frequency.value=5.6; m.gain.value=0.0009; l.connect(m).connect(d.delayTime); inp.connect(d).connect(out); l.start();
+  return {inp};
+}
+// ---------------- Prüfstand ----------------
+const VARIANTS=[
+  {k:'A', n:'Zugriegel pur', d:'ein Oszillator pro Note, sanfter Einsatz, ohne Leslie', o:{perc:false,click:false}, lsl:false},
+  {k:'B', n:'+ Klick & Perkussion', d:'harter Einsatz und kurzer 2⅔′-Klopfer (Regler „Perkussion“)', o:{perc:true,click:true}, lsl:false},
+  {k:'C', n:'B + Leslie', d:'Rotor einmal pro Spur, langsam/schnell oben umschalten', o:{perc:true,click:true}, lsl:true},
+  {k:'D', n:'Combo-Orgel', d:'hohl und hell (60er-Transistororgel), Vibrato statt Leslie', o:{combo:true,click:true}, vib:true},
+];
+const REF=[{k:'P', n:'Piano (App)', d:'zum Lautstärke-Vergleich', fn:'pianoVoice', snd:'piano'},{k:'R', n:'Rhodes (App)', d:'zum Lautstärke-Vergleich', fn:'rhodesVoice', snd:'rhodes'}];
+const NEED={'js/voices.js':['noteFreq','arpDecaySeconds'], 'js/events.js':['pianoWave','rhodesEnvAt','rhodesVoice','pianoVoice']};
+function extract(src,name){
+  const i=src.indexOf('function '+name+'('); if(i<0) throw new Error(name+' nicht gefunden');
+  let j=src.indexOf('{',i), d=0;
+  for(;j<src.length;j++){ const c=src[j]; if(c==='{') d++; else if(c==='}' && --d===0) break; }
+  return src.slice(i,j+1);
+}
+let ready=false;
+async function load(){
+  const st=document.getElementById('st');
+  try{
+    const ver=await fetch('../../index.html',{cache:'no-store'}).then(r=>r.text()).then(t=>(t.match(/\?v=(\d+)/)||[])[1]);
+    for(const [file,names] of Object.entries(NEED)){
+      const src=await fetch('../../'+file,{cache:'no-store'}).then(r=>{ if(!r.ok) throw new Error(file+' '+r.status); return r.text(); });
+      for(const n of names) (0,eval)(extract(src,n));
+    }
+    ready=true; st.textContent='Keys-Code aus der App geladen (v'+(ver||'?')+'). Ton an, Stummschalter am iPhone aus.';
+  }catch(e){ st.textContent='Fehler: '+e.message; st.className='err'; }
+}
+let REG='jazz', LSL=1, VEL=0.75;
+const S={ton:0.5, perc:0.5, rel:0.25};
+function ctx(){
+  if(!audioCtx){
+    audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+    const inG=audioCtx.createGain(); inG.gain.value=0.85;
+    const comp=audioCtx.createDynamicsCompressor(); comp.knee.value=30; comp.release.value=0.25; // wie Master-Preset „Drumstar“
+    const thru=audioCtx.createGain();
+    const hp=audioCtx.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=350; hp.Q.value=0.9;
+    const pk=audioCtx.createBiquadFilter(); pk.type='peaking'; pk.frequency.value=3000; pk.gain.value=6; pk.Q.value=0.8;
+    const lp=audioCtx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=9000;
+    hp.connect(pk).connect(lp).connect(audioCtx.destination);
+    chain={inG,comp,thru,hp};
+    chain.lsl=leslieBuild(inG); chain.vib=vibBuild(inG);
+  }
+  if(audioCtx.state!=='running') audioCtx.resume();
+  const c=chain, useComp=document.getElementById('optComp').checked, phone=document.getElementById('optPhone').checked;
+  [c.inG,c.comp].forEach(n=>{ try{n.disconnect();}catch(e){} });
+  const out=phone?c.hp:audioCtx.destination;
+  if(useComp){ c.inG.connect(c.comp).connect(out); } else { c.inG.connect(out); }
+  return audioCtx;
+}
+function phrase(f,tr,what){
+  const t0=audioCtx.currentTime+0.06, sd=60/110/4;
+  if(what==='lauf'){
+    [[12,0,2,1],[16,2,1,0.6],[19,3,1,0.7],[24,4,3,1],[23,7,1,0.5],[19,8,2,0.8],[16,10,2,0.6],[12,12,4,0.9]]
+      .forEach(([n,s,l,a])=>f(tr,t0+s*sd,n,VEL*a,l*sd*0.96));
+    [0,12].forEach((s,i)=>f(tr,t0+s*sd,i?-5:0,VEL*0.8,(i?4:12)*sd*0.96));
+    return;
+  }
+  if(what==='halt'){ [0,12,16,19].forEach(n=>f(tr,t0,n,VEL,3)); return; }
+  const notes={tief:[0],mitte:[12],akk:[12,16,19]}[what];
+  notes.forEach(n=>f(tr,t0,n,VEL,1.0));
+}
+function playO(v,what){
+  if(!ready) return; const c=ctx();
+  const tr={id:'piano', sound:'organ', rootNote:0, cutoff:S.ton, envMod:S.perc, decay:S.rel, vol:0.8, bus:chain.inG};
+  if(v.lsl){ chain.lsl.set(LSL); tr._org=chain.lsl.inp; } else if(v.vib) tr._org=chain.vib.inp;
+  const o=Object.assign({reg:REG},v.o);
+  phrase((tr,t,n,vel,h)=>organVoice(tr,t,n,vel,h,o),tr,what);
+}
+function playK(v,what){
+  if(!ready) return; ctx();
+  const rh=v.snd==='rhodes';
+  const tr={id:'piano', sound:v.snd, rootNote:0, cutoff:rh?0.5:0.55, envMod:rh?0.45:0.5, decay:rh?0.55:0.5, tremolo:rh?0.35:0, vol:0.8, bus:chain.inG};
+  phrase((tr,t,n,vel,h)=>window[v.fn](tr,t,n,vel,h),tr,what);
+}
+const IC={
+  tief:'<svg viewBox="0 0 20 16"><path d="M2 12h16M5 12V5"/></svg>',
+  mitte:'<svg viewBox="0 0 20 16"><path d="M2 12h16M10 12V5"/></svg>',
+  akk:'<svg viewBox="0 0 20 16"><path d="M2 14h16M6 14V4M10 14V7M14 14V5"/></svg>',
+  halt:'<svg viewBox="0 0 20 16"><path d="M2 14h16M3 8h14M3 5h14"/></svg>',
+  lauf:'<svg viewBox="0 0 20 16"><path d="M2 13l4-3 3 2 4-6 5-3"/></svg>'};
+function addRow(v,box,fn){
+  const d=document.createElement('div'); d.className='row'+(v.fn?' cur':'');
+  d.innerHTML=`<div class="l"><b><span class="k">${v.k}</span>${v.n}</b><small>${v.d}</small></div><div class="btns"></div>`;
+  const bx=d.querySelector('.btns');
+  [['Tief','tief'],['Mitte','mitte'],['Akkord','akk'],['Halten','halt'],['Lauf','lauf']].forEach(([l,w])=>{
+    const b=document.createElement('button'); b.innerHTML=IC[w]+l; b.onclick=()=>{ fn(v,w); b.classList.add('hit'); setTimeout(()=>b.classList.remove('hit'),150); }; bx.appendChild(b); });
+  document.getElementById(box).appendChild(d);
+}
+VARIANTS.forEach(v=>addRow(v,'rowsO',playO));
+REF.forEach(v=>addRow(v,'rowsK',playK));
+// Register-Auswahl + Zugriegel-Anzeige
+const regSeg=document.getElementById('regSeg');
+function drawDb(){
+  const d=REGS[REG].db, cls=['b','b','w','w','b','w','b','b','w']; // 16′ 5⅓′ braun, 8′ 4′ weiß, 2⅔′ schwarz … (vereinfacht)
+  document.getElementById('dbView').innerHTML=[...d].map((s,i)=>`<i class="${cls[i]}" style="height:${4+(+s)*5}px" title="${s}"></i>`).join('');
+}
+Object.entries(REGS).forEach(([id,r])=>{ const b=document.createElement('button'); b.textContent=r.name; if(id===REG) b.classList.add('on');
+  b.onclick=()=>{ REG=id; regSeg.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); drawDb(); }; regSeg.appendChild(b); });
+document.getElementById('dbView').onclick=()=>{ const ks=Object.keys(REGS); const b=regSeg.querySelectorAll('button')[(ks.indexOf(REG)+1)%ks.length]; b.click(); };
+drawDb();
+function setLsl(s){ LSL=s; ['lslSeg','shLsl'].forEach(id=>document.querySelectorAll('#'+id+' button').forEach(x=>x.classList.toggle('on',+x.dataset.s===s))); if(chain) chain.lsl.set(s); }
+['lslSeg','shLsl'].forEach(id=>document.querySelectorAll('#'+id+' button').forEach(b=>b.onclick=()=>setLsl(+b.dataset.s)));
+document.querySelectorAll('#velSeg button').forEach(b=>b.onclick=()=>{ VEL=+b.dataset.v; document.querySelectorAll('#velSeg button').forEach(x=>x.classList.toggle('on',x===b)); });
+document.getElementById('shTon').oninput=e=>S.ton=e.target.value/100;
+document.getElementById('shPerc').oninput=e=>S.perc=e.target.value/100;
+document.getElementById('shRel').oninput=e=>S.rel=e.target.value/100;
+load();
+</script>
+</body></html>
