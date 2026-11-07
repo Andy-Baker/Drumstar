@@ -596,7 +596,7 @@ function syncBottomBarVisibility(){
 }
 function closeAllOverlays(){
   closeSheets(); closeMenus();
-  [tempoOverlay, patternsOverlay, kitPickerOverlay, soundPickerOverlay, sampleEditorOverlay, xyOverlay, drumSetOverlay, document.getElementById('prWin'), kitConfirm].forEach(el=>{ if(el) el.classList.remove('open'); });
+  [tempoOverlay, patternsOverlay, kitPickerOverlay, soundPickerOverlay, sampleEditorOverlay, xyOverlay, drumSetOverlay, document.getElementById('prWin'), kitConfirm, document.getElementById('kitDelConfirm')].forEach(el=>{ if(el) el.classList.remove('open'); });
   xyClear();
   syncBottomBarVisibility();
 }

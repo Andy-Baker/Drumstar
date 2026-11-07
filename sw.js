@@ -8,7 +8,7 @@
 //   bei jedem Deploy CACHE hier und alle ?v= in index.html gemeinsam erhöhen (tests/test-sw.py prüft das).
 // - Schriften/Bilder/Samples: Cache zuerst.
 // - Übrige Seiten (Impressum …): stale-while-revalidate. Offline-Fallback nur für Seitenaufrufe.
-const CACHE='mrm44-v103';
+const CACHE='mrm44-v104';
 const OPTIONAL=['./impressum.html','./datenschutz.html','./fonts.css',
   './icons/icon-192.png','./icons/icon-512.png','./icons/logo-drumstar.png',
   './fonts/Rajdhani-Medium.woff','./fonts/Rajdhani-SemiBold.woff','./fonts/Rajdhani-Bold.woff','./fonts/VT323-Regular.woff',

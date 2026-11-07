@@ -203,12 +203,42 @@ async function kitPickerRefresh(){
     row.querySelector('.kn').textContent=s.name; row.querySelector('.kd').textContent=(n?n+' Sample'+(n>1?'s':'')+' · ':'')+'Basis '+KITS[s.baseKitId||'rock'].name;
     row.onclick=()=>kitChooseGuarded(async()=>{ await applyOwnSet(s); closeKitPicker(); });
     row.querySelector('.kib').onclick=e=>{ e.stopPropagation(); kitChooseGuarded(async()=>{ await applyOwnSet(s); openSetEditor(); }); };
-    row.querySelector('.d').onclick=async e=>{ e.stopPropagation(); await dsDel(s.id); if(currentSet.id===s.id){ currentSet={id:null,name:currentSet.name,dirty:true}; updateKitLabel(); } kitPickerRefresh(); };
+    row.querySelector('.d').onclick=e=>{ e.stopPropagation(); dsAskDelete(s); };
     list.appendChild(row);
   });
   const nw=document.createElement('div'); nw.className='kit-chip new'; nw.textContent='＋ Neues Set aus dem aktuellen Kit';
   nw.onclick=()=>kitChooseGuarded(()=>{ currentSet={id:null,name:'Neues Set',dirty:true}; updateKitLabel(); openSetEditor(); });
   list.appendChild(nw);
+}
+// ---- Eigenes Set löschen (#63, Mockup docs/mockups/issue-63.html A) ----
+// Steckt das Set in gespeicherten Beats/Songs oder ist es geladen: Abfrage mit Liste. Sonst sofort löschen, Rückgängig im Toast.
+// Beats/Songs speichern eine Kopie der Stimmen (drumSet.voices) → klingen danach gleich, nur der Listeneintrag verschwindet.
+async function dsUsage(id){
+  const out=[];
+  try{ (await listPatternsFromIndexedDB()).forEach(p=>{ if(p.drumSet && p.drumSet.setId===id) out.push(['Beat',p.name||'Beat']); }); }catch(e){}
+  try{ (await songAll()).forEach(s=>{ if(s.drumSet && s.drumSet.setId===id) out.push(['Song',s.name||'Song']); }); }catch(e){}
+  return out;
+}
+async function dsAskDelete(s){
+  const use=await dsUsage(s.id), cur=currentSet.id===s.id;
+  if(!use.length && !cur){ dsDoDelete(s); return; }
+  const box=document.getElementById('kdBox'), n=use.length, dlg=document.getElementById('kitDelConfirm');
+  box.innerHTML='<div class="kc-h"></div>'
+    +(n?'<div>Wird verwendet in '+n+(n>1?' Beats/Songs':' Beat/Song')+':</div><div class="kc-use"></div>':'<div>Wird in keinem gespeicherten Beat oder Song verwendet.</div>')
+    +(cur?'<div class="kc-info">Ist gerade geladen – der aktuelle Beat behält den Klang, das Set gilt dann als „eigene Änderung“.</div>':'')
+    +(n?'<div class="kc-info">Diese Beats und Songs klingen weiter wie bisher – das Set ist in ihnen mitgespeichert. Nur der Eintrag hier in der Liste verschwindet.</div>':'')
+    +'<div class="kc-row"><button class="danger" id="kdDel">Löschen</button><button id="kdNo">Abbrechen</button></div>';
+  box.querySelector('.kc-h').textContent='„'+s.name+'“ löschen?';
+  if(n){ const U=box.querySelector('.kc-use'); use.forEach(([t,nm])=>{ const d=document.createElement('div'); d.innerHTML='<b class="'+(t==='Song'?'song':'')+'">'+t.toUpperCase()+'</b><span></span>'; d.querySelector('span').textContent=nm; U.appendChild(d); }); }
+  dlg.classList.add('open');
+  box.querySelector('#kdDel').onclick=()=>{ dlg.classList.remove('open'); dsDoDelete(s); };
+  box.querySelector('#kdNo').onclick=()=>dlg.classList.remove('open');
+  dlg.onclick=e=>{ if(e.target===dlg) dlg.classList.remove('open'); };
+}
+async function dsDoDelete(s){
+  const prev=Object.assign({},currentSet), cur=currentSet.id===s.id;
+  await dsDel(s.id); if(cur){ currentSet={id:null,name:currentSet.name,dirty:true}; updateKitLabel(); } kitPickerRefresh();
+  hmToast('„'+s.name+'“ gelöscht', true, async()=>{ await dsPut(s); if(cur){ currentSet=prev; updateKitLabel(); } kitPickerRefresh(); });
 }
 // ---- Set-Editor ----
 function openSetEditor(){

@@ -804,6 +804,17 @@
   #dsDirty{ font-size:11px; color:#ffc247; min-height:13px; flex-shrink:0; }
   #kitConfirm{ display:none; position:fixed; inset:0; z-index:80; background:rgba(0,0,0,.65); align-items:center; justify-content:center; padding:20px; }
   #kitConfirm.open{ display:flex; }
+  /* Eigenes Set löschen (#63, Mockup docs/mockups/issue-63.html A) */
+  #kitDelConfirm{ display:none; position:fixed; inset:0; z-index:80; background:rgba(0,0,0,.65); align-items:center; justify-content:center; padding:20px; }
+  #kitDelConfirm.open{ display:flex; }
+  .kc-h{ font-size:15px; font-weight:700; color:var(--tx,#e9edf3); }
+  .kc-use{ display:flex; flex-direction:column; gap:4px; max-height:180px; overflow-y:auto; }
+  .kc-use div{ display:flex; align-items:center; gap:8px; background:var(--panel-inset,#0e0f14); border-radius:7px; padding:8px 10px; font-size:13px; }
+  .kc-use b{ font:11px 'JetBrains Mono',monospace; padding:1px 6px; border-radius:4px; background:rgba(63,169,255,.14); color:var(--blue-2); flex:none; }
+  .kc-use b.song{ background:rgba(176,124,255,.16); color:#c9a6ff; }
+  .kc-use span{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .kc-info{ font-size:12px; color:var(--dim); line-height:1.4; }
+  .kc-row button.danger{ border-color:rgba(255,107,107,.55); background:rgba(255,107,107,.12); color:#ff8a8a; }
   .kc-box{ background:#12131a; border:1px solid rgba(63,169,255,.4); border-radius:12px; padding:16px; display:flex; flex-direction:column; gap:12px; width:100%; max-width:420px; font-size:13px; }
   .kc-row{ display:flex; gap:8px; } .kc-row button{ flex:1; min-height:40px; border-radius:7px; border:1px solid rgba(63,169,255,.4); background:rgba(63,169,255,.12); color:var(--blue-2); font-family:inherit; font-weight:700; font-size:11px; letter-spacing:.04em; text-transform:uppercase; cursor:pointer; }
   #ovToast{ min-height:14px; font:11px 'JetBrains Mono',monospace; color:var(--blue-2); }
