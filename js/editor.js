@@ -19,8 +19,8 @@ for(let s=0;s<16;s++){
   c.addEventListener('click', ()=>{
     const tr=TRACKS[activeTrackIdx];
     const abs=currentPage*16+s;
-    const sa=ART[tr.id] ? stepArt[tr.id]|0 : 0;
-    if(tr.steps[abs]===stepBrush && (!ART[tr.id] || (tr.notes[abs]|0)===sa)) tr.steps[abs]=VEL_OFF;
+    const sa=ART[trVoice(tr)] ? stepArt[tr.id]|0 : 0;
+    if(tr.steps[abs]===stepBrush && (!ART[trVoice(tr)] || (tr.notes[abs]|0)===sa)) tr.steps[abs]=VEL_OFF;
     else { tr.steps[abs]=stepBrush; if(tr.notes) tr.notes[abs]=sa; }
     updateStepVisual(c, tr.steps[abs]); c.dataset.a=artLetter(tr,abs);
     if(tr._ovCells) updateStepVisual(tr._ovCells[s], tr.steps[abs]);
@@ -59,7 +59,7 @@ function renderEditorArea(tr){
 }
 // Leiste „Spielweise“ unter der Stärke — nur für Spuren mit Spielweisen (Hi-Hat, Ride, Crash)
 function artRender(tr){
-  const row=$id('artRow'), L=ART[tr.id];
+  const row=$id('artRow'), L=ART[trVoice(tr)];
   if(!L){ row.style.display='none'; row.innerHTML=''; return; }
   row.style.display=''; const cur=stepArt[tr.id]|0;
   row.innerHTML='<span class="al">Spielweise</span>'+L.map((x,i)=>'<button data-a="'+i+'" class="'+(i===cur?'on':'')+'" aria-pressed="'+(i===cur)+'"><b>'+x.k+'</b>'+x.n+'</button>').join('');

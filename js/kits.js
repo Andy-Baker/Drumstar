@@ -212,18 +212,24 @@ Object.values(KITS).forEach(k=>{ if(k.samples) k.voices=KITS.rock.voices; });
 const VOICE_ROLE={ bd:'kick', sd:'snare', rs:'rim', ch:'hat', hl:'hat', hf:'hat', oh:'openhat', lt:'tom', ht:'tom',
                    cy:'crash', rd:'ride', rb:'ride', hc:'clap', cb:'perc', cl:'perc', mr:'perc' };
 const ROLE_GROUP={ kick:'Kick', snare:'Snare', rim:'Snare', hat:'Hi-Hat', openhat:'Hi-Hat', tom:'Tom', crash:'Becken', ride:'Becken', clap:'Perc', perc:'Perc' };
-function trVoice(tr){ return tr.id; } // Stimme, die die Zeile spielt (Stufe 2: aus dem Drum-Set)
+// Stufe 2: drumSet.voices[id]={t:'syn',kitId,v} = Zeile spielt Stimme v aus Kit kitId (ohne v: dieselbe Stimme).
+// Mixer-Kanal, Gruppe, Noten, Tune/Laut bleiben an der Zeile; Klang, Rolle, Spielweisen und Name folgen der Stimme.
+function trSwap(tr){ const o=drumSet.voices[tr.id]; return (o && o.t==='syn' && o.v && o.v!==tr.id && VOICE_FNS[o.v]) ? o.v : null; }
+function trVoice(tr){ return trSwap(tr)||tr.id; }
+function trLabel(tr){ const s=trSwap(tr); return s ? TRACKS.find(t=>t.id===s).name : tr.name; }
+function trShort(tr){ const s=trSwap(tr); return s ? s.toUpperCase() : (tr.short||tr.id.toUpperCase()); }
 function trRole(tr){ return VOICE_ROLE[trVoice(tr)]||'perc'; }
 function roleTracks(role){ return TRACKS.filter(t=>t.type!=='arp' && !t.isSample && trRole(t)===role); }
 const ART={ ch:[{k:'Z',n:'Zu',v:'ch'},{k:'L',n:'Locker',v:'hl'},{k:'P',n:'Pedal',v:'hf'}],
             rd:[{k:'F',n:'Fläche',v:'rd'},{k:'B',n:'Bell',v:'rb'}],
             // Crash (#56): frei ausklingen oder mit der Hand abstoppen — sofort, nach 1/16 oder nach 1/8 (tempoabhängig)
             cy:[{k:'C',n:'Crash',v:'cy'},{k:'K',n:'Kurz',v:'cy'},{k:'S',n:'1/16',v:'cy',st:1},{k:'A',n:'1/8',v:'cy',st:2}] };
-function artOf(tr,a){ const L=ART[tr.id]; return L ? (L[a|0]||L[0]) : null; }
-function artLetter(tr,abs){ const L=ART[tr.id]; if(!L || !(tr.steps[abs]>0)) return ''; const a=tr.notes?tr.notes[abs]|0:0; return a>0&&L[a]?L[a].k:''; }
+function artOf(tr,a){ const L=ART[trVoice(tr)]; return L ? (L[a|0]||L[0]) : null; }
+function artLetter(tr,abs){ const L=ART[trVoice(tr)]; if(!L || !(tr.steps[abs]>0)) return ''; const a=tr.notes?tr.notes[abs]|0:0; return a>0&&L[a]?L[a].k:''; }
 function artSynth(tr,a,kp){ // Synth-Kits: Spielweise über die Parameter des Kits
-  if(tr.id==='rd' && a===1) return kp.bell||kp;
-  if(tr.id!=='ch' || !a) return kp;
+  const v=trVoice(tr);
+  if(v==='rd' && a===1) return kp.bell||kp;
+  if(v!=='ch' || !a) return kp;
   const f=a===1?4:0.7, o=Object.assign({},kp,{decayClosed:kp.decayClosed*f, decayClosedAccent:kp.decayClosedAccent*f});
   if(kp.ops) o.ops=kp.ops.map(x=>Object.assign({},x,{decay:x.decay*f}));
   if(a===2) o.fmLevel=kp.fmLevel*0.6; // Pedal: leiser, kurz
@@ -412,16 +418,17 @@ function smpOptRender(){ document.querySelectorAll('#kitPickerList .kit-opts').f
 function smpOptCollapse(){ document.querySelectorAll('#kitPickerList .kit-opts').forEach(b=>{ b.hidden=true; const k=b.parentNode.querySelector('.kit-kl'); if(k) k.setAttribute('aria-expanded','false'); }); }
 function triggerTrack(tr, time, velocity, art){
   currentTrackBus = tr.bus || master;
-  if(tr.id==='ch') chokeOpenSample(time); // Closed Hat kappt ein klingendes Open-Hat-Sample
+  const vid=trVoice(tr);
+  if(vid==='ch') chokeOpenSample(time); // Closed Hat kappt ein klingendes Open-Hat-Sample
   if(tr.type==='arp'){ triggerArpStep(time, tr, 0, velocity, false); return; } // Preview: Grundton
   if(tr.isSample){ playSample(time, tr.vol, tr.tune, velocity); return; }
   const ov=drumSet.voices[tr.id];
   if(ov && ov.t==='smp' && playDrumSample(tr, time, velocity)) return;
-  if(tr.id==='cy' && art>0){ const C=ART.cy[art]; triggerChokedCrash(time, tr, velocity, C&&C.st ? C.st*stepDuration() : 0); return; }
+  if(vid==='cy' && art>0){ const C=ART.cy[art]; triggerChokedCrash(time, tr, velocity, C&&C.st ? C.st*stepDuration() : 0); return; }
   const kid=voiceKitId(tr.id), A=artOf(tr,art);
-  if(KITS[kid].samples && smpPlay(kid, tr, time, velocity, false, A?A.v:tr.id)) return;
-  const kp=artSynth(tr, art|0, KITS[kid].voices[tr.id]);
-  VOICE_FNS[tr.id](time, tr.vol, tr.tune, velocity, kp);
+  if(KITS[kid].samples && smpPlay(kid, tr, time, velocity, false, A?A.v:vid)) return;
+  const kp=artSynth(tr, art|0, KITS[kid].voices[vid]);
+  VOICE_FNS[vid](time, tr.vol, tr.tune, velocity, kp);
 }
 // "Choked" Crash: derselbe Crash des aktuellen Kits, mit der Hand abgestoppt
 // statt frei ausklingend. Funktioniert für beide Crash-Engines (FM und
@@ -437,7 +444,7 @@ function triggerTrack(tr, time, velocity, art){
 // Spur-Bus ausgeblendet (Samples: smpPlay mit choked=Sekunden); beim späten Greifen klingt der Hall nach.
 function triggerChokedCrash(time, tr, velocity, hold){
   currentTrackBus = tr.bus || master;
-  const ovc=drumSet.voices.cy;
+  const ovc=drumSet.voices[tr.id], vid=trVoice(tr);
   if(ovc && ovc.t==='smp' && playDrumSample(tr, time, velocity)) return;
   if(!(hold>0)){ // Kurz: Hall/Delay-Sends kurz ducken, sonst überdeckt der Nachhall den Stopp
     const duckHold=0.11, duckRelease=0.09; // Sekunden: wie lange stumm, wie schnell zurück zur normalen Stärke
@@ -454,10 +461,10 @@ function triggerChokedCrash(time, tr, velocity, hold){
     });
   }
   const h=hold>0 ? Math.max(0.06,hold) : 0.06; // Zeit bis zum Abgreifen; Anschlag bleibt in jeder Stufe voll
-  const ck=voiceKitId('cy'); if(KITS[ck].samples && smpPlay(ck, tr, time, velocity, h)) return;
+  const ck=voiceKitId(tr.id); if(KITS[ck].samples && smpPlay(ck, tr, time, velocity, h, vid)) return;
   const cut=audioCtx.createGain(); cut.connect(tr.bus || master); currentTrackBus=cut;
   cut.gain.setValueAtTime(1, time+h); cut.gain.linearRampToValueAtTime(0.0001, time+h+0.04);
-  const kp=KITS[ck].voices.cy;
+  const kp=KITS[ck].voices[vid]||KITS[ck].voices.cy;
   if(kp.engine==='sixosc') playMetallicSix(time, tr.vol, tr.tune, velocity, kp, 'cymbal');
   else playCrash(time, tr.vol, tr.tune, velocity, kp);
   currentTrackBus = tr.bus || master;

@@ -256,6 +256,26 @@ async def main():
     ok('Rollen: Standard-Zuordnung', r['roles']=='bd:kick sd:snare ch:hat lt:tom ht:tom rs:rim hc:clap oh:openhat cy:crash rd:ride cb:perc cl:perc mr:perc', r['roles'])
     ok('Fill: Standard-Zeilen wie bisher', r['std']=='bd,ch,cy,ht,lt,oh,rd,sd', r['std'])
     ok('Fill: getauschte LT-Zeile (Maracas) bleibt frei, HT übernimmt', r['swap']=='bd,ch,cy,ht,oh,rd,sd' and r['cyChoke'] and r['rndRole']=='perc', r)
+    # Stimmen tauschen (#2 Stufe 2): Set-Editor, Liste nach Rolle, Klang/Name/Fill folgen der Stimme
+    await pg.evaluate("openSetEditor()"); await pg.wait_for_timeout(300)
+    await pg.click('#dsRows .ds-row:has-text("LOW TOM")'); await pg.wait_for_timeout(300)
+    c=await pg.evaluate("(()=>{const c=document.getElementById('dsChips'), b=c.querySelector('button'); return {on:c.querySelector('.on').textContent, ch:c.getBoundingClientRect().height, bh:b.getBoundingClientRect().height}})()")
+    ok('Tauschen: Filter vorausgewählt = Rolle der Zeile (Tom)', c['on']=='Tom', c)
+    ok('Tauschen: Filter-Pills nicht abgeschnitten', c['ch']>=c['bh'] and c['bh']>=38, c)
+    await pg.click('#dsChips button:has-text("Perc")'); await pg.wait_for_timeout(150)
+    await pg.click('#dsList .ds-it:has-text("Maracas") >> nth=0'); await pg.wait_for_timeout(300)
+    r=await pg.evaluate("""(async()=>{ await initAudio(); const lt=TRACKS.find(t=>t.id==='lt'), R={};
+      R.v=trVoice(lt); R.role=trRole(lt); R.ov=lt._ovLab.textContent; R.fill=Object.keys(generateFillOverride(8)).sort().join();
+      let hit=''; const o=VOICE_FNS.mr, t=VOICE_FNS.lt; VOICE_FNS.mr=(...a)=>{hit+='mr'}; VOICE_FNS.lt=(...a)=>{hit+='lt'};
+      triggerTrack(lt, audioCtx.currentTime+0.05, VEL_NORMAL, 0); VOICE_FNS.mr=o; VOICE_FNS.lt=t; R.hit=hit;
+      const d=collectPatternData('t','t'); R.saved=JSON.stringify(d.drumSet.voices.lt); return R; })()""")
+    ok('Tauschen: LT spielt Maracas (Klang, Rolle, Name)', r['v']=='mr' and r['role']=='perc' and r['ov']=='MR' and r['hit']=='mr', r)
+    ok('Tauschen: Fill lässt die getauschte Zeile aus', r['fill']=='bd,ch,cy,ht,oh,rd,sd', r['fill'])
+    ok('Tauschen: wird mit dem Beat gespeichert', '"v":"mr"' in r['saved'] and '"t":"syn"' in r['saved'], r['saved'])
+    await pg.click('#hmToast button'); await pg.wait_for_timeout(300)
+    ok('Tauschen: Rückgängig stellt Original her', await pg.evaluate("trVoice(TRACKS.find(t=>t.id==='lt'))==='lt' && !drumSet.voices.lt && TRACKS.find(t=>t.id==='lt')._ovLab.textContent==='LT'"))
+    await pg.screenshot(path=OUT+'/ds_tauschen.png'); await fz(pg,'Set-Editor')
+    await pg.click('#dsShX'); await pg.click('#dsCloseBtn'); await pg.wait_for_timeout(200)
     ok('Schrift überall ≥ 11 px (#19)', not fz.bad, fz.bad)
     ok('Keine Fehler', not errs, errs)
     await b.close()

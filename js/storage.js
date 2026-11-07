@@ -66,7 +66,7 @@ function collectPatternData(name, id){
 // korrekt auf die aktuelle Pattern-Länge aufgefüllt bzw. gekürzt werden.
 // Spielweisen der Drum-Spuren laden (tr.notes): nur gültige Werte, sonst 0 = Standard
 function artLoad(tr, saved){
-  const n=(ART[tr.id]||[]).length, out=new Array(PATTERN_LENGTH).fill(0);
+  const n=(tr.type!=='arp' && !tr.isSample) ? Math.max(...Object.values(ART).map(l=>l.length)) : 0, out=new Array(PATTERN_LENGTH).fill(0);
   if(n && saved) for(let i=0;i<Math.min(saved.length,PATTERN_LENGTH);i++){ const a=saved[i]|0; out[i]= a>0&&a<n ? a : 0; }
   return out;
 }

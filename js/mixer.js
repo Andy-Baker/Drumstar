@@ -100,7 +100,7 @@ function buildMixerChannels(){
     g.el.querySelector('.mix-grp').onclick=()=>{ mxGrpOpen[k]=!op; buildMixerChannels(); };
     mxGrpMeters[k]=g.meter; mxGrpSolo[k]=g.solo; };
   TRACKS.forEach(tr=>{ const k=trGrp(tr); if(k&&!done[k]){ done[k]=1; grpStrip(k); } if(k&&!mxGrpOpen[k]) return;
-    const r=mxStrip({key:'tr:'+tr.id,cls:k?'in-grp in-'+k:'',color:tr.color,name:tr.short||tr.id.toUpperCase(),label:tr.name,vol:tr.vol,parent:ch,
+    const r=mxStrip({key:'tr:'+tr.id,cls:k?'in-grp in-'+k:'',color:tr.color,name:trShort(tr),label:trLabel(tr),vol:tr.vol,parent:ch,
       onVol:v=>setTrackVol(tr,v), mute:{on:tr.muted,fn:()=>toggleTrackMute(tr)}, solo:{on:tr.solo,fn:()=>toggleTrackSolo(tr)},
       set:()=>openKanal(tr), dots:tr.fx||[]});
     tr._mixFaderEl=r.fader; tr._mixMeter=r.meter; tr._mixMuteBtn=r.mute; tr._mixSoloBtn=r.solo; });

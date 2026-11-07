@@ -73,7 +73,7 @@ function openKanal(tr){ klTr=tr; klMode='kanal'; klView=[]; klResetUI(); renderK
 function openFxRoot(mode,arg){ klMode=mode; klArg=arg; klView=[]; klResetUI(); renderKlang(); openSheet('klSheet'); $id('klSheet').scrollTop=0; }
 function klPush(v){ klView.push(v); klResetUI(); renderKlang(); $id('klSheet').scrollTop=0; }
 function klBackFn(){ klView.pop(); klResetUI(); eqStop(); renderKlang(); }
-const fxTrName=tr=>tr.grp?'Gruppe '+GRP_DEF[tr.k].n:tr.type==='arp'?prName(tr):tr.name, fxShort=tr=>tr.grp?GRP_DEF[tr.k].ab:tr.type==='arp'?prName(tr):(tr.short||tr.id.toUpperCase());
+const fxTrName=tr=>tr.grp?'Gruppe '+GRP_DEF[tr.k].n:tr.type==='arp'?prName(tr):trLabel(tr), fxShort=tr=>tr.grp?GRP_DEF[tr.k].ab:tr.type==='arp'?prName(tr):trShort(tr);
 let FXH={}, fxHid=0; const fxOn=fn=>{ const id='f'+(fxHid++); FXH[id]=fn; return id; };
 // Regler im Gerät: ohne Zahl (nach Gehör); Wert nur beim Ziehen im Label, Zurücksetzen-Symbol nur bei Abweichung
 function fxRow(ps,val,def,fn,noReset){ const isd=def==null||Math.abs(val-def)<1e-9;
@@ -313,7 +313,7 @@ $id('klTabs').addEventListener('click',e=>{ const b=e.target.closest('button'); 
 $id('klX').addEventListener('click',closeSheets);
 { const b=document.createElement('button'); b.className='shx'; b.id='klBack'; b.hidden=true; b.setAttribute('aria-label','Zurück'); b.innerHTML=FXI.l; b.onclick=klBackFn; $id('klT').before(b); }
 $id('artRow').addEventListener('click', e=>{
-  const b=e.target.closest('button[data-a]'); if(!b) return; const tr=TRACKS[activeTrackIdx]; if(!ART[tr.id]) return;
+  const b=e.target.closest('button[data-a]'); if(!b) return; const tr=TRACKS[activeTrackIdx]; if(!ART[trVoice(tr)]) return;
   stepArt[tr.id]=+b.dataset.a; artRender(tr);
   if(!isPlaying) Promise.resolve(initAudio()).then(()=>{ if(audioCtx.state!=='running') audioCtx.resume(); triggerTrack(tr, audioCtx.currentTime+0.01, VEL_NORMAL, stepArt[tr.id]); }); // anhören
 });

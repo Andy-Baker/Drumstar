@@ -764,22 +764,33 @@
   #dsName{ flex:1; min-width:0; background:var(--panel-inset); border:1px solid rgba(255,255,255,.12); border-radius:6px; padding:8px 9px; color:var(--white); font-family:'Rajdhani',sans-serif; font-size:13px; }
   #dsSave{ min-height:38px; padding:0 11px; border-radius:7px; border:1px solid rgba(63,169,255,.4); background:rgba(63,169,255,.12); color:var(--blue-2); font-family:inherit; font-weight:700; font-size:11px; letter-spacing:.04em; text-transform:uppercase; cursor:pointer; }
   #dsRows{ flex:1; min-height:0; overflow-y:auto; }
-  .ds-row{ display:grid; grid-template-columns:34px 1fr 40px; gap:8px; align-items:center; background:var(--panel); border-radius:9px; padding:6px 8px; margin-bottom:6px; cursor:pointer; }
-  .ds-row b{ font-size:11px; color:var(--blue-2); } .ds-src{ min-width:0; display:flex; flex-direction:column; }
+  .ds-row{ display:grid; grid-template-columns:48px 1fr 44px; gap:8px; align-items:center; background:var(--panel); border-radius:9px; padding:6px 8px; margin-bottom:6px; cursor:pointer; border:1px solid transparent; --gc:var(--blue-2); min-height:52px; }
+  .ds-row.ds-perc{ --gc:#2dd4bf; } .ds-row.sw{ border-color:color-mix(in srgb,var(--gc) 45%,transparent); }
+  .ds-row b{ font-size:11px; color:var(--gc); text-align:center; line-height:1.15; } .ds-row b s{ display:block; text-decoration:none; color:var(--dim); font-weight:400; font-size:11px; }
+  .ds-grp{ display:flex; align-items:center; gap:6px; font:700 11px 'JetBrains Mono',monospace; letter-spacing:.12em; color:var(--blue-2); margin:10px 2px 6px; } .ds-grp i{ width:7px; height:7px; border-radius:50%; background:currentColor; }
+  .ds-grp:first-child{ margin-top:2px; } .ds-grp-perc{ color:#2dd4bf; }
+  .ds-rl{ font-style:normal; font:11px 'JetBrains Mono',monospace; padding:0 5px; border-radius:4px; background:rgba(63,169,255,.14); color:var(--blue-2); margin-right:5px; } .ds-src small i{ font-style:normal; }
+  .ds-chips{ display:flex; gap:6px; overflow-x:auto; flex:none; padding:1px 0 3px; scrollbar-width:none; } .ds-chips::-webkit-scrollbar{ display:none; } .ds-chips[hidden]{ display:none; }
+  .ds-chips button{ flex:none; min-height:38px; padding:0 14px; border-radius:19px; border:1px solid rgba(255,255,255,.12); background:var(--panel); color:var(--dim); font-family:inherit; font-weight:700; font-size:13px; cursor:pointer; }
+  .ds-chips button.on{ border-color:var(--blue); color:var(--blue-2); background:rgba(63,169,255,.16); }
+  .ds-kit{ font:700 11px 'JetBrains Mono',monospace; letter-spacing:.1em; color:var(--dim); text-transform:uppercase; margin:8px 2px 0; flex:none; }
+  .ds-it .grow small{ display:block; margin:2px 0 0; } .ds-it.base{ color:var(--blue-2); }
+  .ds-tg{ font-style:normal; font:11px 'JetBrains Mono',monospace; padding:1px 6px; border-radius:4px; background:rgba(255,194,71,.14); color:#ffc247; flex:none; }
+  .ds-it .ds-ipv{ border-color:rgba(63,169,255,.4); background:rgba(63,169,255,.12); color:var(--blue-2); margin-left:0; } .ds-src{ min-width:0; display:flex; flex-direction:column; }
   .ds-src span{ font-size:12px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } .ds-src small{ font-size:11px; color:var(--dim); }
   .ds-src.smp span{ color:#ffc247; }
   .ds-pv{ width:40px; height:36px; border-radius:8px; border:1px solid rgba(63,169,255,.4); background:rgba(63,169,255,.12); color:var(--blue-2); cursor:pointer; padding:0; }
   #dsStatus{ font:11px 'JetBrains Mono',monospace; color:var(--blue-2); min-height:14px; text-align:center; flex-shrink:0; }
   .ds-cap{ font-size:11px; color:var(--dim); line-height:1.4; flex-shrink:0; }
   #dsSheet{ position:absolute; left:0; right:0; bottom:0; background:#0f1015; border-top:1px solid rgba(63,169,255,.4); border-radius:14px 14px 0 0; padding:12px 14px calc(16px + env(safe-area-inset-bottom));
-    transform:translateY(105%); transition:transform .2s; max-height:72%; display:flex; flex-direction:column; gap:8px; box-shadow:0 -10px 30px rgba(0,0,0,.6); z-index:5; }
+    transform:translateY(105%); transition:transform .2s; max-height:80%; display:flex; flex-direction:column; gap:8px; box-shadow:0 -10px 30px rgba(0,0,0,.6); z-index:5; }
   #dsSheet.open{ transform:none; }
   .ds-sh{ display:flex; justify-content:space-between; align-items:center; font-size:12px; font-weight:700; color:var(--blue-2); }
   .ds-seg{ display:flex; border-radius:8px; overflow:hidden; border:1px solid rgba(255,255,255,.12); flex-shrink:0; }
   .ds-seg button{ flex:1; min-height:38px; border:0; background:var(--panel); color:var(--dim); font-family:inherit; font-weight:700; font-size:12px; cursor:pointer; }
   .ds-seg button.on{ background:rgba(63,169,255,.2); color:var(--blue-2); }
-  #dsList{ overflow-y:auto; display:flex; flex-direction:column; gap:5px; }
-  .ds-it{ display:flex; align-items:center; gap:8px; background:var(--panel-inset); border-radius:8px; padding:10px; font-size:12px; border:1px solid transparent; cursor:pointer; }
+  #dsList{ overflow-y:auto; display:flex; flex-direction:column; gap:5px; min-height:0; flex:1 1 auto; }
+  .ds-it{ display:flex; align-items:center; gap:8px; background:var(--panel-inset); border-radius:8px; padding:4px 10px; min-height:48px; flex:none; font-size:13px; font-weight:600; border:1px solid transparent; cursor:pointer; }
   .ds-it.on{ border-color:var(--blue); background:rgba(63,169,255,.12); } .ds-it small{ margin-left:auto; font-size:11px; color:var(--dim); }
   .ds-it.add{ border:1px dashed rgba(255,194,71,.5); color:#ffc247; } .ds-it button{ width:44px; height:40px; margin:-6px -4px -6px auto; flex:none; display:flex; align-items:center; justify-content:center; border-radius:8px; border:1px solid rgba(255,157,122,.35); background:rgba(255,157,122,.06); color:#ff9d7a; cursor:pointer; }
   .ds-it .grow{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }

@@ -288,7 +288,7 @@ hmDefault();
 
 function renderTrackBar(){
   const tr=TRACKS[activeTrackIdx];
-  tbName.textContent=tr.name;
+  tbName.textContent=trLabel(tr);
   tbDot.style.background=tr.color; tbDot.style.boxShadow='0 0 6px '+tr.color;
   syncTbMS();
 

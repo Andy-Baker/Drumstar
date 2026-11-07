@@ -116,6 +116,7 @@ document.querySelectorAll('#beatTabs button').forEach(b=>b.addEventListener('cli
 // (angepasste Stimmen bleiben nicht stehen); bei ungespeicherten Änderungen fragt die App vorher. Siehe drumSet/currentSet in der Engine.
 // =========================================================================
 const drumSetOverlay=document.getElementById('drumSetOverlay'), dsRows=document.getElementById('dsRows'), dsSheet=document.getElementById('dsSheet');
+const dsChips=document.getElementById('dsChips');
 const dsList=document.getElementById('dsList'), dsSeg=document.getElementById('dsSeg'), dsShT=document.getElementById('dsShT'), dsStatus=document.getElementById('dsStatus');
 const dsName=document.getElementById('dsName'), dsDirty=document.getElementById('dsDirty');
 const kitConfirm=document.getElementById('kitConfirm'), kcText=document.getElementById('kcText');
@@ -128,6 +129,15 @@ function updateKitLabel(){
   const KIT_SHORT={rock:'ROCK',studio:'STUDIO',s67:'ST 67',hyb:'HYBRID',rusty:'RUSTY',vintage:'VINT 73',fm909:'909',fm808:'808',real808:'808 A',acid:'ACID',lofi:'LO-FI'};
   { const use=smpKitsInUse(); smpFree(use); use.forEach(k=>{ if(!smp[k] || smp[k].state==='error') smpLoad(k); }); } // Fehler: erneuter Versuch beim nächsten Kit-Tipp
   lcdKit.textContent=(currentSet.name || KIT_SHORT[currentKitId] || KITS[currentKitId].name)+(currentSet.dirty?' *':(custom?' +':''));
+  trNamesRefresh();
+}
+// Getauschte Stimmen (#2): Zeilennamen in Übersicht, Spurleiste und Mixer folgen dem Sound. Neuaufbau nur bei Änderung.
+let trNamesSig='';
+function trNamesRefresh(){
+  const sig=TRACKS.map(trShort).join(); if(sig===trNamesSig) return; trNamesSig=sig;
+  TRACKS.forEach(t=>{ if(t._ovLab) t._ovLab.textContent=trShort(t); });
+  if(typeof renderTrackBar==='function') renderTrackBar();
+  if(typeof mixerRebuild==='function') mixerRebuild();
 }
 async function drumSetLoadBuffers(){
   drumSet.buffers={};
@@ -205,34 +215,80 @@ function openSetEditor(){
   closeKitPicker(); dsName.value=currentSet.name||''; dsDirty.textContent=currentSet.dirty?'● ungespeicherte Änderungen':'';
   dsRender(); drumSetOverlay.classList.add('open'); syncBottomBarVisibility();
 }
-function dsPreview(id){
+function dsPreview(id, o){ // o = Vorhören einer anderen Quelle (Eintrag der Liste), ohne sie zu übernehmen
   const tr=TRACKS.find(t=>t.id===id);
-  Promise.resolve(initAudio()).then(()=>{ if(audioCtx.state!=='running') audioCtx.resume(); triggerTrack(tr, audioCtx.currentTime+0.01, VEL_NORMAL); });
+  const kid=o && o.t==='syn' ? o.kitId : null;
+  Promise.resolve(initAudio()).then(()=>kid && KITS[kid].samples ? Promise.race([smpLoad(kid), new Promise(r=>setTimeout(r,1500))]) : 0).then(()=>{
+    if(audioCtx.state!=='running') audioCtx.resume();
+    const keep=drumSet.voices[id]; if(o!==undefined){ if(o) drumSet.voices[id]=o; else delete drumSet.voices[id]; }
+    try{ triggerTrack(tr, audioCtx.currentTime+0.01, VEL_NORMAL); }
+    finally{ if(o!==undefined){ if(keep) drumSet.voices[id]=keep; else delete drumSet.voices[id]; } }
+  });
+}
+// Stimmen tauschen (#2 Stufe 2, Mockup docs/mockups/issue-2-tauschen.html A): jede Zeile kann jede Stimme
+// jedes Kits spielen. Liste nach Rolle gefiltert, vorausgewählt = Rolle der Zeile.
+const DS_ROLES=['Kick','Snare','Hi-Hat','Tom','Becken','Perc'];
+let dsFilt='all';
+const dsVName=v=>TRACKS.find(t=>t.id===v).name;
+const dsVGroup=v=>ROLE_GROUP[VOICE_ROLE[v]]||'Perc';
+function dsKitVoices(k){ // Stimmen, die ein Kit wirklich eigen spielt (Sample-Kits: nur eigene Aufnahmen, Ersatz-Stimmen stehen beim Ersatz-Kit)
+  const K=KITS[k];
+  if(K.samples) return DS_IDS.filter(v=>K.samples.voices.indexOf(v)>=0);
+  return DS_IDS.filter(v=>K.voices && K.voices[v]);
 }
 function dsRender(){
   dsRows.innerHTML='';
-  DS_IDS.forEach(id=>{
-    const tr=TRACKS.find(t=>t.id===id), v=drumSet.voices[id], d=document.createElement('div'); d.className='ds-row';
-    let name, sub, smp=false;
-    if(v && v.t==='smp'){ smp=true; name=(drumSet.buffers[id] && drumSet.buffers[id].name) || 'Sample (lädt…)'; sub=drumSet.buffers[id] ? 'Sample · aus Bibliothek' : 'Sample fehlt — Synth als Ersatz'; }
-    else if(v){ name=KITS[v.kitId].name; sub='Synth · '+tr.name; }
-    else { name=KITS[currentKitId].name+' (Basis)'; sub='Synth · '+tr.name; }
-    d.innerHTML='<b>'+id.toUpperCase()+'</b><div class="ds-src'+(smp?' smp':'')+'"><span></span><small>'+sub+'</small></div><button class="ds-pv">▶</button>';
-    d.querySelector('span').textContent=name;
-    d.querySelector('.ds-pv').onclick=e=>{ e.stopPropagation(); dsPreview(id); };
-    d.onclick=()=>dsOpenSheet(id); dsRows.appendChild(d);
+  GRP_KEYS.forEach(gk=>{
+    const ids=DS_IDS.filter(id=>GRP_DEF[gk].ids.indexOf(id)>=0); if(!ids.length) return;
+    const h=document.createElement('div'); h.className='ds-grp ds-grp-'+gk; h.innerHTML='<i></i>'+GRP_DEF[gk].ab; dsRows.appendChild(h);
+    ids.forEach(id=>{
+      const tr=TRACKS.find(t=>t.id===id), v=drumSet.voices[id], sw=trSwap(tr), d=document.createElement('div');
+      d.className='ds-row ds-'+gk+(v?' sw':'');
+      let name, sub, smp=false;
+      if(v && v.t==='smp'){ smp=true; name=(drumSet.buffers[id] && drumSet.buffers[id].name) || 'Sample (lädt…)'; sub=drumSet.buffers[id] ? 'Sample · aus Bibliothek' : 'Sample fehlt — Synth als Ersatz'; }
+      else if(v){ name=dsVName(trVoice(tr)); sub=KITS[v.kitId].name; }
+      else { name=tr.name; sub=KITS[currentKitId].name+' (Original)'; }
+      d.innerHTML='<b>'+trShort(tr)+(sw?'<s>statt '+id.toUpperCase()+'</s>':'')+'</b><div class="ds-src'+(smp?' smp':'')+'"><span></span><small>'+(smp?'':'<em class="ds-rl">'+dsVGroup(trVoice(tr))+'</em>')+'<i></i></small></div><button class="ds-pv" aria-label="Anhören">'+UI_IC.play+'</button>';
+      d.querySelector('span').textContent=name; d.querySelector('small i').textContent=sub;
+      d.querySelector('.ds-pv').onclick=e=>{ e.stopPropagation(); dsPreview(id); };
+      d.onclick=()=>dsOpenSheet(id); dsRows.appendChild(d);
+    });
+  });
+}
+function dsPick(id, o){ // o = {t:'syn',kitId,v} oder null = Original; Rückgängig im Toast
+  const prev=drumSet.voices[id], wasDirty=currentSet.dirty;
+  if(o && o.kitId===currentKitId && o.v===id) o=null; // = Original
+  if(o){ if(o.v===id) o={t:'syn',kitId:o.kitId}; drumSet.voices[id]=o; } else delete drumSet.voices[id];
+  delete drumSet.buffers[id]; dsMarkDirty(); dsRender(); dsRenderList(); dsPreview(id);
+  const tr=TRACKS.find(t=>t.id===id);
+  hmToast(id.toUpperCase()+' spielt jetzt '+dsVName(trVoice(tr))+(o?' · '+KITS[o.kitId].name:''), true, async()=>{
+    if(prev) drumSet.voices[id]=prev; else delete drumSet.voices[id];
+    if(prev && prev.t==='smp') await drumSetLoadBuffers();
+    if(!wasDirty){ currentSet.dirty=false; dsDirty.textContent=''; } updateKitLabel(); dsRender(); if(dsSheet.classList.contains('open')) dsRenderList();
   });
 }
 async function dsRenderList(){
   dsList.innerHTML=''; const id=dsCur, v=drumSet.voices[id];
   dsSeg.querySelectorAll('button').forEach(b=>b.classList.toggle('on', b.dataset.m===dsMode));
+  dsChips.hidden=dsMode!=='syn';
   if(dsMode==='syn'){
-    const base=document.createElement('div'); base.className='ds-it'+(!v?' on':''); base.innerHTML='↺ Basis-Kit folgen<small>'+KITS[currentKitId].name+'</small>';
-    base.onclick=()=>{ delete drumSet.voices[id]; delete drumSet.buffers[id]; dsMarkDirty(); dsRender(); dsRenderList(); dsPreview(id); }; dsList.appendChild(base);
+    dsChips.innerHTML='';
+    [['all','Alle']].concat(DS_ROLES.map(r=>[r,r])).forEach(([k,n])=>{ const b=document.createElement('button'); b.textContent=n; b.className=dsFilt===k?'on':''; b.setAttribute('aria-pressed',dsFilt===k);
+      b.onclick=()=>{ dsFilt=k; dsRenderList(); }; dsChips.appendChild(b); });
+    const on=dsChips.querySelector('.on'); if(on) on.scrollIntoView({block:'nearest',inline:'center'});
+    const pv=(o)=>{ const b=document.createElement('button'); b.className='ds-ipv'; b.innerHTML=UI_IC.play; b.setAttribute('aria-label','Anhören'); b.onclick=e=>{ e.stopPropagation(); dsPreview(id,o); }; return b; };
+    const base=document.createElement('div'); base.className='ds-it base'+(!v?' on':''); base.innerHTML='<span class="grow">↺ Original<small>'+KITS[currentKitId].name+' · '+dsVName(id)+'</small></span>';
+    base.appendChild(pv(null)); base.onclick=()=>dsPick(id,null); dsList.appendChild(base);
     Object.keys(KITS).forEach(k=>{
-      const it=document.createElement('div'); it.className='ds-it'+(v && v.t==='syn' && v.kitId===k?' on':''); it.innerHTML=KITS[k].name+'<small>'+TRACKS.find(t=>t.id===id).name+'-Klang</small>';
-      it.onclick=()=>{ drumSet.voices[id]={t:'syn',kitId:k}; delete drumSet.buffers[id]; dsMarkDirty(); dsRender(); dsRenderList(); dsPreview(id); }; dsList.appendChild(it);
+      const vs=dsKitVoices(k).filter(x=>dsFilt==='all' || dsVGroup(x)===dsFilt); if(!vs.length) return;
+      const h=document.createElement('div'); h.className='ds-kit'; h.textContent=KITS[k].name+(KITS[k].samples?' · gesampelt':''); dsList.appendChild(h);
+      vs.forEach(x=>{
+        const sel=v && v.t==='syn' && v.kitId===k && (v.v||id)===x, it=document.createElement('div'); it.className='ds-it'+(sel?' on':'');
+        it.innerHTML='<span class="grow">'+dsVName(x)+'<small>'+dsVGroup(x)+'</small></span>'+(KITS[k].samples?'<em class="ds-tg">ECHT</em>':'');
+        const o={t:'syn',kitId:k,v:x}; it.appendChild(pv(o)); it.onclick=()=>dsPick(id,o); dsList.appendChild(it);
+      });
     });
+    if(dsList.children.length===1){ const e=document.createElement('div'); e.className='ds-it'; e.textContent='Keine Sounds mit dieser Rolle'; dsList.appendChild(e); }
   } else {
     const items=await listSampleLibrary();
     items.forEach(e=>{
@@ -263,8 +319,9 @@ async function smpLibDelete(e){
   });
 }
 function dsOpenSheet(id){
-  dsCur=id; const v=drumSet.voices[id]; dsMode=(v && v.t==='smp')?'smp':'syn';
-  dsShT.textContent=id.toUpperCase()+' · '+TRACKS.find(t=>t.id===id).name; dsSheet.classList.add('open'); dsRenderList();
+  dsCur=id; const v=drumSet.voices[id], tr=TRACKS.find(t=>t.id===id); dsMode=(v && v.t==='smp')?'smp':'syn';
+  dsFilt=dsVGroup(trVoice(tr)); // vorausgewählt: Rolle der Zeile
+  dsShT.textContent=id.toUpperCase()+' · Sound wählen'; dsSheet.classList.add('open'); dsList.scrollTop=0; dsRenderList();
 }
 dsSeg.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{ dsMode=b.dataset.m; dsRenderList(); }));
 document.getElementById('dsShX').addEventListener('click', ()=>dsSheet.classList.remove('open'));

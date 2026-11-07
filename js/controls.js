@@ -179,7 +179,7 @@ TRACKS.forEach((tr,idx)=>{
   row.className='ov-row'; row.style.setProperty('--tc', tr.color);
   row.dataset.idx=idx;
 
-  const lab=document.createElement('div'); lab.className='ov-label'; lab.textContent=tr.short||tr.id.toUpperCase();
+  const lab=document.createElement('div'); lab.className='ov-label'; lab.textContent=tr.short||tr.id.toUpperCase(); tr._ovLab=lab;
   lab.addEventListener('click', ()=>selectTrack(idx));
   row.appendChild(lab);
 
