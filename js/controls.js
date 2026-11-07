@@ -236,7 +236,7 @@ function keysSetSound(tr,id){
 }
 document.getElementById('soundPickerCloseBtn').addEventListener('click', ()=>{ soundPickerOverlay.classList.remove('open'); syncBottomBarVisibility(); });
 Object.keys(KITS).forEach(kitId=>{
-  const kit=KITS[kitId];
+  const kit=KITS[kitId]; if(kit.hidden) return; // Latin-Perc: nur über den Set-Editor
   const chip=document.createElement('div');
   chip.className='kit-chip'+(kitId===currentKitId?' active':'');
   chip.innerHTML='<div class="kn">'+kit.name+'</div><div class="kd">'+kit.desc+'</div>';

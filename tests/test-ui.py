@@ -156,7 +156,7 @@ async def main():
     for k in sm:
       real=sum(f.stat().st_size for f in (root/k['dir']).glob('*.mp3'))/1024
       ok('Größe stimmt: '+k['id'], abs(real-k['kb'])<=max(20,real*0.05), (k['kb'],round(real)))
-    ok('Chips zeigen MB vor dem Laden', all(' MB' in k['t'] for k in sm), [k['t'] for k in sm])
+    ok('Chips zeigen MB vor dem Laden', all(' MB' in k['t'] for k in sm if k['t'] is not None), [k['t'] for k in sm])
     hy=next(k['t'] for k in sm if k['id']=='hyb'); ok('Ersatz-Kit mitgerechnet (Hybrid + Studio)', '2,2 MB' in hy, hy)
     # Offline und nicht geladen: klare Meldung
     await pg.context.set_offline(True)
@@ -275,6 +275,18 @@ async def main():
     await pg.click('#hmToast button'); await pg.wait_for_timeout(300)
     ok('Tauschen: Rückgängig stellt Original her', await pg.evaluate("trVoice(TRACKS.find(t=>t.id==='lt'))==='lt' && !drumSet.voices.lt && TRACKS.find(t=>t.id==='lt')._ovLab.textContent==='LT'"))
     await pg.screenshot(path=OUT+'/ds_tauschen.png'); await fz(pg,'Set-Editor')
+    # Latin-Perc (#60): nur im Set-Editor, nicht als Kit; Conga mit Spielweise Gedämpft spielt die eigene Aufnahme
+    ok('Latin: nicht in der Kit-Auswahl', await pg.evaluate("!KITS.latin._chip && ![...document.querySelectorAll('#kitPickerList .kn')].some(e=>e.textContent==='LATIN PERC')"))
+    await pg.click('#dsShX'); await pg.wait_for_timeout(200)
+    await pg.click('#dsRows .ds-row:has-text("CLAVES")'); await pg.wait_for_timeout(300)
+    names=await pg.evaluate("[...document.querySelectorAll('#dsList .ds-it .grow')].map(e=>e.firstChild.textContent)")
+    ok('Latin: Perc-Liste zeigt Conga, Tumba, Bongos, Timbales, Schellenkranz', all(n in names for n in ['CONGA','TUMBA','BONGO HOCH','BONGO TIEF','TIMBAL HOCH','TIMBAL TIEF','SCHELLENKRANZ']), names)
+    await pg.click('#dsList .ds-it:has-text("CONGA")'); await pg.wait_for_timeout(300)
+    r=await pg.evaluate("""(async()=>{ await initAudio(); await smpLoad('latin'); const cl=TRACKS.find(t=>t.id==='cl'); let got=null; const o=smpPlay;
+      smpPlay=(k,tr,t,v,c,vid)=>{ got=k+':'+vid; return o(k,tr,t,v,c,vid); }; triggerTrack(cl, audioCtx.currentTime+0.05, VEL_NORMAL, 1); smpPlay=o;
+      return {got, ov:cl._ovLab.textContent, art:(ART[trVoice(cl)]||[]).map(x=>x.n).join(','), st:smp.latin.state}; })()""")
+    ok('Latin: Claves → Conga, Gedämpft = eigene Aufnahme', r['got']=='latin:cgm' and r['ov']=='CG' and r['art']=='Offen,Gedämpft' and r['st']=='ready', r)
+    await pg.click('#hmToast button'); await pg.wait_for_timeout(200)
     await pg.click('#dsShX'); await pg.click('#dsCloseBtn'); await pg.wait_for_timeout(200)
     ok('Schrift überall ≥ 11 px (#19)', not fz.bad, fz.bad)
     ok('Keine Fehler', not errs, errs)

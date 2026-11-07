@@ -58,6 +58,10 @@ const KITS={
     samples:{dir:'hyb', kb:493, voices:['sd','rs','cy'], fallback:'studio'} },
   rusty:{ name:'RUSTY KIT', desc:'Echte Aufnahmen · großes 80er-Rockkit', voices:null,
     samples:{dir:'rusty', kb:1853, voices:['bd','sd','rs','ch','hl','hf','oh','lt','ht','cy','rd','rb']} },
+  // Latin-Perc (#60): kein Drum-Kit zur Auswahl (hidden), nur Quelle beim Stimmen-Tauschen im Set-Editor.
+  // Virtuosity Drums (VSCO 2 Pro, Timbales Karoryfer) + VCSL, CC0. Bau: tools/build-latin.py
+  latin:{ name:'LATIN PERC', desc:'Echte Aufnahmen · Conga, Bongos, Timbales, Schellenkranz', voices:null, hidden:true,
+    samples:{dir:'latin', kb:1029, voices:['cgh','cgm','tu','bgh','bgm','bgl','bglm','tih','til','tb','tbh','tbr']} },
   vintage:{ name:'VINTAGE 73', desc:'Echte Aufnahmen · 70er, gedämpft', voices:null,
     samples:{dir:'vintage', kb:878, voices:['bd','sd','rs','ch','hl','hf','oh','lt','ht'], fallback:'studio'} },
   fm909:{ name:'FM-909', desc:'Klassisch · punchy', voices:{
@@ -203,6 +207,8 @@ function rideFromCy(cy){
 }
 Object.values(KITS).forEach(k=>{ if(k.voices && k.voices.cy && !k.voices.rd) k.voices.rd=rideFromCy(k.voices.cy); });
 Object.values(KITS).forEach(k=>{ if(k.samples) k.voices=KITS.rock.voices; });
+{ const R=KITS.rock.voices; // Latin: Synth-Ersatz, solange die Aufnahmen laden (Toms bzw. Maracas)
+  KITS.latin.voices=Object.assign({},R,{cgh:R.lt,cgm:R.lt,tu:R.lt,bgh:R.ht,bgm:R.ht,bgl:R.ht,bglm:R.ht,tih:R.ht,til:R.lt,tb:R.mr,tbh:R.mr,tbr:R.mr}); }
 // Spielweisen pro Step (v72, Mockup kit-stimmen-mockup.html Variante B): Drum-Spuren nutzen das sonst leere
 // tr.notes[s] als Spielweise (0 = Standard). v = Sample-Stimme im Sample-Kit. Zieht automatisch mit beim
 // Kopieren, Undo, Song-Clips, Länge ändern, Speichern und Beats.
@@ -210,20 +216,31 @@ Object.values(KITS).forEach(k=>{ if(k.samples) k.voices=KITS.rock.voices; });
 // IDs, damit eine getauschte Stimme (Stufe 2: z. B. Shaker auf der LT-Zeile) automatisch richtig behandelt wird.
 // Feine Rollen fürs Verhalten; ROLE_GROUP fasst sie für die Anzeige zusammen (Kick · Snare · Hi-Hat · Tom · Becken · Perc).
 const VOICE_ROLE={ bd:'kick', sd:'snare', rs:'rim', ch:'hat', hl:'hat', hf:'hat', oh:'openhat', lt:'tom', ht:'tom',
-                   cy:'crash', rd:'ride', rb:'ride', hc:'clap', cb:'perc', cl:'perc', mr:'perc' };
+                   cy:'crash', rd:'ride', rb:'ride', hc:'clap', cb:'perc', cl:'perc', mr:'perc',
+                   cgh:'perc', cgm:'perc', tu:'perc', bgh:'perc', bgm:'perc', bgl:'perc', bglm:'perc', tih:'perc', til:'perc', tb:'perc', tbh:'perc', tbr:'perc' };
+// Stimmen, die keine eigene Zeile haben (Latin #60): Name und Kürzel für Set-Editor, Übersicht, Mixer
+const VOICE_INFO={ cgh:{n:'CONGA',s:'CG'}, tu:{n:'TUMBA',s:'TU'}, bgh:{n:'BONGO HOCH',s:'BH'}, bgl:{n:'BONGO TIEF',s:'BL'},
+                   tih:{n:'TIMBAL HOCH',s:'TH'}, til:{n:'TIMBAL TIEF',s:'TL'}, tb:{n:'SCHELLENKRANZ',s:'TB'} };
+function voiceName(v){ const i=VOICE_INFO[v]; if(i) return i.n; const t=TRACKS.find(x=>x.id===v); return t?t.name:v.toUpperCase(); }
+function voiceShort(v){ const i=VOICE_INFO[v]; return i ? i.s : v.toUpperCase(); }
 const ROLE_GROUP={ kick:'Kick', snare:'Snare', rim:'Snare', hat:'Hi-Hat', openhat:'Hi-Hat', tom:'Tom', crash:'Becken', ride:'Becken', clap:'Perc', perc:'Perc' };
 // Stufe 2: drumSet.voices[id]={t:'syn',kitId,v} = Zeile spielt Stimme v aus Kit kitId (ohne v: dieselbe Stimme).
 // Mixer-Kanal, Gruppe, Noten, Tune/Laut bleiben an der Zeile; Klang, Rolle, Spielweisen und Name folgen der Stimme.
 function trSwap(tr){ const o=drumSet.voices[tr.id]; return (o && o.t==='syn' && o.v && o.v!==tr.id && VOICE_FNS[o.v]) ? o.v : null; }
 function trVoice(tr){ return trSwap(tr)||tr.id; }
-function trLabel(tr){ const s=trSwap(tr); return s ? TRACKS.find(t=>t.id===s).name : tr.name; }
-function trShort(tr){ const s=trSwap(tr); return s ? s.toUpperCase() : (tr.short||tr.id.toUpperCase()); }
+function trLabel(tr){ const s=trSwap(tr); return s ? voiceName(s) : tr.name; }
+function trShort(tr){ const s=trSwap(tr); return s ? voiceShort(s) : (tr.short||tr.id.toUpperCase()); }
 function trRole(tr){ return VOICE_ROLE[trVoice(tr)]||'perc'; }
 function roleTracks(role){ return TRACKS.filter(t=>t.type!=='arp' && !t.isSample && trRole(t)===role); }
 const ART={ ch:[{k:'Z',n:'Zu',v:'ch'},{k:'L',n:'Locker',v:'hl'},{k:'P',n:'Pedal',v:'hf'}],
             rd:[{k:'F',n:'Fläche',v:'rd'},{k:'B',n:'Bell',v:'rb'}],
             // Crash (#56): frei ausklingen oder mit der Hand abstoppen — sofort, nach 1/16 oder nach 1/8 (tempoabhängig)
-            cy:[{k:'C',n:'Crash',v:'cy'},{k:'K',n:'Kurz',v:'cy'},{k:'S',n:'1/16',v:'cy',st:1},{k:'A',n:'1/8',v:'cy',st:2}] };
+            cy:[{k:'C',n:'Crash',v:'cy'},{k:'K',n:'Kurz',v:'cy'},{k:'S',n:'1/16',v:'cy',st:1},{k:'A',n:'1/8',v:'cy',st:2}],
+            // Latin (#60): Spielweisen = eigene Aufnahmen
+            cgh:[{k:'O',n:'Offen',v:'cgh'},{k:'G',n:'Gedämpft',v:'cgm'}],
+            bgh:[{k:'O',n:'Offen',v:'bgh'},{k:'G',n:'Gedämpft',v:'bgm'}],
+            bgl:[{k:'O',n:'Offen',v:'bgl'},{k:'G',n:'Gedämpft',v:'bglm'}],
+            tb:[{k:'S',n:'Schütteln',v:'tb'},{k:'A',n:'Schlag',v:'tbh'},{k:'W',n:'Wirbel',v:'tbr'}] };
 function artOf(tr,a){ const L=ART[trVoice(tr)]; return L ? (L[a|0]||L[0]) : null; }
 function artLetter(tr,abs){ const L=ART[trVoice(tr)]; if(!L || !(tr.steps[abs]>0)) return ''; const a=tr.notes?tr.notes[abs]|0:0; return a>0&&L[a]?L[a].k:''; }
 function artSynth(tr,a,kp){ // Synth-Kits: Spielweise über die Parameter des Kits
@@ -253,7 +270,8 @@ const VOICE_FNS={
   // Claves: wiederverwendet playRim (kurzer FM-Klick) ohne den zusätzlichen
   // Noise-Klick-Layer (clickLevel:0 im Preset) — klingt trocken/hölzern statt metallisch.
   cl: playRim,
-  mr: playMaracas
+  mr: playMaracas,
+  cgh:playTom, tu:playTom, bgh:playTom, bgl:playTom, tih:playTom, til:playTom, tb:playMaracas // Latin: nur Ersatz, solange die Aufnahmen laden
 };
 // Drum-Set: pro Stimme optional eine eigene Quelle statt des Basis-Kits. drumSet.voices[id] = {t:'syn',kitId} | {t:'smp',sampleId};
 // ohne Eintrag folgt die Stimme dem Basis-Kit (currentKitId). drumSet.buffers[id] = dekodierte Samples. Fehlt ein Sample: Fallback auf Synth.
@@ -283,9 +301,11 @@ function playDrumSample(tr, time, velocity){
 // Datei samples/<kit>/<stimme>.mp3: Sync-Klick bei 0 s, ab 0,1 s zwölf Slots
 // (Layer 1–4 × Round Robin 1–3) zu je SMP_LEN[stimme] Sekunden.
 // =========================================================================
-const SMP_LEN={bd:0.9, sd:0.7, rs:0.6, ch:0.5, hl:0.9, hf:0.6, oh:2.5, lt:2.0, ht:1.8, cy:4.0, rd:3.5, rb:3.5};
+const SMP_LEN={bd:0.9, sd:0.7, rs:0.6, ch:0.5, hl:0.9, hf:0.6, oh:2.5, lt:2.0, ht:1.8, cy:4.0, rd:3.5, rb:3.5,
+  cgh:1.2, cgm:0.5, tu:1.4, bgh:0.8, bgm:0.4, bgl:0.9, bglm:0.45, tih:1.6, til:1.8, tb:0.6, tbh:0.9, tbr:1.6}; // Latin = LEN in tools/build-latin.py
 const STUDIO_LAYER_VEL=[0.15,0.35,0.85,1.3]; // = VEL_GHOST_SOFT, VEL_GHOST, VEL_NORMAL, VEL_ACCENT
-const STUDIO_GAIN={bd:1.0, sd:0.9, rs:0.8, ch:0.55, hl:0.55, hf:0.22, oh:0.5, lt:0.85, ht:0.8, cy:0.55, rd:0.6, rb:0.55};
+const STUDIO_GAIN={bd:1.0, sd:0.9, rs:0.8, ch:0.55, hl:0.55, hf:0.22, oh:0.5, lt:0.85, ht:0.8, cy:0.55, rd:0.6, rb:0.55,
+  cgh:0.85, cgm:0.8, tu:0.85, bgh:0.8, bgm:0.8, bgl:0.8, bglm:0.8, tih:0.9, til:0.9, tb:0.55, tbh:0.55, tbr:0.55}; // Latin wie die Referenz-Stimme beim Bau
 const STUDIO_OUT=1.75;  // Gesamtpegel, abgeglichen mit dem Rock Kit (tests/test-audio.py)
 const STUDIO_ROOM=0.22; // Anteil Raum
 const smp={};            // smp[kitId]={state:'loading'|'ready'|'error', buf:{stimme:[layer][rr]={b,off,dur}}, promise}

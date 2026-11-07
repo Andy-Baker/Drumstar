@@ -229,11 +229,11 @@ function dsPreview(id, o){ // o = Vorhören einer anderen Quelle (Eintrag der Li
 // jedes Kits spielen. Liste nach Rolle gefiltert, vorausgewählt = Rolle der Zeile.
 const DS_ROLES=['Kick','Snare','Hi-Hat','Tom','Becken','Perc'];
 let dsFilt='all';
-const dsVName=v=>TRACKS.find(t=>t.id===v).name;
+const dsVName=voiceName;
 const dsVGroup=v=>ROLE_GROUP[VOICE_ROLE[v]]||'Perc';
 function dsKitVoices(k){ // Stimmen, die ein Kit wirklich eigen spielt (Sample-Kits: nur eigene Aufnahmen, Ersatz-Stimmen stehen beim Ersatz-Kit)
   const K=KITS[k];
-  if(K.samples) return DS_IDS.filter(v=>K.samples.voices.indexOf(v)>=0);
+  if(K.samples) return K.samples.voices.filter(v=>VOICE_FNS[v]); // nur Stimmen mit eigener Zeile (Spielweisen wie hl/rb, cgm gehören zur Hauptstimme)
   return DS_IDS.filter(v=>K.voices && K.voices[v]);
 }
 function dsRender(){

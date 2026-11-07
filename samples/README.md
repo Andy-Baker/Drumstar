@@ -6,6 +6,7 @@ Alle Aufnahmen sind frei nutzbar (Public Domain bzw. CC0, keine Namensnennung n�
 |---|---|---|
 | STUDIO KIT (`studio`), STUDIO 67 (`s67`), HYBRID (`hyb`) | **SM Drums** („Deeply Sampled Free Drums“) von Scott McLean, Tod Stillwell, Suleiman Ali – github.com/sfzinstruments/SMDrums | Public Domain |
 | RUSTY KIT (`rusty`) | **Big Rusty Drums**, Karoryfer Samples – github.com/sfzinstruments/karoryfer.big-rusty-drums | CC0 1.0 |
+| LATIN PERC (`latin`, #60) – Conga, Tumba, Bongos, Timbales, Schellenkranz | **Virtuosity Drums** (Versilian Studios; Aux-Percussion aus VSCO 2 Pro, Timbales von Karoryfer) – github.com/sfzinstruments/virtuosity_drums; Bongos gedämpft und Schellenkranz Schlag/Wirbel aus **VCSL** – github.com/sgossner/VCSL | CC0 1.0 |
 | VINTAGE 73 (`vintage`) | **Gogodze Phu Vol II**, Karoryfer Samples – github.com/sfzinstruments/karoryfer.gogodze-phu-vol-ii | CC0 1.0 |
 
 ## Format
@@ -22,3 +23,11 @@ Layer 1–4 = Ghost leise, Ghost, Normal, Akzent.
 - Studio 67: 1967er Ludwig-Snare (Snare67_NR), lockere Hi-Hat, Tom 2/3, Crash 17". Hybrid: Snare_HyB 1–3 als Round Robin, Hybrid-Rimshot, Crash 15". Fehlende Stimmen kommen aus dem Studio Kit (`samples.fallback`).
 - Vintage: Kick-/Snare-/Front-/Overhead-Mikro, ohne Retro- und Fenster-Mikro. Hat keine Becken (Crash und Ride aus Studio).
 - Ride/Pedal/locker (v72): Studio = Ride 17" + Bell, Hat Foot; „locker“ = offene Hi-Hat, nach 0,18 s abgedämpft (SM Drums hat keine halb offene, „02 Hat, Loose“ klingt fast wie zu). Rusty = ride_22 rd/bl, hihat_14 chik und lc. Vintage = hf, hl. Studio 67/Hybrid nehmen diese Stimmen aus Studio. Einzelne Stimmen neu bauen: `VOICES=hl python3 tools/build-samples.py studio`.
+
+## Latin Perc (`latin`, #60, `tools/build-latin.py`)
+Kein Drum-Kit zur Auswahl (`hidden`), nur Quelle beim Stimmen-Tauschen im Set-Editor. Stimmen (Spielweisen = eigene Dateien):
+cgh Conga offen · cgm Conga gedämpft · tu Tumba · bgh/bgm Bongo hoch offen/gedämpft · bgl/bglm Bongo tief offen/gedämpft ·
+tih/til Timbal 13″/14″ · tb Schellenkranz schütteln · tbh Schlag · tbr Wirbel.
+Virtuosity: Nah- + Mittel-Mikro ausgerichtet gemischt (Timbales: Overhead), 8 bzw. 4 Round Robins (3 je Stufe genutzt, Stufen nehmen verschiedene).
+Lautheit der Akzent-Stufe wie die Studio-Stimme (Congas/Tumba wie Low Tom, Bongos wie High Tom, Timbales wie Snare, Schellenkranz wie Hi-Hat),
+Peak-Limiter höchstens 3 dB (Bongos, Conga gedämpft), damit der Anschlag knackig bleibt. Neu bauen: `VD=… VCSL=… python3 tools/build-latin.py [stimmen]`.
