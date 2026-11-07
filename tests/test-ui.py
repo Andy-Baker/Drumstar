@@ -246,6 +246,16 @@ async def main():
     ok('Laut-Standard je Spur (BD 90)', await pg.evaluate("[...document.querySelectorAll('#klRows .srow')].find(r=>r.querySelector('label').textContent==='Laut').querySelector('input').dataset.def")=='90')
     ok('Klang: Hall auf Standard', await pg.input_value(hall+' input')=='0', await pg.input_value(hall+' input'))
     await pg.click('#klX'); await pg.wait_for_timeout(150)
+    # Rollen (#2 Stufe 1): Fill/Würfeln nach Rolle der Zeile, nicht nach fester ID
+    r=await pg.evaluate("""(()=>{ const ks=o=>Object.keys(o).sort().join(','); const R={};
+      R.roles=TRACKS.filter(t=>t.type!=='arp'&&!t.isSample).map(t=>t.id+':'+trRole(t)).join(' ');
+      fillStyleEnabled.linear=true; R.std=ks(generateFillOverride(8));
+      const orig=trVoice; trVoice=t=>t.id==='lt'?'mr':t.id; // simuliert getauschten Sound: Maracas auf der LT-Zeile
+      const o=generateFillOverride(8); R.swap=ks(o); R.cyChoke=!!o.cy.chokeSteps;
+      const lt=TRACKS.find(t=>t.id==='lt'); R.rndRole=trRole(lt); trVoice=orig; return R; })()""")
+    ok('Rollen: Standard-Zuordnung', r['roles']=='bd:kick sd:snare ch:hat lt:tom ht:tom rs:rim hc:clap oh:openhat cy:crash rd:ride cb:perc cl:perc mr:perc', r['roles'])
+    ok('Fill: Standard-Zeilen wie bisher', r['std']=='bd,ch,cy,ht,lt,oh,rd,sd', r['std'])
+    ok('Fill: getauschte LT-Zeile (Maracas) bleibt frei, HT übernimmt', r['swap']=='bd,ch,cy,ht,oh,rd,sd' and r['cyChoke'] and r['rndRole']=='perc', r)
     ok('Schrift überall ≥ 11 px (#19)', not fz.bad, fz.bad)
     ok('Keine Fehler', not errs, errs)
     await b.close()

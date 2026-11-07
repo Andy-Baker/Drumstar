@@ -206,6 +206,15 @@ Object.values(KITS).forEach(k=>{ if(k.samples) k.voices=KITS.rock.voices; });
 // Spielweisen pro Step (v72, Mockup kit-stimmen-mockup.html Variante B): Drum-Spuren nutzen das sonst leere
 // tr.notes[s] als Spielweise (0 = Standard). v = Sample-Stimme im Sample-Kit. Zieht automatisch mit beim
 // Kopieren, Undo, Song-Clips, Länge ändern, Speichern und Beats.
+// Rollen (#2 Stufe 1): wofür eine Stimme im Beat steht. Fill und Würfeln fragen die Rolle der Zeile ab statt fester
+// IDs, damit eine getauschte Stimme (Stufe 2: z. B. Shaker auf der LT-Zeile) automatisch richtig behandelt wird.
+// Feine Rollen fürs Verhalten; ROLE_GROUP fasst sie für die Anzeige zusammen (Kick · Snare · Hi-Hat · Tom · Becken · Perc).
+const VOICE_ROLE={ bd:'kick', sd:'snare', rs:'rim', ch:'hat', hl:'hat', hf:'hat', oh:'openhat', lt:'tom', ht:'tom',
+                   cy:'crash', rd:'ride', rb:'ride', hc:'clap', cb:'perc', cl:'perc', mr:'perc' };
+const ROLE_GROUP={ kick:'Kick', snare:'Snare', rim:'Snare', hat:'Hi-Hat', openhat:'Hi-Hat', tom:'Tom', crash:'Becken', ride:'Becken', clap:'Perc', perc:'Perc' };
+function trVoice(tr){ return tr.id; } // Stimme, die die Zeile spielt (Stufe 2: aus dem Drum-Set)
+function trRole(tr){ return VOICE_ROLE[trVoice(tr)]||'perc'; }
+function roleTracks(role){ return TRACKS.filter(t=>t.type!=='arp' && !t.isSample && trRole(t)===role); }
 const ART={ ch:[{k:'Z',n:'Zu',v:'ch'},{k:'L',n:'Locker',v:'hl'},{k:'P',n:'Pedal',v:'hf'}],
             rd:[{k:'F',n:'Fläche',v:'rd'},{k:'B',n:'Bell',v:'rb'}],
             // Crash (#56): frei ausklingen oder mit der Hand abstoppen — sofort, nach 1/16 oder nach 1/8 (tempoabhängig)

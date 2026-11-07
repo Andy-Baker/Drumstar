@@ -73,7 +73,7 @@ function scheduleStep(step,time){
 
     if(tr.type==='arp'){
       evPlay(tr, step, hitTime, humanize>0 ? (1+(Math.random()*2-1)*0.12*humanize) : 1, curAbsStep);
-    } else if(tr.id==='cy' && inFillWindow && fillOverride.cy && fillOverride.cy.chokeSteps && fillOverride.cy.chokeSteps[step-fillWindowStart]){
+    } else if(inFillWindow && fillOverride[tr.id] && fillOverride[tr.id].chokeSteps && fillOverride[tr.id].chokeSteps[step-fillWindowStart]){
       triggerChokedCrash(hitTime, tr, playVel); // kurz abgeschnittener statt lang ausklingender Crash
     } else {
       triggerTrack(tr, hitTime, playVel, art);

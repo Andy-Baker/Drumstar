@@ -8,14 +8,15 @@ function randomizeTrackPattern(tr, from=0, to=PATTERN_LENGTH){
   if(tr.type==='arp'){ generateAcidBassline(tr, from, to); return; }
   for(let s=from;s<to;s++){
     const beatPos = s%16; // Rhythmus-Gewichtung bleibt pro Takt (16 Steps) gleich
-    const p = tr.id==='bd'? (beatPos%4===0?0.85:0.12) :
-              tr.id==='sd'? (beatPos%8===4?0.9:0.05) :
-              tr.id==='ch'? 0.55 :
-              tr.id==='rd'? (beatPos%2===0?0.8:0.15) : 0.12;
+    const role=trRole(tr); // nach Rolle statt fester ID (#2)
+    const p = role==='kick'? (beatPos%4===0?0.85:0.12) :
+              role==='snare'? (beatPos%8===4?0.9:0.05) :
+              role==='hat'? 0.55 :
+              role==='ride'? (beatPos%2===0?0.8:0.15) : 0.12;
     const hit=Math.random()<p;
     // gelegentlich ein Ghost-Note statt vollem Hit für lebendigere Zufalls-Patterns
     tr.steps[s]= hit ? (Math.random()<0.15 ? VEL_GHOST : VEL_NORMAL) : VEL_OFF;
-    if(tr.notes) tr.notes[s]= (tr.id==='rd' && hit && beatPos%4===0 && Math.random()<0.25) ? 1 : 0; // Ride: ab und zu Bell auf der Zählzeit
+    if(tr.notes) tr.notes[s]= (trVoice(tr)==='rd' && hit && beatPos%4===0 && Math.random()<0.25) ? 1 : 0; // Ride: ab und zu Bell auf der Zählzeit
   }
 }
 // =========================================================================

@@ -189,9 +189,14 @@ function generateFillOverride(len){
     }
   }
 
-  set('lt',lt); set('ht',ht); set('sd',sd); set('bd',bd);
-  override.cy={vel:cy, chokeSteps};
-  set('ch', new Array(len).fill(VEL_OFF)); set('oh', new Array(len).fill(VEL_OFF)); set('rd', new Array(len).fill(VEL_OFF)); // Hi-Hats + Ride pausieren immer
+  // Rollen statt fester IDs (#2): Kick/Snare/Crash = erste Zeile der Rolle, Toms = erste und zweite Tom-Zeile
+  // (nur eine Tom-Zeile → beide Teile dorthin, keine → entfallen). Hi-Hats + Ride pausieren immer.
+  const put=(tr,vel,extra)=>{ if(!tr) return; const o=override[tr.id];
+    if(o){ o.vel=o.vel.map((v,i)=>Math.max(v,vel[i])); if(extra) Object.assign(o,extra); } else override[tr.id]=Object.assign({vel},extra||{}); };
+  const toms=roleTracks('tom');
+  put(toms[0],lt); put(toms[1]||toms[0],ht); put(roleTracks('snare')[0],sd); put(roleTracks('kick')[0],bd);
+  put(roleTracks('crash')[0],cy,{chokeSteps});
+  ['hat','openhat','ride'].forEach(r=>roleTracks(r).forEach(t=>{ if(!override[t.id]) set(t.id,new Array(len).fill(VEL_OFF)); }));
   return override;
 }
 // Passt alle Track-Step-Arrays auf eine neue Länge an (behält vorhandene Steps,
