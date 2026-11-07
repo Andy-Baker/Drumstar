@@ -92,6 +92,15 @@ async def main():
     await pg.click('#playBtn'); await pg.wait_for_timeout(900); await pg.click('#playBtn'); await pg.wait_for_timeout(600)
     g=await ev("__T.find(x=>x.id==='arp')._arpAmp.gain.value")
     ok('Acid nach Stop: Stimme auf 0', g<1e-5, g)
+    # --- Takt-Geber im Worker: Hauptthread 500 ms blockiert → keine verspäteten Steps, kein Schwall
+    r=await ev("""(async()=>{ const late=[]; const orig=window.scheduleStep;
+      window.scheduleStep=(s,t)=>{ if(t<audioCtx.currentTime-0.005) late.push(+(audioCtx.currentTime-t).toFixed(3)); orig(s,t); };
+      start(); await new Promise(r=>setTimeout(r,500));
+      const a0=absStepCounter, t0=audioCtx.currentTime, e=performance.now()+500; while(performance.now()<e){}
+      await new Promise(r=>setTimeout(r,500)); const da=absStepCounter-a0, dt=audioCtx.currentTime-t0;
+      stop(); window.scheduleStep=orig;
+      return {worker:!!tickWorker, late:late.length, maxLate:Math.max(0,...late), da, exp:Math.round(dt/stepDuration())}; })()""")
+    ok('Worker-Takt: aktiv, nach Blockade keine verspäteten Steps, Position stimmt', r['worker'] and r['late']==0 and abs(r['da']-r['exp'])<=3, r)
     # --- Speichern/Laden
     await ev("(()=>{ const t=__T.find(x=>x.id==='arp'); t.fx=[fxNew('filter',1),fxNew('comp',0)]; t.fx[1].on=false; t.eqLc=.3; t.eqMf=.6; t.eqHighGain=-4; masterFx=[fxNew('limit',1)]; Object.assign(fxDelay,{div:'4t',md:'pp',fb:.5}); fxHall.sz=1.2; grps.drums.vol=.7; grps.perc.vol=.5; grps.perc.fx=[fxNew('comp',1),fxNew('limit',0)]; grps.perc.eqHighGain=3; })()")
     dat=await ev("JSON.parse(JSON.stringify(collectPatternData('fx-test',null)))")

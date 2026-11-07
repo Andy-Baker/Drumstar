@@ -5,6 +5,15 @@
 let isPlaying=false, currentStep=0, nextNoteTime=0;
 const scheduleAheadTime=0.12, lookahead=25;
 let timerID=null, scheduledSteps=[];
+// Takt-Geber im Web Worker: Timer im Hauptthread werden von Rendern/Layout
+// blockiert und im Hintergrund-Tab gedrosselt. Der Worker schickt nur Ticks,
+// die Planung selbst bleibt hier. Ohne Worker (alter Browser, CSP) → setTimeout.
+let tickWorker=null;
+try{
+  const src="let t=null;onmessage=e=>{clearInterval(t);t=null;if(e.data>0)t=setInterval(()=>postMessage(0),e.data);};";
+  tickWorker=new Worker(URL.createObjectURL(new Blob([src],{type:'text/javascript'})));
+  tickWorker.onmessage=()=>{ if(isPlaying) scheduler(); };
+}catch(e){ tickWorker=null; }
 
 const playBtn=document.getElementById('playBtn');
 
@@ -81,6 +90,16 @@ function scheduleStep(step,time){
   });
 }
 function scheduler(){
+  // Hing der Hauptthread länger fest, liegen Steps schon in der Vergangenheit:
+  // nicht als Schwall nachspielen, sondern still überspringen (Position bleibt).
+  while(nextNoteTime < audioCtx.currentTime - 0.03){
+    const swingOffset = (currentStep%2===1) ? stepDuration()*swing : 0;
+    if(nextNoteTime + swingOffset >= audioCtx.currentTime) break;
+    absStepCounter++;
+    nextNoteTime += stepDuration();
+    currentStep=(currentStep+1)%seqLength();
+    if(currentStep===0) onLoopRestart();
+  }
   while(nextNoteTime < audioCtx.currentTime + scheduleAheadTime){
     // Swing verschiebt NUR die Position der ungeraden (Off-Beat-)Steps nach
     // hinten — das Grund-Raster (nextNoteTime-Fortschritt) bleibt bei jedem
@@ -94,7 +113,7 @@ function scheduler(){
     currentStep=(currentStep+1)%seqLength();
     if(currentStep===0) onLoopRestart();
   }
-  timerID=setTimeout(scheduler, lookahead);
+  if(!tickWorker) timerID=setTimeout(scheduler, lookahead);
 }
 function start(){
   Promise.resolve(initAudio()).then(()=>{
@@ -104,12 +123,14 @@ function start(){
     absStepCounter=0; modVisAbs=0;
     loopCount=0; currentLoopIsFill=false; fillOverride=null;
     scheduler();
+    if(tickWorker) tickWorker.postMessage(lookahead);
     playBtn.textContent='■'; playBtn.classList.add('playing'); prSyncPlay();
     requestAnimationFrame(visualLoop);
   });
 }
 function stop(){
   isPlaying=false; pagePinned=false; renderPinChip(); clearTimeout(timerID);
+  if(tickWorker) tickWorker.postMessage(0);
   stopLoopingSampleTrack(); stopCosmicVoices();
   // Acid-Stimme: gehaltene (Slide-)Noten würden sonst weiterklingen; bereits eingeplante Events werden verworfen
   TRACKS.forEach(t=>{
