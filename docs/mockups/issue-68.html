@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="de"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Kit je Gruppe #68</title>
+<link rel="stylesheet" href="../../fonts.css">
+<link rel="stylesheet" href="../../css/app.css">
+<style>
+  /* Nur fürs Mockup: Varianten-Umschalter oben, darunter App-Ausschnitt mit echtem CSS */
+  #mockBar{ position:fixed; left:0; right:0; top:0; z-index:200; display:flex; gap:4px; padding:6px 10px; background:#06070a; border-bottom:1px solid #222; }
+  #mockBar button{ flex:1; min-height:38px; border-radius:8px; border:1px solid rgba(255,255,255,.12); background:#14161c; color:#7f8898; font:700 12px 'Rajdhani',sans-serif; letter-spacing:.04em; }
+  #mockBar button.on{ border-color:#3fa9ff; color:#8fd4ff; background:rgba(63,169,255,.14); }
+  body{ overflow-y:auto; }
+  #mk{ padding:62px 16px 30px; max-width:520px; margin:0 auto; display:flex; flex-direction:column; gap:10px; }
+  #kitPickerOverlay, #dsOv{ top:51px !important; }
+  .grpmenu{ display:flex; gap:6px; }
+  .grpmenu button{ flex:1; min-height:40px; border-radius:8px; border:1px solid rgba(255,255,255,.1); background:#0e1016; color:#7f8898; font:700 13px 'Rajdhani',sans-serif; letter-spacing:.08em; }
+  .grpmenu button.on.drums{ border-color:#3fa9ff; color:#8fd4ff; background:rgba(63,169,255,.12); }
+  .grpmenu button.on.perc{ border-color:#2dd4bf; color:#7ff0dc; background:rgba(45,212,191,.12); }
+  .kitpill.perc{ border-color:rgba(45,212,191,.5); background:rgba(45,212,191,.1); }
+  .kitpill small{ font:11px 'JetBrains Mono',monospace; color:#7f8898; display:block; line-height:1; }
+  /* Step-Raster (vereinfacht) */
+  .g{ display:flex; flex-direction:column; gap:4px; }
+  .gr{ display:grid; grid-template-columns:70px 1fr; gap:6px; align-items:center; }
+  .gl{ height:36px; border-radius:7px; background:#181b22; display:flex; flex-direction:column; justify-content:center; padding:0 6px; font:700 11px 'JetBrains Mono',monospace; color:var(--c); overflow:hidden; }
+  .gl s{ text-decoration:none; font-weight:400; font-size:9.5px; color:#7f8898; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cells{ display:grid; grid-template-columns:repeat(16,1fr); gap:2px; }
+  .cells i{ height:36px; border-radius:3px; background:#1a1d24; } .cells i:nth-child(4n+1){ background:#20242d; } .cells i.on{ background:var(--c); }
+  /* Picker-Ergänzungen */
+  .kp-seg{ display:flex; background:#181b22; border:1px solid #232a35; border-radius:10px; padding:3px; gap:3px; margin-bottom:6px; flex:none; }
+  .kp-seg button{ flex:1; border:0; background:none; border-radius:7px; min-height:46px; color:#7f8898; font:700 13px 'Rajdhani',sans-serif; letter-spacing:.06em; display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1.1; }
+  .kp-seg button small{ font:11px 'JetBrains Mono',monospace; letter-spacing:0; opacity:.8; }
+  .kp-seg button.on[data-g=drums]{ background:rgba(63,169,255,.14); color:#8fd4ff; box-shadow:inset 0 0 0 1px rgba(63,169,255,.5); }
+  .kp-seg button.on[data-g=perc]{ background:rgba(45,212,191,.12); color:#7ff0dc; box-shadow:inset 0 0 0 1px rgba(45,212,191,.5); }
+  .kp-for{ font:700 11px 'JetBrains Mono',monospace; letter-spacing:.12em; padding:2px 0 8px; }
+  #kitPickerOverlay.perc .kit-chip.active{ border-color:#2dd4bf; background:rgba(45,212,191,.12); box-shadow:0 0 12px rgba(45,212,191,.25); }
+  #kitPickerOverlay.perc .kit-chip.active .kn{ color:#7ff0dc; }
+  .kit-chip .tg{ font:10.5px 'JetBrains Mono',monospace; padding:1px 6px; border-radius:4px; background:#14262a; color:#2dd4bf; margin-left:6px; vertical-align:1px; }
+  .kit-chip.follow .kn{ color:#8fd4ff; }
+  #kitPickerOverlay{ overflow-y:auto; }
+  #kitOwnList .kit-chip .grow{ flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+  /* Set-Editor (vereinfacht, wie #2) */
+  #dsOv{ display:none; position:fixed; inset:0; z-index:70; background:linear-gradient(180deg,#101218,#0a0b0f); flex-direction:column; padding:12px 14px; gap:8px; overflow-y:auto; }
+  #dsOv.open{ display:flex; }
+  .ds-top{ display:flex; align-items:center; justify-content:space-between; }
+  .ds-bar2{ display:flex; gap:6px; } .ds-bar2 input{ flex:1; min-height:42px; border-radius:9px; border:1px solid #232a35; background:#12141a; color:#e9edf3; font:600 14px 'Rajdhani',sans-serif; padding:0 10px; }
+  .ds-bar2 button{ min-height:42px; padding:0 14px; border-radius:9px; border:1px solid rgba(45,212,191,.5); background:rgba(45,212,191,.12); color:#7ff0dc; font:700 13px 'Rajdhani',sans-serif; }
+  .ds-g{ font:700 11px 'JetBrains Mono',monospace; letter-spacing:.12em; color:#2dd4bf; margin:6px 2px 0; }
+  .ds-r{ display:grid; grid-template-columns:46px 1fr; gap:8px; align-items:center; background:#181b22; border-radius:10px; padding:8px; border:1px solid transparent; }
+  .ds-r.sw{ border-color:rgba(45,212,191,.45); }
+  .ds-r b{ font:700 11px 'JetBrains Mono',monospace; color:#2dd4bf; text-align:center; }
+  .ds-r span{ font-size:14px; font-weight:700; } .ds-r small{ display:block; font-size:12px; color:#7f8898; font-weight:500; }
+  .ds-info{ font-size:12px; color:#7f8898; line-height:1.4; }
+  #hmToast.on{ opacity:1; pointer-events:auto; }
+  #hmToast button{ background:none; border:0; color:#8fd4ff; font:700 11px 'JetBrains Mono',monospace; text-transform:uppercase; padding:6px 4px; }
+  .note{ font-size:13.5px; color:#b9c2cf; line-height:1.4; } .note b{ color:#e9edf3; } ul.note{ padding-left:18px; margin:0; } ul.note li{ margin:4px 0; }
+  .hd{ font:700 12px 'Rajdhani',sans-serif; letter-spacing:.1em; color:#8fd4ff; text-transform:uppercase; margin-top:6px; }
+</style></head>
+<body>
+<div id="mockBar"><button data-v="a" class="on">A · Kit an der Spur</button><button data-v="b">B · Ein Picker, 2 Reiter</button></div>
+
+<div id="mk">
+  <div class="grpmenu" id="grpM"><button data-g="drums" class="drums on">DRUMS</button><button data-g="perc" class="perc">PERC</button></div>
+  <div id="spurRow" class="hasKit">
+    <div class="lcdsel"><button class="lcdbtn"><span class="lbl">SPUR</span><span id="gName">DRUMS</span><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button></div>
+    <button class="kitpill" id="pill"><span id="lcdKit">ROCK KIT</span><svg class="lcd-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+  </div>
+  <div class="g" id="grid"></div>
+
+  <div class="hd">So funktioniert’s</div>
+  <ul class="note" id="howA">
+    <li><b>Kit-Taste gehört zur gewählten Spur.</b> Bei DRUMS wählt sie das Drum-Kit, bei PERC das Perc-Kit. Oben DRUMS/PERC umschalten (steht für die Spur-Auswahl), dann Kit-Taste tippen.</li>
+    <li>Perc-Liste: zuerst <b>„Wie Drums“</b> (= heutiges Verhalten, Standard für alte Beats), dann <b>LATIN PERC</b> (wird sichtbar) und die Kits mit eigenen Perc-Sounds, darunter <b>Eigene Perc-Kits</b>.</li>
+    <li><b>Drum-Kit wechseln lässt Perc in Ruhe.</b> Ein eigenes Perc-Kit bleibt, egal welches Drum-Kit du nimmst.</li>
+    <li><b>＋ Neues Perc-Kit</b> öffnet den Set-Editor nur mit den PERC-Zeilen (RS, HC, CB, CL, MR). Jede Zeile kann wie bisher jeden Sound aus allen Kits spielen (auch Conga, Bongo, Tambourin).</li>
+    <li>Gespeichert wird im Beat beides: Drum-Kit/-Set und Perc-Kit. Alte eigene Sets werden beim ersten Start in ein Drum-Set und, falls Perc-Zeilen getauscht waren, ein Perc-Kit aufgeteilt.</li>
+  </ul>
+  <ul class="note" id="howB" style="display:none">
+    <li><b>Eine Kit-Taste für beide.</b> Sie zeigt beide Kits („ROCK · LATIN“). Im Picker oben zwei Reiter DRUMS / PERC mit dem jeweils gewählten Kit.</li>
+    <li>Listen und Verhalten wie A, nur alles in einem Fenster; die Spur-Auswahl spielt keine Rolle (Reiter startet aber auf der gewählten Spur).</li>
+    <li>Nachteil: Kit-Taste wird eng (zwei Namen), und es gibt zwei Wege zur selben Sache.</li>
+  </ul>
+  <p class="note"><b>Empfehlung: A.</b> Die Kit-Taste sitzt schon heute neben der Spur-Auswahl, also wirkt sie natürlich auf diese Spur. Kein neuer Bedienweg, nur die Liste passt sich an.</p>
+</div>
+
+<div id="kitPickerOverlay">
+  <div id="kitPickerHead"><h2 class="ovt" id="kpT">Kit wählen</h2><button id="kitPickerCloseBtn" aria-label="Schließen">✕</button></div>
+  <div class="kp-seg" id="kpSeg" style="display:none"><button data-g="drums">DRUMS<small id="kpSD"></small></button><button data-g="perc">PERC<small id="kpSP"></small></button></div>
+  <div class="kp-for" id="kpFor"></div>
+  <div class="kp-sec">Standard</div>
+  <div id="kitPickerList"></div>
+  <div class="kp-sec" id="kpOwnT">Eigene Sets</div>
+  <div id="kitOwnList"></div>
+</div>
+
+<div id="dsOv">
+  <div class="ds-top"><h2 class="ovt">Perc-Kit bearbeiten</h2><button class="dsx" aria-label="Schließen" style="width:36px;height:36px;border-radius:8px;background:#181b22;border:1px solid rgba(255,255,255,.1);color:#8fd4ff">✕</button></div>
+  <div class="ds-bar2"><input id="dsName" value="Mein Latin-Perc"><button id="dsSave">Speichern</button></div>
+  <div class="ds-info">Nur die PERC-Zeilen. Zeile antippen = Sound aus allen Kits wählen (wie heute im Set-Editor).</div>
+  <div class="ds-g">● PERC</div>
+  <div id="dsRows" style="display:flex;flex-direction:column;gap:6px"></div>
+</div>
+
+<div id="hmToast"><span id="tT"></span><button id="tU">Rückgängig</button></div>
+
+<script>
+const $=id=>document.getElementById(id);
+let V='a', G='drums';
+const KD=[['rock','ROCK KIT','Live · akustisch · druckvoll'],['studio','STUDIO KIT','Echte Aufnahmen · modern, trocken'],['s67','STUDIO 67','Echte Aufnahmen · 1967er Snare'],['hyb','HYBRID','Echte Aufnahmen · Pop-Snare'],['rusty','RUSTY KIT','Echte Aufnahmen · 80er-Rockkit'],['vintage','VINTAGE 73','Echte Aufnahmen · 70er, gedämpft'],['fm909','FM-909','Klassisch · punchy'],['fm808','FM-808','Tief · warm · lang'],['real808','808 AUTHENTIC','Original-Technik'],['acid','ACID DRIVE','Aggressiv · verzerrt'],['lofi','LO-FI DUST','Gedämpft · vintage']];
+const KP=[['latin','LATIN PERC','Echte Aufnahmen · Conga, Bongos, Timbales, Schellenkranz',1],['real808','808 AUTHENTIC','Cowbell, Claves, Maracas der 808'],['fm808','FM-808','Perc-Sounds des FM-808'],['fm909','FM-909','Rim, Clap des FM-909'],['rock','ROCK KIT','Perc-Sounds des Rock Kit'],['acid','ACID DRIVE','verzerrt'],['lofi','LO-FI DUST','gedämpft']];
+let OWN={drums:[{id:'d1',name:'Rock + 909 Snare',d:'Basis ROCK KIT · 1 Tausch'}],perc:[{id:'p1',name:'Mein Latin-Perc',d:'Conga · Bongo · Schellenkranz · Claves · Shaker'}]};
+const NAME=Object.fromEntries([...KD,...KP].map(k=>[k[0],k[1]])); OWN.drums.forEach(s=>NAME[s.id]=s.name.toUpperCase()); OWN.perc.forEach(s=>NAME[s.id]=s.name.toUpperCase());
+let sel={drums:'rock',perc:'follow'};
+const SHORT=k=>k==='follow'?'WIE DRUMS':(NAME[k]||k).replace(' KIT','').replace(' PERC','');
+const ROWS={drums:[['bd','BD','#3fa9ff',[0,6,8]],['sd','SD','#8fd4ff',[4,12]],['ch','HH','#e8f4ff',[0,2,4,6,8,10,12,14]],['lt','LT','#2f7fd4',[]],['ht','HT','#2f7fd4',[14]],['oh','OH','#c7e6ff',[]],['cy','CY','#a3d8ff',[0]],['rd','RD','#b9dcff',[]]],
+  perc:[['rs','RS','#5eead4',[3,11]],['hc','HC','#2dd4bf',[4,12]],['cb','CB','#14b8a6',[2,7,10]],['cl','CL','#99f6e4',[0,3,6,10,12]],['mr','MR','#7ff0dc',[0,2,4,6,8,10,12,14]]]};
+const PSUB={latin:{rs:'TIMBAL',hc:'CONGA',cb:'BONGO',cl:'CLAVES',mr:'SCHELLENKR.'},p1:{rs:'CONGA',hc:'BONGO',cb:'SCHELLENKR.',cl:'CLAVES',mr:'SHAKER'}};
+function kitOf(g){ return g==='perc' && sel.perc==='follow' ? sel.drums : sel[g]; }
+function renderMain(){
+  [...$('grpM').children].forEach(b=>b.classList.toggle('on',b.dataset.g===G));
+  $('gName').textContent=G.toUpperCase();
+  const p=$('pill'); p.classList.toggle('perc',G==='perc'&&V==='a');
+  $('lcdKit').innerHTML = V==='b' ? SHORT(sel.drums)+' · '+(sel.perc==='follow'?SHORT(sel.drums):SHORT(sel.perc))
+    : (G==='perc' && sel.perc==='follow' ? SHORT(sel.drums)+'<small>WIE DRUMS</small>' : NAME[kitOf(G)]);
+  const gr=$('grid'); gr.innerHTML='';
+  ROWS[G].forEach(([id,ab,c,on])=>{ const r=document.createElement('div'); r.className='gr'; r.style.setProperty('--c',c);
+    const sub=G==='perc' && PSUB[sel.perc] ? PSUB[sel.perc][id] : SHORT(kitOf(G));
+    r.innerHTML='<div class="gl">'+ab+'<s>'+sub+'</s></div><div class="cells">'+Array.from({length:16},(_,i)=>'<i class="'+(on.includes(i)?'on':'')+'"></i>').join('')+'</div>'; gr.appendChild(r); });
+  $('howA').style.display=V==='a'?'':'none'; $('howB').style.display=V==='b'?'':'none';
+}
+let PG='drums';
+function openPicker(){ PG=G; const o=$('kitPickerOverlay'); o.classList.add('open'); o.scrollTop=0; renderPicker(); }
+function renderPicker(){
+  const ov=$('kitPickerOverlay'); ov.classList.toggle('perc',PG==='perc');
+  $('kpSeg').style.display=V==='b'?'flex':'none';
+  [...$('kpSeg').children].forEach(b=>b.classList.toggle('on',b.dataset.g===PG));
+  $('kpSD').textContent=SHORT(sel.drums); $('kpSP').textContent=SHORT(sel.perc);
+  $('kpT').textContent = V==='a' ? (PG==='drums'?'Drum-Kit':'Perc-Kit') : 'Kits';
+  $('kpFor').textContent = V==='a' ? (PG==='drums'?'für BD · SD · HH · TOMS · BECKEN':'für RS · HC · CB · CL · MR') : '';
+  $('kpFor').style.color = PG==='drums'?'#3fa9ff':'#2dd4bf';
+  const L=$('kitPickerList'); L.innerHTML='';
+  const add=(k,n,d,tag,cls)=>{ const c=document.createElement('div'); c.className='kit-chip'+(cls?' '+cls:'')+(sel[PG]===k?' active':'');
+    c.innerHTML='<div class="kn"></div><div class="kd"></div>'; c.querySelector('.kn').textContent=n; if(tag) c.querySelector('.kn').insertAdjacentHTML('beforeend','<span class="tg">'+tag+'</span>'); c.querySelector('.kd').textContent=d;
+    c.onclick=()=>pick(k); L.appendChild(c); };
+  if(PG==='perc') add('follow','WIE DRUMS','Perc-Sounds aus dem Drum-Kit ('+SHORT(sel.drums)+') · wie bisher',null,'follow');
+  (PG==='drums'?KD:KP).forEach(k=>add(k[0],k[1],k[2],k[3]?'NEU':null));
+  $('kpOwnT').textContent = PG==='drums'?'Eigene Drum-Sets':'Eigene Perc-Kits';
+  const O=$('kitOwnList'); O.innerHTML='';
+  OWN[PG].forEach(s=>{ const c=document.createElement('div'); c.className='kit-chip'+(sel[PG]===s.id?' active':'');
+    c.innerHTML='<div class="grow"><div class="kn"></div><div class="kd"></div></div>'; c.querySelector('.kn').textContent=s.name; c.querySelector('.kd').textContent=s.d; c.onclick=()=>pick(s.id); O.appendChild(c); });
+  const nw=document.createElement('div'); nw.className='kit-chip new'; nw.textContent=PG==='drums'?'＋ Neues Drum-Set aus dem aktuellen Kit':'＋ Neues Perc-Kit';
+  nw.onclick=()=>{ if(PG==='perc') openDs(); }; O.appendChild(nw);
+}
+let last=null;
+function pick(k){ const g=PG, old=sel[g]; sel[g]=k; renderPicker(); renderMain();
+  if(V==='a') $('kitPickerOverlay').classList.remove('open');
+  let msg=(g==='drums'?'Drums: ':'Perc: ')+(k==='follow'?'wie Drums':NAME[k]);
+  if(g==='drums' && sel.perc!=='follow') msg+=' · Perc bleibt '+SHORT(sel.perc);
+  last=[g,old]; toast(msg); }
+function toast(m){ $('tT').textContent=m; $('hmToast').classList.add('on'); clearTimeout(toast.t); toast.t=setTimeout(()=>$('hmToast').classList.remove('on'),3500); }
+$('tU').onclick=()=>{ if(!last) return; sel[last[0]]=last[1]; last=null; renderMain(); if($('kitPickerOverlay').classList.contains('open')) renderPicker(); $('hmToast').classList.remove('on'); };
+function openDs(){ $('dsOv').classList.add('open'); const R=$('dsRows'); R.innerHTML='';
+  ROWS.perc.forEach(([id,ab])=>{ const sw=PSUB.p1[id]; const r=document.createElement('div'); r.className='ds-r sw';
+    r.innerHTML='<b>'+ab+'</b><div><span>'+sw+'</span><small>'+(id==='cl'?'Latin Perc':'Latin Perc · statt '+ab)+'</small></div>'; R.appendChild(r); }); }
+document.querySelector('.dsx').onclick=()=>$('dsOv').classList.remove('open');
+$('dsSave').onclick=()=>{ $('dsOv').classList.remove('open'); sel.perc='p1'; renderPicker(); renderMain(); toast('Perc-Kit „Mein Latin-Perc“ gespeichert'); };
+$('pill').onclick=openPicker;
+$('kitPickerCloseBtn').onclick=()=>$('kitPickerOverlay').classList.remove('open');
+$('kpSeg').onclick=e=>{ const b=e.target.closest('button'); if(!b) return; PG=b.dataset.g; renderPicker(); };
+$('grpM').onclick=e=>{ const b=e.target.closest('button'); if(!b) return; G=b.dataset.g; renderMain(); };
+document.querySelector('#spurRow .lcdbtn').onclick=()=>{ G=G==='drums'?'perc':'drums'; renderMain(); };
+$('mockBar').onclick=e=>{ const b=e.target.closest('button'); if(!b) return; V=b.dataset.v; [...$('mockBar').children].forEach(x=>x.classList.toggle('on',x===b)); $('kitPickerOverlay').classList.remove('open'); renderMain(); };
+renderMain();
+</script>
+</body></html>
