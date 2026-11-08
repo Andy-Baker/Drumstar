@@ -4,7 +4,7 @@
 // =========================================================================
 let isPlaying=false, currentStep=0, nextNoteTime=0;
 const scheduleAheadTime=0.12, lookahead=25;
-let timerID=null, scheduledSteps=[];
+let timerID=null;
 // Takt-Geber im Web Worker: Timer im Hauptthread werden von Rendern/Layout
 // blockiert und im Hintergrund-Tab gedrosselt. Der Worker schickt nur Ticks,
 // die Planung selbst bleibt hier. Ohne Worker (alter Browser, CSP) → setTimeout.
@@ -15,7 +15,13 @@ try{
   tickWorker.onmessage=()=>{ if(isPlaying) scheduler(); };
 }catch(e){ tickWorker=null; }
 
-const playBtn=document.getElementById('playBtn');
+// Transport-Ereignisse: Die Engine (start/stop/scheduler/scheduleStep) kennt keine
+// Oberfläche. UI-Teile (Play-Taste, Abspielkopf, Piano Roll) hängen sich hier ein
+// (js/transport-ui.js). 'start' kommt vor dem ersten Planen, 'step' je geplantem Step
+// ({step,time,isFill,abs}, time = Audio-Zeit, also im Voraus), 'stop' am Ende von stop().
+const TRANSPORT_HOOKS={start:[],stop:[],step:[]};
+function transportOn(ev,fn){ TRANSPORT_HOOKS[ev].push(fn); }
+function transportEmit(ev,a){ const l=TRANSPORT_HOOKS[ev]; for(let i=0;i<l.length;i++) l[i](a); }
 
 function stepDuration(){ return 60/bpm/4; }
 // Hält die Delay-Zeit synchron zum Tempo (Viertelnoten-Delay = 4 Steps).
@@ -32,11 +38,6 @@ function updateDelayTime(){ fxDelayUpdate(); }
 // (scheduleStep), nicht im Offline-WAV-Export, da renderPatternToWav() einen
 // eigenen Trigger-Loop nutzt und scheduleStep() dafür nicht aufruft.
 let metronomeClickEnabled=false;
-const tempoClickToggle=document.getElementById('tempoClickToggle');
-tempoClickToggle.addEventListener('click', ()=>{
-  metronomeClickEnabled=!metronomeClickEnabled;
-  tempoClickToggle.classList.toggle('on', metronomeClickEnabled);
-});
 function playMetronomeClick(time, accented){
   if(!audioCtx) return;
   const osc=audioCtx.createOscillator(); osc.type='square';
@@ -53,7 +54,7 @@ function scheduleStep(step,time){
   const anySolo=TRACKS.some(t=>t.solo);
   const fillWindowStart=PATTERN_LENGTH-activeFillLength;
   const inFillWindow = currentLoopIsFill && fillOverride && step>=fillWindowStart;
-  scheduledSteps.push({step,time,isFill:inFillWindow,abs:curAbsStep});
+  transportEmit('step',{step,time,isFill:inFillWindow,abs:curAbsStep});
   TRACKS.forEach(tr=>{
     let v, art=0;
     if(inFillWindow && fillOverride[tr.id]){
@@ -118,18 +119,17 @@ function scheduler(){
 function start(){
   Promise.resolve(initAudio()).then(()=>{
     if(audioCtx.state!=='running') audioCtx.resume();
-    isPlaying=true; pagePinned=false; renderPinChip(); currentStep=0; nextNoteTime=audioCtx.currentTime+0.06; scheduledSteps=[];
+    isPlaying=true; currentStep=0; nextNoteTime=audioCtx.currentTime+0.06;
     TRACKS.forEach(t=>{ t._arpHeld=false; });
-    absStepCounter=0; modVisAbs=0;
+    absStepCounter=0;
     loopCount=0; currentLoopIsFill=false; fillOverride=null;
+    transportEmit('start');
     scheduler();
     if(tickWorker) tickWorker.postMessage(lookahead);
-    playBtn.textContent='■'; playBtn.classList.add('playing'); prSyncPlay();
-    requestAnimationFrame(visualLoop);
   });
 }
 function stop(){
-  isPlaying=false; pagePinned=false; renderPinChip(); clearTimeout(timerID);
+  isPlaying=false; clearTimeout(timerID);
   if(tickWorker) tickWorker.postMessage(0);
   stopLoopingSampleTrack(); stopCosmicVoices();
   // Acid-Stimme: gehaltene (Slide-)Noten würden sonst weiterklingen; bereits eingeplante Events werden verworfen
@@ -145,43 +145,7 @@ function stop(){
     }
     t._arpHeld=false;
   });
-  playBtn.textContent='▶'; playBtn.classList.remove('playing'); prSyncPlay(); prHidePh();
-  document.querySelectorAll('.playcol').forEach(el=>el.classList.remove('playcol'));
-}
-playBtn.addEventListener('click', ()=> isPlaying ? stop() : start());
-
-let lastDisplayStep=-1;
-function visualLoop(){
-  if(!isPlaying) return;
-  requestAnimationFrame(visualLoop);
-  const now=audioCtx.currentTime;
-  while(scheduledSteps.length && scheduledSteps[0].time<=now){
-    const ev=scheduledSteps.shift();
-    modVisAbs=ev.abs; updateAutoVisual();
-    if(arrOn() && switchTabIsSong()) ovPlayhead(Math.floor(ev.step/16));
-    const dstep=arrOn() ? ev.step%PATTERN_LENGTH : ev.step;
-    if(dstep!==lastDisplayStep){
-      const page=Math.floor(dstep/16), rel=dstep%16;
-      // Beim Überschreiten einer Seitengrenze blättert die Ansicht automatisch mit,
-      // damit der Playhead beim Abspielen längerer Patterns immer sichtbar bleibt.
-      if(page!==currentPage && !pagePinned){
-        currentPage=page;
-        renderAllForPage();
-        renderPageNav();
-      }
-      document.querySelectorAll('.playcol').forEach(el=>el.classList.remove('playcol'));
-      if(page===currentPage){ TRACKS.forEach(tr=> tr._ovCells[rel].classList.add('playcol'));
-      bigCells[rel].classList.add('playcol'); }
-      if(page===currentPage && TRACKS[activeTrackIdx].steps[dstep]){
-        bigCells[rel].classList.add('flash');
-        setTimeout(()=>bigCells[rel].classList.remove('flash'),90);
-      }
-      { const on=page===currentPage, pp=document.querySelector('#prPv .pph');
-        if(prIsOpen()) prPlayhead(dstep);
-        if(pp){ pp.style.display=on?'block':'none'; pp.style.left=(rel/16*100)+'%'; } }
-      lastDisplayStep=dstep;
-    }
-  }
+  transportEmit('stop');
 }
 
 // =========================================================================
@@ -252,30 +216,3 @@ async function restoreLastOpenedOrSeed(){
     if(data){ applyPatternData(data); setCurrentLoadedPattern(lastId, data.name); pbMarkClean(); }
   } catch(err){ console.warn('Zuletzt geöffneter Beat konnte nicht geladen werden:', err); }
 }
-
-// =========================================================================
-// BOTTOM-TAB-BAR — scroll-richtungsabhängiges Ein-/Ausblenden. #panelMain ist
-// selbst der scrollende Container (overflow-y:auto), daher hier gehorcht.
-// Ausblenden nur ab einem kleinen Schwellwert (gegen Zittern bei Mini-Scrolls),
-// an den beiden Scroll-Enden (ganz oben/unten) immer einblenden, damit die Bar
-// nicht "verschwunden" wirkt, wenn gar nicht aktiv gescrollt wird.
-// Verhalten ist bewusst IMMER gleich, auch während Song-Wiedergabe — keine
-// Sonderfälle, um das Verhalten vorhersehbar zu halten.
-(function initBottomTabBarScroll(){
-  const panelMainEl=document.getElementById('panelMain');
-  const bar=document.getElementById('bottomTabBar');
-  if(!panelMainEl || !bar) return;
-  let lastTop=panelMainEl.scrollTop, hidden=false;
-  panelMainEl.addEventListener('scroll', ()=>{
-    const top=panelMainEl.scrollTop;
-    const delta=top-lastTop;
-    const maxScroll=panelMainEl.scrollHeight-panelMainEl.clientHeight;
-    if(top<=4 || top>=maxScroll-4){
-      if(hidden){ hidden=false; bar.classList.remove('hidden'); }
-    } else if(Math.abs(delta)>6){
-      if(delta>0 && !hidden){ hidden=true; bar.classList.add('hidden'); }
-      else if(delta<0 && hidden){ hidden=false; bar.classList.remove('hidden'); }
-    }
-    lastTop=top;
-  }, {passive:true});
-})();
