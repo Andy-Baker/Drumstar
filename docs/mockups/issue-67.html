@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="de"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Plugin-Instrument #67</title>
+<link rel="stylesheet" href="../../fonts.css">
+<link rel="stylesheet" href="../../css/app.css">
+<style>
+  /* Mockup-Rahmen: Varianten oben, darunter die echte App (Screenshot v106 + echtes CSS für Fenster/Sheets) */
+  body{ margin:0; background:#06070a; }
+  #mockBar{ position:fixed; left:0; right:0; top:0; z-index:200; display:flex; gap:4px; padding:6px 10px; background:#06070a; border-bottom:1px solid #222; }
+  #mockBar button{ flex:1; min-height:40px; border-radius:8px; border:1px solid rgba(255,255,255,.12); background:#14161c; color:#7f8898; font:700 12px 'Rajdhani',sans-serif; letter-spacing:.03em; line-height:1.1; }
+  #mockBar button.on{ border-color:#3fa9ff; color:#5fc2ff; background:rgba(63,169,255,.14); }
+  #app{ position:relative; width:390px; max-width:100vw; height:844px; margin:53px auto 0; overflow:hidden; background:#0b0d12 url(img/issue-67-app.png) top left/100% auto no-repeat; }
+  #app #kitPickerOverlay,#app #soundPickerOverlay{ position:absolute; } #app .sheet{ position:absolute; max-height:86%; }
+  /* Überdeckte Stellen im Screenshot (Spur-LCD, Sound-LCD, Spur-Name) */
+  .ov{ position:absolute; display:flex; align-items:center; justify-content:space-between; padding:0 14px 0 12px; border-radius:9px; font:26px 'VT323',monospace; letter-spacing:.05em; cursor:pointer; }
+  #ovTrack{ left:7px; top:75px; width:188px; height:47px; background:#05070a; border:1px solid rgba(63,169,255,.25); color:#5fc2ff; }
+  #ovSnd{ left:203px; top:75px; width:180px; height:47px; background:#16140c; border:1px solid var(--c); color:var(--c); }
+  .ov svg{ width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:2.2; }
+  #ovName{ position:absolute; left:12px; top:194px; width:160px; height:42px; display:flex; align-items:center; gap:10px; background:#15171c; font:700 17px 'Rajdhani',sans-serif; letter-spacing:.06em; color:#e9edf3; padding-left:4px; }
+  #ovName i{ width:12px; height:12px; border-radius:50%; background:var(--c); }
+  #ovKlang{ position:absolute; left:331px; top:193px; width:44px; height:44px; border-radius:9px; cursor:pointer; box-shadow:0 0 0 2px var(--c); animation:pulse 1.6s infinite; }
+  @keyframes pulse{ 50%{ box-shadow:0 0 0 5px transparent; } }
+  .hint{ position:absolute; left:16px; right:16px; top:600px; text-align:center; font:13px 'JetBrains Mono',monospace; color:#5fc2ff; background:rgba(5,7,10,.8); border-radius:8px; padding:8px; }
+  /* Sound wählen: Plugin-Einträge */
+  .kit-chip .ptag{ float:right; font:11px 'JetBrains Mono',monospace; padding:1px 6px; border-radius:4px; background:rgba(255,126,182,.16); color:#ff9cc6; }
+  .kit-chip.soon{ opacity:.45; pointer-events:none; }
+  /* Klang-Sheet Plugin */
+  #klSheet.plg input[type=range]{ accent-color:var(--c); }
+  .pl-card{ display:flex; align-items:center; gap:10px; background:var(--panel); border-radius:10px; padding:8px 10px; }
+  .pl-card b{ font:700 15px 'Rajdhani',sans-serif; letter-spacing:.05em; color:var(--c); } .pl-card small{ display:block; color:var(--dim); font-size:12px; }
+  .pl-card .grow{ flex:1; min-width:0; }
+  .pl-lcd{ display:flex; align-items:center; gap:6px; background:#05070a; border:1px solid rgba(255,255,255,.08); border-radius:10px; padding:4px; }
+  .pl-lcd .n{ flex:1; min-width:0; font:22px 'VT323',monospace; color:var(--c); letter-spacing:.04em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding:0 4px; cursor:pointer; min-height:40px; display:flex; align-items:center; }
+  .pl-lcd button,.pl-card button{ width:44px; height:44px; flex:none; border-radius:9px; border:1px solid rgba(255,255,255,.12); background:var(--panel); color:var(--blue-2); font:700 18px 'Rajdhani',sans-serif; }
+  .pl-card button{ width:auto; padding:0 12px; font-size:13px; }
+  .pl-chips{ display:flex; gap:6px; overflow-x:auto; flex:none; padding:1px 0 3px; scrollbar-width:none; } .pl-chips::-webkit-scrollbar{ display:none; }
+  .pl-chips button{ flex:none; min-height:38px; padding:0 14px; border-radius:19px; border:1px solid rgba(255,255,255,.12); background:var(--panel); color:var(--dim); font:700 13px 'Rajdhani',sans-serif; }
+  .pl-chips button.on{ border-color:var(--blue); color:var(--blue-2); background:rgba(63,169,255,.16); }
+  .pl-list{ display:flex; flex-direction:column; gap:5px; overflow-y:auto; min-height:0; }
+  .pl-it{ display:flex; align-items:center; gap:8px; min-height:46px; padding:0 4px 0 10px; border-radius:8px; background:var(--panel-inset); font:600 14px 'Rajdhani',sans-serif; flex:none; border:1px solid transparent; }
+  .pl-it.on{ border-color:var(--blue); background:rgba(63,169,255,.12); } .pl-it span{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .pl-it small{ font:11px 'JetBrains Mono',monospace; color:var(--dim); }
+  .pl-it button{ width:44px; height:40px; border-radius:8px; border:1px solid rgba(63,169,255,.4); background:rgba(63,169,255,.12); color:var(--blue-2); }
+  .pl-search{ min-height:42px; border-radius:9px; border:1px solid var(--line,rgba(255,255,255,.12)); background:var(--panel-inset); color:var(--tx,#e9edf3); font:600 14px 'Rajdhani',sans-serif; padding:0 10px; flex:none; }
+  #klRows{ overflow-y:auto; min-height:0; display:flex; flex-direction:column; gap:6px; }
+  details.pl-all{ background:var(--panel); border-radius:10px; padding:2px 10px; } details.pl-all summary{ min-height:42px; display:flex; align-items:center; font:700 13px 'Rajdhani',sans-serif; color:var(--blue-2); }
+  .pl-note{ font-size:12px; color:var(--dim); line-height:1.4; }
+</style></head>
+<body>
+<div id="mockBar"><button data-v="a" class="on">A · In der KEYS-Spur<br><small>als weiterer Sound</small></button><button data-v="b">B · Eigene Spur SYNTH<br><small>nur Plugins</small></button></div>
+<div id="app">
+  <div class="ov" id="ovTrack"><span id="ovTrackT">KEYS</span><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></div>
+  <div class="ov" id="ovSnd"><span id="ovSndT">PIANO</span><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></div>
+  <div id="ovName"><i></i><span id="ovNameT">KEYS</span></div>
+  <div id="ovKlang" title="Klang"></div>
+  <div class="hint" id="hint">Tippe auf PIANO (Sound wählen)</div>
+
+  <div id="soundPickerOverlay">
+    <div id="soundPickerHead"><h2 class="ovt">Sound wählen</h2><button id="soundPickerCloseBtn" aria-label="Schließen">✕</button></div>
+    <div id="spBody"></div>
+  </div>
+
+  <div class="sheet plg" id="klSheet">
+    <div class="sh"><button class="shx" id="klBack" hidden aria-label="Zurück"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg></button><span id="klT">Klang</span><button class="shx" id="klX" aria-label="Schließen">✕</button></div>
+    <div class="am-seg" id="klTabs"><button data-t="sound" class="on">SOUND</button><button data-t="fx">MIX &amp; FX</button><button data-t="key">TONART</button></div>
+    <div id="klRows"></div>
+  </div>
+</div>
+<script>
+const OXO_PARAMS=[["Oscillators", "osc1 shape", 0, 3, 1, false], ["Oscillators", "osc2 shape", 1, 4, 2, false], ["Oscillators", "osc2 pitch", 0, 127, 51, false], ["Oscillators", "osc2 fine tune", 0, 127, 66, false], ["Oscillators", "osc2 kbd track", 0, 1, 1, false], ["Oscillators", "osc mix", 0, 127, 127, false], ["Oscillators", "osc2 sync", 0, 1, 0, false], ["Oscillators", "osc2 ring modulation", 0, 1, 0, false], ["Oscillators", "osc pulse width", 0, 127, 112, false], ["Oscillators", "osc key shift", -24, 24, 0, false], ["Oscillators", "osc mod env on/off", 0, 1, 0, false], ["Oscillators", "osc mod env amount", 0, 127, 64, false], ["Oscillators", "osc mod env attack", 0, 127, 0, false], ["Oscillators", "osc mod env decay", 0, 127, 0, false], ["Filter", "filter type", 0, 4, 1, false], ["Filter", "filter attack", 0, 127, 99, false], ["Filter", "filter decay", 0, 127, 97, false], ["Filter", "filter sustain", 0, 127, 47, false], ["Filter", "filter release", 0, 127, 100, false], ["Filter", "filter freq", 0, 127, 43, false], ["Filter", "filter resonance", 0, 127, 18, false], ["Filter", "filter amount", 0, 127, 87, false], ["Filter", "filter kbd track", 0, 127, 64, false], ["Filter", "filter saturation", 0, 127, 0, false], ["Filter", "filter velocity switch", 0, 1, 1, false], ["Amplifier", "amp attack", 0, 127, 0, false], ["Amplifier", "amp decay", 0, 127, 49, false], ["Amplifier", "amp sustain", 0, 127, 127, false], ["Amplifier", "amp release", 0, 127, 95, false], ["Amplifier", "amp gain", 0, 127, 85, false], ["Amplifier", "amp velocity sens", 0, 127, 0, false], ["Arpeggiator", "arpeggiator type", 1, 4, 1, false], ["Arpeggiator", "arpeggiator oct range", 0, 3, 1, false], ["Arpeggiator", "arpeggiator beat", 0, 18, 14, false], ["Arpeggiator", "arpeggiator gate", 0, 127, 29, false], ["Delay", "delay time", 0, 19, 10, false], ["Delay", "delay feedback", 0, 127, 51, false], ["Delay", "delay dry/wet", 0, 127, 45, false], ["Voice", "play mode type", 0, 2, 0, false], ["Voice", "portament time", 0, 127, 0, false], ["Wheel / MIDI", "pitch bend range", 0, 24, 12, false], ["LFO", "lfo1 destination", 1, 7, 5, false], ["LFO", "lfo1 type", 0, 5, 5, false], ["LFO", "lfo1 speed", 0, 127, 37, false], ["LFO", "lfo1 depth", 0, 127, 41, false], ["Oscillators", "osc1 FM", 0, 127, 0, false], ["LFO", "lfo2 destination", 1, 7, 3, false], ["LFO", "lfo2 type", 0, 5, 4, false], ["LFO", "lfo2 speed", 0, 127, 10, false], ["LFO", "lfo2 depth", 0, 127, 0, false], ["LFO", "midi ctrl sens1", 0, 127, 64, false], ["LFO", "midi ctrl sens2", 0, 127, 64, false], ["LFO", "chorus delay time", 0, 127, 64, false], ["LFO", "chorus depth", 0, 127, 72, false], ["LFO", "chorus rate", 0, 127, 50, false], ["LFO", "chorus feedback", 0, 127, 64, false], ["LFO", "chorus level", 0, 127, 105, false], ["LFO", "lfo1 on/off", 0, 1, 1, false], ["LFO", "lfo2 on/off", 0, 1, 1, false], ["LFO", "arpeggiator on/off", 0, 1, 0, false], ["LFO", "equalizer tone", 0, 127, 64, false], ["LFO", "equalizer freq", 0, 127, 64, false], ["LFO", "equalizer level", 0, 127, 64, false], ["LFO", "equalizer Q", 0, 127, 64, false], ["LFO", "chorus type", 1, 4, 2, false], ["LFO", "delay on/off", 0, 1, 0, false], ["LFO", "chorus on/off", 0, 1, 1, false], ["LFO", "lfo1 tempo sync", 0, 1, 0, false], ["LFO", "lfo1 key sync", 0, 1, 0, false], ["LFO", "lfo2 tempo sync", 0, 1, 0, false], ["LFO", "lfo2 key sync", 0, 1, 0, false], ["Oscillators", "osc mod dest", 0, 2, 0, false], ["Oscillators", "osc1,2 fine tune", 0, 127, 64, false], ["Wheel / MIDI", "unison mode", 0, 1, 0, false], ["Wheel / MIDI", "portament auto mode", 0, 1, 0, false], ["Wheel / MIDI", "unison detune", 0, 127, 26, false], ["Oscillators", "osc1 detune", 0, 127, 0, false], ["Wheel / MIDI", "effect on/off", 0, 1, 0, false], ["Wheel / MIDI", "effect type", 0, 9, 0, false], ["Wheel / MIDI", "effect control1", 0, 127, 64, false], ["Wheel / MIDI", "effect control2", 0, 127, 64, false], ["Wheel / MIDI", "effect level/mix", 0, 127, 64, false], ["Wheel / MIDI", "delay type", 0, 2, 0, false], ["Wheel / MIDI", "delay time spread", 0, 127, 0, false], ["Wheel / MIDI", "unison pan spread", 0, 127, 64, false], ["Wheel / MIDI", "unison pitch", 0, 48, 24, false], ["Wheel / MIDI", "midi ctrl src1", -1, 65535, 45057, false], ["Wheel / MIDI", "midi ctrl assign1", -1, 65535, 44, false], ["Wheel / MIDI", "midi ctrl src2", -1, 65535, 45057, false], ["Wheel / MIDI", "midi ctrl assign2", -1, 65535, 49, false], ["Equalizer", "pan", 0, 127, 64, false], ["Oscillators", "osc phase shift", 0, 127, 0, false], ["Voice", "unison phase shift", 0, 127, 0, false], ["Voice", "unison voice num", 2, 8, 2, false], ["Voice", "polyphony", 1, 32, 16, false], ["Oscillators", "osc1 sub gain", 0, 127, 0, false], ["Oscillators", "osc1 sub shape", 0, 3, 3, false], ["Oscillators", "osc1 sub octave", 0, 1, 1, false], ["Delay", "delay tone", 0, 127, 64, false], ["Master", "volume", 0, 127, 64, false]];
+const OXO_PRESETS=["INIT", "PAD PWM Chorus", "PAD PWM Raw", "PAD Distant Hills", "PAD Negative Resonance", "PAD SuperSaw Viola", "PAD SuperSaw RND LFO", "PAD Deep House 5th", "PAD Juno Soft", "PAD JX-3P Square Chorus", "PAD MKS-70 Warm", "PAD Choir", "PAD JX Hollow", "PAD JX Hollow Gate", "BAS Solid", "BAS Lately Echo", "BAS 101 Square Low", "BAS 242 1982", "BAS BandPass", "BAS BandPass 2", "BAS Analog Bass", "BAS TB-303 Square", "BAS TB-303 Saw", "BAS FM 242-1", "BAS FM 242-2", "BAS FM 242-3", "SYN Juno Res Chords", "SYN Juno Soft Res", "SYN MKS-70 Square Chorus", "SYN JMJ MemoryMoog", "SYN Res Short", "SYN Saw Short", "SYN Short EBM", "SYN Saw Electro", "SYN Sine JP-8", "SYN H3.1 Stabs", "SYN PWM", "SYN FM Pluck", "DUB Chords BandPass", "DUB Chords WH", "DUB DeepH PW WH", "ARP SH-101", "ARP 242 Kampfbereit", "ARP Melodic Saw WH", "ARP Saw Portamento", "ARP Noise RND", "ARP SuperSaw", "ARP SuperSaw Phaser", "ARP Trance Uni", "ARP Sine", "ARP Stranger Things", "Soundtrack", "Analog Strings", "DX7 Tubular Bells", "Phazed Strings", "Fairlight Vox ?", "Choir", "Enigma Strings", "Epic Strings", "Fairlight ARR Voice", "Roland D-50", "JX8P Sync", "PPG Wave Glistening Pad", "Closed Hat", "Open Hi Hat", "Bass Drum", "Snare Drum", "Moving Pad", "Solid Bass", "Lush Pad", "Harp", "Ultra Pluck", "Korg M1 Digital Pan", "Hollow Pad", "JP8000 Saws", "Good Vibes", "One Finger Phazed Pad", "Fanfare", "Korg M1 Perc Organ", "Juno Strings", "Pizzicato", "PPG Bass", "Universe", "Korg M1 Piano", "Roland Fantasia", "Harmony Pad", "Lush XP Pad", "Fender Strat ?", "Cheezy 80's SynBrass", "Jupiter 8 Factory Pad", "JV2080 Euphoria", "PPG Hybrid", "Pulse Pad", "JP8000 Padding", "Jupiter 8 Bass", "Voice Stab", "PPG Bell 1", "Juno Bass", "Basic Organ", "Intro Sweep", "Cinema Strings", "Roland D50 Chimes", "Matrix-12 Pad", "Jupiter 80 Plucked Pad", "Roland D50 Pluck", "Big Brass", "Roland D-50 Dream Pad", "Fresh PPG Pad", "DX7IIFD Bass", "Epic Leader", "Roland D-50 Breather", "SH101 Bass or Lead", "Roland D-50 Flute Pad", "OBX-a Filter Pad", "Roland JP 6 Solo", "Matrix 12 Wonder Pad", "JX8p Bass", "PPG 2.2 Comp Pad", "OSCar Lead", "Jupiter 8 Sweep Pad", "SH101 Lead", "Theramin", "JP8080 Euphoric Strings", "D50 Dream", "JV2080 Plucked Pad", "Big PPG Wave Bass", "D-50 Clean Digital Bells", "Prophet 5 Fresh Pad", "OBX-a Bright Pad", "D-50 Harpsichord", "Jupiter Slow Strings", "Moog Source Lead", "Sequencer Bass", "Cold Brass-String", "D-50 Digital Clav ?", "Jupiter 80 Phased Strings", "XP-60 Moving Pad", "PPG Voca-Pad", "OBX-a Hornz", "Bad Sampled Cello's", "Treated M1 Piano", "Jupiter Horns", "JV2080 Epic Pad", "D-50 Super Dulcimer", "Jupiter 80 Bell Pad", "Attack Angels", "JX3p Filter Pad", "JP8080 Super Lead", "New Universe", "D-50 Ambience", "PPG Atmos Pad", "CS-80 Pad", "Heavy Music Box", "D-50 Shimmer Pad", "Matrix 12 Epic Pad", "M1 Organ", "Synthetic Marimba", "OSCar Hyper Lead", "Melotron Voices", "Square Bass", "The Ultimate Strings", "PPG Fresh Pad", "Hyper Lead", "JX8p Clean Pad", "Ammoco Renagade", "PPG Voca-Lead", "Phased String Pad", "Nineties Pad", "Alpha-Juno Sweep", "D-50 Calm Pad", "Thin Strings", "Short Jupiter", "JV2080 Angel", "Electro Koto", "Polly-800 Pad", "Blow Pad", "ARP Lead", "Ambience", "Spooky Pad"];
+const $=id=>document.getElementById(id);
+let V='a', snd='piano', pIdx=21, view='main', cat='Alle';
+const COL={a:'#ffd166',b:'#ff7eb6'};
+// Preset-Kategorien aus den Namen (Oxo-Werksbank, 179 Presets)
+const CATS=[['Pad',/\bPAD\b|pad\b|Choir|Vox|Voice|Angel|Atmos|Ambience|Universe|Dream/i],['Bass',/\bBAS\b|bass/i],['Lead',/lead|solo|Theramin|Hornz|Brass|Fanfare|Horns/i],['Strings',/string|cello|viola|Pizzicato/i],['Keys',/piano|organ|clav|harpsi|bell|chime|marimba|music box|dulcimer|koto|harp\b/i],['Arp & Pluck',/\bARP\b|pluck|stab|short|seq/i],['Synth',/\bSYN\b|\bDUB\b|saw|pwm|sync|sweep/i],['Drums',/hat|drum|snare/i]];
+const catOf=n=>{ for(const [c,r] of CATS) if(r.test(n)) return c; return 'Sonstige'; };
+const PLAY='<svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor"><path d="M4 2l10 6-10 6z"/></svg>';
+function paint(){
+  document.documentElement.style.setProperty('--c', snd==='oxo'?COL[V]:(V==='b'?COL.b:'#ffd166'));
+  $('ovTrackT').textContent=V==='b'?'SYNTH':'KEYS'; $('ovNameT').textContent=V==='b'?'SYNTH':'KEYS';
+  $('ovSndT').textContent= snd==='oxo'?'OXO SYNTH2':(V==='b'?'– wählen –':snd.toUpperCase());
+  $('hint').textContent= snd==='oxo' ? 'Tippe auf das Regler-Symbol (Klang)' : 'Tippe auf '+$('ovSndT').textContent+' (Sound wählen)';
+  $('ovKlang').style.display=snd==='oxo'?'block':'none';
+}
+function picker(){
+  const B=$('spBody'); let h='';
+  if(V==='a') h+='<div class="kp-sec">Keys</div><div id="soundPickerList">'+[['piano','PIANO','Hammer · Saiten · warm'],['rhodes','RHODES','E-Piano · Glocke · Tremolo']].map(([k,n,d])=>'<div class="kit-chip'+(snd===k?' active':'')+'" data-s="'+k+'"><div class="kn">'+n+'</div><div class="kd">'+d+'</div></div>').join('')+'</div>';
+  h+='<div class="kp-sec">Plugins (WebCLAP)</div><div id="soundPickerList">'
+   +'<div class="kit-chip'+(snd==='oxo'?' active':'')+'" data-s="oxo"><div class="kn">OXO SYNTH2 <span class="ptag">PLUGIN</span></div><div class="kd">Synth1-Nachbau · 179 Presets · 0,1 MB</div></div>'
+   +'<div class="kit-chip soon"><div class="kn">WEITERE PLUGINS</div><div class="kd">z. B. Effekte aus open-webclap – später</div></div></div>';
+  B.innerHTML=h; B.querySelectorAll('[data-s]').forEach(c=>c.onclick=()=>{ snd=c.dataset.s; $('soundPickerOverlay').classList.remove('open'); paint(); });
+  $('soundPickerOverlay').classList.add('open');
+}
+const KURZ=[['Cutoff','filter freq'],['Reso','filter resonance'],['Hüllkurve','filter amount'],['Attack','amp attack'],['Release','amp release'],['Detune','unison detune'],['Chorus','chorus level'],['Delay','delay dry/wet']];
+const P=n=>OXO_PARAMS.find(p=>p[1]===n);
+const pct=(p)=>Math.round((p[4]-p[2])/(p[3]-p[2]||1)*100);
+function srow(label,p){ return '<div class="srow"><label>'+label+'</label><input type="range" min="'+p[2]+'" max="'+p[3]+'" step="'+(p[5]?1:(p[3]-p[2])/200)+'" value="'+p[4]+'"><b class="rs def">'+(p[5]?Math.round(p[4]):pct(p)+'%')+'</b></div>'; }
+function sheet(){
+  $('klT').textContent='Klang · '+(V==='b'?'SYNTH':'KEYS');
+  const R=$('klRows'); $('klBack').hidden=view==='main';
+  if(view==='presets'){
+    $('klT').textContent='Preset wählen'; $('klTabs').style.display='none';
+    let h='<input class="pl-search" placeholder="Suchen …" id="plQ"><div class="pl-chips" id="plCh">'+['Alle'].concat(CATS.map(c=>c[0]),['Sonstige']).map(c=>'<button class="'+(c===cat?'on':'')+'">'+c+'</button>').join('')+'</div><div class="pl-list" id="plL"></div>';
+    R.innerHTML=h; const list=()=>{ const q=($('plQ').value||'').toLowerCase(); $('plL').innerHTML=OXO_PRESETS.map((n,i)=>[n,i]).filter(([n])=>(cat==='Alle'||catOf(n)===cat)&&n.toLowerCase().includes(q)).map(([n,i])=>'<div class="pl-it'+(i===pIdx?' on':'')+'" data-i="'+i+'"><span>'+n+'</span><small>'+catOf(n)+'</small><button aria-label="Anhören">'+PLAY+'</button></div>').join('');
+      $('plL').querySelectorAll('.pl-it').forEach(it=>it.onclick=e=>{ if(e.target.closest('button')) return; pIdx=+it.dataset.i; view='main'; sheet(); }); };
+    $('plCh').querySelectorAll('button').forEach(b=>b.onclick=()=>{ cat=b.textContent; sheet(); }); $('plQ').oninput=list; list(); return;
+  }
+  $('klTabs').style.display='';
+  const groups={}; OXO_PARAMS.forEach(p=>(groups[p[0]]=groups[p[0]]||[]).push(p));
+  R.innerHTML=
+    '<div class="pl-card"><div class="grow"><b>OXO SYNTH2</b><small>Plugin · WebCLAP · chab (MIT)</small></div><button id="plSwap">Wechseln</button></div>'
+   +'<div class="grp">Preset</div><div class="pl-lcd"><button id="pPrev" aria-label="Vorheriges">‹</button><div class="n" id="pN">'+pIdx+' · '+OXO_PRESETS[pIdx]+'</div><button id="pNext" aria-label="Nächstes">›</button></div>'
+   +'<div class="acts"><button class="act" id="plList"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h9"/></svg>Alle Presets</button><button class="act"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"></rect><circle cx="9" cy="9" r="1" fill="currentColor"></circle><circle cx="15" cy="15" r="1" fill="currentColor"></circle><circle cx="12" cy="12" r="1" fill="currentColor"></circle></svg>Preset würfeln</button></div>'
+   +'<div class="grp">Wichtig</div>'+KURZ.map(([l,n])=>srow(l,P(n))).join('')
+   +'<div class="grp">Pegel</div><div class="srow"><label>Plugin</label><input type="range" min="-24" max="6" step="0.5" value="-6"><b class="rs">-6 dB</b></div>'
+   +'<p class="pl-note">Ab Werk −6 dB: volle Akkorde mancher Presets gehen sonst über 0 dB (Handytest).</p>'
+   +'<details class="pl-all"><summary>Alle '+OXO_PARAMS.length+' Parameter</summary>'+Object.keys(groups).map(g=>'<div class="grp">'+g+'</div>'+groups[g].map(p=>srow(p[1],p)).join('')).join('')+'</details>';
+  $('pPrev').onclick=()=>{ pIdx=(pIdx+OXO_PRESETS.length-1)%OXO_PRESETS.length; sheet(); };
+  $('pNext').onclick=()=>{ pIdx=(pIdx+1)%OXO_PRESETS.length; sheet(); };
+  $('pN').onclick=$('plList').onclick=()=>{ view='presets'; cat=catOf(OXO_PRESETS[pIdx]); sheet(); };
+  $('plSwap').onclick=()=>{ $('klSheet').classList.remove('open'); picker(); };
+}
+$('ovSnd').onclick=picker; $('soundPickerCloseBtn').onclick=()=>$('soundPickerOverlay').classList.remove('open');
+$('ovKlang').onclick=()=>{ view='main'; sheet(); $('klSheet').classList.add('open'); };
+$('klX').onclick=()=>$('klSheet').classList.remove('open'); $('klBack').onclick=()=>{ view='main'; sheet(); };
+$('mockBar').onclick=e=>{ const b=e.target.closest('button'); if(!b) return; V=b.dataset.v; [...$('mockBar').children].forEach(x=>x.classList.toggle('on',x===b)); snd=V==='b'?'none':'piano'; $('klSheet').classList.remove('open'); $('soundPickerOverlay').classList.remove('open'); paint(); };
+paint();
+</script>
+</body></html>
