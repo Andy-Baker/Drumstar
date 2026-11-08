@@ -116,24 +116,31 @@ function patchBuf(i){ const p=patches[i], name=new TextEncoder().encode(p.name);
 function setPatch(i){ if(!patches.length) return; pIdx=(i+patches.length)%patches.length; node.port.postMessage(patchBuf(pIdx)); $('pName').textContent=(pIdx)+' · '+patches[pIdx].name; setTimeout(refreshParams,150); }
 // Rechenlast: dasselbe Plugin in einem OfflineAudioContext, Noten gehalten, so schnell wie möglich gerechnet.
 // Last = Rechenzeit / Audiodauer (Anteil eines Kerns). Im AudioWorklet selbst gibt es ohne Cross-Origin-Isolation keine genaue Uhr.
-async function bench(voices){
-  const sr=ctx.sampleRate, dur=6, off=new OfflineAudioContext(2, sr*dur, sr);
+// Eine Instanz pro Messung (der Host gibt Instanzen nie frei → sonst läuft am Handy der Speicher voll):
+// 3 Abschnitte à 2 s, per suspend() angehalten, Stimmen nachgelegt (1 → 4 → 8), Zeit je Abschnitt gemessen.
+const benchMods={};
+async function benchAll(){
+  const sr=ctx.sampleRate, seg=2, off=new OfflineAudioContext(2, sr*seg*3, sr);
   await off.audioWorklet.addModule('note-feeder.js'); const f=new AudioWorkletNode(off,'drumstar-note-feeder',{numberOfInputs:0,numberOfOutputs:1});
-  const mod=new ClapAudioNode(PLUG[cur].url), list=await mod.plugins();
+  const mod=benchMods[cur]||(benchMods[cur]=new ClapAudioNode(PLUG[cur].url)), list=await mod.plugins();
   const n=await mod.createNode(off, list[0].id, {numberOfInputs:1, numberOfOutputs:1, outputChannelCount:[2]});
   const keep=off.createConstantSource(); keep.offset.value=0; keep.start(); keep.connect(n); n.connect(off.destination);
   if(patches.length) n.port.postMessage(patchBuf(pIdx));
-  await new Promise(r=>setTimeout(r,100));
-  [48,55,60,63,67,70,74,79].slice(0,voices).forEach(k=>f.port.postMessage({bytes:noteBytes(true,k,0.8)}));
-  await new Promise(r=>setTimeout(r,50));
-  const t0=performance.now(), buf=await off.startRendering(), ms=performance.now()-t0;
-  let pk=0; const d=buf.getChannelData(0); for(let i=0;i<d.length;i+=7) pk=Math.max(pk,Math.abs(d[i]));
-  return {load:ms/(dur*1000), peak:pk};
+  const KEYS=[48,55,60,63,67,70,74,79], steps=[1,4,8], res=[]; let t0=0, have=0;
+  const add=v=>{ KEYS.slice(have,v).forEach(k=>f.port.postMessage({bytes:noteBytes(true,k,0.8)})); have=v; };
+  steps.forEach((v,i)=>{ if(i) off.suspend(i*seg).then(()=>{ res.push(performance.now()-t0); add(v); setTimeout(()=>{ t0=performance.now(); off.resume(); },30); }); });
+  await new Promise(r=>setTimeout(r,100)); add(1); await new Promise(r=>setTimeout(r,50));
+  t0=performance.now(); const buf=await off.startRendering(); res.push(performance.now()-t0);
+  const d=buf.getChannelData(0), out={};
+  steps.forEach((v,i)=>{ let pk=0; for(let j=i*seg*sr;j<(i+1)*seg*sr;j+=7) pk=Math.max(pk,Math.abs(d[j])); out[v]={load:res[i]/(seg*1000), peak:pk}; });
+  try{ n.disconnect(); f.disconnect(); keep.stop(); }catch(e){}
+  return out;
 }
 function showLoad(id,r){ const el=$('m'+id), b=$('b'+id), p=Math.round(r.load*100);
   el.textContent=r.peak>1e-4 ? p+' %' : 'stumm'; el.className=p>60?'bad':p>25?'warn':''; b.style.width=Math.min(100,p)+'%'; b.style.background=p>60?'var(--bad)':p>25?'var(--warn)':'var(--ok)'; }
-$('bench').onclick=async()=>{ const B=$('bench'); B.disabled=true; for(const v of [1,4,8]){ $('m'+v).textContent='…'; B.textContent='misst '+v+' …';
-    try{ const r=await bench(v); showLoad(v,r); log(`Last ${v} Stimme(n): ${Math.round(r.load*1000)/10} % · Spitze ${r.peak.toFixed(2)}`); }catch(e){ log('Messung: '+(e.message||e)); $('m'+v).textContent='Fehler'; } }
+$('bench').onclick=async()=>{ const B=$('bench'); B.disabled=true; B.textContent='misst …'; [1,4,8].forEach(v=>$('m'+v).textContent='…');
+  try{ const R=await benchAll(); [1,4,8].forEach(v=>{ showLoad(v,R[v]); log(`Last ${v} Stimme(n): ${Math.round(R[v].load*1000)/10} % · Spitze ${R[v].peak.toFixed(2)}`); }); }
+  catch(e){ log('Messung: '+(e.message||e)); [1,4,8].forEach(v=>$('m'+v).textContent='Fehler'); }
   B.disabled=false; B.textContent='Rechenlast messen'; };
 let prmFns=[];
 async function buildParams(){

@@ -8,4 +8,4 @@ Fremdcode (unverändert, nur für diesen Test):
 - `plugins/clack_plugin_polysynth.wasm`: clack-Beispiel (MIT/Apache) aus WebCLAP/examples
 
 Eigenes: `index.html`, `note-feeder.js` (schickt CLAP-Noten-Events über `globalThis.clapRouting` an den Host-Prozessor im selben AudioWorklet).
-Lektionen: Host-Knoten braucht einen (stillen) Eingang, sonst rechnet Chrome ihn nach dem Laden nie mehr. Live-CPU im Worklet ohne Cross-Origin-Isolation unbrauchbar (keine genaue Uhr) → Rechenlast per OfflineAudioContext (Renderzeit / Audiodauer).
+Lektionen: Host-Knoten braucht einen (stillen) Eingang, sonst rechnet Chrome ihn nach dem Laden nie mehr. Live-CPU im Worklet ohne Cross-Origin-Isolation unbrauchbar (keine genaue Uhr) → Rechenlast per OfflineAudioContext (Renderzeit / Audiodauer). Host gibt Plugin-Instanzen nie frei (kein destroyPlugin) → pro Messung nur eine Instanz, Stufen per suspend()/resume() im selben Durchlauf (vorher 3 Instanzen je Messung → Absturz am Handy nach wenigen Messungen).
