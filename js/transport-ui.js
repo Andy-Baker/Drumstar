@@ -46,7 +46,7 @@ function visualLoop(){
         renderPageNav();
       }
       document.querySelectorAll('.playcol').forEach(el=>el.classList.remove('playcol'));
-      if(page===currentPage){ TRACKS.forEach(tr=> tr._ovCells[rel].classList.add('playcol'));
+      if(page===currentPage){ TRACKS.forEach(tr=> trUi(tr).ovCells[rel].classList.add('playcol'));
       bigCells[rel].classList.add('playcol'); }
       if(page===currentPage && TRACKS[activeTrackIdx].steps[dstep]){
         bigCells[rel].classList.add('flash');

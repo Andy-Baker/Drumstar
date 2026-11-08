@@ -1,4 +1,11 @@
 "use strict";
+// Oberflächen-Elemente je Spur (Übersicht, Mixer) liegen nicht an der Spur selbst,
+// damit TRACKS ohne Oberfläche nutzbar bleibt (Vorbereitung freie Spuren, #13).
+// Spur-ID → {ovRow, ovCells, ovLab, mixFaderEl, mixMeter, mixMuteBtn, mixSoloBtn, mixPanKnob, mixEqKnobs}.
+// Audio-Knoten (bus, _fxN, _arpAmp …) bleiben an der Spur.
+const TR_UI=new Map();
+function trUi(tr){ let u=TR_UI.get(tr.id); if(!u){ u={}; TR_UI.set(tr.id,u); } return u; }
+
 // =========================================================================
 // KNOB-KOMPONENTE
 // =========================================================================
@@ -154,12 +161,12 @@ setBpm(bpm); // initiale Anzeige synchronisieren
 // immer denselben Zustand zeigen, egal wo zuerst geklickt wurde.
 function toggleTrackMute(tr){
   tr.muted=!tr.muted; syncTbMS();
-  if(tr._ovRow) tr._ovRow.classList.toggle('muted', tr.muted);
-  if(tr._mixMuteBtn) tr._mixMuteBtn.classList.toggle('on', tr.muted);
+  if(trUi(tr).ovRow) trUi(tr).ovRow.classList.toggle('muted', tr.muted);
+  if(trUi(tr).mixMuteBtn) trUi(tr).mixMuteBtn.classList.toggle('on', tr.muted);
 }
 function toggleTrackSolo(tr){
   tr.solo=!tr.solo;
-  if(tr._mixSoloBtn) tr._mixSoloBtn.classList.toggle('on', tr.solo);
+  if(trUi(tr).mixSoloBtn) trUi(tr).mixSoloBtn.classList.toggle('on', tr.solo);
   refreshSoloVisuals();
 }
 // Zentrale Stelle für Lautstärkeänderungen (egal ob per Track-Detail-Knob oder
@@ -167,7 +174,7 @@ function toggleTrackSolo(tr){
 // Rundungs-Drift zwischen zwei separaten Zustandskopien entstehen kann.
 function setTrackVol(tr, v){
   tr.vol=v;
-  if(tr._mixFaderEl && Number(tr._mixFaderEl.value)!==v) tr._mixFaderEl.value=v;
+  if(trUi(tr).mixFaderEl && Number(trUi(tr).mixFaderEl.value)!==v) trUi(tr).mixFaderEl.value=v;
 }
 
 // =========================================================================
@@ -179,7 +186,7 @@ TRACKS.forEach((tr,idx)=>{
   row.className='ov-row'; row.style.setProperty('--tc', tr.color);
   row.dataset.idx=idx;
 
-  const lab=document.createElement('div'); lab.className='ov-label'; lab.textContent=tr.short||tr.id.toUpperCase(); tr._ovLab=lab;
+  const lab=document.createElement('div'); lab.className='ov-label'; lab.textContent=tr.short||tr.id.toUpperCase(); trUi(tr).ovLab=lab;
   lab.addEventListener('click', ()=>selectTrack(idx));
   row.appendChild(lab);
 
@@ -190,7 +197,7 @@ TRACKS.forEach((tr,idx)=>{
     row.appendChild(c); cells.push(c);
   }
 
-  tr._ovCells=cells; tr._ovRow=row;
+  trUi(tr).ovCells=cells; trUi(tr).ovRow=row;
   row.addEventListener('click', (e)=>{ if(e.target===row) selectTrack(idx); });
   overviewEl.appendChild(row);
 });
@@ -199,14 +206,14 @@ TRACKS.forEach((tr,idx)=>{
 function refreshSoloVisuals(){
   const anySolo=TRACKS.some(t=>t.solo); syncTbMS(); if(typeof mixerSyncGrpSolo==='function') mixerSyncGrpSolo();
   TRACKS.forEach(tr=>{
-    tr._ovRow.classList.toggle('solo-dim', anySolo && !tr.solo); tr._ovRow.classList.toggle('solo', !!tr.solo);
+    trUi(tr).ovRow.classList.toggle('solo-dim', anySolo && !tr.solo); trUi(tr).ovRow.classList.toggle('solo', !!tr.solo);
   });
 }
 // Aktualisiert nur die Step-Anzeige einer einzelnen Spur (Overview-Zeile +
 // großes Grid, falls diese Spur gerade aktiv ausgewählt ist) — genutzt vom
 // Pro-Spur-Random-Button, damit nicht das ganze UI neu gerendert werden muss.
 function refreshTrackStepVisuals(tr){
-  for(let s=0;s<16;s++) updateStepVisual(tr._ovCells[s], tr.steps[currentPage*16+s]);
+  for(let s=0;s<16;s++) updateStepVisual(trUi(tr).ovCells[s], tr.steps[currentPage*16+s]);
   if(tr===TRACKS[activeTrackIdx]) renderBigGrid();
 }
 

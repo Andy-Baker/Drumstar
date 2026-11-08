@@ -265,7 +265,7 @@ async def main():
     await pg.click('#dsChips button:has-text("Perc")'); await pg.wait_for_timeout(150)
     await pg.click('#dsList .ds-it:has-text("Maracas") >> nth=0'); await pg.wait_for_timeout(300)
     r=await pg.evaluate("""(async()=>{ await initAudio(); const lt=TRACKS.find(t=>t.id==='lt'), R={};
-      R.v=trVoice(lt); R.role=trRole(lt); R.ov=lt._ovLab.textContent; R.fill=Object.keys(generateFillOverride(8)).sort().join();
+      R.v=trVoice(lt); R.role=trRole(lt); R.ov=trUi(lt).ovLab.textContent; R.fill=Object.keys(generateFillOverride(8)).sort().join();
       let hit=''; const o=VOICE_FNS.mr, t=VOICE_FNS.lt; VOICE_FNS.mr=(...a)=>{hit+='mr'}; VOICE_FNS.lt=(...a)=>{hit+='lt'};
       triggerTrack(lt, audioCtx.currentTime+0.05, VEL_NORMAL, 0); VOICE_FNS.mr=o; VOICE_FNS.lt=t; R.hit=hit;
       const d=collectPatternData('t','t'); R.saved=JSON.stringify(d.drumSet.voices.lt); return R; })()""")
@@ -273,7 +273,7 @@ async def main():
     ok('Tauschen: Fill lässt die getauschte Zeile aus', r['fill']=='bd,ch,cy,ht,oh,rd,sd', r['fill'])
     ok('Tauschen: wird mit dem Beat gespeichert', '"v":"mr"' in r['saved'] and '"t":"syn"' in r['saved'], r['saved'])
     await pg.click('#hmToast button'); await pg.wait_for_timeout(300)
-    ok('Tauschen: Rückgängig stellt Original her', await pg.evaluate("trVoice(TRACKS.find(t=>t.id==='lt'))==='lt' && !drumSet.voices.lt && TRACKS.find(t=>t.id==='lt')._ovLab.textContent==='LT'"))
+    ok('Tauschen: Rückgängig stellt Original her', await pg.evaluate("trVoice(TRACKS.find(t=>t.id==='lt'))==='lt' && !drumSet.voices.lt && trUi(TRACKS.find(t=>t.id==='lt')).ovLab.textContent==='LT'"))
     await pg.screenshot(path=OUT+'/ds_tauschen.png'); await fz(pg,'Set-Editor')
     # Latin-Perc (#60): nur im Set-Editor, nicht als Kit; Conga mit Spielweise Gedämpft spielt die eigene Aufnahme
     ok('Latin: nicht in der Kit-Auswahl', await pg.evaluate("!KITS.latin._chip && ![...document.querySelectorAll('#kitPickerList .kn')].some(e=>e.textContent==='LATIN PERC')"))
@@ -284,7 +284,7 @@ async def main():
     await pg.click('#dsList .ds-it:has-text("CONGA")'); await pg.wait_for_timeout(300)
     r=await pg.evaluate("""(async()=>{ await initAudio(); await smpLoad('latin'); const cl=TRACKS.find(t=>t.id==='cl'); let got=null; const o=smpPlay;
       smpPlay=(k,tr,t,v,c,vid)=>{ got=k+':'+vid; return o(k,tr,t,v,c,vid); }; triggerTrack(cl, audioCtx.currentTime+0.05, VEL_NORMAL, 1); smpPlay=o;
-      return {got, ov:cl._ovLab.textContent, art:(ART[trVoice(cl)]||[]).map(x=>x.n).join(','), st:smp.latin.state}; })()""")
+      return {got, ov:trUi(cl).ovLab.textContent, art:(ART[trVoice(cl)]||[]).map(x=>x.n).join(','), st:smp.latin.state}; })()""")
     ok('Latin: Claves → Conga, Gedämpft = eigene Aufnahme', r['got']=='latin:cgm' and r['ov']=='CG' and r['art']=='Offen,Gedämpft' and r['st']=='ready', r)
     await pg.click('#hmToast button'); await pg.wait_for_timeout(200)
     await pg.click('#dsShX'); await pg.click('#dsCloseBtn'); await pg.wait_for_timeout(200)
@@ -306,6 +306,10 @@ async def main():
     await pg.click('#kitOwnList .kit-chip:has-text("Set Benutzt") .kib.d'); await pg.wait_for_timeout(400); await pg.click('#kdDel'); await pg.wait_for_timeout(300)
     ok('Set löschen: Bestätigen löscht', await pg.evaluate("(async()=>!(await dsAll()).some(s=>s.id==='t63a'))()"))
     await pg.evaluate("(async()=>{ await dsDel('t63b'); await deletePatternFromIndexedDB('t63beat'); })()"); await pg.click('#kitPickerCloseBtn'); await pg.wait_for_timeout(200)
+    r=await pg.evaluate("""(()=>{ const isEl=v=>v instanceof Node || (Array.isArray(v) && v.some(x=>x instanceof Node)) || (v && v.dbReadout instanceof Node);
+      const bad=[]; TRACKS.forEach(t=>Object.keys(t).forEach(k=>{ if(isEl(t[k])) bad.push(t.id+'.'+k); }));
+      return {bad, ui:TRACKS.every(t=>trUi(t).ovRow instanceof Element && trUi(t).ovCells.length===16)}; })()""")
+    ok('Spuren ohne DOM-Referenzen, Elemente in trUi (#66)', not r['bad'] and r['ui'], r)
     ok('Schrift überall ≥ 11 px (#19)', not fz.bad, fz.bad)
     ok('Keine Fehler', not errs, errs)
     await b.close()

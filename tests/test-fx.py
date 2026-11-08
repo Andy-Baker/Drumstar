@@ -182,7 +182,7 @@ async def main():
     ok('Mixer: Effekt-Punkte am ACID-Knopf', await pg.evaluate("[...document.querySelectorAll('#mixerChannels .mix-strip')].find(s=>s.querySelector('.mix-name')&&s.querySelector('.mix-name').textContent==='ARP').querySelectorAll('.mx-dots i.on').length")==3)
     # v93 (#50): Pegel grün/gelb/rot, CLIP-LED rastet ein, Spitzenwert, Zurücksetzen per Tippen
     r=await pg.evaluate("""(()=>{ const s=[...document.querySelectorAll('#mixerChannels .mix-strip')].find(x=>x.querySelector('.mix-name')&&x.querySelector('.mix-name').textContent==='ARP');
-      const tr=__T.find(t=>t.id==='arp'), m=tr._mixMeter, fake=v=>({fftSize:4,getFloatTimeDomainData(b){b.set([0,v,-v*0.5,0]);}});
+      const tr=__T.find(t=>t.id==='arp'), m=trUi(tr).mixMeter, fake=v=>({fftSize:4,getFloatTimeDomainData(b){b.set([0,v,-v*0.5,0]);}});
       updateMeter(m,fake(0.5)); const ok1=!m.clipEl.classList.contains('on') && m.pkEl.textContent==='-6.0';
       updateMeter(m,fake(1.5)); const clip=m.clipEl.classList.contains('on'), txt=m.pkEl.textContent, red=m.pkEl.classList.contains('r');
       updateMeter(m,fake(0.1)); const latched=m.clipEl.classList.contains('on');

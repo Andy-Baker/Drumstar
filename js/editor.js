@@ -23,7 +23,7 @@ for(let s=0;s<16;s++){
     if(tr.steps[abs]===stepBrush && (!ART[trVoice(tr)] || (tr.notes[abs]|0)===sa)) tr.steps[abs]=VEL_OFF;
     else { tr.steps[abs]=stepBrush; if(tr.notes) tr.notes[abs]=sa; }
     updateStepVisual(c, tr.steps[abs]); c.dataset.a=artLetter(tr,abs);
-    if(tr._ovCells) updateStepVisual(tr._ovCells[s], tr.steps[abs]);
+    if(trUi(tr).ovCells) updateStepVisual(trUi(tr).ovCells[s], tr.steps[abs]);
   });
   bigGrid.appendChild(c); bigCells.push(c);
 }
@@ -259,6 +259,6 @@ function setPatternGroup(gid, select){
   patternGroup=gid;
   grpSelRender();
   { const kitOn=(gid==='drums'||gid==='perc'||gid==='piano'); $id('spurRow').classList.toggle('hasKit',kitOn); $id('lcdKitBtn').style.display=kitOn?'':'none'; $id('lcdKitBtn').classList.toggle('keys',gid==='piano'); updateKitLabel(); $id('fillBtn').style.display=gid==='drums'?'':'none'; }
-  TRACKS.forEach(tr=>{ if(tr._ovRow) tr._ovRow.style.display = groupOfTrack(tr)===gid ? '' : 'none'; });
+  TRACKS.forEach(tr=>{ if(trUi(tr).ovRow) trUi(tr).ovRow.style.display = groupOfTrack(tr)===gid ? '' : 'none'; });
   if(select) selectTrack(TRACKS.findIndex(t=>groupOfTrack(t)===gid));
 }

@@ -326,7 +326,7 @@ function selectTrack(idx){
   
   activeTrackIdx=idx;
   { const g0=groupOfTrack(TRACKS[idx]); if(g0!==patternGroup) setPatternGroup(g0,false); }
-  TRACKS.forEach((tr,i)=> tr._ovRow.classList.toggle('active', i===idx));
+  TRACKS.forEach((tr,i)=> trUi(tr).ovRow.classList.toggle('active', i===idx));
   renderTrackBar();
   renderBigGrid();
 }

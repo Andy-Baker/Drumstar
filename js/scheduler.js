@@ -159,7 +159,7 @@ function stop(){
   [0,2,4,6,8,10,12,14].forEach(s=>ch.steps[s]=VEL_NORMAL);
   ch.steps[6]=VEL_GHOST; // Beispiel-Ghost-Note zur Demonstration der neuen Stufen
   oh.steps[15]=VEL_NORMAL;
-  TRACKS.forEach(tr=> tr._ovCells.forEach((c,s)=>updateStepVisual(c, tr.steps[s])));
+  TRACKS.forEach(tr=> trUi(tr).ovCells.forEach((c,s)=>updateStepVisual(c, tr.steps[s])));
   selectTrack(0);
   renderPageNav();
   renderLengthChips();

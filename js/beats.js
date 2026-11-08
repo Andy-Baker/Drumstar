@@ -32,9 +32,10 @@ function applyTrackSound(tr, sv){
   tr.eqLowGain=sv.eqLowGain||0; tr.eqMidGain=sv.eqMidGain||0; tr.eqHighGain=sv.eqHighGain||0;
   fxLoadTrack(tr,sv);
   if(tr.sendGain) tr.sendGain.gain.value=tr.reverbAmount; if(tr.delaySendGain) tr.delaySendGain.gain.value=tr.delaySend; if(tr.panner) tr.panner.pan.value=tr.pan;
-  if(tr._mixFaderEl){ tr._mixFaderEl.value=tr.vol; if(tr._mixMeter) tr._mixMeter.dbReadout.textContent=dbLabel(tr.vol)+'dB'; }
-  if(tr._mixPanKnob) tr._mixPanKnob.setValue(tr.pan);
-  if(tr._mixEqKnobs){ ['eqLowGain','eqMidGain','eqHighGain'].forEach(k=>{ if(tr._mixEqKnobs[k]) tr._mixEqKnobs[k].setValue(tr[k]); }); }
+  const u=trUi(tr);
+  if(u.mixFaderEl){ u.mixFaderEl.value=tr.vol; if(u.mixMeter) u.mixMeter.dbReadout.textContent=dbLabel(tr.vol)+'dB'; }
+  if(u.mixPanKnob) u.mixPanKnob.setValue(tr.pan);
+  if(u.mixEqKnobs){ ['eqLowGain','eqMidGain','eqHighGain'].forEach(k=>{ if(u.mixEqKnobs[k]) u.mixEqKnobs[k].setValue(tr[k]); }); }
   if(tr.type==='arp'){
     tr.rootNote=sv.rootNote!=null?sv.rootNote:0; tr.cutoff=sv.cutoff!=null?sv.cutoff:0.5; tr.resonance=sv.resonance!=null?sv.resonance:0.35;
     tr.envMod=sv.envMod!=null?sv.envMod:0.5; tr.decay=sv.decay!=null?sv.decay:0.26; tr.scale=SCALES[sv.scale]?sv.scale:'minor'; tr.accentAmt=sv.accentAmt!=null?sv.accentAmt:0.5;
@@ -135,7 +136,7 @@ function updateKitLabel(){
 let trNamesSig='';
 function trNamesRefresh(){
   const sig=TRACKS.map(trShort).join(); if(sig===trNamesSig) return; trNamesSig=sig;
-  TRACKS.forEach(t=>{ if(t._ovLab) t._ovLab.textContent=trShort(t); });
+  TRACKS.forEach(t=>{ if(trUi(t).ovLab) trUi(t).ovLab.textContent=trShort(t); });
   if(typeof renderTrackBar==='function') renderTrackBar();
   if(typeof mixerRebuild==='function') mixerRebuild();
 }

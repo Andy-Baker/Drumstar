@@ -106,8 +106,8 @@ function applyTrackAndFillData(data){
       cosmic.steps=new Array(PATTERN_LENGTH).fill(VEL_OFF);
       cosmic.events=[]; delete cosmic.notes; delete cosmic.slides; cosmic._idx=null;
       cosmic.muted=false; cosmic.solo=false;
-      if(cosmic._ovRow) cosmic._ovRow.classList.remove('muted');
-      if(cosmic._mixMuteBtn) cosmic._mixMuteBtn.classList.remove('on'); if(cosmic._mixSoloBtn) cosmic._mixSoloBtn.classList.remove('on');
+      if(trUi(cosmic).ovRow) trUi(cosmic).ovRow.classList.remove('muted');
+      if(trUi(cosmic).mixMuteBtn) trUi(cosmic).mixMuteBtn.classList.remove('on'); if(trUi(cosmic).mixSoloBtn) trUi(cosmic).mixSoloBtn.classList.remove('on');
       applyTrackSound(cosmic,{vol:0.68,tune:0.5,rootNote:0,cutoff:0.62,resonance:0.22,envMod:0.62,decay:0.42,scale:'minor',reverbAmount:0.24,delaySend:0.28,cosmicWidth:0.62,cosmicMotion:0.46,cosmicWarmth:0.22,cosmicAir:0.18});
     }
   }
@@ -115,7 +115,7 @@ function applyTrackAndFillData(data){
     const pn=TRACKS.find(t=>t.id==='piano');
     if(pn){
       pn.steps=new Array(PATTERN_LENGTH).fill(VEL_OFF); pn.events=[]; delete pn.notes; delete pn.slides; pn._idx=null; pn.muted=false; pn.solo=false;
-      ['_mixMuteBtn','_mixSoloBtn'].forEach(k=>{ if(pn[k]) pn[k].classList.remove('on'); }); if(pn._ovRow) pn._ovRow.classList.remove('muted');
+      ['mixMuteBtn','mixSoloBtn'].forEach(k=>{ if(trUi(pn)[k]) trUi(pn)[k].classList.remove('on'); }); if(trUi(pn).ovRow) trUi(pn).ovRow.classList.remove('muted');
       applyTrackSound(pn,{vol:0.8,tune:0.5,rootNote:0,cutoff:0.55,resonance:0.2,envMod:0.5,decay:0.5,scale:'minor',reverbAmount:0.18,delaySend:0});
     }
   }
@@ -133,22 +133,23 @@ function applyTrackAndFillData(data){
     tr.pan=saved.pan||0; // ältere Patterns ohne pan-Feld -> zentriert (Standard)
     tr.eqLowGain=saved.eqLowGain||0; tr.eqMidGain=saved.eqMidGain||0; tr.eqHighGain=saved.eqHighGain||0;
     fxLoadTrack(tr,saved);
-    if(tr._mixEqKnobs){
-      if(tr._mixEqKnobs.eqLowGain) tr._mixEqKnobs.eqLowGain.setValue(tr.eqLowGain);
-      if(tr._mixEqKnobs.eqMidGain) tr._mixEqKnobs.eqMidGain.setValue(tr.eqMidGain);
-      if(tr._mixEqKnobs.eqHighGain) tr._mixEqKnobs.eqHighGain.setValue(tr.eqHighGain);
+    const u=trUi(tr);
+    if(u.mixEqKnobs){
+      if(u.mixEqKnobs.eqLowGain) u.mixEqKnobs.eqLowGain.setValue(tr.eqLowGain);
+      if(u.mixEqKnobs.eqMidGain) u.mixEqKnobs.eqMidGain.setValue(tr.eqMidGain);
+      if(u.mixEqKnobs.eqHighGain) u.mixEqKnobs.eqHighGain.setValue(tr.eqHighGain);
     }
     tr.muted=!!saved.muted; tr.solo=!!saved.solo; // ältere Patterns ohne diese Felder -> beides aus
-    if(tr._ovRow) tr._ovRow.classList.toggle('muted', tr.muted);
-    if(tr._mixMuteBtn) tr._mixMuteBtn.classList.toggle('on', tr.muted);
-    if(tr._mixSoloBtn) tr._mixSoloBtn.classList.toggle('on', tr.solo);
+    if(u.ovRow) u.ovRow.classList.toggle('muted', tr.muted);
+    if(u.mixMuteBtn) u.mixMuteBtn.classList.toggle('on', tr.muted);
+    if(u.mixSoloBtn) u.mixSoloBtn.classList.toggle('on', tr.solo);
     tr.feel=saved.feel||0;
     tr.delaySend=saved.delaySend||0;
     if(tr.delaySendGain) tr.delaySendGain.gain.value=tr.delaySend;
     if(tr.sendGain) tr.sendGain.gain.value=tr.reverbAmount;
     if(tr.panner) tr.panner.pan.value=tr.pan;
-    if(tr._mixFaderEl){ tr._mixFaderEl.value=tr.vol; if(tr._mixMeter) tr._mixMeter.dbReadout.textContent=dbLabel(tr.vol)+'dB'; }
-    if(tr._mixPanKnob) tr._mixPanKnob.setValue(tr.pan);
+    if(u.mixFaderEl){ u.mixFaderEl.value=tr.vol; if(u.mixMeter) u.mixMeter.dbReadout.textContent=dbLabel(tr.vol)+'dB'; }
+    if(u.mixPanKnob) u.mixPanKnob.setValue(tr.pan);
     if(tr.type==='arp'){
       // ältere Patterns ohne Arp-Track: sinnvolle Defaults statt undefined
       tr.events=evLoad(saved,tr); delete tr.notes; delete tr.slides; evTouch(tr);

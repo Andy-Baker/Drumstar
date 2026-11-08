@@ -42,7 +42,7 @@ let mxGrpOpen={drums:false,perc:false}, mxGrpMeters={}, mxRetMeters={}, mxGrpSol
 // Solo am Gruppenkanal (v96): soliert alle Spuren der Gruppe; leuchtet, wenn alle soliert sind. Nutzt das normale Spur-Solo (tr.solo).
 const grpTracks=k=>TRACKS.filter(t=>trGrp(t)===k);
 function grpSoloOn(k){ const L=grpTracks(k); return L.length>0 && L.every(t=>t.solo); }
-function toggleGrpSolo(k){ const on=!grpSoloOn(k); grpTracks(k).forEach(t=>{ t.solo=on; if(t._mixSoloBtn) t._mixSoloBtn.classList.toggle('on',on); }); refreshSoloVisuals(); }
+function toggleGrpSolo(k){ const on=!grpSoloOn(k); grpTracks(k).forEach(t=>{ t.solo=on; if(trUi(t).mixSoloBtn) trUi(t).mixSoloBtn.classList.toggle('on',on); }); refreshSoloVisuals(); }
 function mixerSyncGrpSolo(){ Object.keys(mxGrpSolo).forEach(k=>{ if(mxGrpSolo[k]) mxGrpSolo[k].classList.toggle('on',grpSoloOn(k)); }); }
 const MX_ICO='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4v16M12 4v16M19 4v16"/><circle cx="5" cy="14" r="2" fill="currentColor"/><circle cx="12" cy="8" r="2" fill="currentColor"/><circle cx="19" cy="15" r="2" fill="currentColor"/></svg>';
 const mxDots=L=>'<span class="mx-dots">'+Array.from({length:FX_MAX},(_,i)=>'<i class="'+(L&&L[i]?(L[i].on?'on':'by'):'')+'"></i>').join('')+'</span>';
@@ -90,7 +90,7 @@ function mxStrip(o){ // o: {cls,color,name,sub,head,vol,label,onVol,mute,solo,ch
 }
 function buildMixerChannels(){
   const ch=mixerChannels, ms=document.getElementById('mixerMaster'); ch.innerHTML=''; ms.innerHTML='';
-  TRACKS.forEach(tr=>{ tr._mixFaderEl=null; tr._mixMeter=null; tr._mixMuteBtn=null; tr._mixSoloBtn=null; tr._mixPanKnob=null; tr._mixEqKnobs=null; });
+  TRACKS.forEach(tr=>{ const u=trUi(tr); u.mixFaderEl=null; u.mixMeter=null; u.mixMuteBtn=null; u.mixSoloBtn=null; u.mixPanKnob=null; u.mixEqKnobs=null; });
   mxGrpMeters={}; mxGrpSolo={}; const done={};
   const grpStrip=k=>{ const G=grps[k], D=GRP_DEF[k], op=mxGrpOpen[k];
     const g=mxStrip({key:'grp:'+k,cls:'grp-strip grp-'+k+(op?' open':''),color:D.color,label:'Gruppe '+D.n,vol:G.vol,parent:ch,
@@ -103,7 +103,7 @@ function buildMixerChannels(){
     const r=mxStrip({key:'tr:'+tr.id,cls:k?'in-grp in-'+k:'',color:tr.color,name:trShort(tr),label:trLabel(tr),vol:tr.vol,parent:ch,
       onVol:v=>setTrackVol(tr,v), mute:{on:tr.muted,fn:()=>toggleTrackMute(tr)}, solo:{on:tr.solo,fn:()=>toggleTrackSolo(tr)},
       set:()=>openKanal(tr), dots:tr.fx||[]});
-    tr._mixFaderEl=r.fader; tr._mixMeter=r.meter; tr._mixMuteBtn=r.mute; tr._mixSoloBtn=r.solo; });
+    const u=trUi(tr); u.mixFaderEl=r.fader; u.mixMeter=r.meter; u.mixMuteBtn=r.mute; u.mixSoloBtn=r.solo; });
   const sep=document.createElement('div'); sep.className='mix-sep'; ch.appendChild(sep);
   mxRetMeters={};
   [['hall',fxHall,'Hall'],['delay',fxDelay,'Delay']].forEach(([k,p,n])=>{
@@ -160,7 +160,7 @@ function updateMeter(m, analyser){
 function mixerMeterLoop(){
   if(!mixerOverlay.classList.contains('open')){ mixerMeterRAF=null; return; }
   const t=performance.now()/1000; meterDt=meterT?Math.min(0.1,t-meterT):0; meterT=t;
-  TRACKS.forEach(tr=>{ if(tr._mixMeter) updateMeter(tr._mixMeter, tr.analyser); });
+  TRACKS.forEach(tr=>{ const m=trUi(tr).mixMeter; if(m) updateMeter(m, tr.analyser); });
   GRP_KEYS.forEach(k=>{ if(mxGrpMeters[k]&&FXG.g&&FXG.g[k]) updateMeter(mxGrpMeters[k], FXG.g[k].an); });
   if(mxRetMeters.hall) updateMeter(mxRetMeters.hall, FXG.revAn); if(mxRetMeters.delay) updateMeter(mxRetMeters.delay, FXG.dlAn);
   if(window._masterMeter) updateMeter(window._masterMeter, masterAnalyser);

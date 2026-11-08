@@ -235,7 +235,7 @@ function setPatternLength(newLen){
 // Aktualisiert Overview (alle Spuren) + großes Grid (aktive Spur) für die aktuelle Seite
 function renderAllForPage(){
   TRACKS.forEach(tr=>{
-    for(let s=0;s<16;s++) updateStepVisual(tr._ovCells[s], tr.steps[currentPage*16+s]);
+    for(let s=0;s<16;s++) updateStepVisual(trUi(tr).ovCells[s], tr.steps[currentPage*16+s]);
   });
   renderBigGrid();
 }
