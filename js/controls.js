@@ -329,26 +329,27 @@ pageNextBtn.addEventListener('click', ()=>{
 // die direkt folgende Seite und springt dorthin — schnellster Weg, um z.B. aus einem
 // 16-Step-Grundbeat per 32/64-Step-Verlängerung einen Vers/Chorus-Unterschied nur an
 // den paar Steps zu bauen, die sich wirklich unterscheiden sollen.
+// #69: nur die gewählte Spur (activeTrackIdx); alle anderen Spuren bleiben, Rückgängig im Toast.
 function copyCurrentPageToNext(){
   const total=totalPages();
   if(currentPage>=total-1) return;
-  const from=currentPage*16, to=(currentPage+1)*16;
-  TRACKS.forEach(tr=>{
-    if(tr.type==='arp'){
-      const src=tr.events.filter(e=>e.s>=from&&e.s<from+16);
-      tr.events=tr.events.filter(e=>!(e.s>=to&&e.s<to+16)).map(e=>(e.s<to&&e.s+e.l>to)?Object.assign({},e,{l:to-e.s}):e)
-        .concat(src.map(e=>Object.assign({},e,{s:e.s+16,l:Math.max(1,Math.min(e.l,from+16-e.s))})));
-      evTouch(tr); return;
-    }
-    for(let i=0;i<16;i++){
-      tr.steps[to+i]=tr.steps[from+i];
-      if(tr.notes) tr.notes[to+i]=tr.notes[from+i];
-      if(tr.slides) tr.slides[to+i]=tr.slides[from+i];
-    }
-  });
+  const from=currentPage*16, to=(currentPage+1)*16, tr=TRACKS[activeTrackIdx];
+  if(!tr) return;
+  taSnapshot();
+  if(tr.type==='arp'){
+    const src=tr.events.filter(e=>e.s>=from&&e.s<from+16);
+    tr.events=tr.events.filter(e=>!(e.s>=to&&e.s<to+16)).map(e=>(e.s<to&&e.s+e.l>to)?Object.assign({},e,{l:to-e.s}):e)
+      .concat(src.map(e=>Object.assign({},e,{s:e.s+16,l:Math.max(1,Math.min(e.l,from+16-e.s))})));
+    evTouch(tr);
+  } else for(let i=0;i<16;i++){
+    tr.steps[to+i]=tr.steps[from+i];
+    if(tr.notes) tr.notes[to+i]=tr.notes[from+i];
+    if(tr.slides) tr.slides[to+i]=tr.slides[from+i];
+  }
   currentPage++; pinIfPlaying();
   renderPageNav();
   renderAllForPage();
+  hmToast(trLabel(tr)+': Seite '+currentPage+' → '+(currentPage+1)+' kopiert', true, ()=>{ const p=currentPage-1; taUndoBtn.click(); currentPage=p; renderPageNav(); renderAllForPage(); });
 }
 pageCopyBtn.addEventListener('click', copyCurrentPageToNext);
 

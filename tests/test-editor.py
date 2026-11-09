@@ -163,6 +163,20 @@ async def main():
     # Drums: Klang-Sheet ohne Reiter
     await grp('DRUMS'); await pg.click('#tbSound'); await pg.wait_for_timeout(300); await s('18_drums_klang')
     ok('Drums: keine Reiter, Tune da', await pg.evaluate("getComputedStyle(document.getElementById('klTabs')).display==='none' && [...document.querySelectorAll('#klRows label')].some(l=>l.textContent==='Tune')"))
+    await pg.click('#klX'); await pg.wait_for_timeout(250)
+    # Seite kopieren (#69): nur die gewählte Spur, andere bleiben; Rückgängig im Toast
+    r=await pg.evaluate("""(()=>{ setPatternLength(32); currentPage=0; renderPageNav(); renderAllForPage();
+      const T=id=>TRACKS.find(t=>t.id===id), bd=T('bd'), sd=T('sd');
+      for(let i=0;i<32;i++){ bd.steps[i]=i<16&&i%4===0?VEL_NORMAL:VEL_OFF; sd.steps[i]=i<16&&i%8===4?VEL_NORMAL:(i===20?VEL_NORMAL:VEL_OFF); }
+      selectTrack(TRACKS.indexOf(bd)); renderAllForPage(); return 1; })()""")
+    await pg.click('#pageCopyBtn'); await pg.wait_for_timeout(250)
+    r=await pg.evaluate("""(()=>{ const T=id=>TRACKS.find(t=>t.id===id), bd=T('bd'), sd=T('sd');
+      return {bd:bd.steps.slice(16,32).map(v=>v?1:0).join(''), sd:sd.steps.slice(16,32).map(v=>v?1:0).join(''), page:currentPage, toast:document.querySelector('#hmToast span').textContent}; })()""")
+    ok('Seite kopieren: nur gewählte Spur (BD), SD bleibt', r['bd']=='1000100010001000' and r['sd']=='0000100000000000' and r['page']==1 and 'Seite 1 → 2' in r['toast'], r)
+    await pg.click('#hmToast button'); await pg.wait_for_timeout(250)
+    r=await pg.evaluate("({bd:TRACKS.find(t=>t.id==='bd').steps.slice(16,32).some(v=>v), page:currentPage})")
+    ok('Seite kopieren: Rückgängig', not r['bd'] and r['page']==0, r)
+    await pg.evaluate("setPatternLength(16); currentPage=0; renderPageNav(); renderAllForPage()")
     ok('Schrift überall ≥ 11 px (#19)', not fz.bad, fz.bad)
     ok('Keine Konsolenfehler', not errs, errs)
     await b.close()
