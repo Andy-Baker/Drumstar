@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Solo im Noteneditor (#5)</title>
+<link rel="stylesheet" href="../../fonts.css">
+<style>
+/* Mockup zu Issue #5: Die echte App (../../index.html) läuft im Rahmen, der Noteneditor ist geöffnet.
+   Die Varianten werden dort zur Laufzeit eingebaut. Die Leiste "Mixer" oben schaltet Solo/Mute
+   so, als hätte man es im Mixer getan (der Mixer liegt hinter dem Editor). */
+:root{color-scheme:dark;--bg:#050507;--blue:#3fa9ff;--blue-2:#8fd4ff;--white:#f4f5f7;--dim:#7d818c;--metal:#c7cbd4;--solo:#ffc247}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--white);font-family:'Rajdhani',system-ui,sans-serif}
+#mbar{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;flex-direction:column;gap:5px;padding:calc(6px + env(safe-area-inset-top,0px)) 10px 6px;background:repeating-linear-gradient(135deg,#0b1622 0 8px,#0d1a28 8px 16px);border-bottom:1px dashed rgba(63,169,255,.45);font:700 11px 'JetBrains Mono',monospace;color:var(--blue-2)}
+#mbar .r{display:flex;flex-wrap:wrap;align-items:center;gap:5px}
+#mbar .l{min-width:44px;color:var(--dim)}
+#mbar button{height:28px;padding:0 9px;border-radius:6px;border:1px solid rgba(63,169,255,.45);background:rgba(63,169,255,.12);font:700 11px 'JetBrains Mono',monospace;color:var(--blue-2);cursor:pointer}
+#mbar button.on{background:var(--blue);color:#042c53}
+#mbar .mx button{border-color:rgba(255,255,255,.16);background:#14161c;color:var(--metal)}
+#mbar .mx button.s.on{background:var(--solo);border-color:var(--solo);color:#2a1a00}
+#mbar .mx button.m.on{background:#ff6b6b;border-color:#ff6b6b;color:#2a0000}
+#mbar label{display:flex;align-items:center;gap:5px;cursor:pointer}
+#mbar label.hide{display:none}
+#stage{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:center;align-items:flex-start;gap:28px;overflow:auto}
+.ph{display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;width:100%}
+iframe{border:0;width:100%;height:100%;background:#050507;display:block}
+#side{display:none;width:310px;font-size:14px;color:var(--metal);line-height:1.45;padding-top:10px}
+#side h3{font:700 11px 'Rajdhani';letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin:16px 0 6px}
+#side p{margin:0 0 8px} #side b{color:var(--white)}
+#side .v{display:none} #side .v.on{display:block}
+@media (min-width:900px) and (min-height:900px){
+  #stage{padding:14px 0}
+  .ph{width:auto;height:auto}
+  iframe{width:390px;height:844px;border-radius:30px;border:8px solid #1a1e26;box-shadow:0 30px 80px rgba(0,0,0,.75);box-sizing:content-box}
+  #side{display:block}
+}
+</style>
+</head>
+<body>
+<div id="mbar">
+  <div class="r"><span class="l">#5</span>
+    <button data-v="h" class="on">Heute</button>
+    <button data-v="a">A · Wie Mixer + Hinweis</button>
+    <button data-v="b">B · Nur im Editor</button>
+    <label id="autoL" class="hide"><input type="checkbox" id="auto"> beim Öffnen automatisch</label>
+  </div>
+  <div class="r mx" id="mx"><span class="l">Mixer</span></div>
+</div>
+<div id="stage">
+  <div class="ph"><iframe id="f" src="../../index.html" title="App mit Noteneditor"></iframe></div>
+  <div id="side">
+    <h3>Was das ist</h3>
+    <p>Die <b>echte App</b> mit offenem Noteneditor. Die Zeile <b>Mixer</b> oben schaltet Solo (S) und Stumm (M) so, als hätte man es im Mixer gedrückt. Play im Editor spielt das Pattern.</p>
+    <p>Zum Ausprobieren: <b>Mixer → Cosmic S</b> drücken und dann im Editor Acid bearbeiten. Heute hört man Acid dann nicht – und nichts zeigt, warum.</p>
+    <div class="v on" data-s="h"><h3>Heute</h3>
+      <p>Der Kopfhörer-Knopf unten im Editor ist schon dasselbe Solo wie <b>S</b> im Mixer (gleicher Zustand, wird mit dem Beat gespeichert). Er leuchtet aber <b>blau</b>, im Mixer <b>gelb</b>.</p>
+      <p>Ist eine andere Spur solo oder diese Spur stumm, bleibt der Editor still, ohne Hinweis.</p></div>
+    <div class="v" data-s="a"><h3>A · Wie Mixer + Hinweis</h3>
+      <p>Solo bleibt <b>ein</b> Zustand für Editor und Mixer. Der Knopf leuchtet gelb wie <b>S</b> im Mixer; sind noch andere Spuren solo, steht deren Zahl daran.</p>
+      <p>Ist die Spur gerade nicht zu hören, erscheint unten ein <b>Hinweis</b> (z. B. „COS SOLO“ oder „STUMM“). Antippen = diese Spur hörbar machen (mit-solo bzw. Stumm aus).</p></div>
+    <div class="v" data-s="b"><h3>B · Nur im Editor</h3>
+      <p>Der Kopfhörer-Knopf ist ein <b>Vorhören</b>: nur diese Spur, solange der Editor offen ist (auch wenn im Mixer eine andere solo ist). Beim Zurück ist das Mixer-Solo wieder wie vorher; das Vorhören wird nicht mit dem Beat gespeichert.</p>
+      <p>Gestrichelter gelber Rand = vorübergehend. Optional: <b>beim Öffnen automatisch</b>. Der Hinweis aus A kommt auch hier.</p></div>
+    <h3>Zur Entscheidung</h3>
+    <p>Welche Variante – oder ist mit dem Issue etwas ganz anderes gemeint (z. B. andere Spuren im Editor leiser statt ganz stumm)?</p>
+  </div>
+</div>
+<script>
+const f=document.getElementById('f');
+let V='h', W=null;
+const IC_MUTE='<svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 9l5 6M21 9l-5 6"/></svg>';
+function trs(){ try{ return W ? W.eval('TRACKS') : []; }catch(e){ return []; } }
+function byId(id){ return trs().find(t=>t.id===id); }
+function prTr(){ return W.eval('prTr'); }
+function audible(tr){ const any=trs().some(t=>t.solo); return any ? !!tr.solo : !tr.muted; }
+function short(tr){ return W.trShort ? W.trShort(tr) : tr.id.toUpperCase(); }
+function redraw(){ if(W && W.document.getElementById('prWin').classList.contains('open')) W.prRenderChrome(); buildMx(); }
+
+function hook(){
+  W=f.contentWindow; const d=f.contentDocument; if(!W || !W.prOpen || W.__m5) return; W.__m5=true;
+  const st=d.createElement('style'); st.textContent=
+    '#prWin .ib.solo5.on{background:rgba(255,194,71,.22);border-color:#ffc247;color:#ffc247}'
+   +'#prWin .ib.solo5{position:relative}'
+   +'#prWin .ib.solo5 i{position:absolute;right:-4px;top:-4px;min-width:16px;height:16px;border-radius:8px;background:#ffc247;color:#2a1a00;font:700 11px/16px "JetBrains Mono",monospace;font-style:normal}'
+   +'#prWin .ib.solo5.tmp{border-style:dashed}'
+   +'#prWin .ms5{height:44px;display:flex;align-items:center;gap:5px;padding:0 9px;border-radius:12px;border:1px solid rgba(255,107,107,.55);background:rgba(255,107,107,.12);color:#ff8a8a;font:700 11px "JetBrains Mono",monospace;letter-spacing:.03em;white-space:nowrap;cursor:pointer;flex:none}'
+   +'#prWin .ms5 svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}';
+  d.head.appendChild(st);
+  let tmp=null, prev=[]; // B: Spur, die der Editor vorübergehend allein spielt, und das Solo von vorher
+  function setOnly(list){ trs().forEach(t=>{ if(!!t.solo!==list.includes(t)) W.toggleTrackSolo(t); }); }
+  function take(tr){ if(!tmp) prev=trs().filter(t=>t.solo); tmp=tr; setOnly([tr]); }
+  const origChrome=W.prRenderChrome, origClose=W.prClose, origOpen=W.prOpen;
+  W.prRenderChrome=function(){ origChrome.apply(this,arguments); if(V==='h') return;
+    const tr=prTr(); if(!tr) return; const b=d.querySelector('#prWin [data-pa="solo"]'); if(!b) return;
+    b.classList.add('solo5'); b.classList.toggle('tmp', V==='b' && tmp===tr);
+    const others=trs().filter(t=>t.solo && t!==tr).length;
+    if(V==='a' && tr.solo && others){ const i=d.createElement('i'); i.textContent='+'+others; b.appendChild(i); }
+    if(!audible(tr)){ const c=d.createElement('button'); c.className='ms5'; c.dataset.m5='1';
+      const so=trs().filter(t=>t.solo); c.innerHTML=IC_MUTE+'<span></span>';
+      c.querySelector('span').textContent=so.length ? (so.length>1 ? so.length+' SOLO' : short(so[0])+' SOLO') : 'STUMM';
+      b.after(c); }
+  };
+  // Klicks im Editor abfangen (vor dem Handler der App)
+  d.getElementById('prWin').addEventListener('click',e=>{
+    if(V==='h') return; const tr=prTr(); if(!tr) return;
+    if(e.target.closest('[data-m5]')){ e.stopPropagation();
+      if(V==='b') take(tr); else if(trs().some(t=>t.solo)) W.toggleTrackSolo(tr); else W.toggleTrackMute(tr);
+      redraw(); return; }
+    const s=e.target.closest('[data-pa="solo"]'); if(s && V==='b'){ e.stopPropagation();
+      if(tmp===tr) drop(); else take(tr);
+      redraw(); }
+  },true);
+  // B: beim Schließen bzw. Spurwechsel im Editor zurücksetzen, optional beim Öffnen automatisch
+  function drop(){ if(tmp){ setOnly(prev); tmp=null; prev=[]; } }
+  W.prClose=function(){ if(V==='b') drop(); origClose.apply(this,arguments); buildMx(); };
+  W.prOpen=function(tr){ if(V==='b') drop(); origOpen.apply(this,arguments); const t=prTr();
+    if(V==='b' && document.getElementById('auto').checked && t){ take(t); W.prRenderChrome(); } buildMx(); };
+  d.getElementById('prBack').addEventListener('click',()=>{ if(V==='b') drop(); setTimeout(buildMx,0); },true);
+  W.__m5drop=drop;
+  W.prOpen(byId('arp'));
+  buildMx();
+}
+function buildMx(){
+  const mx=document.getElementById('mx'); mx.querySelectorAll('button').forEach(b=>b.remove()); if(!W||!W.__m5) return;
+  const add=(txt,cls,on,fn)=>{ const b=document.createElement('button'); b.className=cls+(on?' on':''); b.textContent=txt; b.onclick=()=>{ fn(); redraw(); }; mx.appendChild(b); };
+  ['arp','cosmic','piano'].forEach(id=>{ const t=byId(id); if(t) add(short(t)+' S','s',t.solo,()=>W.toggleTrackSolo(t)); });
+  if(W.toggleGrpSolo) add('DRUMS S','s',W.grpSoloOn('drums'),()=>W.toggleGrpSolo('drums'));
+  const cur=prTr(); if(cur) add(short(cur)+' M','m',cur.muted,()=>W.toggleTrackMute(cur));
+}
+f.addEventListener('load',()=>{ const t=setInterval(()=>{ try{ if(f.contentWindow.prOpen && f.contentWindow.prRenderChrome){ clearInterval(t); setTimeout(hook,300); } }catch(e){} },200); });
+document.querySelectorAll('#mbar [data-v]').forEach(b=>b.onclick=()=>{
+  if(W && W.__m5drop) W.__m5drop();
+  V=b.dataset.v; document.querySelectorAll('#mbar [data-v]').forEach(x=>x.classList.toggle('on',x===b));
+  document.getElementById('autoL').classList.toggle('hide',V!=='b');
+  document.querySelectorAll('#side .v').forEach(x=>x.classList.toggle('on',x.dataset.s===V));
+  redraw();
+});
+const fitTop=()=>document.getElementById('stage').style.top=document.getElementById('mbar').offsetHeight+'px'; addEventListener('resize',fitTop); fitTop();
+</script>
+</body>
+</html>
