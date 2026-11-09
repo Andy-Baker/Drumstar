@@ -60,7 +60,8 @@ const KITS={
     samples:{dir:'rusty', kb:1853, voices:['bd','sd','rs','ch','hl','hf','oh','lt','ht','cy','rd','rb']} },
   // Latin-Perc (#60): kein Drum-Kit zur Auswahl (hidden), nur Quelle beim Stimmen-Tauschen im Set-Editor.
   // Virtuosity Drums (VSCO 2 Pro, Timbales Karoryfer) + VCSL, CC0. Bau: tools/build-latin.py
-  latin:{ name:'LATIN PERC', desc:'Echte Aufnahmen · Conga, Bongos, Timbales, Schellenkranz', voices:null, hidden:true,
+  // rows (#68): Standard-Belegung der Zeilen, wenn das Kit Basis-Kit einer Drum-Spur ist (Zeilen ohne Eintrag: eigene Stimme bzw. Ersatz)
+  latin:{ name:'LATIN PERC', desc:'Echte Aufnahmen · Conga, Bongos, Timbales, Schellenkranz', voices:null, rows:{rs:'tih',hc:'cgh',cb:'bgh',mr:'tb'},
     samples:{dir:'latin', kb:1029, voices:['cgh','cgm','tu','bgh','bgm','bgl','bglm','tih','til','tb','tbh','tbr']} },
   vintage:{ name:'VINTAGE 73', desc:'Echte Aufnahmen · 70er, gedämpft', voices:null,
     samples:{dir:'vintage', kb:878, voices:['bd','sd','rs','ch','hl','hf','oh','lt','ht'], fallback:'studio'} },
@@ -226,7 +227,11 @@ function voiceShort(v){ const i=VOICE_INFO[v]; return i ? i.s : v.toUpperCase();
 const ROLE_GROUP={ kick:'Kick', snare:'Snare', rim:'Snare', hat:'Hi-Hat', openhat:'Hi-Hat', tom:'Tom', crash:'Becken', ride:'Becken', clap:'Perc', perc:'Perc' };
 // Stufe 2: drumSet.voices[id]={t:'syn',kitId,v} = Zeile spielt Stimme v aus Kit kitId (ohne v: dieselbe Stimme).
 // Mixer-Kanal, Gruppe, Noten, Tune/Laut bleiben an der Zeile; Klang, Rolle, Spielweisen und Name folgen der Stimme.
-function trSwap(tr){ const o=drumSet.voices[tr.id]; return (o && o.t==='syn' && o.v && o.v!==tr.id && VOICE_FNS[o.v]) ? o.v : null; }
+function trSwap(tr){
+  const o=drumSet.voices[tr.id];
+  if(!o){ const m=rowDefVoice(tr.id); return m!==tr.id ? m : null; } // Standard-Belegung des Basis-Kits (z. B. Latin auf PERC)
+  return (o.t==='syn' && o.v && o.v!==tr.id && VOICE_FNS[o.v]) ? o.v : null;
+}
 function trVoice(tr){ return trSwap(tr)||tr.id; }
 function trLabel(tr){ const s=trSwap(tr); return s ? voiceName(s) : tr.name; }
 function trShort(tr){ const s=trSwap(tr); return s ? voiceShort(s) : (tr.short||tr.id.toUpperCase()); }
@@ -252,7 +257,6 @@ function artSynth(tr,a,kp){ // Synth-Kits: Spielweise über die Parameter des Ki
   if(a===2) o.fmLevel=kp.fmLevel*0.6; // Pedal: leiser, kurz
   return o;
 }
-let currentKitId='rock';
 
 const VOICE_FNS={
   bd:playKick, sd:playSnare, lt:playTom, ht:playTom, rs:playRim, hc:playClap,
@@ -274,11 +278,13 @@ const VOICE_FNS={
   cgh:playTom, tu:playTom, bgh:playTom, bgl:playTom, tih:playTom, til:playTom, tb:playMaracas // Latin: nur Ersatz, solange die Aufnahmen laden
 };
 // Drum-Set: pro Stimme optional eine eigene Quelle statt des Basis-Kits. drumSet.voices[id] = {t:'syn',kitId} | {t:'smp',sampleId};
-// ohne Eintrag folgt die Stimme dem Basis-Kit (currentKitId). drumSet.buffers[id] = dekodierte Samples. Fehlt ein Sample: Fallback auf Synth.
+// ohne Eintrag folgt die Stimme dem Basis-Kit ihrer Drum-Spur (DRUM_TRACKS[].kit, #68). drumSet.buffers[id] = dekodierte Samples. Fehlt ein Sample: Fallback auf Synth.
+// Geladenes eigenes Set je Drum-Spur: DRUM_TRACKS[].set = {id,name,dirty} (id/name null = Standard-Kit).
 const drumSet={voices:{}, buffers:{}};
-let currentSet={id:null, name:null, dirty:false}; // geladenes eigenes Set (oder null = Standard-Kit), dirty = ungespeicherte Änderungen
 let lastOpenSample=null;
-function voiceKitId(id){ const v=drumSet.voices[id]; return (v && v.t==='syn' && KITS[v.kitId]) ? v.kitId : currentKitId; }
+function rowKit(id){ const k=dtOfRow(id).kit; return KITS[k] ? k : 'rock'; }
+function rowDefVoice(id){ const R=KITS[rowKit(id)].rows, m=R && R[id]; return m && VOICE_FNS[m] ? m : id; }
+function voiceKitId(id){ const v=drumSet.voices[id]; return (v && v.t==='syn' && KITS[v.kitId]) ? v.kitId : rowKit(id); }
 function chokeOpenSample(time){
   if(!lastOpenSample) return; const o=lastOpenSample; lastOpenSample=null;
   try{ o.g.gain.cancelScheduledValues(time); o.g.gain.setValueAtTime(o.g.gain.value, time); o.g.gain.linearRampToValueAtTime(0.0001, time+0.025); o.src.stop(time+0.03); }catch(e){}
@@ -316,7 +322,7 @@ const SMP_OPT_DEF={layers:true, rr:true, vari:50, room:STUDIO_ROOM};
 const smpOpt=Object.assign({},SMP_OPT_DEF);
 function smpKitsInUse(){ // Sample-Kits, die gerade klingen (Basis-Kit + Set-Stimmen) samt Ersatz-Kit
   const s=new Set(); const add=id=>{ const k=KITS[id]; if(k && k.samples){ s.add(id); if(k.samples.fallback) s.add(k.samples.fallback); } };
-  add(currentKitId); Object.values(drumSet.voices).forEach(v=>{ if(v && v.t==='syn') add(v.kitId); });
+  DRUM_TRACKS.forEach(d=>add(d.kit)); Object.values(drumSet.voices).forEach(v=>{ if(v && v.t==='syn') add(v.kitId); });
   return [...s];
 }
 function smpChipText(kid,t){ const c=KITS[kid]._chip; if(c){ const d=c.querySelector('.kd'); if(d) d.textContent=t; } }

@@ -23,9 +23,11 @@ function collectPatternData(name, id){
     savedAt: Date.now(),
     schemaVersion: 8, // v80: grps {drums,perc} mit Effekten statt grpDrums (alt wird gelesen) // v79: Effekte (tracks[].fx/eqOn/eqLc/eqMf, fxHall, fxDelay, masterFx) // v62: optionale Felder harmony + tracks[].harm (rückwärtskompatibel) // v6 = Humanize (global) + Feel (pro Spur); pan/EQ/muted/solo/fill (v6.1, rückwärtskompatibel) neu dazu
     bpm, swing, humanize,
-    kitId: currentKitId,
+    kitId: DRUM_TRACKS[0].kit, // = Drum-Kit (ältere Versionen lesen nur das)
+    kits: Object.fromEntries(DRUM_TRACKS.map(d=>[d.id, d.kit])), // #68: Kit je Drum-Spur
     smpOpt: Object.assign({},smpOpt),
-    drumSet: { voices: JSON.parse(JSON.stringify(drumSet.voices)), setId: currentSet.id, setName: currentSet.name },
+    drumSet: { voices: JSON.parse(JSON.stringify(drumSet.voices)), setId: DRUM_TRACKS[0].set.id, setName: DRUM_TRACKS[0].set.name,
+               sets: Object.fromEntries(DRUM_TRACKS.map(d=>[d.id, {id:d.set.id, name:d.set.name}])) },
     patternLength: PATTERN_LENGTH,
     tracks: TRACKS.map(tr=>({
       id: tr.id,
@@ -86,12 +88,8 @@ function migrateStepsToVelocity(savedSteps, trackId, oldAccentSteps, targetLen){
 // Fill-Einstellungen. Bewusst OHNE Tempo/Swing/Humanize und OHNE stop().
 // applyPatternData() (Beats laden per Hand) ergänzt Tempo+Stop.
 function applyTrackAndFillData(data){
-  if(KITS[data.kitId]){
-    currentKitId=data.kitId;
-    document.querySelectorAll('.kit-chip').forEach(c=>c.classList.remove('active'));
-    if(KITS[data.kitId]._chip) KITS[data.kitId]._chip.classList.add('active');
-    updateKitLabel();
-  }
+  { const K=data.kits||{}; // #68: Kit je Drum-Spur; ältere Stände: alle Spuren mit kitId (klingt wie bisher)
+    DRUM_TRACKS.forEach(d=>{ const k=K[d.id]||data.kitId; if(KITS[k]) d.kit=k; }); }
 
   Object.assign(smpOpt, SMP_OPT_DEF, data.smpOpt||{}); smpOptRender(); // ohne Angabe: Standard
   drumSetApply(data.drumSet); // ältere Patterns/Beats ohne Set: alle Stimmen aus dem Basis-Kit

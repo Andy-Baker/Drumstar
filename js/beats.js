@@ -2,7 +2,7 @@
 // =========================================================================
 // BEATS PRO SPURTYP (Drums / Perc / Acid / Sample) — Store "beats". Ein Beat = Muster einer Gruppe (Steps, bei Acid Noten + Slides, Länge)
 // plus Klang der Gruppe (Mixer-Werte, Acid-Filter/Skala, Sample-Verweis). Laden: nur Muster (▶) oder Muster + Klang (🔊) ins Arbeits-Pattern.
-// Das Kit ist global und wird nicht umgeschaltet (kitId nur gemerkt, für spätere Drum-Sets).
+// kitId = Kit der Drum-Spur (#68) bzw. Drum-Kit; nur gemerkt, beim Laden wird das Kit nicht umgeschaltet.
 // =========================================================================
 let beatTab='all';
 async function beatPut(d){ const db=await idbOpen(); db.transaction(IDB_BEATS,'readwrite').objectStore(IDB_BEATS).put(d, d.id); }
@@ -21,7 +21,7 @@ function beatTrackData(tr){
     cosmicWidth:tr.cosmicWidth, cosmicMotion:tr.cosmicMotion, cosmicWarmth:tr.cosmicWarmth, cosmicAir:tr.cosmicAir, sound:tr.sound, tremolo:tr.tremolo };
 }
 function beatCollect(gid, name){
-  const d={ id:genId(), kind:'beat', group:gid, name, savedAt:Date.now(), length:PATTERN_LENGTH, kitId:currentKitId, tracks:arrGroupTracks(gid).map(beatTrackData) };
+  const d={ id:genId(), kind:'beat', group:gid, name, savedAt:Date.now(), length:PATTERN_LENGTH, kitId:(dtById(gid)||DRUM_TRACKS[0]).kit, tracks:arrGroupTracks(gid).map(beatTrackData) };
   if(gid==='acid') d.acidAuto={shape:autoShape, bars:autoBars, depth:autoDepth};
   if(gid==='sample') d.sampleId=sampleTrackSampleId;
   return d;
@@ -114,7 +114,7 @@ document.querySelectorAll('#beatTabs button').forEach(b=>b.addEventListener('cli
 
 // =========================================================================
 // KIT-MENÜ + DRUM-SET-EDITOR — Standard-Kits und eigene Sets stehen gleichberechtigt im Kit-Menü. Ein Wechsel ersetzt das ganze Set
-// (angepasste Stimmen bleiben nicht stehen); bei ungespeicherten Änderungen fragt die App vorher. Siehe drumSet/currentSet in der Engine.
+// (angepasste Stimmen bleiben nicht stehen); bei ungespeicherten Änderungen fragt die App vorher. Siehe drumSet und DRUM_TRACKS[].kit/.set (#68: je Drum-Spur).
 // =========================================================================
 const drumSetOverlay=document.getElementById('drumSetOverlay'), dsRows=document.getElementById('dsRows'), dsSheet=document.getElementById('dsSheet');
 const dsChips=document.getElementById('dsChips');
@@ -122,14 +122,20 @@ const dsList=document.getElementById('dsList'), dsSeg=document.getElementById('d
 const dsName=document.getElementById('dsName'), dsDirty=document.getElementById('dsDirty');
 const kitConfirm=document.getElementById('kitConfirm'), kcText=document.getElementById('kcText');
 const DS_IDS=['bd','sd','ch','oh','lt','ht','rs','hc','cy','rd','cb','cl','mr'];
+// #68: Kit-Taste, Kit-Auswahl und Set-Editor wirken auf die gewählte Drum-Spur (DRUMS bzw. PERC)
+function dtActive(){ return (typeof patternGroup!=='undefined' && dtById(patternGroup)) || DRUM_TRACKS[0]; }
+const dtCustom=d=>!d.set.name && d.rows.some(r=>drumSet.voices[r]);
+function kitFits(k, d){ // Kit spielt mindestens eine Zeile der Spur selbst (eigene Stimme oder Standard-Belegung)
+  const K=KITS[k], own=dsKitVoices(k); return d.rows.some(r=>(K.rows && K.rows[r]) || own.indexOf(r)>=0);
+}
 let dsCur=null, dsMode='syn', dsMsgTimer=null, kitPending=null;
 function dsSay(m){ dsStatus.textContent=m; clearTimeout(dsMsgTimer); dsMsgTimer=setTimeout(()=>{ dsStatus.textContent=''; },3000); }
 function updateKitLabel(){
   if(typeof patternGroup!=='undefined' && patternGroup==='piano'){ const k=TRACKS.find(t=>t.id==='piano'); lcdKit.textContent=(KEY_SOUNDS[k&&k.sound]||KEY_SOUNDS.piano).name; return; }
-  const custom=!currentSet.name && Object.keys(drumSet.voices).length>0;
-  const KIT_SHORT={rock:'ROCK',studio:'STUDIO',s67:'ST 67',hyb:'HYBRID',rusty:'RUSTY',vintage:'VINT 73',fm909:'909',fm808:'808',real808:'808 A',acid:'ACID',lofi:'LO-FI'};
+  const d=dtActive(), S=d.set, custom=dtCustom(d);
+  const KIT_SHORT={rock:'ROCK',studio:'STUDIO',s67:'ST 67',hyb:'HYBRID',rusty:'RUSTY',vintage:'VINT 73',fm909:'909',fm808:'808',real808:'808 A',acid:'ACID',lofi:'LO-FI',latin:'LATIN'};
   { const use=smpKitsInUse(); smpFree(use); use.forEach(k=>{ if(!smp[k] || smp[k].state==='error') smpLoad(k); }); } // Fehler: erneuter Versuch beim nächsten Kit-Tipp
-  lcdKit.textContent=(currentSet.name || KIT_SHORT[currentKitId] || KITS[currentKitId].name)+(currentSet.dirty?' *':(custom?' +':''));
+  lcdKit.textContent=(S.name || KIT_SHORT[d.kit] || KITS[d.kit].name)+(S.dirty?' *':(custom?' +':''));
   trNamesRefresh();
 }
 // Getauschte Stimmen (#2): Zeilennamen in Übersicht, Spurleiste und Mixer folgen dem Sound. Neuaufbau nur bei Änderung.
@@ -155,51 +161,82 @@ async function drumSetLoadBuffers(){
 }
 function drumSetApply(ds){
   drumSet.voices=(ds && ds.voices) ? JSON.parse(JSON.stringify(ds.voices)) : {};
-  currentSet={id:(ds && ds.setId)||null, name:(ds && ds.setName)||null, dirty:false};
+  DRUM_TRACKS.forEach((d,i)=>{ // #68: Set je Drum-Spur; ältere Stände: setId = Set der Drums
+    const x=ds && (ds.sets ? ds.sets[d.id] : (i===0 ? {id:ds.setId, name:ds.setName} : null));
+    d.set={id:(x && x.id)||null, name:(x && x.name)||null, dirty:false};
+  });
   drumSet.buffers={}; updateKitLabel(); drumSetLoadBuffers();
 }
 // ---- Speichern (Store "drumsets"; gleiche id überschreibt) ----
 async function dsPut(d){ const db=await idbOpen(); db.transaction(IDB_DRUMSETS,'readwrite').objectStore(IDB_DRUMSETS).put(d,d.id); }
 async function dsDel(id){ const db=await idbOpen(); db.transaction(IDB_DRUMSETS,'readwrite').objectStore(IDB_DRUMSETS).delete(id); }
-async function dsAll(){
+let dsMig=null; // Umzug alter Sets läuft nur einmal, auch bei gleichzeitigen Aufrufen
+async function dsAll(again){
   const db=await idbOpen(), out=[];
   await new Promise((res,rej)=>{ const q=db.transaction(IDB_DRUMSETS,'readonly').objectStore(IDB_DRUMSETS).openCursor(); q.onsuccess=e=>{ const c=e.target.result; if(c){ out.push(c.value); c.continue(); } else res(); }; q.onerror=()=>rej(q.error); });
+  if(!again && out.some(s=>!s.kind)){
+    if(!dsMig) dsMig=(async()=>{ for(const s of out) if(!s.kind){ try{ await dsMigrate(s); }catch(e){ console.warn('Set-Umzug', s.id, e); } } })().finally(()=>{ dsMig=null; });
+    await dsMig; return dsAll(true); // neu lesen (inkl. neuer Perc-Kits)
+  }
   return out.sort((a,b)=>b.savedAt-a.savedAt);
 }
-async function dsSaveCurrent(){
-  const others=new Set((await dsAll()).filter(s=>s.id!==currentSet.id).map(s=>s.name));
-  const name=uniqueName((currentSet.name||'').trim()||'Mein Set', others), id=currentSet.id||genId();
-  await dsPut({id, name, savedAt:Date.now(), baseKitId:currentKitId, voices:JSON.parse(JSON.stringify(drumSet.voices))});
-  currentSet={id, name, dirty:false}; updateKitLabel(); return name;
+// #68: Sets von vor v107 enthalten Zeilen aller Drum-Spuren. Einmalig aufteilen: das Set behält id/Namen und wird Drum-Set
+// (Verweise in Beats/Songs passen weiter); getauschte Perc-Zeilen werden ein neues Perc-Kit „<Name> (Perc)“.
+async function dsMigrate(s){
+  const add=[], V=s.voices||{};
+  DRUM_TRACKS.forEach((d,i)=>{
+    const v={}; d.rows.forEach(r=>{ if(V[r]) v[r]=V[r]; });
+    if(i===0){ s.kind=d.kind; s.voices=v; }
+    else if(Object.keys(v).length) add.push({id:genId(), kind:d.kind, name:s.name+' ('+d.name.charAt(0)+d.name.slice(1).toLowerCase()+')', savedAt:s.savedAt, baseKitId:s.baseKitId, voices:v});
+  });
+  await dsPut(s); for(const a of add) await dsPut(a);
+  return add;
 }
-function dsMarkDirty(){ currentSet.dirty=true; updateKitLabel(); dsDirty.textContent='● ungespeicherte Änderungen'; }
-// ---- Wechsel mit Sicherheitsabfrage ----
-function kitNeedsConfirm(){ return currentSet.dirty || (!currentSet.name && Object.keys(drumSet.voices).length>0); }
+async function dsSaveCurrent(){
+  const d=dtActive(), S=d.set;
+  const others=new Set((await dsAll()).filter(s=>s.id!==S.id && s.kind===d.kind).map(s=>s.name));
+  const name=uniqueName((S.name||'').trim()||'Mein '+d.setT, others), id=S.id||genId(), v={};
+  d.rows.forEach(r=>{ if(drumSet.voices[r]) v[r]=JSON.parse(JSON.stringify(drumSet.voices[r])); });
+  await dsPut({id, kind:d.kind, name, savedAt:Date.now(), baseKitId:d.kit, voices:v});
+  d.set={id, name, dirty:false}; updateKitLabel(); return name;
+}
+function dsMarkDirty(rowId){ (rowId ? dtOfRow(rowId) : dtActive()).set.dirty=true; updateKitLabel(); dsDirty.textContent='● ungespeicherte Änderungen'; }
+// ---- Wechsel mit Sicherheitsabfrage (nur die gewählte Drum-Spur) ----
+function kitNeedsConfirm(){ const d=dtActive(); return d.set.dirty || dtCustom(d); }
 function kitChooseGuarded(fn){
   if(!kitNeedsConfirm()){ fn(); return; }
-  kitPending=fn; kcText.textContent='„'+(currentSet.name || KITS[currentKitId].name+' (angepasst)')+'“ hat ungespeicherte Änderungen. Beim Wechsel gehen sie verloren.';
+  const d=dtActive();
+  kitPending=fn; kcText.textContent='„'+(d.set.name || KITS[d.kit].name+' (angepasst)')+'“ hat ungespeicherte Änderungen. Beim Wechsel gehen sie verloren.';
   kitConfirm.classList.add('open');
 }
 document.getElementById('kcSave').addEventListener('click', async ()=>{ kitConfirm.classList.remove('open'); await dsSaveCurrent(); const f=kitPending; kitPending=null; if(f) f(); });
-document.getElementById('kcDiscard').addEventListener('click', ()=>{ kitConfirm.classList.remove('open'); currentSet.dirty=false; const f=kitPending; kitPending=null; if(f) f(); });
+document.getElementById('kcDiscard').addEventListener('click', ()=>{ kitConfirm.classList.remove('open'); dtActive().set.dirty=false; const f=kitPending; kitPending=null; if(f) f(); });
 document.getElementById('kcCancel').addEventListener('click', ()=>{ kitConfirm.classList.remove('open'); kitPending=null; });
 function closeKitPicker(){ kitPickerOverlay.classList.remove('open'); syncBottomBarVisibility(); }
-function applyStandardKit(kitId){
-  currentKitId=kitId; drumSet.voices={}; drumSet.buffers={}; currentSet={id:null,name:null,dirty:false};
+function dtClear(d){ d.rows.forEach(r=>{ delete drumSet.voices[r]; delete drumSet.buffers[r]; }); }
+function applyStandardKit(kitId){ // nur die gewählte Drum-Spur; die anderen behalten Kit und Set
+  const d=dtActive(); d.kit=kitId; dtClear(d); d.set={id:null,name:null,dirty:false};
   updateKitLabel(); closeKitPicker();
 }
 async function applyOwnSet(s){
-  currentKitId=KITS[s.baseKitId] ? s.baseKitId : currentKitId;
-  drumSet.voices=JSON.parse(JSON.stringify(s.voices||{})); drumSet.buffers={}; currentSet={id:s.id,name:s.name,dirty:false};
+  const d=dtActive(), V=s.voices||{};
+  if(KITS[s.baseKitId]) d.kit=s.baseKitId;
+  dtClear(d); d.rows.forEach(r=>{ if(V[r]) drumSet.voices[r]=JSON.parse(JSON.stringify(V[r])); });
+  d.set={id:s.id,name:s.name,dirty:false};
   updateKitLabel(); await drumSetLoadBuffers();
 }
 async function kitPickerRefresh(){
-  const customAny=Object.keys(drumSet.voices).length>0;
-  Object.keys(KITS).forEach(k=>{ const c=KITS[k]._chip; if(c) c.classList.toggle('active', !currentSet.name && !customAny && k===currentKitId); });
+  const d=dtActive(), custom=dtCustom(d);
+  kitPickerOverlay.classList.toggle('perc', d.kind==='perc');
+  $id('kpTitle').textContent=d.kitT; $id('kpOwnT').textContent=d.ownT;
+  $id('kpFor').textContent='für '+d.rows.map(r=>r.toUpperCase()).join(' · ');
+  Object.keys(KITS).forEach(k=>{ const c=KITS[k]._chip; if(!c) return;
+    const K=KITS[k]; c.hidden=!kitFits(k,d); c.style.order=K.rows && d.rows.some(r=>K.rows[r]) ? -1 : 0; // eigens für diese Spur gebaut: nach oben
+    c.classList.toggle('active', !d.set.name && !custom && k===d.kit); });
   const list=document.getElementById('kitOwnList'); list.innerHTML='';
-  (await dsAll()).forEach(s=>{
+  (await dsAll()).filter(s=>s.kind===d.kind).forEach(s=>{
     const n=Object.keys(s.voices||{}).filter(i=>s.voices[i].t==='smp').length;
-    const row=document.createElement('div'); row.className='kit-chip'+(currentSet.id===s.id?' active':'');
+    const row=document.createElement('div'); row.className='kit-chip'+(d.set.id===s.id?' active':'');
     row.innerHTML='<div class="grow"><div class="kn"></div><div class="kd"></div></div><button class="kib" title="Bearbeiten" aria-label="Bearbeiten">'+UI_IC.ren+'</button><button class="kib d" title="Löschen" aria-label="Löschen">'+UI_IC.del+'</button>';
     row.querySelector('.kn').textContent=s.name; row.querySelector('.kd').textContent=(n?n+' Sample'+(n>1?'s':'')+' · ':'')+'Basis '+KITS[s.baseKitId||'rock'].name;
     row.onclick=()=>kitChooseGuarded(async()=>{ await applyOwnSet(s); closeKitPicker(); });
@@ -207,8 +244,8 @@ async function kitPickerRefresh(){
     row.querySelector('.d').onclick=e=>{ e.stopPropagation(); dsAskDelete(s); };
     list.appendChild(row);
   });
-  const nw=document.createElement('div'); nw.className='kit-chip new'; nw.textContent='＋ Neues Set aus dem aktuellen Kit';
-  nw.onclick=()=>kitChooseGuarded(()=>{ currentSet={id:null,name:'Neues Set',dirty:true}; updateKitLabel(); openSetEditor(); });
+  const nw=document.createElement('div'); nw.className='kit-chip new'; nw.textContent=d.newT;
+  nw.onclick=()=>kitChooseGuarded(()=>{ d.set={id:null,name:'Neues '+d.setT,dirty:true}; updateKitLabel(); openSetEditor(); });
   list.appendChild(nw);
 }
 // ---- Eigenes Set löschen (#63, Mockup docs/mockups/issue-63.html A) ----
@@ -216,12 +253,13 @@ async function kitPickerRefresh(){
 // Beats/Songs speichern eine Kopie der Stimmen (drumSet.voices) → klingen danach gleich, nur der Listeneintrag verschwindet.
 async function dsUsage(id){
   const out=[];
-  try{ (await listPatternsFromIndexedDB()).forEach(p=>{ if(p.drumSet && p.drumSet.setId===id) out.push(['Beat',p.name||'Beat']); }); }catch(e){}
-  try{ (await songAll()).forEach(s=>{ if(s.drumSet && s.drumSet.setId===id) out.push(['Song',s.name||'Song']); }); }catch(e){}
+  const has=ds=>ds && (ds.setId===id || (ds.sets && Object.values(ds.sets).some(x=>x && x.id===id)));
+  try{ (await listPatternsFromIndexedDB()).forEach(p=>{ if(has(p.drumSet)) out.push(['Beat',p.name||'Beat']); }); }catch(e){}
+  try{ (await songAll()).forEach(s=>{ if(has(s.drumSet)) out.push(['Song',s.name||'Song']); }); }catch(e){}
   return out;
 }
 async function dsAskDelete(s){
-  const use=await dsUsage(s.id), cur=currentSet.id===s.id;
+  const use=await dsUsage(s.id), cur=DRUM_TRACKS.some(d=>d.set.id===s.id);
   if(!use.length && !cur){ dsDoDelete(s); return; }
   const box=document.getElementById('kdBox'), n=use.length, dlg=document.getElementById('kitDelConfirm');
   box.innerHTML='<div class="kc-h"></div>'
@@ -237,13 +275,14 @@ async function dsAskDelete(s){
   dlg.onclick=e=>{ if(e.target===dlg) dlg.classList.remove('open'); };
 }
 async function dsDoDelete(s){
-  const prev=Object.assign({},currentSet), cur=currentSet.id===s.id;
-  await dsDel(s.id); if(cur){ currentSet={id:null,name:currentSet.name,dirty:true}; updateKitLabel(); } kitPickerRefresh();
-  hmToast('„'+s.name+'“ gelöscht', true, async()=>{ await dsPut(s); if(cur){ currentSet=prev; updateKitLabel(); } kitPickerRefresh(); });
+  const d=DRUM_TRACKS.find(x=>x.set.id===s.id), prev=d && Object.assign({},d.set);
+  await dsDel(s.id); if(d){ d.set={id:null,name:d.set.name,dirty:true}; updateKitLabel(); } kitPickerRefresh();
+  hmToast('„'+s.name+'“ gelöscht', true, async()=>{ await dsPut(s); if(d){ d.set=prev; updateKitLabel(); } kitPickerRefresh(); });
 }
 // ---- Set-Editor ----
 function openSetEditor(){
-  closeKitPicker(); dsName.value=currentSet.name||''; dsDirty.textContent=currentSet.dirty?'● ungespeicherte Änderungen':'';
+  const d=dtActive(); closeKitPicker(); dsName.value=d.set.name||''; dsDirty.textContent=d.set.dirty?'● ungespeicherte Änderungen':'';
+  $id('dsTitle').textContent=d.setT+' bearbeiten'; dsName.placeholder='Name ('+d.setT+')…';
   dsRender(); drumSetOverlay.classList.add('open'); syncBottomBarVisibility();
 }
 function dsPreview(id, o){ // o = Vorhören einer anderen Quelle (Eintrag der Liste), ohne sie zu übernehmen
@@ -269,7 +308,7 @@ function dsKitVoices(k){ // Stimmen, die ein Kit wirklich eigen spielt (Sample-K
 }
 function dsRender(){
   dsRows.innerHTML='';
-  GRP_KEYS.forEach(gk=>{
+  [dtActive().id].forEach(gk=>{ // #68: nur die Zeilen der gewählten Drum-Spur
     const ids=DS_IDS.filter(id=>GRP_DEF[gk].ids.indexOf(id)>=0); if(!ids.length) return;
     const h=document.createElement('div'); h.className='ds-grp ds-grp-'+gk; h.innerHTML='<i></i>'+GRP_DEF[gk].ab; dsRows.appendChild(h);
     ids.forEach(id=>{
@@ -278,7 +317,7 @@ function dsRender(){
       let name, sub, smp=false;
       if(v && v.t==='smp'){ smp=true; name=(drumSet.buffers[id] && drumSet.buffers[id].name) || 'Sample (lädt…)'; sub=drumSet.buffers[id] ? 'Sample · aus Bibliothek' : 'Sample fehlt — Synth als Ersatz'; }
       else if(v){ name=dsVName(trVoice(tr)); sub=KITS[v.kitId].name; }
-      else { name=tr.name; sub=KITS[currentKitId].name+' (Original)'; }
+      else { name=trLabel(tr); sub=KITS[rowKit(id)].name+' (Original)'; }
       d.innerHTML='<b>'+trShort(tr)+(sw?'<s>statt '+id.toUpperCase()+'</s>':'')+'</b><div class="ds-src'+(smp?' smp':'')+'"><span></span><small>'+(smp?'':'<em class="ds-rl">'+dsVGroup(trVoice(tr))+'</em>')+'<i></i></small></div><button class="ds-pv" aria-label="Anhören">'+UI_IC.play+'</button>';
       d.querySelector('span').textContent=name; d.querySelector('small i').textContent=sub;
       d.querySelector('.ds-pv').onclick=e=>{ e.stopPropagation(); dsPreview(id); };
@@ -287,15 +326,15 @@ function dsRender(){
   });
 }
 function dsPick(id, o){ // o = {t:'syn',kitId,v} oder null = Original; Rückgängig im Toast
-  const prev=drumSet.voices[id], wasDirty=currentSet.dirty;
-  if(o && o.kitId===currentKitId && o.v===id) o=null; // = Original
+  const S=dtOfRow(id).set, prev=drumSet.voices[id], wasDirty=S.dirty;
+  if(o && o.kitId===rowKit(id) && o.v===rowDefVoice(id)) o=null; // = Original
   if(o){ if(o.v===id) o={t:'syn',kitId:o.kitId}; drumSet.voices[id]=o; } else delete drumSet.voices[id];
-  delete drumSet.buffers[id]; dsMarkDirty(); dsRender(); dsRenderList(); dsPreview(id);
+  delete drumSet.buffers[id]; dsMarkDirty(id); dsRender(); dsRenderList(); dsPreview(id);
   const tr=TRACKS.find(t=>t.id===id);
   hmToast(id.toUpperCase()+' spielt jetzt '+dsVName(trVoice(tr))+(o?' · '+KITS[o.kitId].name:''), true, async()=>{
     if(prev) drumSet.voices[id]=prev; else delete drumSet.voices[id];
     if(prev && prev.t==='smp') await drumSetLoadBuffers();
-    if(!wasDirty){ currentSet.dirty=false; dsDirty.textContent=''; } updateKitLabel(); dsRender(); if(dsSheet.classList.contains('open')) dsRenderList();
+    if(!wasDirty){ S.dirty=false; dsDirty.textContent=''; } updateKitLabel(); dsRender(); if(dsSheet.classList.contains('open')) dsRenderList();
   });
 }
 async function dsRenderList(){
@@ -308,7 +347,7 @@ async function dsRenderList(){
       b.onclick=()=>{ dsFilt=k; dsRenderList(); }; dsChips.appendChild(b); });
     const on=dsChips.querySelector('.on'); if(on) on.scrollIntoView({block:'nearest',inline:'center'});
     const pv=(o)=>{ const b=document.createElement('button'); b.className='ds-ipv'; b.innerHTML=UI_IC.play; b.setAttribute('aria-label','Anhören'); b.onclick=e=>{ e.stopPropagation(); dsPreview(id,o); }; return b; };
-    const base=document.createElement('div'); base.className='ds-it base'+(!v?' on':''); base.innerHTML='<span class="grow">↺ Original<small>'+KITS[currentKitId].name+' · '+dsVName(id)+'</small></span>';
+    const base=document.createElement('div'); base.className='ds-it base'+(!v?' on':''); base.innerHTML='<span class="grow">↺ Original<small>'+KITS[rowKit(id)].name+' · '+dsVName(rowDefVoice(id))+'</small></span>';
     base.appendChild(pv(null)); base.onclick=()=>dsPick(id,null); dsList.appendChild(base);
     Object.keys(KITS).forEach(k=>{
       const vs=dsKitVoices(k).filter(x=>dsFilt==='all' || dsVGroup(x)===dsFilt); if(!vs.length) return;
@@ -327,7 +366,7 @@ async function dsRenderList(){
       const nm=document.createElement('span'); nm.className='grow'; nm.textContent=e.name||'Sample'; it.appendChild(nm);
       const del=document.createElement('button'); del.innerHTML=UI_IC.del; del.title='Sample löschen'; del.setAttribute('aria-label','Sample löschen');
       del.onclick=ev=>{ ev.stopPropagation(); smpLibDelete(e); }; it.appendChild(del);
-      it.onclick=async()=>{ drumSet.voices[id]={t:'smp',sampleId:e.id}; dsMarkDirty(); await drumSetLoadBuffers(); dsRender(); dsRenderList(); dsPreview(id); }; dsList.appendChild(it);
+      it.onclick=async()=>{ drumSet.voices[id]={t:'smp',sampleId:e.id}; dsMarkDirty(id); await drumSetLoadBuffers(); dsRender(); dsRenderList(); dsPreview(id); }; dsList.appendChild(it);
     });
     if(!items.length){ const e=document.createElement('div'); e.className='ds-it'; e.textContent='Noch keine Samples in der Bibliothek'; dsList.appendChild(e); }
     const add=document.createElement('div'); add.className='ds-it add'; add.textContent='＋ Aufnehmen / Datei laden (Sample-Editor)';
@@ -338,14 +377,14 @@ async function dsRenderList(){
 // Kein Rückfrage-Dialog, stattdessen Rückgängig im Toast (Eintrag inkl. Audio wird neu gespeichert).
 async function smpLibDelete(e){
   const used=Object.keys(drumSet.voices).filter(k=>{ const v=drumSet.voices[k]; return v && v.t==='smp' && v.sampleId===e.id; });
-  const prev=used.map(k=>[k, drumSet.voices[k], drumSet.buffers[k]]), wasDirty=currentSet.dirty;
+  const prev=used.map(k=>[k, drumSet.voices[k], drumSet.buffers[k]]), wasDirty=new Map(DRUM_TRACKS.map(d=>[d,d.set.dirty]));
   await deleteSampleLibraryEntry(e.id);
-  used.forEach(k=>{ delete drumSet.voices[k]; delete drumSet.buffers[k]; }); if(used.length) dsMarkDirty();
+  used.forEach(k=>{ delete drumSet.voices[k]; delete drumSet.buffers[k]; dsMarkDirty(k); });
   dsRender(); dsRenderList();
   hmToast('„'+(e.name||'Sample')+'“ gelöscht', true, async()=>{
     await saveSampleLibraryEntry(e);
     prev.forEach(([k,v,b])=>{ drumSet.voices[k]=v; if(b) drumSet.buffers[k]=b; });
-    if(used.length && !wasDirty){ currentSet.dirty=false; updateKitLabel(); dsDirty.textContent=''; }
+    if(used.length){ wasDirty.forEach((w,d)=>{ d.set.dirty=w; }); updateKitLabel(); if(!dtActive().set.dirty) dsDirty.textContent=''; }
     dsRender(); dsRenderList();
   });
 }
@@ -356,10 +395,10 @@ function dsOpenSheet(id){
 }
 dsSeg.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{ dsMode=b.dataset.m; dsRenderList(); }));
 document.getElementById('dsShX').addEventListener('click', ()=>dsSheet.classList.remove('open'));
-dsName.addEventListener('input', ()=>{ currentSet.name=dsName.value; dsMarkDirty(); });
+dsName.addEventListener('input', ()=>{ dtActive().set.name=dsName.value; dsMarkDirty(); });
 document.getElementById('dsSave').addEventListener('click', async ()=>{
   if(!dsName.value.trim()){ dsSay('Bitte einen Namen eingeben'); return; }
-  currentSet.name=dsName.value; const n=await dsSaveCurrent(); dsName.value=n; dsDirty.textContent=''; dsSay('„'+n+'“ gespeichert');
+  dtActive().set.name=dsName.value; const n=await dsSaveCurrent(); dsName.value=n; dsDirty.textContent=''; dsSay('„'+n+'“ gespeichert');
 });
 document.getElementById('dsCloseBtn').addEventListener('click', ()=>{ dsSheet.classList.remove('open'); drumSetOverlay.classList.remove('open'); syncBottomBarVisibility(); });
 updateKitLabel();

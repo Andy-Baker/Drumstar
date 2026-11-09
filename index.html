@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>MRM-44 — Mobile Rhythm Machine</title>
 <link rel="stylesheet" href="./fonts.css">
-<link rel="stylesheet" href="./css/app.css?v=106">
+<link rel="stylesheet" href="./css/app.css?v=107">
 
 
 <!-- Drumstar PWA -->
@@ -41,12 +41,13 @@
 
       <div id="kitPickerOverlay">
         <div id="kitPickerHead">
-          <h2 class="ovt">Kit wählen</h2>
+          <h2 class="ovt" id="kpTitle">Kit wählen</h2>
           <button id="kitPickerCloseBtn" aria-label="Schließen">✕</button>
         </div>
+        <div id="kpFor"></div>
         <div class="kp-sec">Standard</div>
         <div id="kitPickerList"></div>
-        <div class="kp-sec">Eigene Sets</div>
+        <div class="kp-sec" id="kpOwnT">Eigene Sets</div>
         <div id="kitOwnList"></div>
       </div>
 
@@ -225,7 +226,7 @@
       </div>
 
       <div id="drumSetOverlay">
-        <div id="dsHead"><h2 class="ovt">Set bearbeiten</h2><button id="dsCloseBtn" aria-label="Schließen">✕</button></div>
+        <div id="dsHead"><h2 class="ovt" id="dsTitle">Set bearbeiten</h2><button id="dsCloseBtn" aria-label="Schließen">✕</button></div>
         <div class="ds-bar"><input type="text" id="dsName" placeholder="Name des Sets…" maxlength="40"><button id="dsSave">Speichern</button></div>
         <div id="dsDirty"></div>
         <div id="dsRows"></div>
@@ -535,28 +536,28 @@
       </div>
 </div>
 
-<script src="./js/base.js?v=106"></script>
-<script src="./js/audio.js?v=106"></script>
-<script src="./js/fx.js?v=106"></script>
-<script src="./js/voices.js?v=106"></script>
-<script src="./js/events.js?v=106"></script>
-<script src="./js/kits.js?v=106"></script>
-<script src="./js/tracks.js?v=106"></script>
-<script src="./js/controls.js?v=106"></script>
-<script src="./js/harmony.js?v=106"></script>
-<script src="./js/editor.js?v=106"></script>
-<script src="./js/sheets.js?v=106"></script>
-<script src="./js/sample-track.js?v=106"></script>
-<script src="./js/wav-export.js?v=106"></script>
-<script src="./js/mixer.js?v=106"></script>
-<script src="./js/sample-editor.js?v=106"></script>
-<script src="./js/storage.js?v=106"></script>
-<script src="./js/beats.js?v=106"></script>
-<script src="./js/pianoroll.js?v=106"></script>
-<script src="./js/scheduler.js?v=106"></script>
-<script src="./js/transport-ui.js?v=106"></script>
-<script src="./js/tempo-detect.js?v=106"></script>
-<script src="./js/main.js?v=106"></script>
+<script src="./js/base.js?v=107"></script>
+<script src="./js/audio.js?v=107"></script>
+<script src="./js/fx.js?v=107"></script>
+<script src="./js/voices.js?v=107"></script>
+<script src="./js/events.js?v=107"></script>
+<script src="./js/kits.js?v=107"></script>
+<script src="./js/tracks.js?v=107"></script>
+<script src="./js/controls.js?v=107"></script>
+<script src="./js/harmony.js?v=107"></script>
+<script src="./js/editor.js?v=107"></script>
+<script src="./js/sheets.js?v=107"></script>
+<script src="./js/sample-track.js?v=107"></script>
+<script src="./js/wav-export.js?v=107"></script>
+<script src="./js/mixer.js?v=107"></script>
+<script src="./js/sample-editor.js?v=107"></script>
+<script src="./js/storage.js?v=107"></script>
+<script src="./js/beats.js?v=107"></script>
+<script src="./js/pianoroll.js?v=107"></script>
+<script src="./js/scheduler.js?v=107"></script>
+<script src="./js/transport-ui.js?v=107"></script>
+<script src="./js/tempo-detect.js?v=107"></script>
+<script src="./js/main.js?v=107"></script>
 
 <script>
 // Drumstar PWA service worker

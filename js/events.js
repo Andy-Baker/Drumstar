@@ -10,8 +10,7 @@ let editClip=null; // Clip im Editor: dann spielen/exportieren Wiedergabe und Ex
 function arrOn(){ return arr.enabled && !editClip; }
 // Übersichts-Gruppen: jede Gruppe ist eine Zeile in der Song-Übersicht; Clips liegen weiterhin pro Stimme/Spur.
 const ARR_GROUPS=[
-  {id:'drums', label:'DRUMS', ids:['bd','sd','ch','oh','lt','ht','cy','rd']},
-  {id:'perc',  label:'PERC',  ids:['rs','hc','cb','cl','mr']},
+  ...DRUM_TRACKS.map(d=>({id:d.id, label:d.name, ids:d.rows})),
   {id:'acid',  label:'ACID',  ids:['arp']},
   {id:'cosmic',label:'COSMIC',ids:['cosmic']},
   {id:'piano',label:'KEYS',ids:['piano']},

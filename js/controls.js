@@ -243,9 +243,9 @@ function keysSetSound(tr,id){
 }
 document.getElementById('soundPickerCloseBtn').addEventListener('click', ()=>{ soundPickerOverlay.classList.remove('open'); syncBottomBarVisibility(); });
 Object.keys(KITS).forEach(kitId=>{
-  const kit=KITS[kitId]; if(kit.hidden) return; // Latin-Perc: nur über den Set-Editor
+  const kit=KITS[kitId]; // welche Kits eine Drum-Spur anbietet: kitPickerRefresh (kitFits)
   const chip=document.createElement('div');
-  chip.className='kit-chip'+(kitId===currentKitId?' active':'');
+  chip.className='kit-chip';
   chip.innerHTML='<div class="kn">'+kit.name+'</div><div class="kd">'+kit.desc+'</div>';
   if(kit.samples){
     chip.classList.add('smp');

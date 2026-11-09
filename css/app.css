@@ -97,7 +97,13 @@
   #soundPickerList{ display:flex; flex-direction:column; gap:6px; }
   #soundPickerList .kit-chip{ display:flex; flex-direction:column; gap:2px; padding:12px 14px; min-width:0; }
   .kitpill.keys{ border-color:rgba(255,209,102,.45); background:rgba(255,209,102,.1); color:#ffd166; }
+  .kitpill.perc{ border-color:rgba(45,212,191,.5); background:rgba(45,212,191,.1); }
+  #kpFor{ font:700 11px 'JetBrains Mono',monospace; letter-spacing:.12em; color:var(--blue); margin:2px 2px 0; flex-shrink:0; }
+  #kitPickerOverlay.perc #kpFor{ color:#2dd4bf; }
+  #kitPickerOverlay.perc .kit-chip.active{ border-color:#2dd4bf; background:rgba(45,212,191,.12); box-shadow:0 0 12px rgba(45,212,191,.25); }
+  #kitPickerOverlay.perc .kit-chip.active .kn{ color:#7ff0dc; }
   #kitPickerList{ display:flex; flex-direction:column; gap:6px; }
+  #kitPickerList .kit-chip[hidden]{ display:none; }
   #kitPickerList .kit-chip{ display:flex; flex-direction:column; gap:2px; padding:12px 14px; min-width:0; }
 
   /* ---------- Bottom-Bar: dauerhafte Markierung des aktiven Tabs (zusätzlich

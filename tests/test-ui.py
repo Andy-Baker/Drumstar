@@ -275,9 +275,11 @@ async def main():
     await pg.click('#hmToast button'); await pg.wait_for_timeout(300)
     ok('Tauschen: Rückgängig stellt Original her', await pg.evaluate("trVoice(TRACKS.find(t=>t.id==='lt'))==='lt' && !drumSet.voices.lt && trUi(TRACKS.find(t=>t.id==='lt')).ovLab.textContent==='LT'"))
     await pg.screenshot(path=OUT+'/ds_tauschen.png'); await fz(pg,'Set-Editor')
-    # Latin-Perc (#60): nur im Set-Editor, nicht als Kit; Conga mit Spielweise Gedämpft spielt die eigene Aufnahme
-    ok('Latin: nicht in der Kit-Auswahl', await pg.evaluate("!KITS.latin._chip && ![...document.querySelectorAll('#kitPickerList .kn')].some(e=>e.textContent==='LATIN PERC')"))
-    await pg.click('#dsShX'); await pg.wait_for_timeout(200)
+    # Latin-Perc (#60): Conga mit Spielweise Gedämpft spielt die eigene Aufnahme. Set-Editor zeigt nur die Zeilen der gewählten Drum-Spur (#68)
+    ok('Set-Editor DRUMS: nur Drum-Zeilen', await pg.evaluate("[...document.querySelectorAll('#dsRows .ds-row b')].length===8 && document.getElementById('dsTitle').textContent==='Drum-Set bearbeiten'"))
+    await pg.click('#dsShX'); await pg.click('#dsCloseBtn'); await pg.wait_for_timeout(200)
+    await pg.evaluate("setPatternGroup('perc',true); openSetEditor()"); await pg.wait_for_timeout(300)
+    ok('Set-Editor PERC: nur Perc-Zeilen', await pg.evaluate("[...document.querySelectorAll('#dsRows .ds-row b')].length===5 && document.getElementById('dsTitle').textContent==='Perc-Kit bearbeiten'"))
     await pg.click('#dsRows .ds-row:has-text("CLAVES")'); await pg.wait_for_timeout(300)
     names=await pg.evaluate("[...document.querySelectorAll('#dsList .ds-it .grow')].map(e=>e.firstChild.textContent)")
     ok('Latin: Perc-Liste zeigt Conga, Tumba, Bongos, Timbales, Schellenkranz', all(n in names for n in ['CONGA','TUMBA','BONGO HOCH','BONGO TIEF','TIMBAL HOCH','TIMBAL TIEF','SCHELLENKRANZ']), names)
@@ -288,6 +290,47 @@ async def main():
     ok('Latin: Claves → Conga, Gedämpft = eigene Aufnahme', r['got']=='latin:cgm' and r['ov']=='CG' and r['art']=='Offen,Gedämpft' and r['st']=='ready', r)
     await pg.click('#hmToast button'); await pg.wait_for_timeout(200)
     await pg.click('#dsShX'); await pg.click('#dsCloseBtn'); await pg.wait_for_timeout(200)
+    # Kit je Drum-Spur (#68, Mockup docs/mockups/issue-68.html A): PERC hat eigenes Kit, Drum-Wechsel lässt es stehen
+    await pg.click('#lcdKitBtn'); await pg.wait_for_timeout(400)
+    r=await pg.evaluate("""(()=>{ const vis=k=>KITS[k]._chip.offsetHeight>0, L=[...document.querySelectorAll('#kitPickerList .kit-chip')].filter(c=>c.offsetHeight>0);
+      return {t:document.getElementById('kpTitle').textContent, latin:vis('latin'), s67:vis('s67'), first:L.sort((a,b)=>(+a.style.order||0)-(+b.style.order||0))[0].querySelector('.kn').textContent,
+        pill:document.getElementById('lcdKitBtn').classList.contains('perc')}; })()""")
+    ok('Perc-Kit: Titel, Latin oben, Kits ohne Perc-Stimmen fehlen', r['t']=='Perc-Kit' and r['latin'] and not r['s67'] and r['first']=='LATIN PERC' and r['pill'], r)
+    await pg.evaluate("document.getElementById('kitPickerOverlay').scrollTop=0"); await pg.screenshot(path=OUT+'/perc_kit.png'); await fz(pg,'Perc-Kit')
+    dk=await pg.evaluate("DRUM_TRACKS[0].kit")
+    await pg.click('#kitPickerList .kit-chip:has-text("LATIN PERC")'); await pg.wait_for_timeout(400)
+    r=await pg.evaluate("""(async()=>{ await initAudio(); await smpLoad('latin'); const T=id=>TRACKS.find(t=>t.id===id), rs=T('rs'); let got=null; const o=smpPlay;
+      smpPlay=(k,tr,t,v,c,vid)=>{ got=k+':'+vid; return o(k,tr,t,v,c,vid); }; triggerTrack(rs, audioCtx.currentTime+0.05, VEL_NORMAL, 0);
+      const bd=T('bd'); let gb=null; smpPlay=(k,tr,t,v,c,vid)=>{ gb=k; return false; }; triggerTrack(bd, audioCtx.currentTime+0.05, VEL_NORMAL, 0); smpPlay=o;
+      return {kits:DRUM_TRACKS.map(d=>d.kit).join(), got, gb, hc:trUi(T('hc')).ovLab.textContent, cl:trUi(T('cl')).ovLab.textContent, lcd:document.getElementById('lcdKit').textContent}; })()""")
+    ok('Perc-Kit Latin: RS spielt Timbal, HC Conga, CL bleibt Claves, Drums unverändert', r['kits']==dk+',latin' and r['got']=='latin:tih' and r['gb']!='latin' and r['hc']=='CG' and r['cl']=='CL' and r['lcd']=='LATIN', r)
+    await pg.evaluate("setPatternGroup('drums',true)"); await pg.click('#lcdKitBtn'); await pg.wait_for_timeout(400)
+    r=await pg.evaluate("({t:document.getElementById('kpTitle').textContent, latin:KITS.latin._chip.offsetHeight>0, s67:KITS.s67._chip.offsetHeight>0})")
+    ok('Drum-Kit: Titel, ohne Latin', r['t']=='Drum-Kit' and not r['latin'] and r['s67'], r)
+    await pg.click('#kitPickerList .kit-chip:has-text("FM-909")'); await pg.wait_for_timeout(300)
+    kc=await pg.evaluate("kitConfirm.classList.contains('open') && kcText.textContent")
+    ok('Drum-Wechsel fragt nur nach dem ungespeicherten Drum-Set', not kc or 'Drum-Set' in kc, kc)
+    if kc: await pg.click('#kcDiscard'); await pg.wait_for_timeout(300)
+    r=await pg.evaluate("""(()=>{ const d=collectPatternData('t','t'); return {kits:DRUM_TRACKS.map(x=>x.kit).join(), rs:trVoice(TRACKS.find(t=>t.id==='rs')), sk:JSON.stringify(d.kits), kid:d.kitId}; })()""")
+    ok('Drum-Wechsel lässt Perc-Kit stehen, beide gespeichert', r['kits']=='fm909,latin' and r['rs']=='tih' and r['sk']=='{"drums":"fm909","perc":"latin"}' and r['kid']=='fm909', r)
+    r=await pg.evaluate("""(()=>{ const d=collectPatternData('t','t'); delete d.kits; d.kitId='fm808'; delete d.drumSet.sets; applyPatternData(d);
+      const R={kits:DRUM_TRACKS.map(x=>x.kit).join(), rs:trVoice(TRACKS.find(t=>t.id==='rs'))}; const n=collectPatternData('t','t'); n.kits={drums:'rock',perc:'rock'}; applyPatternData(n); return R; })()""")
+    ok('Alter Beat (nur kitId): beide Spuren mit diesem Kit', r['kits']=='fm808,fm808' and r['rs']=='rs', r)
+    r=await pg.evaluate("""(async()=>{ await dsPut({id:'t68',name:'Altes Set',savedAt:Date.now(),baseKitId:'rock',voices:{lt:{t:'syn',kitId:'rock',v:'mr'},cb:{t:'syn',kitId:'latin',v:'cgh'}}});
+      const all=await dsAll(), a=all.find(s=>s.id==='t68'), p=all.find(s=>s.name==='Altes Set (Perc)');
+      const R={a:a&&a.kind+':'+Object.keys(a.voices).join(), p:p&&p.kind+':'+Object.keys(p.voices).join()+':'+p.voices.cb.v, again:(await dsAll()).filter(s=>s.name==='Altes Set (Perc)').length};
+      await dsDel('t68'); if(p) await dsDel(p.id); return R; })()""")
+    ok('Alte Sets: einmal in Drum-Set + Perc-Kit aufgeteilt', r['a']=='drums:lt' and r['p']=='perc:cb:cgh' and r['again']==1, r)
+    await pg.evaluate("setPatternGroup('perc',true)"); await pg.click('#lcdKitBtn'); await pg.wait_for_timeout(300)
+    await pg.click('#kitOwnList .kit-chip.new'); await pg.wait_for_timeout(300)
+    await pg.fill('#dsName','Test Perc 68'); await pg.click('#dsSave'); await pg.wait_for_timeout(300)
+    await pg.click('#dsCloseBtn'); await pg.wait_for_timeout(100)
+    await pg.evaluate("setPatternGroup('drums',true)"); await pg.click('#lcdKitBtn'); await pg.wait_for_timeout(400)
+    r=await pg.evaluate("""(async()=>{ const s=(await dsAll()).find(x=>x.name==='Test Perc 68'); const inDrums=[...document.querySelectorAll('#kitOwnList .kn')].some(e=>e.textContent==='Test Perc 68');
+      const R={kind:s&&s.kind, base:s&&s.baseKitId, inDrums, drumsSet:DRUM_TRACKS[0].set.name, percSet:DRUM_TRACKS[1].set.name}; if(s) await dsDel(s.id); return R; })()""")
+    ok('Eigenes Perc-Kit: gehört zu PERC, nicht in der Drum-Liste', r['kind']=='perc' and r['base']=='rock' and not r['inDrums'] and r['drumsSet'] is None and r['percSet']=='Test Perc 68', r)
+    await pg.click('#kitPickerList .kit-chip:has-text("ROCK KIT")'); await pg.wait_for_timeout(200)
+    await pg.evaluate("setPatternGroup('perc',true); applyStandardKit('rock'); setPatternGroup('drums',true)")
     # Eigenes Set löschen (#63): benutzt → Abfrage mit Beat-Liste; unbenutzt → sofort, Rückgängig
     await pg.evaluate("""(async()=>{ await dsPut({id:'t63a',name:'Set Benutzt',savedAt:Date.now(),baseKitId:'rock',voices:{}}); await dsPut({id:'t63b',name:'Set Frei',savedAt:Date.now()-1,baseKitId:'rock',voices:{}});
       const d=collectPatternData('Beat mit Set','t63beat'); d.drumSet.setId='t63a'; d.drumSet.setName='Set Benutzt'; await savePatternToIndexedDB(d); })()""")

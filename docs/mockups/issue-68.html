@@ -69,7 +69,7 @@
   <div class="hd">So funktioniert’s</div>
   <ul class="note" id="howA">
     <li><b>Kit-Taste gehört zur gewählten Spur.</b> Bei DRUMS wählt sie das Drum-Kit, bei PERC das Perc-Kit. Oben DRUMS/PERC umschalten (steht für die Spur-Auswahl), dann Kit-Taste tippen.</li>
-    <li>Perc-Liste: zuerst <b>„Wie Drums“</b> (= heutiges Verhalten, Standard für alte Beats), dann <b>LATIN PERC</b> (wird sichtbar) und die Kits mit eigenen Perc-Sounds, darunter <b>Eigene Perc-Kits</b>.</li>
+    <li><b>PERC ist einfach eine zweite Drum-Spur</b> mit eigenem Kit. Perc-Liste: <b>LATIN PERC</b> oben, dann alle Kits mit Perc-Sounds, darunter <b>Eigene Perc-Kits</b>. Alte Beats: PERC startet mit demselben Kit wie DRUMS (klingt wie bisher).</li>
     <li><b>Drum-Kit wechseln lässt Perc in Ruhe.</b> Ein eigenes Perc-Kit bleibt, egal welches Drum-Kit du nimmst.</li>
     <li><b>＋ Neues Perc-Kit</b> öffnet den Set-Editor nur mit den PERC-Zeilen (RS, HC, CB, CL, MR). Jede Zeile kann wie bisher jeden Sound aus allen Kits spielen (auch Conga, Bongo, Tambourin).</li>
     <li>Gespeichert wird im Beat beides: Drum-Kit/-Set und Perc-Kit. Alte eigene Sets werden beim ersten Start in ein Drum-Set und, falls Perc-Zeilen getauscht waren, ein Perc-Kit aufgeteilt.</li>
@@ -79,7 +79,7 @@
     <li>Listen und Verhalten wie A, nur alles in einem Fenster; die Spur-Auswahl spielt keine Rolle (Reiter startet aber auf der gewählten Spur).</li>
     <li>Nachteil: Kit-Taste wird eng (zwei Namen), und es gibt zwei Wege zur selben Sache.</li>
   </ul>
-  <p class="note"><b>Empfehlung: A.</b> Die Kit-Taste sitzt schon heute neben der Spur-Auswahl, also wirkt sie natürlich auf diese Spur. Kein neuer Bedienweg, nur die Liste passt sich an.</p>
+  <p class="note"><b>Entschieden: A</b> (09.11.), ohne „Wie Drums“. <b>Grund:</b> Die Kit-Taste sitzt schon heute neben der Spur-Auswahl, also wirkt sie natürlich auf diese Spur. Kein neuer Bedienweg, nur die Liste passt sich an.</p>
 </div>
 
 <div id="kitPickerOverlay">
@@ -109,7 +109,7 @@ const KD=[['rock','ROCK KIT','Live · akustisch · druckvoll'],['studio','STUDIO
 const KP=[['latin','LATIN PERC','Echte Aufnahmen · Conga, Bongos, Timbales, Schellenkranz',1],['real808','808 AUTHENTIC','Cowbell, Claves, Maracas der 808'],['fm808','FM-808','Perc-Sounds des FM-808'],['fm909','FM-909','Rim, Clap des FM-909'],['rock','ROCK KIT','Perc-Sounds des Rock Kit'],['acid','ACID DRIVE','verzerrt'],['lofi','LO-FI DUST','gedämpft']];
 let OWN={drums:[{id:'d1',name:'Rock + 909 Snare',d:'Basis ROCK KIT · 1 Tausch'}],perc:[{id:'p1',name:'Mein Latin-Perc',d:'Conga · Bongo · Schellenkranz · Claves · Shaker'}]};
 const NAME=Object.fromEntries([...KD,...KP].map(k=>[k[0],k[1]])); OWN.drums.forEach(s=>NAME[s.id]=s.name.toUpperCase()); OWN.perc.forEach(s=>NAME[s.id]=s.name.toUpperCase());
-let sel={drums:'rock',perc:'follow'};
+let sel={drums:'rock',perc:'rock'};
 const SHORT=k=>k==='follow'?'WIE DRUMS':(NAME[k]||k).replace(' KIT','').replace(' PERC','');
 const ROWS={drums:[['bd','BD','#3fa9ff',[0,6,8]],['sd','SD','#8fd4ff',[4,12]],['ch','HH','#e8f4ff',[0,2,4,6,8,10,12,14]],['lt','LT','#2f7fd4',[]],['ht','HT','#2f7fd4',[14]],['oh','OH','#c7e6ff',[]],['cy','CY','#a3d8ff',[0]],['rd','RD','#b9dcff',[]]],
   perc:[['rs','RS','#5eead4',[3,11]],['hc','HC','#2dd4bf',[4,12]],['cb','CB','#14b8a6',[2,7,10]],['cl','CL','#99f6e4',[0,3,6,10,12]],['mr','MR','#7ff0dc',[0,2,4,6,8,10,12,14]]]};
@@ -141,7 +141,6 @@ function renderPicker(){
   const add=(k,n,d,tag,cls)=>{ const c=document.createElement('div'); c.className='kit-chip'+(cls?' '+cls:'')+(sel[PG]===k?' active':'');
     c.innerHTML='<div class="kn"></div><div class="kd"></div>'; c.querySelector('.kn').textContent=n; if(tag) c.querySelector('.kn').insertAdjacentHTML('beforeend','<span class="tg">'+tag+'</span>'); c.querySelector('.kd').textContent=d;
     c.onclick=()=>pick(k); L.appendChild(c); };
-  if(PG==='perc') add('follow','WIE DRUMS','Perc-Sounds aus dem Drum-Kit ('+SHORT(sel.drums)+') · wie bisher',null,'follow');
   (PG==='drums'?KD:KP).forEach(k=>add(k[0],k[1],k[2],k[3]?'NEU':null));
   $('kpOwnT').textContent = PG==='drums'?'Eigene Drum-Sets':'Eigene Perc-Kits';
   const O=$('kitOwnList'); O.innerHTML='';

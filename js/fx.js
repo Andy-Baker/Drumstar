@@ -65,8 +65,8 @@ const mfxDefault=()=>[fxNew('comp',0)];
 masterFx=mfxDefault();
 const fxSave=list=>(list||[]).map(f=>({t:f.t,on:f.on,p:Object.assign({},f.p)}));
 // Gruppen (Busse): Spuren → Gruppe (Effekte → Laut) → Master. ids = ARR_GROUPS
-const GRP_DEF={drums:{n:'Drums',ab:'DRUMS',ids:['bd','sd','ch','oh','lt','ht','cy','rd'],color:'#2a5a86'},
-               perc:{n:'Perc',ab:'PERC',ids:['rs','hc','cb','cl','mr'],color:'#1f6f68'}};
+const GRP_COL={drums:'#2a5a86',perc:'#1f6f68'}; // je Drum-Spur (#68)
+const GRP_DEF={}; DRUM_TRACKS.forEach(d=>GRP_DEF[d.id]={n:d.name.charAt(0)+d.name.slice(1).toLowerCase(),ab:d.name,ids:d.rows,color:GRP_COL[d.kind]});
 const GRP_KEYS=Object.keys(GRP_DEF);
 const grpNew=k=>({grp:true,k,vol:1,muted:false,fx:[],eqOn:true,eqLc:0,eqLowGain:0,eqMidGain:0,eqMf:EQ_MF_DEF,eqHighGain:0});
 const EQ_KEYS=['eqOn','eqLc','eqLowGain','eqMidGain','eqMf','eqHighGain'];

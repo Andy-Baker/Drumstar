@@ -21,6 +21,7 @@ Zusammengeführt am 28.10.2026 aus DECISIONS-2/-3, ARCHITECTURE-11/-12 und ROADM
 - Neuer Beat (29.10., Mockup `neuer-beat-mockup.html` Variante B): Beats-Fenster oben Karte „Aktueller Beat“, darunter Bibliothek mit „Neuer Beat“. Auswahl „Leer, gleicher Klang“ / „Leer, Standard“, keine Rückfrage, Undo-Toast. Speichern überschreibt den geladenen Beat, „Als Kopie“ legt neu an. Oranger Punkt neben dem Namen = ungespeichert.
 - Zurücksetzen (29.10., Mockup `zuruecksetzen-mockup.html` B): kein versteckter Doppeltipp mehr. Verstellter Regler zeigt seinen Wert als Taste mit ↺, Antippen = nur dieser Regler auf Standard (je Spur eigener Standard), Rückgängig im Toast.
 - Step-Stärke über Pinsel (Ghost leise, Ghost, Normal, Akzent), nicht Tipp-Zyklus.
+- Drum-Spuren (#68, 09.11.): PERC ist eine zweite Drum-Spur mit eigenem Kit/Set, keine Sonderform. Kein „Wie Drums“; alte Beats bekommen für PERC dasselbe Kit. Eigene Sets gehören zu einer Spurart (Zeilen verschieden); Kits mit eigenen Zeilen für jede Spur erst mit #13. Verworfen: ein Picker mit Reitern DRUMS/PERC (Variante B).
 - Kit nur bei Drums/Perc; Fill nur bei Drums (Icon-Taste + Sheet), steuert nur BD/SD/Toms/Becken/Hats. Perc-Fill evtl. später als eigene Version.
 - Design braucht Raum; Sticky-Elemente am Rand dürfen keinen Spalt zum Chassis lassen (Safe-Area im Element selbst auffangen).
 - Querformat nur für Spielflächen (Step-Raster, Pads, Noteneditor); Mixer, Song und Vollbild-Overlays bleiben Hochformat und scrollen.
