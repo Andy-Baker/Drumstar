@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Drum-Zeilen hinzufügen (#2)</title>
+<link rel="stylesheet" href="../../fonts.css">
+<style>
+/* Mockup zu Issue #2 Stufe 3: Zeilen (Stimmen) zu einer Drum-/Perc-Spur hinzufügen und entfernen. Die echte App läuft im Rahmen; neue Spuren werden dort
+   zur Laufzeit wirklich angelegt (eigene Noten, eigener Klang, eigener Mixer-Kanal, eigene Song-Zeile).
+   Varianten unterscheiden nur, WO man hinzufügt und die Spur-Aktionen findet. */
+:root{color-scheme:dark;--bg:#050507;--blue:#3fa9ff;--blue-2:#8fd4ff;--white:#f4f5f7;--dim:#7d818c;--metal:#c7cbd4}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--white);font-family:'Rajdhani',system-ui,sans-serif}
+#mbar{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:calc(6px + env(safe-area-inset-top,0px)) 10px 6px;background:repeating-linear-gradient(135deg,#0b1622 0 8px,#0d1a28 8px 16px);border-bottom:1px dashed rgba(63,169,255,.45);font:700 11px 'JetBrains Mono',monospace;color:var(--blue-2)}
+#mbar .g{display:flex;align-items:center;gap:4px}
+#mbar button{height:30px;padding:0 7px;border-radius:6px;border:1px solid rgba(63,169,255,.45);background:rgba(63,169,255,.12);font:700 11px 'JetBrains Mono',monospace;color:var(--blue-2);cursor:pointer}
+#mbar button.on{background:var(--blue);color:#042c53}
+#mbar .sp{flex:1}
+#stage{position:fixed;top:44px;left:0;right:0;bottom:0;display:flex;justify-content:center;align-items:flex-start;gap:28px;overflow:auto}
+.ph{display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;width:100%}
+iframe{border:0;width:100%;height:100%;background:#050507;display:block}
+#side{display:none;width:320px;font-size:14px;color:var(--metal);line-height:1.45;padding-top:20px}
+#side h3,#info h3{font:700 11px 'Rajdhani';letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin:16px 0 6px}
+#side p,#info p{margin:0 0 8px} #side b,#info b{color:var(--white)}
+#side ul,#info ul{margin:0 0 8px;padding-left:18px} #side li,#info li{margin:3px 0}
+#info{position:fixed;inset:44px 0 0 0;z-index:190;background:#07080bf2;overflow:auto;padding:8px 18px 40px;font-size:14.5px;color:var(--metal);line-height:1.45;display:none}
+#info.open{display:block}
+@media (min-width:900px) and (min-height:900px){
+  #stage{padding:14px 0}
+  .ph{width:auto;height:auto}
+  iframe{width:390px;height:844px;border-radius:30px;border:8px solid #1a1e26;box-shadow:0 30px 80px rgba(0,0,0,.75);box-sizing:content-box}
+  #side{display:block} #infoBtn{display:none}
+}
+</style>
+</head>
+<body>
+<div id="mbar">
+  <span>#2</span>
+  <div class="g"><button data-v="a" class="on">A Set-Editor</button><button data-v="b">B Raster</button></div>
+  <span class="sp"></span>
+  <button id="exBtn">Conga + Tamb.</button>
+  <button id="infoBtn">ⓘ</button>
+</div>
+<div id="stage">
+  <div class="ph"><iframe id="fR" src="../../index.html" title="App mit Vorschlag"></iframe></div>
+  <div id="side"></div>
+</div>
+<div id="info"></div>
+<template id="notes">
+  <h3>Was das ist</h3>
+  <p>Die <b>echte App</b> (v111). Eine Drum- oder Perc-Spur bekommt <b>zusätzliche Zeilen</b> mit beliebigem Sound aus jedem Kit, z. B. Conga oder Schellenkranz in DRUMS. Die neue Zeile klingt wirklich, hat Noten, Mixer-Kanal und Song-Clips wie jede andere.</p>
+  <p><b>Conga + Tamb.</b> oben: legt in DRUMS eine Conga- und eine Schellenkranz-Zeile mit Rhythmus an. Play drücken.</p>
+  <h3>Varianten</h3>
+  <ul>
+    <li><b>A · Set-Editor</b>: Kit-Taste → „Set bearbeiten“ → unten „+ Zeile hinzufügen“ → bekannte Sound-Auswahl (Kit-Sounds / Eigene Samples, Rollen-Chips).</li>
+    <li><b>B · Raster</b>: zusätzlich direkt im Pattern unter den Zeilen „+ Zeile“ – öffnet dieselbe Auswahl, danach bist du gleich wieder im Raster.</li>
+  </ul>
+  <h3>Entfernen</h3>
+  <p>Zeile im Set-Editor antippen → in der Sound-Auswahl unten „Zeile entfernen“ (mit Rückgängig). Im Mockup nur für hinzugefügte Zeilen.</p>
+  <h3>Meine Empfehlung: B</h3>
+  <p><b>Pro:</b> Du programmierst im Raster – dort fehlt die Zeile, also dort hinzufügen. Kein Umweg über die Kit-Taste. Der Set-Editor bleibt der Ort für alle Sounds.</p>
+  <p><b>Contra:</b> Eine Zeile mehr im Raster, die keine Noten trägt. Zwei Einstiege.</p>
+  <h3>Regeln (Vorschlag)</h3>
+  <ul>
+    <li>Höchstens 16 Zeilen je Spur.</li>
+    <li>Eine hinzugefügte Zeile behält ihren Sound beim Kit-Wechsel (sie gehört zur Spur, nicht zum Kit).</li>
+    <li>Eigene Sets merken sich die Zusatz-Zeilen mit: Set laden = Zeilen kommen mit.</li>
+  </ul>
+  <h3>Im Mockup nicht drin</h3>
+  <p>Speichern/Laden, Sets mit Zusatz-Zeilen, Kit-Wechsel-Regel, Entfernen von Zeilen ab Werk.</p>
+  <h3>Zur Entscheidung</h3>
+  <ul>
+    <li>A oder B?</li>
+    <li>Sollen auch Zeilen ab Werk (z. B. Ride, Toms) entfernbar sein, wenn du sie nie brauchst?</li>
+    <li>Passen die drei Regeln?</li>
+  </ul>
+</template>
+<script>
+// ===== Läuft im globalen Scope der App (per eval im Rahmen) =====
+function MK(){
+  if(window.__mk) return;
+  let V='a', pending=null, backToPattern=false; const added=new Set(), MAXR=16;
+  const tplOf=d=>d.kind==='perc'?'mr':'rd'; // Vorlage: letzte Zeile der Art (Sortierung im Set-Editor ans Ende)
+  function addRow(d, v, kitId){
+    if(d.rows.length>=MAXR) return null;
+    const b=tplOf(d); let n=20; while(TRACKS.some(t=>t.id===b+'_'+n)) n++;
+    const id=b+'_'+n, T=ROW_TPL[b];
+    const tr=Object.assign({},T,{id,_def:Object.assign({},T._def)});
+    tr.steps=new Array(PATTERN_LENGTH).fill(VEL_OFF); tr.notes=new Array(PATTERN_LENGTH).fill(0); tr.slides=new Array(PATTERN_LENGTH).fill(false);
+    tr.muted=false; tr.solo=false; tr.pan=0; tr.feel=0; tr.reverbAmount=T._def.reverbAmount||0; tr.delaySend=T._def.delaySend||0;
+    tr.eqLowGain=0; tr.eqMidGain=0; tr.eqHighGain=0; tr.eqOn=true; tr.eqLc=0; tr.eqMf=EQ_MF_DEF; tr.fx=[];
+    d.rows.push(id); ROW_DT[id]=d; added.add(id);
+    if(v) drumSet.voices[id]={t:'syn',kitId,v};
+    let at=0; TRACKS.forEach((t,i)=>{ if(ROW_DT[t.id]===d) at=i+1; });
+    TRACKS.splice(at,0,tr); const nx=TRACKS[at+1]; ovRowMake(tr, nx?trUi(nx).ovRow:null);
+    if(audioCtx) ensureTrackBuses();
+    if(KITS[kitId]&&KITS[kitId].samples) try{ smpLoad(kitId); }catch(e){}
+    melChanged(tr); updateKitLabel(); trNamesRefresh&&trNamesRefresh();
+    return tr;
+  }
+  function removeRow(id){
+    const d=ROW_DT[id], t=TRACKS.find(x=>x.id===id); if(!d||!t) return;
+    if(isPlaying) stop();
+    trDetach(t); delete drumSet.voices[id]; delete ROW_DT[id]; d.rows.splice(d.rows.indexOf(id),1); added.delete(id);
+    melChanged(TRACKS.find(x=>x.id===d.rows[0])); updateKitLabel();
+    if(drumSetOverlay.classList.contains('open')) dsRender();
+  }
+  // Set-Editor: „+ Zeile hinzufügen“ unter den Zeilen
+  const oRender=dsRender;
+  dsRender=function(){ oRender(); const d=dtActive(), full=d.rows.length>=MAXR;
+    const b=document.createElement('button'); b.className='mk-addrow'; b.disabled=full;
+    b.innerHTML=TR_IC.plus+(full?'Höchstens '+MAXR+' Zeilen':'Zeile hinzufügen'); b.onclick=()=>startAdd(d,false); dsRows.appendChild(b);
+    const ids=d.rows.slice().sort((a,b)=>DS_IDS.indexOf(rowBase(a))-DS_IDS.indexOf(rowBase(b)));
+    dsRows.querySelectorAll('.ds-row').forEach((r,i)=>{ if(added.has(ids[i])){ r.classList.add('mk-new'); const s=r.querySelector('b s'); if(s) s.remove(); const sub=r.querySelector('small i'); if(sub && /Original/.test(sub.textContent)) sub.textContent='noch kein Sound'; } }); };
+  const oList=dsRenderList;
+  dsRenderList=function(){ oList.apply(this,arguments); if(added.has(dsCur)){ const f=[...dsList.children].find(e=>/Original/.test(e.textContent)); if(f) f.remove(); } };
+  function startAdd(d, fromGrid){
+    const tr=addRow(d, null, d.kit); if(!tr) return; pending=tr.id; backToPattern=fromGrid;
+    if(!drumSetOverlay.classList.contains('open')) openSetEditor(); else dsRender();
+    dsOpenSheet(tr.id); dsFilt='Perc'; dsRenderList(); dsShT.textContent='Neue Zeile · Sound wählen';
+  }
+  const oPick=dsPick;
+  dsPick=function(id,o){ const r=oPick.apply(this,arguments);
+    if(pending===id){ pending=null; dsSheet.classList.remove('open'); hmToast(trLabel(TRACKS.find(t=>t.id===id))+' als Zeile hinzugefügt',true,()=>removeRow(id));
+      if(backToPattern){ drumSetOverlay.classList.remove('open'); syncBottomBarVisibility(); } else dsRender(); }
+    return r; };
+  const cancel=()=>{ if(pending){ const id=pending; pending=null; removeRow(id); if(backToPattern){ drumSetOverlay.classList.remove('open'); syncBottomBarVisibility(); } } };
+  $id('dsShX').addEventListener('click', cancel);
+  // Sound-Auswahl einer hinzugefügten Zeile: „Zeile entfernen“
+  const oOpen=dsOpenSheet;
+  dsOpenSheet=function(id){ oOpen(id); const old=$id('mkDel'); if(old) old.remove();
+    if(added.has(id)){ dsShT.textContent=trShort(TRACKS.find(t=>t.id===id))+' · Sound wählen'; dsRenderList(); }
+    if(added.has(id) && pending!==id){ const b=document.createElement('button'); b.id='mkDel'; b.className='mk-delrow'; b.innerHTML=TR_IC.del+'Zeile entfernen';
+      b.onclick=()=>{ dsSheet.classList.remove('open'); const t=TRACKS.find(x=>x.id===id), keep={v:drumSet.voices[id], steps:t.steps.slice(), name:trLabel(t)}, d=ROW_DT[id];
+        removeRow(id); hmToast(keep.name+' entfernt',true,()=>{ const n=addRow(d, keep.v&&keep.v.v, keep.v&&keep.v.kitId); if(n){ n.steps=keep.steps; renderAllForPage(); } }); };
+      dsSheet.appendChild(b); } };
+  // Variante B: „+ Zeile“ im Raster unter den Zeilen der gewählten Drum-Spur
+  const gridBtn=document.createElement('button'); gridBtn.className='mk-gridadd'; gridBtn.innerHTML=TR_IC.plus+'Zeile';
+  gridBtn.onclick=()=>{ const d=dtById(patternGroup); if(d) startAdd(d,true); };
+  $id('overview').insertAdjacentElement('afterend', gridBtn);
+  const oSet=setPatternGroup;
+  setPatternGroup=function(g,s){ const r=oSet.apply(this,arguments); gridSync(); return r; };
+  function gridSync(){ const d=dtById(patternGroup); gridBtn.style.display=(V==='b' && d)?'':'none'; if(d){ const full=d.rows.length>=MAXR; gridBtn.disabled=full; gridBtn.lastChild.textContent=full?'Höchstens '+MAXR+' Zeilen':'Zeile'; } }
+  const st=document.createElement('style');
+  st.textContent=`.mk-addrow{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:52px;margin-top:8px;border-radius:12px;border:1px dashed rgba(63,169,255,.45);background:rgba(63,169,255,.06);color:var(--blue-2);font:700 15px Rajdhani,sans-serif;letter-spacing:.06em;cursor:pointer}
+  .mk-addrow .uic,.mk-gridadd .uic,.mk-delrow .uic{width:18px;height:18px}.mk-addrow:disabled,.mk-gridadd:disabled{opacity:.45}
+  .mk-gridadd{display:flex;align-items:center;justify-content:center;gap:8px;width:calc(100% - 28px);margin:6px 14px 4px;min-height:40px;border-radius:10px;border:1px dashed rgba(63,169,255,.45);background:rgba(63,169,255,.05);color:var(--blue-2);font:700 13px Rajdhani,sans-serif;letter-spacing:.08em;cursor:pointer}
+  .mk-delrow{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:48px;margin-top:10px;border-radius:12px;border:1px solid rgba(255,107,53,.45);background:rgba(255,107,53,.08);color:#ff8a5b;font:700 14px Rajdhani,sans-serif;letter-spacing:.06em;cursor:pointer;flex:none}
+  .ds-row.mk-new{box-shadow:inset 3px 0 0 #3fa9ff}`;
+  document.head.appendChild(st);
+  function setV(v){ V=v; gridSync(); }
+  function example(){
+    if(isPlaying) stop();
+    [...added].forEach(removeRow);
+    const d=dtById('drums'); if(KITS.latin.samples) try{ smpLoad('latin'); }catch(e){}
+    const c=addRow(d,'cgh','latin'), t=addRow(d,'tb','latin');
+    [0,3,6,10,12].forEach(s=>c.steps[s]=VEL_NORMAL); [7,15].forEach(s=>c.steps[s]=VEL_GHOST);
+    [4,12].forEach(s=>t.steps[s]=VEL_NORMAL); [2,6,10,14].forEach(s=>t.steps[s]=VEL_GHOST);
+    setPatternGroup('drums',true); selectTrack(TRACKS.indexOf(c)); renderAllForPage();
+    hmToast('Conga + Schellenkranz in DRUMS – Play drücken',false);
+  }
+  setV('a');
+  window.__mk={setV,example};
+}
+
+// ===== Rahmen-Steuerung =====
+const fR=document.getElementById('fR');
+let V='a';
+function hook(){ const w=fR.contentWindow; try{ if(!w||w.eval('typeof TRACKS')!=='object') return null; if(!w.__mk) w.eval('('+MK.toString()+')()'); }catch(e){ console.error(e); return null; } return w.__mk; }
+function apply(){ const m=hook(); if(m) m.setV(V); document.querySelectorAll('[data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v===V)); }
+fR.addEventListener('load',()=>setTimeout(apply,700));
+document.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{ V=b.dataset.v; apply(); });
+document.getElementById('exBtn').onclick=()=>{ const m=hook(); if(m) m.example(); };
+const notes=document.getElementById('notes').innerHTML; document.getElementById('side').innerHTML=notes; const info=document.getElementById('info'); info.innerHTML=notes;
+document.getElementById('infoBtn').onclick=()=>info.classList.toggle('open');
+const fitTop=()=>{ const h=document.getElementById('mbar').offsetHeight; document.getElementById('stage').style.top=h+'px'; info.style.top=h+'px'; }; addEventListener('resize',fitTop); fitTop();
+</script>
+</body>
+</html>
