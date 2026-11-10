@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Spuren hinzufügen (#13)</title>
+<link rel="stylesheet" href="../../fonts.css">
+<style>
+/* Mockup zu Issue #13: Spuren frei hinzufügen. Die echte App läuft im Rahmen; neue Spuren werden dort
+   zur Laufzeit wirklich angelegt (eigene Noten, eigener Klang, eigener Mixer-Kanal, eigene Song-Zeile).
+   Varianten unterscheiden nur, WO man hinzufügt und die Spur-Aktionen findet. */
+:root{color-scheme:dark;--bg:#050507;--blue:#3fa9ff;--blue-2:#8fd4ff;--white:#f4f5f7;--dim:#7d818c;--metal:#c7cbd4}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--white);font-family:'Rajdhani',system-ui,sans-serif}
+#mbar{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:calc(6px + env(safe-area-inset-top,0px)) 10px 6px;background:repeating-linear-gradient(135deg,#0b1622 0 8px,#0d1a28 8px 16px);border-bottom:1px dashed rgba(63,169,255,.45);font:700 11px 'JetBrains Mono',monospace;color:var(--blue-2)}
+#mbar .g{display:flex;align-items:center;gap:4px}
+#mbar button{height:30px;padding:0 7px;border-radius:6px;border:1px solid rgba(63,169,255,.45);background:rgba(63,169,255,.12);font:700 11px 'JetBrains Mono',monospace;color:var(--blue-2);cursor:pointer}
+#mbar button.on{background:var(--blue);color:#042c53}
+#mbar .sp{flex:1}
+#stage{position:fixed;top:44px;left:0;right:0;bottom:0;display:flex;justify-content:center;align-items:flex-start;gap:28px;overflow:auto}
+.ph{display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;width:100%}
+iframe{border:0;width:100%;height:100%;background:#050507;display:block}
+#side{display:none;width:320px;font-size:14px;color:var(--metal);line-height:1.45;padding-top:20px}
+#side h3,#info h3{font:700 11px 'Rajdhani';letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin:16px 0 6px}
+#side p,#info p{margin:0 0 8px} #side b,#info b{color:var(--white)}
+#side ul,#info ul{margin:0 0 8px;padding-left:18px} #side li,#info li{margin:3px 0}
+#info{position:fixed;inset:44px 0 0 0;z-index:190;background:#07080bf2;overflow:auto;padding:8px 18px 40px;font-size:14.5px;color:var(--metal);line-height:1.45;display:none}
+#info.open{display:block}
+@media (min-width:900px) and (min-height:900px){
+  #stage{padding:14px 0}
+  .ph{width:auto;height:auto}
+  iframe{width:390px;height:844px;border-radius:30px;border:8px solid #1a1e26;box-shadow:0 30px 80px rgba(0,0,0,.75);box-sizing:content-box}
+  #side{display:block} #infoBtn{display:none}
+}
+</style>
+</head>
+<body>
+<div id="mbar">
+  <span>#13</span>
+  <div class="g"><button data-v="a" class="on">A Menü</button><button data-v="b">B Song</button><button data-v="c">C Beides</button></div>
+  <span class="sp"></span>
+  <button id="exBtn">Piano + Rhodes</button>
+  <button id="infoBtn">ⓘ</button>
+</div>
+<div id="stage">
+  <div class="ph"><iframe id="fR" src="../../index.html" title="App mit Vorschlag"></iframe></div>
+  <div id="side"></div>
+</div>
+<div id="info"></div>
+<template id="notes">
+  <h3>Was das ist</h3>
+  <p>Die <b>echte App</b>. Neue Spuren werden wirklich angelegt: eigene Noten, eigener Klang, eigener Mixer-Kanal, eigene Zeile im Song. Play drücken und hören.</p>
+  <p><b>Piano + Rhodes</b> oben: legt eine Akkordfolge auf KEYS und eine zweite Keys-Spur „RHODES“ mit denselben Noten an – Schichten zum Anhören.</p>
+  <h3>Varianten</h3>
+  <ul>
+    <li><b>A · Spur-Menü</b>: Pattern-Seite → Menü SPUR → „+ Spur hinzufügen“. Jede Melodiespur hat dort ⋯ (Umbenennen · Kopieren · Löschen).</li>
+    <li><b>B · Song</b>: Tab SONG → „+ Spur“ unter den Zeilen. Spurname in der Zeile antippen → dieselben Aktionen.</li>
+    <li><b>C · Beides</b>: A und B zusammen, gleiches Sheet.</li>
+  </ul>
+  <h3>Sheet „Spur hinzufügen“</h3>
+  <p>Instrument wählen (Acid, Cosmic, Piano, Rhodes), Name ist vorbelegt. Bei „Kopieren“ zusätzlich „Noten übernehmen“. Neue Spur wird gleich ausgewählt, Rückgängig im Toast.</p>
+  <h3>Meine Empfehlung: C</h3>
+  <p><b>Pro:</b> Auf der Pattern-Seite arbeitest du am meisten (A), im Song denkst du in Spuren wie in Cubase (B). Beide Wege kosten fast nichts extra, weil es dasselbe Sheet ist.</p>
+  <p><b>Contra:</b> Zwei Orte für dieselbe Funktion; wer nur einen kennt, sucht evtl. Wenn dir eins reicht: A, weil es dort ist, wo die Spur bearbeitet wird.</p>
+  <h3>Umfang Stufe 1</h3>
+  <ul>
+    <li>Nur Melodiespuren (Acid, Cosmic, Keys). <b>Zweite Drum-/Perc-Spur = Stufe 2</b> (im Sheet ausgegraut): Drums bestehen aus vielen Zeilen, Kit und Fill hängen daran – eigener Schritt.</li>
+    <li>Höchstens 4 zusätzliche Spuren (Handy-Last: Cosmic ist teuer).</li>
+    <li>Speichern in Beat und Song, alte Stände laden wie bisher.</li>
+  </ul>
+  <h3>Im Mockup nicht drin</h3>
+  <p>Speichern/Laden der neuen Spuren, Beats-Bibliothek, Export. Löschen nur für neu angelegte Spuren.</p>
+  <h3>Zur Entscheidung</h3>
+  <ul>
+    <li>Welche Variante?</li>
+    <li>Dürfen auch die Original-Spuren (ACID, COSMIC, KEYS) gelöscht/umbenannt werden?</li>
+    <li>Passt „Stufe 2 = Drums“ für dich?</li>
+  </ul>
+</template>
+<script>
+// ===== Läuft im globalen Scope der App (klassische Skripte js/*.js; per eval im Rahmen) =====
+function MK(){
+  if(window.__mk) return;
+  let V='a'; const added=[]; const MAX=4;
+  const IN=[
+    {k:'arp',n:'ACID',d:'303-Bass',c:'#ff6b35'},
+    {k:'cosmic',n:'COSMIC',d:'Fläche · Arp',c:'#b88cff'},
+    {k:'piano',n:'PIANO',d:'Keys',c:'#ffd166',inst:'piano',sound:'piano'},
+    {k:'rhodes',n:'RHODES',d:'Keys',c:'#ffd166',inst:'piano',sound:'rhodes'},
+    {k:'drums',n:'DRUMS',d:'Stufe 2',c:'#3fa9ff',soon:1},
+    {k:'perc',n:'PERC',d:'Stufe 2',c:'#2dd4bf',soon:1}];
+  const oPrName=prName; prName=tr=>tr.label||oPrName(tr);
+  const shortOf=n=>{ const s=n.replace(/\s+/g,'').toUpperCase(); return /\d$/.test(s) ? s.slice(0,2)+s.slice(-1) : s.slice(0,3); };
+  const grpOf=tr=>ARR_GROUPS.find(g=>g.ids.indexOf(tr.id)>=0);
+  const isAdded=tr=>added.indexOf(tr)>=0;
+  const nameFree=n=>!ARR_GROUPS.some(g=>g.label===n);
+  function suggest(o){ let n=o.n; if(nameFree(n)) return n; for(let i=2;;i++) if(nameFree(o.n+' '+i)) return o.n+' '+i; }
+
+  // ---------- Spur anlegen / entfernen (echt, zur Laufzeit) ----------
+  function addTrack(o,name,copy){
+    const inst=o.inst||o.k, base=TRACKS.find(t=>t.id===inst);
+    let k=2; while(TRACKS.some(t=>t.id===inst+k)) k++;
+    const tr=Object.assign({},base._snd0,{id:inst+k,inst,label:name,name,short:shortOf(name)});
+    tr._def=Object.assign({},base._def); tr._snd0=Object.assign({},base._snd0);
+    tr.steps=new Array(PATTERN_LENGTH).fill(VEL_OFF); tr.events=[]; tr.fx=[]; tr.eqOn=true; tr.eqLc=0; tr.eqMf=EQ_MF_DEF; tr.pan=0;
+    if(o.sound) tr.sound=o.sound;
+    tr.harm=hmDefaultTrack(tr);
+    if(copy){ tr.events=JSON.parse(JSON.stringify(trOwnEvents(copy))); ['rootNote','scale','cutoff','resonance','envMod','decay','accentAmt','vol'].forEach(f=>tr[f]=copy[f]);
+      if(!o.sound) Object.assign(tr,instSave(copy)); if(o.sound) tr.sound=o.sound; }
+    tr._idx=null; evTouch(tr);
+    TRACKS.push(tr);
+    // Gruppe direkt hinter die letzte Spur desselben Instruments
+    let at=-1; ARR_GROUPS.forEach((g,i)=>{ const t=TRACKS.find(x=>x.id===g.ids[0]); if(t && trInst(t)===trInst(tr)) at=i; });
+    ARR_GROUPS.splice(at+1,0,{id:tr.id,label:name,ids:[tr.id]});
+    const row=document.createElement('div'); row.className='ov-row'; row.style.setProperty('--tc',tr.color);
+    const lab=document.createElement('div'); lab.className='ov-label'; lab.textContent=tr.short; trUi(tr).ovLab=lab; row.appendChild(lab);
+    const cells=[]; for(let s=0;s<16;s++){ const c=document.createElement('div'); c.className='ov-cell'; row.appendChild(c); cells.push(c); }
+    row.addEventListener('click',()=>selectTrack(TRACKS.indexOf(tr)));
+    trUi(tr).ovCells=cells; trUi(tr).ovRow=row; document.getElementById('overview').appendChild(row);
+    if(audioCtx) ensureTrackBuses();
+    added.push(tr); refresh(); selectTrack(TRACKS.indexOf(tr));
+    return tr;
+  }
+  function removeTrack(tr){
+    if(isPlaying) stop();
+    const i=TRACKS.indexOf(tr); if(i<0) return;
+    try{ tr.panner.disconnect(); }catch(e){}
+    TRACKS.splice(i,1); ARR_GROUPS.splice(ARR_GROUPS.indexOf(grpOf(tr)),1); added.splice(added.indexOf(tr),1);
+    if(trUi(tr).ovRow) trUi(tr).ovRow.remove(); TR_UI.delete(tr.id); delete arr.clips[tr.id];
+    const back=TRACKS.findIndex(t=>t.id===tr.inst); activeTrackIdx=back; patternGroup=groupOfTrack(TRACKS[back]);
+    refresh(); selectTrack(back);
+  }
+  function refresh(){ grpSelRender(); if(typeof ovRender==='function') ovRender(); if(typeof buildMixerChannels==='function') buildMixerChannels(); renderAllForPage(); }
+
+  // ---------- Sheets ----------
+  const st=document.createElement('style');
+  st.textContent=`
+  .mk-sheet .mk-tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:2px 0 6px}
+  .mk-tile{min-height:64px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:var(--panel);color:var(--white);text-align:left;padding:10px 12px;display:flex;flex-direction:column;justify-content:center;gap:2px;cursor:pointer;font-family:'Rajdhani',sans-serif;position:relative}
+  .mk-tile b{font-size:16px;letter-spacing:.06em;color:var(--c)} .mk-tile small{font-size:12px;color:var(--dim)}
+  .mk-tile::before{content:'';position:absolute;left:0;top:10px;bottom:10px;width:3px;border-radius:2px;background:var(--c)}
+  .mk-tile.on{border-color:var(--c);background:color-mix(in srgb,var(--c) 14%,transparent);box-shadow:0 0 12px color-mix(in srgb,var(--c) 25%,transparent)}
+  .mk-tile.soon{opacity:.38;cursor:default}
+  .mk-lbl{font:700 11px 'JetBrains Mono',monospace;letter-spacing:.12em;color:var(--dim);margin-top:4px}
+  .mk-in{min-height:46px;border-radius:10px;border:1px solid #232a35;background:#12141a;color:var(--white);font:600 16px 'Rajdhani',sans-serif;padding:0 12px;width:100%}
+  .mk-chk{display:flex;align-items:center;gap:10px;min-height:44px;font-size:15px;color:var(--white)} .mk-chk input{width:20px;height:20px;accent-color:#3fa9ff}
+  .mk-go{min-height:50px;border-radius:12px;border:1px solid rgba(63,169,255,.5);background:rgba(63,169,255,.16);color:var(--blue-2);font:700 15px 'Rajdhani',sans-serif;letter-spacing:.08em;text-transform:uppercase;margin-top:6px;cursor:pointer}
+  .mk-go:disabled{opacity:.4}
+  .mk-hint{font-size:12px;color:var(--dim);line-height:1.35}
+  .mk-del{border-color:rgba(255,107,53,.45)!important} .mk-del .uic{color:#ff8a5b!important}
+  #grpMenu .mk-add{flex-direction:row;align-items:center;gap:10px;color:var(--blue-2);font-size:20px;position:sticky;bottom:0;background:#0b1118;border-top:1px solid rgba(63,169,255,.35);border-bottom:0}
+  #grpMenu .mk-add .uic{width:20px;height:20px}
+  #grpMenu button.mk-has{position:relative;padding-right:56px}
+  #grpMenu .mk-dots{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:44px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--blue-2)}
+  #grpMenu .mk-dots:active{background:rgba(63,169,255,.16)}
+  .mk-ovadd{display:flex;align-items:center;justify-content:center;gap:8px;min-height:46px;margin-top:6px;border-radius:10px;border:1px dashed rgba(63,169,255,.45);background:rgba(63,169,255,.06);color:var(--blue-2);font:700 14px 'Rajdhani',sans-serif;letter-spacing:.08em;cursor:pointer;width:100%}
+  .mk-ovadd .uic{width:18px;height:18px}
+  .ar-lab.mk-tap>span:first-child{text-decoration:underline dotted rgba(143,212,255,.6);text-underline-offset:3px;cursor:pointer}
+  `;
+  document.head.appendChild(st);
+  const IC={plus:'<svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>',
+    dots:'<svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="19" cy="12" r="1.6" fill="currentColor"/></svg>',
+    pen:'<svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>',
+    copy:'<svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M4 16V6a2 2 0 0 1 2-2h10"/></svg>',
+    del:'<svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"/></svg>'};
+  const sh=document.createElement('div'); sh.className='sheet mk-sheet'; sh.id='mkSheet'; document.body.appendChild(sh);
+  const veil=$id('sheetVeil');
+  function open(html){ closeMenus(); closeSheets(); sh.innerHTML=html; veil.style.display='block'; sh.classList.add('open'); sh.querySelector('.shx').onclick=close; veil.onclick=close; }
+  function close(){ sh.classList.remove('open'); veil.style.display='none'; veil.onclick=null; }
+  const head=t=>'<div class="sh"><span>'+t+'</span><button class="shx" aria-label="Schließen">✕</button></div>';
+
+  function addSheet(copy){
+    const full=added.length>=MAX;
+    let sel=copy ? IN.find(o=>(o.inst||o.k)===(copy.inst||copy.id) && (!o.sound || o.sound===copy.sound)) : null;
+    open(head(copy?'Spur kopieren · '+prName(copy):'Spur hinzufügen')
+      +'<div class="mk-lbl">INSTRUMENT</div><div class="mk-tiles">'+IN.filter(o=>!copy||!o.soon).map((o,i)=>'<button class="mk-tile'+(o.soon?' soon':'')+'" data-i="'+IN.indexOf(o)+'" style="--c:'+o.c+'"><b>'+o.n+'</b><small>'+o.d+'</small></button>').join('')+'</div>'
+      +'<div class="mk-lbl">NAME</div><input class="mk-in" id="mkName" maxlength="12">'
+      +(copy?'<label class="mk-chk"><input type="checkbox" id="mkNotes" checked>Noten von '+prName(copy)+' übernehmen</label>':'')
+      +(full?'<div class="mk-hint">Höchstens '+MAX+' zusätzliche Spuren (Handy-Last).</div>':'')
+      +'<button class="mk-go" id="mkGo">Hinzufügen</button>');
+    const nm=$id('mkName'), go=$id('mkGo'); let touched=false;
+    nm.oninput=()=>{ touched=true; go.disabled=full||!sel||!nm.value.trim()||!nameFree(nm.value.trim().toUpperCase()); };
+    const pick=o=>{ sel=o; sh.querySelectorAll('.mk-tile').forEach(b=>b.classList.toggle('on',IN[+b.dataset.i]===o)); if(!touched) nm.value=suggest(o); nm.oninput(); touched=false; };
+    sh.querySelectorAll('.mk-tile').forEach(b=>{ const o=IN[+b.dataset.i]; if(!o.soon) b.onclick=()=>pick(o); });
+    if(sel) pick(sel); else { go.disabled=true; }
+    go.onclick=()=>{ const n=nm.value.trim().toUpperCase(); const tr=addTrack(sel,n,copy && $id('mkNotes').checked ? copy : null); close();
+      hmToast(n+' hinzugefügt',true,()=>removeTrack(tr)); };
+  }
+  function renameSheet(tr){
+    open(head('Umbenennen · '+prName(tr))+'<input class="mk-in" id="mkName" maxlength="12"><button class="mk-go" id="mkGo">Übernehmen</button>');
+    const nm=$id('mkName'), go=$id('mkGo'); nm.value=prName(tr); nm.focus(); nm.select();
+    nm.oninput=()=>{ const v=nm.value.trim().toUpperCase(); go.disabled=!v || (v!==prName(tr) && !nameFree(v)); };
+    go.onclick=()=>{ const v=nm.value.trim().toUpperCase(); tr.label=tr.name=v; tr.short=shortOf(v); grpOf(tr).label=v; if(trUi(tr).ovLab) trUi(tr).ovLab.textContent=tr.short; close(); refresh(); };
+  }
+  function actSheet(tr){
+    const can=isAdded(tr);
+    open(head(prName(tr)+(instSound(tr)?' · '+instSound(tr).name:''))
+      +'<button class="nb-opt" data-a="ren">'+IC.pen+'<span><b>Umbenennen</b><small>Name in Spur-Menü, Song und Mixer.</small></span></button>'
+      +'<button class="nb-opt" data-a="cp">'+IC.copy+'<span><b>Als neue Spur kopieren</b><small>Gleiche Noten und Einstellungen, Instrument wählbar – z. B. zum Schichten.</small></span></button>'
+      +'<button class="nb-opt mk-del" data-a="del"'+(can?'':' disabled style="opacity:.4"')+'>'+IC.del+'<span><b>Löschen</b><small>'+(can?'Mit Rückgängig.':'Im Mockup nur für neu angelegte Spuren.')+'</small></span></button>');
+    sh.querySelector('[data-a=ren]').onclick=()=>renameSheet(tr);
+    sh.querySelector('[data-a=cp]').onclick=()=>addSheet(tr);
+    sh.querySelector('[data-a=del]').onclick=()=>{ if(!can) return; close(); const keep={label:tr.label, events:JSON.parse(JSON.stringify(tr.events)), sound:tr.sound};
+      removeTrack(tr); hmToast(keep.label+' gelöscht',true,()=>{ const o=IN.find(x=>(x.inst||x.k)===tr.inst && (!x.sound||x.sound===keep.sound)); const t=addTrack(o,keep.label); t.events=keep.events; t._idx=null; evTouch(t); renderAllForPage(); }); };
+  }
+
+  // ---------- Spur-Menü (Pattern-Seite) ----------
+  const oGrp=grpSelRender;
+  grpSelRender=function(){
+    oGrp(); const m=$id('grpMenu'); if(!m) return;
+    [...m.children].forEach((b,i)=>{ const g=ARR_GROUPS[i]; if(!g) return; const tr=TRACKS.find(t=>t.id===g.ids[0]), I=trInst(tr); if(!I) return;
+      const s=instSound(tr); b.querySelector('small').textContent=(g.label!==I.name?I.name+(s?' · ':''):'')+(s?s.name:(g.label!==I.name?'':I.name));
+      if(V!=='b'){ b.classList.add('mk-has'); const d=document.createElement('span'); d.className='mk-dots'; d.setAttribute('role','button'); d.setAttribute('aria-label',g.label+' Aktionen'); d.innerHTML=IC.dots;
+        d.onclick=e=>{ e.stopPropagation(); actSheet(tr); }; b.appendChild(d); } });
+    if(V!=='b'){ const a=document.createElement('button'); a.className='mk-add'; a.innerHTML=IC.plus+'Spur hinzufügen'; a.onclick=()=>{ closeMenus(); addSheet(null); }; m.appendChild(a); }
+  };
+  // ---------- Song-Übersicht ----------
+  const oOv=ovRender;
+  ovRender=function(){
+    oOv(); if(V==='a') return;
+    const rows=[...ovRows.querySelectorAll('.ar-row')];
+    rows.forEach((r,i)=>{ const g=ARR_GROUPS[i], tr=g&&TRACKS.find(t=>t.id===g.ids[0]); if(!trInst(tr)) return;
+      const lab=r.querySelector('.ar-lab'); lab.classList.add('mk-tap'); lab.firstChild.onclick=()=>actSheet(tr); });
+    const b=document.createElement('button'); b.className='mk-ovadd'; b.innerHTML=IC.plus+'Spur'; b.onclick=()=>addSheet(null); ovRows.appendChild(b);
+  };
+
+  function setV(v){ V=v; refresh(); }
+  function example(){
+    if(isPlaying) stop();
+    const P=TRACKS.find(t=>t.id==='piano'); hmReset && hmReset(P);
+    const ch=[[0,3,7],[-4,0,3],[3,7,10],[-2,2,5]];
+    P.events=[]; ch.forEach((c,i)=>c.forEach(n=>P.events.push({s:i*4,n,l:4,v:.8,a:false,sl:false}))); P._idx=null; evTouch(P);
+    added.slice().forEach(t=>{ if(t.inst==='piano') removeTrack(t); });
+    TRACKS.forEach(t=>{ if(t.type==='arp' && t!==P){ t.muted=false; } });
+    const t=addTrack(IN.find(o=>o.k==='rhodes'),suggest(IN.find(o=>o.k==='rhodes')),P);
+    hmToast('RHODES schichtet KEYS – Play drücken',false);
+    return t;
+  }
+  window.__mk={setV,example};
+}
+
+// ===== Rahmen-Steuerung =====
+const fR=document.getElementById('fR');
+let V='a';
+function hook(){ const w=fR.contentWindow; try{ if(!w||w.eval('typeof TRACKS')!=='object') return null; if(!w.__mk) w.eval('('+MK.toString()+')()'); }catch(e){ console.error(e); return null; } return w.__mk; }
+function apply(){ const m=hook(); if(m) m.setV(V); document.querySelectorAll('[data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v===V)); }
+fR.addEventListener('load',()=>setTimeout(apply,700));
+document.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{ V=b.dataset.v; apply(); });
+document.getElementById('exBtn').onclick=()=>{ const m=hook(); if(m) m.example(); };
+const notes=document.getElementById('notes').innerHTML; document.getElementById('side').innerHTML=notes; const info=document.getElementById('info'); info.innerHTML=notes;
+document.getElementById('infoBtn').onclick=()=>info.classList.toggle('open');
+const fitTop=()=>{ const h=document.getElementById('mbar').offsetHeight; document.getElementById('stage').style.top=h+'px'; info.style.top=h+'px'; }; addEventListener('resize',fitTop); fitTop();
+</script>
+</body>
+</html>
