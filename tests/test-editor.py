@@ -196,6 +196,37 @@ async def main():
        r['a']['xy'] and 'Accent' in r['a']['lab'] and not r['a']['cos'] and r['c']['cos'] and not r['c']['xy'] and 'Width' in r['c']['lab'] and 'Accent' not in r['c']['lab']
        and r['p']['pno'] and r['p']['seg']>=3 and 'Ton' in r['p']['lab'], r)
     ok('Register: Klang-Auswahl an der Kit-Taste nur bei Keys', r['grp']==[True,False,False], r['grp'])
+    # Spuren hinzufügen (#13): Kopieren/Anlegen, Umbenennen, Löschen + Rückgängig, Speichern/Laden (mel), alte Stände, Song-Clips, Beats je Instrument
+    r=await pg.evaluate("""(async()=>{ const L=()=>TRACKS.filter(trInst).map(t=>t.id+':'+trTitle(t)).join(' ');
+      const base=JSON.parse(JSON.stringify(collectPatternData('t0','t0'))); const P=TRACKS.find(t=>t.id==='piano');
+      P.events=[{s:0,n:0,l:4,v:.9,a:false},{s:8,n:7,l:4,v:.8,a:false}]; P._idx=null; evTouch(P);
+      const R=trAddNew({k:'piano',sound:'rhodes',label:'RHODES',src:P,notes:true}), C=trAddNew({k:'cosmic',label:'PAD'});
+      const add=[L(), R.sound, R.events.length, TRACKS[activeTrackIdx]===C, ARR_GROUPS.map(g=>g.id).join(',')];
+      trRename(R,'E-PIANO'); const ren=[trTitle(R), R.short, ARR_GROUPS.find(g=>g.id==='piano2').label, melNameFree('KEYS'), melNameFree('DRUMS'), melNameFree('keys 9')];
+      arr.bars=8; arrStamp('piano2',0); const d=JSON.parse(JSON.stringify(songCollect('s','s')));
+      trDelete(TRACKS.find(t=>t.id==='arp')); const del=[L(), ARR_GROUPS.some(g=>g.id==='acid')]; hmToastFn(); const und=L();
+      trDelete(TRACKS.find(t=>t.id==='arp')); const d2=JSON.parse(JSON.stringify(collectPatternData('x','x')));
+      const old=JSON.parse(JSON.stringify(d)); delete old.mel; applyPatternData(old); const lo=L();
+      songApply(d); const ls=[L(), (arr.clips.piano2||[]).length, TRACKS.find(t=>t.id==='piano2').sound, TRACKS.find(t=>t.id==='piano2').events.length];
+      applyPatternData(d2); const ld=L();
+      selectTrack(TRACKS.findIndex(t=>t.id==='piano2')); const bt=beatCollect('piano','b'); selectTrack(TRACKS.findIndex(t=>t.id==='cosmic'));
+      await beatApply(bt,false); const ba=TRACKS.find(t=>t.id==='piano').events.length;
+      const ab=JSON.parse(JSON.stringify(bt)); ab.group='acid'; ab.tracks[0].events=[{s:0,n:0,l:1,v:.85,a:false,sl:false}]; await beatApply(ab,false); const ac=L();
+      let full=0; while(melCount()<MEL_MAX){ trAddNew({k:'arp',label:melSuggest('ACID')}); full++; } trAddSheet(null); const go=$id('trGo').disabled; closeSheets();
+      applyPatternData(base); const back=L();
+      grpSelRender(); const menu=document.querySelectorAll('#grpMenu .grp-dots').length+'/'+!!document.querySelector('#grpMenu .grp-add');
+      ovRender(); const song=document.querySelectorAll('#ovRows .ar-lab.tap').length+'/'+!!document.querySelector('#ovRows .ov-add');
+      return {add,ren,del,und,lo,ls,ld,ba,ac,full,go,back,menu,song}; })()""")
+    ok('#13 Spur kopieren/anlegen: hinter Original, Klang, Noten, Auswahl', r['add'][0]=='arp:ACID cosmic:COSMIC cosmic2:PAD piano:KEYS piano2:RHODES' and r['add'][1:4]==['rhodes',2,True]
+       and r['add'][4]=='drums,perc,acid,cosmic,cosmic2,piano,piano2,sample', r['add'])
+    ok('#13 Umbenennen + Namensprüfung', r['ren']==['E-PIANO','E-P','E-PIANO',False,False,True], r['ren'])
+    ok('#13 Original löschen + Rückgängig', r['del']==['cosmic:COSMIC cosmic2:PAD piano:KEYS piano2:E-PIANO',False] and r['und'].startswith('arp:ACID '), [r['del'],r['und']])
+    ok('#13 alter Stand ohne mel → ACID, COSMIC, KEYS', r['lo']=='arp:ACID cosmic:COSMIC piano:KEYS', r['lo'])
+    ok('#13 Song laden: Spuren, Clips, Klang, Noten', r['ls']==['arp:ACID cosmic:COSMIC cosmic2:PAD piano:KEYS piano2:E-PIANO',1,'rhodes',2], r['ls'])
+    ok('#13 gelöschte Original-Spur bleibt beim Laden weg', r['ld']=='cosmic:COSMIC cosmic2:PAD piano:KEYS piano2:E-PIANO', r['ld'])
+    ok('#13 Keys-Beat lädt in Keys-Spur, Acid-Beat legt fehlende Acid-Spur an', r['ba']==2 and r['ac'].endswith('arp:ACID'), [r['ba'],r['ac']])
+    ok('#13 höchstens 7 Melodiespuren', r['go'] is True, r)
+    ok('#13 Standard laden → 3 Melodiespuren; Menü/Song mit Aktionen', r['back']=='arp:ACID cosmic:COSMIC piano:KEYS' and r['menu']=='3/true' and r['song']=='3/true', [r['back'],r['menu'],r['song']])
     ok('Schrift überall ≥ 11 px (#19)', not fz.bad, fz.bad)
     ok('Keine Konsolenfehler', not errs, errs)
     await b.close()

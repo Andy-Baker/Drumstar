@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>MRM-44 — Mobile Rhythm Machine</title>
 <link rel="stylesheet" href="./fonts.css">
-<link rel="stylesheet" href="./css/app.css?v=109">
+<link rel="stylesheet" href="./css/app.css?v=110">
 
 
 <!-- Drumstar PWA -->
@@ -511,6 +511,7 @@
   <button class="nb-opt pri" data-k="keep"><svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 10h16"/></svg><span><b>Leer, gleicher Klang</b><small>Alle Noten weg. Tempo, Kit, Sounds, Mixer und Länge bleiben.</small></span></button>
   <button class="nb-opt" data-k="def"><svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.3-5.7"/><path d="M4 4v5h5"/></svg><span><b>Leer, Standard</b><small>Alles auf Anfang: Tempo, Kit, Sounds und Mixer wie beim ersten Start.</small></span></button>
 </div>
+<div class="sheet" id="trSheet" role="dialog" aria-label="Spur"></div>
 <div id="hmToast" role="status" aria-live="polite"><span></span><button type="button">Rückgängig</button></div>
 <div class="sheet" id="prSheet"><div class="sh"><span id="prShT"></span><button class="shx" id="prShX" aria-label="Schließen">✕</button></div><div id="prShRows"></div></div>
 <div class="sheet" id="fillSheet"><div class="sh"><span>Fill · Drums</span><button class="shx" id="fillX" aria-label="Schließen">✕</button></div>
@@ -536,28 +537,29 @@
       </div>
 </div>
 
-<script src="./js/base.js?v=109"></script>
-<script src="./js/audio.js?v=109"></script>
-<script src="./js/fx.js?v=109"></script>
-<script src="./js/voices.js?v=109"></script>
-<script src="./js/events.js?v=109"></script>
-<script src="./js/kits.js?v=109"></script>
-<script src="./js/tracks.js?v=109"></script>
-<script src="./js/controls.js?v=109"></script>
-<script src="./js/harmony.js?v=109"></script>
-<script src="./js/editor.js?v=109"></script>
-<script src="./js/sheets.js?v=109"></script>
-<script src="./js/sample-track.js?v=109"></script>
-<script src="./js/wav-export.js?v=109"></script>
-<script src="./js/mixer.js?v=109"></script>
-<script src="./js/sample-editor.js?v=109"></script>
-<script src="./js/storage.js?v=109"></script>
-<script src="./js/beats.js?v=109"></script>
-<script src="./js/pianoroll.js?v=109"></script>
-<script src="./js/scheduler.js?v=109"></script>
-<script src="./js/transport-ui.js?v=109"></script>
-<script src="./js/tempo-detect.js?v=109"></script>
-<script src="./js/main.js?v=109"></script>
+<script src="./js/base.js?v=110"></script>
+<script src="./js/audio.js?v=110"></script>
+<script src="./js/fx.js?v=110"></script>
+<script src="./js/voices.js?v=110"></script>
+<script src="./js/events.js?v=110"></script>
+<script src="./js/kits.js?v=110"></script>
+<script src="./js/tracks.js?v=110"></script>
+<script src="./js/controls.js?v=110"></script>
+<script src="./js/harmony.js?v=110"></script>
+<script src="./js/editor.js?v=110"></script>
+<script src="./js/sheets.js?v=110"></script>
+<script src="./js/sample-track.js?v=110"></script>
+<script src="./js/wav-export.js?v=110"></script>
+<script src="./js/mixer.js?v=110"></script>
+<script src="./js/sample-editor.js?v=110"></script>
+<script src="./js/storage.js?v=110"></script>
+<script src="./js/beats.js?v=110"></script>
+<script src="./js/spuren.js?v=110"></script>
+<script src="./js/pianoroll.js?v=110"></script>
+<script src="./js/scheduler.js?v=110"></script>
+<script src="./js/transport-ui.js?v=110"></script>
+<script src="./js/tempo-detect.js?v=110"></script>
+<script src="./js/main.js?v=110"></script>
 
 <script>
 // Drumstar PWA service worker

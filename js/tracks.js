@@ -25,7 +25,10 @@ const TRACKS=[
    rootNote:0, cutoff:0.55, resonance:0.2, envMod:0.5, decay:0.5, scale:'minor', reverbAmount:0.18, delaySend:0},
 ];
 TRACKS.forEach(t=>{ t._def={vol:t.vol, tune:t.tune, reverbAmount:t.reverbAmount||0, delaySend:t.delaySend||0}; }); // Standardwerte je Spur (Zurücksetzen im Klang-Sheet)
-TRACKS.forEach(t=>{ if(t.type==='arp') t._snd0=Object.assign({},t); }); // Melodiespur ab Werk (Laden eines Patterns ohne diese Spur)
+// Melodiespur ab Werk = Vorlage des Instruments (neue Spuren #13, Laden eines Patterns ohne diese Spur); bleibt, auch wenn die Original-Spur gelöscht ist
+TRACKS.forEach(t=>{ const I=INSTR[t.id]; if(I){ I.tpl=Object.assign({},t); I.def=Object.assign({},t._def); } });
+function instTpl(tr){ return trInst(tr).tpl; }
+arrGroupsBuild();
 // steps[s] speichert die Velocity eines Steps direkt als Zahl:
 // 0 = aus, 0.15 = Ghost soft (sehr leise), 0.35 = Ghost, 0.85 = Normal, 1.3 = Accent.
 // Ersetzt das alte reine An/Aus + globalen Accent-Layer durch echte

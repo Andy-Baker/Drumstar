@@ -40,11 +40,25 @@ function instLoad(tr,sv){ const I=trInst(tr); if(!I) return;
 // Gewählter Klang eines Instruments mit Klang-Auswahl (Keys); Ersatz = Standardklang
 function instSound(tr){ const I=trInst(tr), S=I&&I.sounds&&I.sounds(); return S ? (S[tr.sound]||S[I.fields.sound]) : null; }
 // Übersichts-Gruppen: jede Gruppe ist eine Zeile in der Song-Übersicht; Clips liegen weiterhin pro Stimme/Spur.
-const ARR_GROUPS=[
+// Melodiespuren sind frei (#13): ARR_GROUPS wird aus TRACKS neu gebaut (arrGroupsBuild), ARR_GROUPS_BASE = Werksaufbau
+// (z. B. zum Aufteilen alter Gesamt-Beats). Gruppen-ID einer Melodiespur: Original-Spur (id = Instrument) → INSTR.grp
+// (acid/cosmic/piano, wie Beat-Reiter und alte Stände), weitere Spuren → ihre Spur-ID.
+const ARR_GROUPS_BASE=[
   ...DRUM_TRACKS.map(d=>({id:d.id, label:d.name, ids:d.rows})),
   ...Object.keys(INSTR).map(k=>({id:INSTR[k].grp, label:INSTR[k].name, ids:[k]})),
   {id:'sample',label:'SAMPLE',ids:['mc']}
 ];
+const ARR_GROUPS=ARR_GROUPS_BASE.map(g=>Object.assign({},g));
+const MEL_MAX=7; // Melodiespuren gesamt (3 ab Werk + 4 zusätzliche; Handy-Last)
+function trInstKey(tr){ return tr.inst||tr.id; }
+function trGrpId(tr){ return tr.id===trInstKey(tr) ? INSTR[tr.id].grp : tr.id; }
+function trTitle(tr){ const I=trInst(tr); return tr.label || (I ? I.name : tr.name); } // Anzeigename (Spur-Menü, Song, Noteneditor)
+function instByGrp(g){ return Object.keys(INSTR).find(k=>INSTR[k].grp===g)||null; } // Beat-Reiter → Instrument
+function arrGroupsBuild(){
+  const mel=TRACKS.filter(t=>trInst(t)).map(t=>({id:trGrpId(t), label:trTitle(t), ids:[t.id]}));
+  const base=ARR_GROUPS_BASE.filter(g=>!instByGrp(g.id));
+  ARR_GROUPS.length=0; ARR_GROUPS.push(...base.filter(g=>g.id!=='sample'), ...mel, ...base.filter(g=>g.id==='sample'));
+}
 // Spur einer Gruppe, deren Instrument eine Klang-Auswahl hat (Kit-Taste zeigt dann die Klänge), sonst null
 function grpSoundTr(gid){ const g=ARR_GROUPS.find(x=>x.id===gid), tr=g && TRACKS.find(t=>g.ids.indexOf(t.id)>=0), I=trInst(tr); return I && I.sounds ? tr : null; }
 // Polyphone Melodiespuren (Akkorde, keine Slides). trOct = Oktavlage der Namen/Töne
@@ -134,7 +148,7 @@ function stepInfo(tr, s){
   }
   return {v:0, note:0, slide:false};
 }
-function arrGroupTracks(gid){ const g=ARR_GROUPS.find(x=>x.id===gid); return TRACKS.filter(t=>g.ids.indexOf(t.id)>=0); }
+function arrGroupTracks(gid){ const g=ARR_GROUPS.find(x=>x.id===gid); return g ? TRACKS.filter(t=>g.ids.indexOf(t.id)>=0) : []; }
 function arrClipAt(gid, bar){ const first=arrGroupTracks(gid)[0]; return first ? (arr.clips[first.id]||[]).find(c=>bar>=c.start && bar<c.start+c.bars) : null; }
 function clipV(trId, s){ const list=arr.clips[trId]||[], bar=Math.floor(s/16); for(let k=0;k<list.length;k++){ const c=list[k]; if(bar>=c.start && bar<c.start+c.bars) return c.steps[s-c.start*16]||0; } return 0; }
 // Stempeln: kopiert das aktuelle Arbeits-Pattern der Gruppe ab Takt b (überschreibt überlappende Clips der Gruppe)

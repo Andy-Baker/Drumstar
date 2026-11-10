@@ -181,26 +181,23 @@ function setTrackVol(tr, v){
 // UI: OVERVIEW — glanceable, Track-Auswahl + Volume-Regler pro Sound
 // =========================================================================
 const overviewEl=document.getElementById('overview');
-TRACKS.forEach((tr,idx)=>{
-  const row=document.createElement('div');
+// Zeile je Spur; Index erst beim Antippen bestimmen (Spuren kommen und gehen, #13). before = Zeile, vor der eingefügt wird
+function ovRowMake(tr, before){
+  const row=document.createElement('div'), sel=()=>selectTrack(TRACKS.indexOf(tr));
   row.className='ov-row'; row.style.setProperty('--tc', tr.color);
-  row.dataset.idx=idx;
-
-  const lab=document.createElement('div'); lab.className='ov-label'; lab.textContent=tr.short||tr.id.toUpperCase(); trUi(tr).ovLab=lab;
-  lab.addEventListener('click', ()=>selectTrack(idx));
+  const lab=document.createElement('div'); lab.className='ov-label'; lab.textContent=trShort(tr); trUi(tr).ovLab=lab;
+  lab.addEventListener('click', sel);
   row.appendChild(lab);
-
-
   const cells=[];
   for(let s=0;s<16;s++){
-    const c=document.createElement('div'); c.className='ov-cell'; c.addEventListener('click', ()=>selectTrack(idx));
+    const c=document.createElement('div'); c.className='ov-cell'; c.addEventListener('click', sel);
     row.appendChild(c); cells.push(c);
   }
-
   trUi(tr).ovCells=cells; trUi(tr).ovRow=row;
-  row.addEventListener('click', (e)=>{ if(e.target===row) selectTrack(idx); });
-  overviewEl.appendChild(row);
-});
+  row.addEventListener('click', (e)=>{ if(e.target===row) sel(); });
+  overviewEl.insertBefore(row, before||null);
+}
+TRACKS.forEach(tr=>ovRowMake(tr));
 // Zeigt an, welche Spuren durch aktive Solo-Schaltung(en) gerade stummgeschaltet
 // sind (alle nicht-solierten, sobald mindestens eine Spur soliert ist).
 function refreshSoloVisuals(){

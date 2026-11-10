@@ -11,7 +11,8 @@ function grpSelRender(){
   ARR_GROUPS.forEach(g=>{ const b=document.createElement('button'); b.setAttribute('role','option'); if(g.id===patternGroup) b.className='cur';
     b.innerHTML=g.label+'<small>'+g.ids.map(i=>i.toUpperCase()).join(' ')+'</small>';
     b.onclick=()=>{ closeMenus(); setPatternGroup(g.id,true); }; m.appendChild(b); });
-  const g=ARR_GROUPS.find(x=>x.id===patternGroup), n=g.ids.length;
+  if(typeof trMenuDecorate==='function') trMenuDecorate(m); // #13: ⋯ je Melodiespur + „Spur hinzufügen“ (js/spuren.js)
+  const g=ARR_GROUPS.find(x=>x.id===patternGroup)||ARR_GROUPS[0], n=g.ids.length;
   $id('grpName').textContent=g.label; $id('grpCnt').textContent=n+(n===1?' Spur':' Spuren');
 }
 grpSelRender();
@@ -20,7 +21,7 @@ $id('tbM').addEventListener('click', ()=>toggleTrackMute(TRACKS[activeTrackIdx])
 $id('tbS').addEventListener('click', ()=>toggleTrackSolo(TRACKS[activeTrackIdx]));
 $id('tbSound').addEventListener('click', ()=>openKlang(TRACKS[activeTrackIdx]));
 
-function closeSheets(){ if(typeof eqStop==='function') eqStop(); $id('sheetVeil').style.display='none'; ['setSheet','klSheet','fillSheet','prSheet','hmChordSheet','hmTplSheet','hmConfSheet','newBeatSheet'].forEach(i=>$id(i).classList.remove('open')); }
+function closeSheets(){ if(typeof eqStop==='function') eqStop(); $id('sheetVeil').style.display='none'; ['setSheet','klSheet','fillSheet','prSheet','hmChordSheet','hmTplSheet','hmConfSheet','newBeatSheet','trSheet'].forEach(i=>$id(i).classList.remove('open')); }
 function openSheet(id){ closeMenus(); $id('sheetVeil').style.display='block'; $id(id).classList.add('open'); }
 $id('sheetVeil').addEventListener('click', closeSheets); $id('setX').addEventListener('click', closeSheets); $id('fillX').addEventListener('click', closeSheets);
 // Zurücksetzen (v78, Mockup zuruecksetzen-mockup.html B, ersetzt den versteckten Doppeltipp): Regler mit data-def zeigen
@@ -279,7 +280,7 @@ function renderKlang(){
       +(!I.xy?'':'<button class="act" id="klXy">'+ico('<circle cx="12" cy="12" r="8"/><path d="M12 4v16M4 12h16"/>')+'XY-Pad</button>');
     box.appendChild(acts);
     const dec=v=>{ const sec=arpDecaySeconds(v/100); return sec<1 ? Math.round(sec*1000)+'ms' : sec.toFixed(1)+'s'; };
-    const W=tr._snd0, D={cut:Math.round(W.cutoff*100),res:Math.round(W.resonance*100),env:Math.round(W.envMod*100),dec:Math.round(W.decay*100)}; // Regler-Standard = Spur ab Werk
+    const W=instTpl(tr), D={cut:Math.round(W.cutoff*100),res:Math.round(W.resonance*100),env:Math.round(W.envMod*100),dec:Math.round(W.decay*100)}; // Regler-Standard = Spur ab Werk
     grp('Filter');
     box.appendChild(soundRow('Cutoff',0,100,num(tr.cutoff,D.cut/100)*100,D.cut,pct,v=>tr.cutoff=v/100));
     box.appendChild(soundRow('Reso',0,100,num(tr.resonance,D.res/100)*100,D.res,pct,v=>tr.resonance=v/100));

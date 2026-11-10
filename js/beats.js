@@ -20,8 +20,13 @@ function beatTrackData(tr){
     accentAmt:tr.accentAmt, rootNote:tr.rootNote, cutoff:tr.cutoff, resonance:tr.resonance, envMod:tr.envMod, decay:tr.decay, scale:tr.scale,
     ...instSave(tr) }; // eigene Felder des Instruments (#24)
 }
+// Beat-Reiter der Melodie-Instrumente (acid/cosmic/piano) gelten für alle Spuren dieses Instruments (#13):
+// Ziel = gewählte Spur, wenn sie das Instrument spielt, sonst die erste solche Spur (null = keine da)
+function beatMelTrack(gid){ const k=instByGrp(gid); if(!k) return null; const a=TRACKS[activeTrackIdx];
+  return a && trInstKey(a)===k ? a : TRACKS.find(t=>trInstKey(t)===k)||null; }
+function beatTracksOf(gid){ if(!instByGrp(gid)) return arrGroupTracks(gid); const t=beatMelTrack(gid); return t ? [t] : []; }
 function beatCollect(gid, name){
-  const d={ id:genId(), kind:'beat', group:gid, name, savedAt:Date.now(), length:PATTERN_LENGTH, kitId:(dtById(gid)||DRUM_TRACKS[0]).kit, tracks:arrGroupTracks(gid).map(beatTrackData) };
+  const d={ id:genId(), kind:'beat', group:gid, name, savedAt:Date.now(), length:PATTERN_LENGTH, kitId:(dtById(gid)||DRUM_TRACKS[0]).kit, tracks:beatTracksOf(gid).map(beatTrackData) };
   if(gid==='acid') d.acidAuto={shape:autoShape, bars:autoBars, depth:autoDepth};
   if(gid==='sample') d.sampleId=sampleTrackSampleId;
   return d;
@@ -48,8 +53,11 @@ async function beatApply(d, withSound){
   arrGroupTracks(d.group).forEach(tr=>{ // Spuren der Gruppe, die der Beat noch nicht kannte (z. B. Ride vor v72): leer
     if(tr.type!=='arp' && !d.tracks.some(sv=>sv.id===tr.id)){ tr.steps.fill(VEL_OFF); if(tr.notes) tr.notes.fill(0); }
   });
+  const k=instByGrp(d.group); let mt=k ? beatMelTrack(d.group) : null;
+  if(k && !mt){ if(melCount()>=MEL_MAX){ showPatternIOStatus('Keine '+INSTR[k].name+'-Spur und kein Platz für eine neue', true); return; }
+    mt=trAddNew({k, label:melSuggest(INSTR[k].name)}); } // Instrument-Spur gelöscht: neu anlegen
   d.tracks.forEach(sv=>{
-    const tr=TRACKS.find(t=>t.id===sv.id); if(!tr) return;
+    const tr=k ? mt : TRACKS.find(t=>t.id===sv.id); if(!tr) return;
     tr.steps=migrateStepsToVelocity(sv.steps, tr.id, undefined, PATTERN_LENGTH);
     if(tr.type!=='arp') tr.notes=artLoad(tr, sv.notes);
     if(tr.type==='arp'){
@@ -64,6 +72,7 @@ async function beatApply(d, withSound){
   selectTrack(activeTrackIdx); renderAllForPage(); ovRender();
 }
 async function beatSaveGroup(typed){
+  if(!beatTracksOf(beatTab).length){ showPatternIOStatus('Keine Spur für diesen Reiter', true); return; }
   const names=new Set((await beatAll()).filter(b=>b.group===beatTab).map(b=>b.name)), name=uniqueName(typed,names);
   await beatPut(beatCollect(beatTab,name)); patternNameInput.value=''; beatRenderGroupList();
   showPatternIOStatus(name!==typed ? 'Name vergeben — gespeichert als „'+name+'“' : '„'+name+'“ gespeichert');
@@ -89,7 +98,7 @@ async function beatRenderGroupList(){
 async function beatSplitLegacy(item){
   const data=await loadPatternFromIndexedDB(item.id) || item;
   const all=await beatAll(); let made=0;
-  for(const g of ARR_GROUPS){
+  for(const g of ARR_GROUPS_BASE){ // Werksaufbau: alte Gesamt-Beats kennen nur ACID, COSMIC, KEYS
     const saved=data.tracks.filter(s=>g.ids.indexOf(s.id)>=0); if(!saved.length) continue;
     const len=data.patternLength||16;
     const tracks=saved.map(sv=>Object.assign({}, sv, { steps:migrateStepsToVelocity(sv.steps, sv.id, data.accentSteps, len) }));
@@ -106,8 +115,8 @@ document.querySelectorAll('#beatTabs button').forEach(b=>b.addEventListener('cli
   beatTab=b.dataset.t;
   document.querySelectorAll('#beatTabs button').forEach(x=>x.classList.toggle('on', x===b));
   patternsOverlay.classList.toggle('grp', beatTab!=='all');
-  const g=ARR_GROUPS.find(x=>x.id===beatTab);
-  patternNameInput.placeholder = g ? 'Name für aktuellen '+g.label+'-Beat…' : 'Name für aktuellen Beat…';
+  const g=ARR_GROUPS_BASE.find(x=>x.id===beatTab), mt=beatMelTrack(beatTab);
+  patternNameInput.placeholder = mt ? 'Name für '+trTitle(mt)+'-Beat…' : g ? 'Name für aktuellen '+g.label+'-Beat…' : 'Name für aktuellen Beat…';
   refreshPatternList();
 }));
 

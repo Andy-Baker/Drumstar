@@ -17,7 +17,7 @@ function prLandOn(){ return prLandMQ.matches; }
 function prIsOpen(){ return prWin.classList.contains('open'); }
 function prSyncPlay(){ if(!isPlaying){ prRecSnap=false; prPhStep=-1; } if(prIsOpen()) prRenderChrome(); }
 function prHidePh(){ const a=$id('prPh'), b=document.querySelector('#prPv .pph'); if(a) a.style.display='none'; if(b) b.style.display='none'; }
-function prName(tr){ const I=trInst(tr); return I ? I.name : tr.name; }
+function prName(tr){ return trTitle(tr); }
 function prSubName(tr){ const s=instSound(tr); return s ? s.name : ''; }
 function prWhite(tr,n){ return [0,2,4,5,7,9,11].indexOf((((9+tr.rootNote+n)%12)+12)%12)>=0; }
 function prRows(tr){ const out=[]; for(let n=PR_HI;n>=PR_LO;n--) if(!prScaleOnly || pitchInScale(n,tr)) out.push(n); return out; }

@@ -1463,3 +1463,28 @@ html,body{min-height:100%;height:100%;}
 .td-acts .td-pri{grid-column:1/-1;background:#1d4f7a;border-color:var(--blue);color:#fff;font-size:15px}
 #tdRecRow{margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,.07)}
 #tdRecInfo{font:12px 'JetBrains Mono',monospace;color:var(--dim);letter-spacing:.04em}
+
+/* #13 Spuren hinzufügen (Mockup docs/mockups/issue-13.html C) */
+#trSheet .trs-tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:2px 0 6px}
+.trs-tile{min-height:64px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:var(--panel);color:var(--white);text-align:left;padding:10px 12px 10px 16px;display:flex;flex-direction:column;justify-content:center;gap:2px;cursor:pointer;font-family:'Rajdhani',sans-serif;position:relative}
+.trs-tile b{font-size:16px;letter-spacing:.06em;color:var(--c)} .trs-tile small{font-size:12px;color:var(--dim)}
+.trs-tile::before{content:'';position:absolute;left:0;top:10px;bottom:10px;width:3px;border-radius:2px;background:var(--c)}
+.trs-tile.on{border-color:var(--c);background:color-mix(in srgb,var(--c) 14%,transparent);box-shadow:0 0 12px color-mix(in srgb,var(--c) 25%,transparent)}
+.trs-tile.soon{opacity:.38;cursor:default}
+.trs-lbl{font:700 11px 'JetBrains Mono',monospace;letter-spacing:.12em;color:var(--dim);margin-top:4px}
+.trs-in{min-height:46px;border-radius:10px;border:1px solid #232a35;background:#12141a;color:var(--white);font:600 16px 'Rajdhani',sans-serif;padding:0 12px;width:100%;text-transform:uppercase}
+.trs-chk{display:flex;align-items:center;gap:10px;min-height:44px;font-size:15px;color:var(--white)} .trs-chk input{width:20px;height:20px;accent-color:var(--blue)}
+.trs-go{min-height:50px;border-radius:12px;border:1px solid rgba(63,169,255,.5);background:rgba(63,169,255,.16);color:var(--blue-2);font:700 15px 'Rajdhani',sans-serif;letter-spacing:.08em;text-transform:uppercase;margin-top:6px;cursor:pointer}
+.trs-go:disabled{opacity:.4}
+.trs-hint{font-size:12px;color:var(--dim);line-height:1.35}
+#trSheet .nb-opt+.nb-opt{margin-top:8px} #trSheet .nb-opt:disabled{opacity:.4}
+.trs-del{border-color:rgba(255,107,53,.45)} .trs-del .uic{color:#ff8a5b}
+#grpMenu .grp-add{flex-direction:row;align-items:center;justify-content:flex-start;gap:10px;color:var(--blue-2);font-size:20px;position:sticky;bottom:0;background:#0b1118;border-top:1px solid rgba(63,169,255,.35);border-bottom:0}
+#grpMenu .grp-add .uic{width:20px;height:20px}
+#grpMenu button.grp-has{position:relative;padding-right:56px}
+#grpMenu .grp-dots{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:44px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--blue-2)}
+#grpMenu .grp-dots .uic{width:20px;height:20px}
+#grpMenu .grp-dots:active{background:rgba(63,169,255,.16)}
+.ov-add{display:flex;align-items:center;justify-content:center;gap:8px;min-height:46px;margin-top:6px;border-radius:10px;border:1px dashed rgba(63,169,255,.45);background:rgba(63,169,255,.06);color:var(--blue-2);font:700 14px 'Rajdhani',sans-serif;letter-spacing:.08em;cursor:pointer;width:100%}
+.ov-add .uic{width:18px;height:18px}
+.ar-lab.tap>span:first-child{text-decoration:underline dotted rgba(143,212,255,.6);text-underline-offset:3px;cursor:pointer}

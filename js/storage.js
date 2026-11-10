@@ -16,6 +16,31 @@ function uniqueName(base, existingNames){
   while(existingNames.has(candidate)){ n++; candidate=base+' ('+n+')'; }
   return candidate;
 }
+// Eine Spur als Speicher-Eintrag (Pattern, Song, Rückgängig beim Löschen, Kopieren)
+function trSave(tr){
+  return {
+    id: tr.id,
+    steps: tr.steps.slice(),
+    events: tr.events ? JSON.parse(JSON.stringify(trOwnEvents(tr))) : undefined, // folgt die Spur der Harmonie: eigene Noten, nicht die erzeugten
+    harm: tr.harm ? JSON.parse(JSON.stringify(tr.harm)) : undefined,
+    notes: tr.notes ? tr.notes.slice() : undefined,
+    slides: tr.slides ? tr.slides.slice() : undefined,
+    vol: tr.vol,
+    tune: tr.tune,
+    pan: tr.pan || 0,
+    eqLowGain: tr.eqLowGain || 0,
+    eqMidGain: tr.eqMidGain || 0,
+    eqHighGain: tr.eqHighGain || 0,
+    eqOn: tr.eqOn!==false, eqLc: tr.eqLc||0, eqMf: tr.eqMf!=null?tr.eqMf:EQ_MF_DEF, fx: fxSave(tr.fx),
+    muted: !!tr.muted,
+    solo: !!tr.solo,
+    reverbAmount: tr.reverbAmount || 0,
+    feel: tr.feel || 0,
+    delaySend: tr.delaySend || 0,
+    accentAmt: tr.accentAmt, rootNote: tr.rootNote, cutoff: tr.cutoff, resonance: tr.resonance, envMod: tr.envMod, decay: tr.decay, scale: tr.scale, ...instSave(tr) // eigene Felder des Instruments (#24), optional für ältere Pattern
+
+  };
+}
 function collectPatternData(name, id){
   return {
     id: id || genId(),
@@ -29,27 +54,8 @@ function collectPatternData(name, id){
     drumSet: { voices: JSON.parse(JSON.stringify(drumSet.voices)), setId: DRUM_TRACKS[0].set.id, setName: DRUM_TRACKS[0].set.name,
                sets: Object.fromEntries(DRUM_TRACKS.map(d=>[d.id, {id:d.set.id, name:d.set.name}])) },
     patternLength: PATTERN_LENGTH,
-    tracks: TRACKS.map(tr=>({
-      id: tr.id,
-      steps: tr.steps.slice(),
-      events: tr.events ? JSON.parse(JSON.stringify(trOwnEvents(tr))) : undefined, // folgt die Spur der Harmonie: eigene Noten, nicht die erzeugten
-      harm: tr.harm ? JSON.parse(JSON.stringify(tr.harm)) : undefined,
-      notes: tr.notes ? tr.notes.slice() : undefined,
-      slides: tr.slides ? tr.slides.slice() : undefined,
-      vol: tr.vol,
-      tune: tr.tune,
-      pan: tr.pan || 0,
-      eqLowGain: tr.eqLowGain || 0,
-      eqMidGain: tr.eqMidGain || 0,
-      eqHighGain: tr.eqHighGain || 0,
-      eqOn: tr.eqOn!==false, eqLc: tr.eqLc||0, eqMf: tr.eqMf!=null?tr.eqMf:EQ_MF_DEF, fx: fxSave(tr.fx),
-      muted: !!tr.muted,
-      solo: !!tr.solo,
-      reverbAmount: tr.reverbAmount || 0,
-      feel: tr.feel || 0,
-      delaySend: tr.delaySend || 0,
-      accentAmt: tr.accentAmt, rootNote: tr.rootNote, cutoff: tr.cutoff, resonance: tr.resonance, envMod: tr.envMod, decay: tr.decay, scale: tr.scale, ...instSave(tr) // eigene Felder des Instruments (#24), optional für ältere Pattern
-    })),
+    tracks: TRACKS.map(trSave),
+    mel: TRACKS.filter(trInst).map(melEntry), // #13: Melodiespuren in Reihenfolge (fehlt bei älteren Ständen = ACID, COSMIC, KEYS)
     harmony: JSON.parse(JSON.stringify(harmony)), // v62: Akkordfolge + Tonart (optional, ältere Pattern: Standard-Vorlage)
     acidAuto: { shape: autoShape, bars: autoBars, depth: autoDepth },
     fxHall: Object.assign({},fxHall), fxDelay: Object.assign({},fxDelay), masterFx: fxSave(masterFx), mfxV: 2, grps: Object.fromEntries(GRP_KEYS.map(k=>[k,Object.assign({vol:grps[k].vol,muted:grps[k].muted,fx:fxSave(grps[k].fx)},Object.fromEntries(EQ_KEYS.map(q=>[q,grps[k][q]])))])),
@@ -87,6 +93,45 @@ function migrateStepsToVelocity(savedSteps, trackId, oldAccentSteps, targetLen){
 // Pattern-Länge, alle Track-Daten (Steps/Vol/Pan/EQ/Mute/Solo/Feel/Sends/Arp) und
 // Fill-Einstellungen. Bewusst OHNE Tempo/Swing/Humanize und OHNE stop().
 // applyPatternData() (Beats laden per Hand) ergänzt Tempo+Stop.
+// Gespeicherten Spur-Eintrag auf eine Spur anwenden (accentSteps = globaler Accent-Layer sehr alter Stände)
+function trLoadSaved(tr, saved, accentSteps){
+  tr.steps=migrateStepsToVelocity(saved.steps, tr.id, accentSteps, PATTERN_LENGTH);
+  if(tr.type!=='arp') tr.notes=artLoad(tr, saved.notes);
+  tr.vol=saved.vol; tr.tune=saved.tune; tr.reverbAmount=saved.reverbAmount||0;
+  tr.pan=saved.pan||0; // ältere Patterns ohne pan-Feld -> zentriert (Standard)
+  tr.eqLowGain=saved.eqLowGain||0; tr.eqMidGain=saved.eqMidGain||0; tr.eqHighGain=saved.eqHighGain||0;
+  fxLoadTrack(tr,saved);
+  const u=trUi(tr);
+  if(u.mixEqKnobs){
+    if(u.mixEqKnobs.eqLowGain) u.mixEqKnobs.eqLowGain.setValue(tr.eqLowGain);
+    if(u.mixEqKnobs.eqMidGain) u.mixEqKnobs.eqMidGain.setValue(tr.eqMidGain);
+    if(u.mixEqKnobs.eqHighGain) u.mixEqKnobs.eqHighGain.setValue(tr.eqHighGain);
+  }
+  tr.muted=!!saved.muted; tr.solo=!!saved.solo; // ältere Patterns ohne diese Felder -> beides aus
+  if(u.ovRow) u.ovRow.classList.toggle('muted', tr.muted);
+  if(u.mixMuteBtn) u.mixMuteBtn.classList.toggle('on', tr.muted);
+  if(u.mixSoloBtn) u.mixSoloBtn.classList.toggle('on', tr.solo);
+  tr.feel=saved.feel||0;
+  tr.delaySend=saved.delaySend||0;
+  if(tr.delaySendGain) tr.delaySendGain.gain.value=tr.delaySend;
+  if(tr.sendGain) tr.sendGain.gain.value=tr.reverbAmount;
+  if(tr.panner) tr.panner.pan.value=tr.pan;
+  if(u.mixFaderEl){ u.mixFaderEl.value=tr.vol; if(u.mixMeter) u.mixMeter.dbReadout.textContent=dbLabel(tr.vol)+'dB'; }
+  if(u.mixPanKnob) u.mixPanKnob.setValue(tr.pan);
+  if(tr.type==='arp'){
+    // ältere Patterns ohne Arp-Track: sinnvolle Defaults statt undefined
+    tr.events=evLoad(saved,tr); delete tr.notes; delete tr.slides; evTouch(tr);
+    tr.rootNote = saved.rootNote!=null ? saved.rootNote : 0;
+    tr.cutoff = saved.cutoff!=null ? saved.cutoff : 0.5;
+    tr.resonance = saved.resonance!=null ? saved.resonance : 0.35;
+    tr.envMod = saved.envMod!=null ? saved.envMod : 0.5;
+    tr.decay = saved.decay!=null ? saved.decay : 0.26;
+    instLoad(tr,saved); // eigene Felder des Instruments (#24)
+    tr.scale = SCALES[saved.scale] ? saved.scale : 'minor';
+    tr.accentAmt = saved.accentAmt!=null ? saved.accentAmt : 0.5;
+    tr.harm = hmSanTrack(tr, saved.harm);
+  }
+}
 function applyTrackAndFillData(data){
   { const K=data.kits||{}; // #68: Kit je Drum-Spur; ältere Stände: alle Spuren mit kitId (klingt wie bisher)
     DRUM_TRACKS.forEach(d=>{ const k=K[d.id]||data.kitId; if(KITS[k]) d.kit=k; }); }
@@ -95,6 +140,7 @@ function applyTrackAndFillData(data){
   drumSetApply(data.drumSet); // ältere Patterns/Beats ohne Set: alle Stimmen aus dem Basis-Kit
   PATTERN_LENGTH = data.patternLength || 16; // ältere Patterns hatten keine gespeicherte Länge → 16
   currentPage=0;
+  melSync(data.mel); // #13: Melodiespuren wie gespeichert anlegen/entfernen (ältere Stände: ACID, COSMIC, KEYS)
   // Neue Spuren, die in älteren gespeicherten Patterns noch nicht existierten,
   // starten beim Laden leer statt den Zustand des zuvor geladenen Beats zu behalten.
   // Melodiespuren, die das Pattern nicht kennt (z. B. Cosmic/Keys vor ihrer Einführung): leer, Klang ab Werk (tr._snd0)
@@ -102,53 +148,14 @@ function applyTrackAndFillData(data){
     if(!trInst(tr) || (data.tracks||[]).some(saved=>saved.id===tr.id)) return;
     tr.steps=new Array(PATTERN_LENGTH).fill(VEL_OFF); tr.events=[]; delete tr.notes; delete tr.slides; tr._idx=null; tr.muted=false; tr.solo=false;
     const u=trUi(tr); ['mixMuteBtn','mixSoloBtn'].forEach(k=>{ if(u[k]) u[k].classList.remove('on'); }); if(u.ovRow) u.ovRow.classList.remove('muted');
-    applyTrackSound(tr, tr._snd0);
+    applyTrackSound(tr, instTpl(tr));
   });
   TRACKS.forEach(tr=>{ if(tr.type==='arp'){ tr.harm=hmDefaultTrack(tr); delete tr.harmOwn; } });
   TRACKS.forEach(tr=>{ // Drum-Spuren, die es im gespeicherten Pattern noch nicht gab (z. B. Ride vor v72): leer
     if(tr.type==='arp' || (data.tracks||[]).some(s=>s.id===tr.id)) return;
     tr.steps=new Array(PATTERN_LENGTH).fill(VEL_OFF); tr.notes=new Array(PATTERN_LENGTH).fill(0); tr.slides=new Array(PATTERN_LENGTH).fill(false);
   });
-  data.tracks.forEach(saved=>{
-    const tr=TRACKS.find(t=>t.id===saved.id);
-    if(!tr) return;
-    tr.steps=migrateStepsToVelocity(saved.steps, tr.id, data.accentSteps, PATTERN_LENGTH);
-    if(tr.type!=='arp') tr.notes=artLoad(tr, saved.notes);
-    tr.vol=saved.vol; tr.tune=saved.tune; tr.reverbAmount=saved.reverbAmount||0;
-    tr.pan=saved.pan||0; // ältere Patterns ohne pan-Feld -> zentriert (Standard)
-    tr.eqLowGain=saved.eqLowGain||0; tr.eqMidGain=saved.eqMidGain||0; tr.eqHighGain=saved.eqHighGain||0;
-    fxLoadTrack(tr,saved);
-    const u=trUi(tr);
-    if(u.mixEqKnobs){
-      if(u.mixEqKnobs.eqLowGain) u.mixEqKnobs.eqLowGain.setValue(tr.eqLowGain);
-      if(u.mixEqKnobs.eqMidGain) u.mixEqKnobs.eqMidGain.setValue(tr.eqMidGain);
-      if(u.mixEqKnobs.eqHighGain) u.mixEqKnobs.eqHighGain.setValue(tr.eqHighGain);
-    }
-    tr.muted=!!saved.muted; tr.solo=!!saved.solo; // ältere Patterns ohne diese Felder -> beides aus
-    if(u.ovRow) u.ovRow.classList.toggle('muted', tr.muted);
-    if(u.mixMuteBtn) u.mixMuteBtn.classList.toggle('on', tr.muted);
-    if(u.mixSoloBtn) u.mixSoloBtn.classList.toggle('on', tr.solo);
-    tr.feel=saved.feel||0;
-    tr.delaySend=saved.delaySend||0;
-    if(tr.delaySendGain) tr.delaySendGain.gain.value=tr.delaySend;
-    if(tr.sendGain) tr.sendGain.gain.value=tr.reverbAmount;
-    if(tr.panner) tr.panner.pan.value=tr.pan;
-    if(u.mixFaderEl){ u.mixFaderEl.value=tr.vol; if(u.mixMeter) u.mixMeter.dbReadout.textContent=dbLabel(tr.vol)+'dB'; }
-    if(u.mixPanKnob) u.mixPanKnob.setValue(tr.pan);
-    if(tr.type==='arp'){
-      // ältere Patterns ohne Arp-Track: sinnvolle Defaults statt undefined
-      tr.events=evLoad(saved,tr); delete tr.notes; delete tr.slides; evTouch(tr);
-      tr.rootNote = saved.rootNote!=null ? saved.rootNote : 0;
-      tr.cutoff = saved.cutoff!=null ? saved.cutoff : 0.5;
-      tr.resonance = saved.resonance!=null ? saved.resonance : 0.35;
-      tr.envMod = saved.envMod!=null ? saved.envMod : 0.5;
-      tr.decay = saved.decay!=null ? saved.decay : 0.26;
-      instLoad(tr,saved); // eigene Felder des Instruments (#24)
-      tr.scale = SCALES[saved.scale] ? saved.scale : 'minor';
-      tr.accentAmt = saved.accentAmt!=null ? saved.accentAmt : 0.5;
-      tr.harm = hmSanTrack(tr, saved.harm);
-    }
-  });
+  data.tracks.forEach(saved=>{ const tr=TRACKS.find(t=>t.id===saved.id); if(tr) trLoadSaved(tr, saved, data.accentSteps); });
   { const h=hmSanHarmony(data.harmony); if(h){ harmony=h; hmTpl=0; } else hmDefault(); }
   TRACKS.forEach(tr=>{ if(hmOn(tr)){ tr.harmOwn=tr.events; hmRegen(tr); } });
   refreshSoloVisuals(); // Mute/Solo mehrerer Spuren gerade geändert -> Solo-Dimming einmal gesamt neu berechnen
@@ -639,6 +646,7 @@ function ovRender(){
     }
     row.appendChild(tl); ovRows.appendChild(row);
   });
+  if(typeof trSongDecorate==='function') trSongDecorate(ovRows); // #13: Spurname antippen = Aktionen, „+ Spur“
   ovActionsRender();
 }
 // ---- Clips bearbeiten: Clip ins Arbeits-Pattern laden, im Pattern-Tab bearbeiten, zurückschreiben ----
