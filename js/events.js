@@ -58,6 +58,7 @@ function arrGroupsBuild(){
   const mel=TRACKS.filter(t=>trInst(t)).map(t=>({id:trGrpId(t), label:trTitle(t), ids:[t.id]}));
   const base=ARR_GROUPS_BASE.filter(g=>!instByGrp(g.id));
   ARR_GROUPS.length=0; ARR_GROUPS.push(...base.filter(g=>g.id!=='sample'), ...mel, ...base.filter(g=>g.id==='sample'));
+  if(typeof TR_UI!=='undefined') TRACKS.forEach((t,i)=>{ const r=TR_UI.get(t.id); if(r && r.ovRow) r.ovRow.dataset.idx=i; }); // Zeilen-Index = Platz in TRACKS
 }
 // Spur einer Gruppe, deren Instrument eine Klang-Auswahl hat (Kit-Taste zeigt dann die Klänge), sonst null
 function grpSoundTr(gid){ const g=ARR_GROUPS.find(x=>x.id===gid), tr=g && TRACKS.find(t=>g.ids.indexOf(t.id)>=0), I=trInst(tr); return I && I.sounds ? tr : null; }

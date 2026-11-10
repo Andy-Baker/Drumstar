@@ -197,7 +197,7 @@ function ovRowMake(tr, before){
   row.addEventListener('click', (e)=>{ if(e.target===row) sel(); });
   overviewEl.insertBefore(row, before||null);
 }
-TRACKS.forEach(tr=>ovRowMake(tr));
+TRACKS.forEach(tr=>ovRowMake(tr)); arrGroupsBuild(); // setzt data-idx
 // Zeigt an, welche Spuren durch aktive Solo-Schaltung(en) gerade stummgeschaltet
 // sind (alle nicht-solierten, sobald mindestens eine Spur soliert ist).
 function refreshSoloVisuals(){
