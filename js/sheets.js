@@ -249,45 +249,46 @@ function openKlang(tr,tab){
 function renderKlang(){
   const box=$id('klRows'); eqStop(); $id('klBack').hidden=!klView.length;
   if(klView.length || klMode!=='klang'){ box.innerHTML=''; $id('klTabs').style.display='none'; $id('klSheet').classList.remove('cos','pno'); fxRenderView(box,klView.length?klView[klView.length-1]:{v:klMode}); return; }
-  const tr=klTr, arp=tr.type==='arp'; box.innerHTML='';
+  const tr=klTr, arp=tr.type==='arp', I=trInst(tr); box.innerHTML='';
   const tab=arp?klTab:'fx';
   $id('klT').textContent='Klang · '+(arp?prName(tr):tr.name);
   $id('klTabs').style.display=arp?'':'none';
   $id('klTabs').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
-  $id('klSheet').classList.toggle('cos',tr.id==='cosmic'); $id('klSheet').classList.toggle('pno',tr.id==='piano');
+  ['cos','pno'].forEach(c=>$id('klSheet').classList.toggle(c,!!I && I.cls===c)); // Instrumentfarbe
   const grp=t=>{ const g=document.createElement('div'); g.className='grp'; g.textContent=t; box.appendChild(g); };
   const pct=v=>v+'%', num=(v,d)=>v!=null?v:d;
   if(tab==='sound'){
-    if(tr.id==='piano'){
+    if(I.sounds){ // Instrument mit Klang-Auswahl (Keys)
+      const KS=I.sounds(), cur=instSound(tr);
       grp('Instrument');
       const sg=document.createElement('div'); sg.className='am-seg';
-      Object.keys(KEY_SOUNDS).concat(['organ']).forEach(id=>{ const b=document.createElement('button'); const k=KEY_SOUNDS[id];
+      Object.keys(KS).concat(['organ']).forEach(id=>{ const b=document.createElement('button'); const k=KS[id];
         if(!k){ b.className='soon'; b.innerHTML='ORGEL<small>bald</small>'; } else { b.textContent=k.name; if(tr.sound===id) b.classList.add('on'); b.onclick=()=>{ keysSetSound(tr,id); renderKlang(); if(prIsOpen()) prRenderChrome(); }; }
         sg.appendChild(b); });
       box.appendChild(sg);
-      const rh=tr.sound==='rhodes'; grp('Klang · '+(KEY_SOUNDS[tr.sound]||KEY_SOUNDS.piano).name);
-      box.appendChild(soundRow('Ton',0,100,num(tr.cutoff,.55)*100,Math.round((KEY_SOUNDS[tr.sound]||KEY_SOUNDS.piano).def.cutoff*100),pct,v=>tr.cutoff=v/100));
-      box.appendChild(soundRow(rh?'Biss':'Härte',0,100,num(tr.envMod,.5)*100,Math.round((KEY_SOUNDS[tr.sound]||KEY_SOUNDS.piano).def.envMod*100),pct,v=>tr.envMod=v/100));
-      box.appendChild(soundRow('Ausklang',0,100,num(tr.decay,.5)*100,Math.round((KEY_SOUNDS[tr.sound]||KEY_SOUNDS.piano).def.decay*100),pct,v=>tr.decay=v/100));
+      const rh=tr.sound==='rhodes'; grp('Klang · '+cur.name);
+      box.appendChild(soundRow('Ton',0,100,num(tr.cutoff,.55)*100,Math.round(cur.def.cutoff*100),pct,v=>tr.cutoff=v/100));
+      box.appendChild(soundRow(rh?'Biss':'Härte',0,100,num(tr.envMod,.5)*100,Math.round(cur.def.envMod*100),pct,v=>tr.envMod=v/100));
+      box.appendChild(soundRow('Ausklang',0,100,num(tr.decay,.5)*100,Math.round(cur.def.decay*100),pct,v=>tr.decay=v/100));
       if(rh) box.appendChild(soundRow('Tremolo',0,100,num(tr.tremolo,.35)*100,35,pct,v=>tr.tremolo=v/100));
       return;
     }
-    const cos=tr.id==='cosmic', ico=d=>'<svg viewBox="0 0 24 24" aria-hidden="true">'+d+'</svg>';
+    const ico=d=>'<svg viewBox="0 0 24 24" aria-hidden="true">'+d+'</svg>';
     const acts=document.createElement('div'); acts.className='acts';
     acts.innerHTML='<button class="act" id="klRand">'+ico('<rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9" r="1" fill="currentColor"/><circle cx="15" cy="15" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/>')+'Filter würfeln</button>'
-      +(cos?'':'<button class="act" id="klXy">'+ico('<circle cx="12" cy="12" r="8"/><path d="M12 4v16M4 12h16"/>')+'XY-Pad</button>');
+      +(!I.xy?'':'<button class="act" id="klXy">'+ico('<circle cx="12" cy="12" r="8"/><path d="M12 4v16M4 12h16"/>')+'XY-Pad</button>');
     box.appendChild(acts);
     const dec=v=>{ const sec=arpDecaySeconds(v/100); return sec<1 ? Math.round(sec*1000)+'ms' : sec.toFixed(1)+'s'; };
-    const D=cos?{cut:62,res:22,env:62,dec:42}:{cut:50,res:35,env:50,dec:26};
+    const W=tr._snd0, D={cut:Math.round(W.cutoff*100),res:Math.round(W.resonance*100),env:Math.round(W.envMod*100),dec:Math.round(W.decay*100)}; // Regler-Standard = Spur ab Werk
     grp('Filter');
     box.appendChild(soundRow('Cutoff',0,100,num(tr.cutoff,D.cut/100)*100,D.cut,pct,v=>tr.cutoff=v/100));
     box.appendChild(soundRow('Reso',0,100,num(tr.resonance,D.res/100)*100,D.res,pct,v=>tr.resonance=v/100));
     box.appendChild(soundRow('Env Mod',0,100,num(tr.envMod,D.env/100)*100,D.env,pct,v=>tr.envMod=v/100));
     box.appendChild(soundRow('Decay',0,100,num(tr.decay,D.dec/100)*100,D.dec,dec,v=>tr.decay=v/100));
-    if(!cos) box.appendChild(soundRow('Accent',0,100,num(tr.accentAmt,.5)*100,50,pct,v=>tr.accentAmt=v/100));
-    if(cos){ grp('Klang');
-      [['Width','cosmicWidth',62],['Motion','cosmicMotion',46],['Warmth','cosmicWarmth',22],['Air','cosmicAir',18]].forEach(([l,k,d])=>
-        box.appendChild(soundRow(l,0,100,num(tr[k],d/100)*100,d,pct,v=>tr[k]=v/100))); }
+    if(I.accent) box.appendChild(soundRow('Accent',0,100,num(tr.accentAmt,.5)*100,50,pct,v=>tr.accentAmt=v/100));
+    if(I.knobs){ grp('Klang');
+      I.knobs.forEach(([l,k])=>{ const d=Math.round(I.fields[k]*100);
+        box.appendChild(soundRow(l,0,100,num(tr[k],d/100)*100,d,pct,v=>tr[k]=v/100)); }); }
     $id('klRand').onclick=()=>{ if(TRACKS[activeTrackIdx]!==tr) selectTrack(TRACKS.indexOf(tr)); arpFilterRandBtn.click(); renderKlang(); };
     const xy=$id('klXy'); if(xy) xy.onclick=()=>{ closeSheets(); if(prIsOpen()) prClose(); if(TRACKS[activeTrackIdx]!==tr) selectTrack(TRACKS.indexOf(tr)); openXY(); };
   } else if(tab==='fx'){

@@ -18,7 +18,7 @@ function beatTrackData(tr){
     eqOn:tr.eqOn!==false, eqLc:tr.eqLc||0, eqMf:tr.eqMf!=null?tr.eqMf:EQ_MF_DEF, fx:fxSave(tr.fx),
     reverbAmount:tr.reverbAmount||0, delaySend:tr.delaySend||0, feel:tr.feel||0,
     accentAmt:tr.accentAmt, rootNote:tr.rootNote, cutoff:tr.cutoff, resonance:tr.resonance, envMod:tr.envMod, decay:tr.decay, scale:tr.scale,
-    cosmicWidth:tr.cosmicWidth, cosmicMotion:tr.cosmicMotion, cosmicWarmth:tr.cosmicWarmth, cosmicAir:tr.cosmicAir, sound:tr.sound, tremolo:tr.tremolo };
+    ...instSave(tr) }; // eigene Felder des Instruments (#24)
 }
 function beatCollect(gid, name){
   const d={ id:genId(), kind:'beat', group:gid, name, savedAt:Date.now(), length:PATTERN_LENGTH, kitId:(dtById(gid)||DRUM_TRACKS[0]).kit, tracks:arrGroupTracks(gid).map(beatTrackData) };
@@ -40,8 +40,7 @@ function applyTrackSound(tr, sv){
     tr.rootNote=sv.rootNote!=null?sv.rootNote:0; tr.cutoff=sv.cutoff!=null?sv.cutoff:0.5; tr.resonance=sv.resonance!=null?sv.resonance:0.35;
     tr.envMod=sv.envMod!=null?sv.envMod:0.5; tr.decay=sv.decay!=null?sv.decay:0.26; tr.scale=SCALES[sv.scale]?sv.scale:'minor'; tr.accentAmt=sv.accentAmt!=null?sv.accentAmt:0.5;
   }
-  if(tr.id==='piano'){ tr.sound=KEY_SOUNDS[sv.sound]?sv.sound:'piano'; tr.tremolo=sv.tremolo!=null?sv.tremolo:0; }
-  if(tr.id==='cosmic'){ tr.cosmicWidth=sv.cosmicWidth!=null?sv.cosmicWidth:0.62; tr.cosmicMotion=sv.cosmicMotion!=null?sv.cosmicMotion:0.46; tr.cosmicWarmth=sv.cosmicWarmth!=null?sv.cosmicWarmth:0.22; tr.cosmicAir=sv.cosmicAir!=null?sv.cosmicAir:0.18; }
+  instLoad(tr,sv);
 }
 async function beatApply(d, withSound){
   if(isPlaying) stop();
@@ -131,7 +130,7 @@ function kitFits(k, d){ // Kit spielt mindestens eine Zeile der Spur selbst (eig
 let dsCur=null, dsMode='syn', dsMsgTimer=null, kitPending=null;
 function dsSay(m){ dsStatus.textContent=m; clearTimeout(dsMsgTimer); dsMsgTimer=setTimeout(()=>{ dsStatus.textContent=''; },3000); }
 function updateKitLabel(){
-  if(typeof patternGroup!=='undefined' && patternGroup==='piano'){ const k=TRACKS.find(t=>t.id==='piano'); lcdKit.textContent=(KEY_SOUNDS[k&&k.sound]||KEY_SOUNDS.piano).name; return; }
+  { const k=typeof patternGroup!=='undefined' && grpSoundTr(patternGroup); if(k){ lcdKit.textContent=instSound(k).name; return; } }
   const d=dtActive(), S=d.set, custom=dtCustom(d);
   const KIT_SHORT={rock:'ROCK',studio:'STUDIO',s67:'ST 67',hyb:'HYBRID',rusty:'RUSTY',vintage:'VINT 73',fm909:'909',fm808:'808',real808:'808 A',acid:'ACID',lofi:'LO-FI',latin:'LATIN'};
   { const use=smpKitsInUse(); smpFree(use); use.forEach(k=>{ if(!smp[k] || smp[k].state==='error') smpLoad(k); }); } // Fehler: erneuter Versuch beim nächsten Kit-Tipp

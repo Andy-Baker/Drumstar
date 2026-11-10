@@ -17,8 +17,8 @@ function prLandOn(){ return prLandMQ.matches; }
 function prIsOpen(){ return prWin.classList.contains('open'); }
 function prSyncPlay(){ if(!isPlaying){ prRecSnap=false; prPhStep=-1; } if(prIsOpen()) prRenderChrome(); }
 function prHidePh(){ const a=$id('prPh'), b=document.querySelector('#prPv .pph'); if(a) a.style.display='none'; if(b) b.style.display='none'; }
-function prName(tr){ return tr.id==='arp' ? 'ACID' : tr.id==='cosmic' ? 'COSMIC' : tr.id==='piano' ? 'KEYS' : tr.name; }
-function prSubName(tr){ return tr.id==='piano' ? (KEY_SOUNDS[tr.sound]||KEY_SOUNDS.piano).name : ''; }
+function prName(tr){ const I=trInst(tr); return I ? I.name : tr.name; }
+function prSubName(tr){ const s=instSound(tr); return s ? s.name : ''; }
 function prWhite(tr,n){ return [0,2,4,5,7,9,11].indexOf((((9+tr.rootNote+n)%12)+12)%12)>=0; }
 function prRows(tr){ const out=[]; for(let n=PR_HI;n>=PR_LO;n--) if(!prScaleOnly || pitchInScale(n,tr)) out.push(n); return out; }
 let prR=[];
@@ -425,7 +425,7 @@ function prKeyAt(x,y){ const e=document.elementFromPoint(x,y); return (e && e.da
 function prPress(id,el,y,glide){
   const tr=prTr; if(!audioCtx) initAudio(); if(audioCtx.state!=='running') audioCtx.resume();
   const n=+el.dataset.n, r=el.getBoundingClientRect(), vel=prVp ? Math.max(0.3,Math.min(1,0.3+0.7*(y-r.top)/r.height)) : 0.85;
-  const h = tr.id==='cosmic' ? prCosmicOn(tr,n,vel) : tr.id==='piano' ? prPianoOn(tr,n,vel) : (prAcidOn(tr,n,vel,glide||prLive.size>0), null);
+  const h = trInst(tr).live(tr,n,vel,glide||prLive.size>0); // Acid: null (einstimmig, Loslassen über prAcidOff)
   prLive.set(id,{el,n,h,tr,rc:prRecStart(tr,n,vel)}); el.classList.add('down');
 }
 function prRelease(id,keepAcid){

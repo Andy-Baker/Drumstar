@@ -8,17 +8,48 @@
 const arr={enabled:false, bars:8, clips:{}};
 let editClip=null; // Clip im Editor: dann spielen/exportieren Wiedergabe und Export das Arbeits-Pattern (Vorschau)
 function arrOn(){ return arr.enabled && !editClip; }
+// =========================================================================
+// MELODIE-INSTRUMENTE (#24) — alles, was Acid, Cosmic und Keys unterscheidet, steht NUR hier.
+// trInst(tr) = Eintrag der Spur (null bei Drums/Perc/Sample). Schlüssel = Instrument; heute gleich der Spur-ID,
+// mit #13 (mehrere Spuren gleichen Typs) setzt die Spur tr.inst und behält eine eigene ID.
+//   name     Anzeige (Noteneditor, Klang-Sheet, Übersicht)   grp   Übersichts-Gruppe
+//   poly     Akkorde, keine Slides                          oct   Oktavlage der Namen/Töne (Halbtöne)
+//   trigger  Wiedergabe einer Note (time,tr,semis,vel,lenSteps,modPos,chordN); fehlt = Acid-Stimme in triggerArpStep
+//   live     Live-Spiel im Noteneditor (tr,n,vel,legato) → Handle mit rel() bzw. null (einstimmig, prAcidOff)
+//   fields   eigene Klang-Felder mit Standard (werden gespeichert/geladen)   undo  Felder im Schritt-Rückgängig
+//   sounds   Auswahl an Klängen (Kit-Taste, Klang-Sheet), Wert in tr.sound   knobs Zusatzregler [Label, Feld]
+//   xy/accent  XY-Pad bzw. Accent-Regler im Klang-Sheet      arpStyle/bass  Harmonie-Standard
+// Funktionen in Pfeilen, weil sie in späteren Dateien stehen (Aufruf erst zur Laufzeit).
+// =========================================================================
+const INSTR={
+  arp:   {name:'ACID',   grp:'acid',   poly:false, oct:0,  cls:'',    xy:true, accent:true, arpStyle:'classic', bass:'roll',
+          live:(tr,n,v,lg)=>{ prAcidOn(tr,n,v,lg); return null; }, fields:{}, undo:[]},
+  cosmic:{name:'COSMIC', grp:'cosmic', poly:true,  oct:24, cls:'cos', arpStyle:'cosmic', bass:'hold',
+          trigger:(t,tr,n,v,l,m,c)=>triggerCosmicArpStep(t,tr,n,v,m,l,c), live:(tr,n,v)=>prCosmicOn(tr,n,v),
+          fields:{cosmicWidth:0.62, cosmicMotion:0.46, cosmicWarmth:0.22, cosmicAir:0.18}, undo:['cosmicWidth','cosmicMotion','cosmicWarmth','cosmicAir'],
+          knobs:[['Width','cosmicWidth'],['Motion','cosmicMotion'],['Warmth','cosmicWarmth'],['Air','cosmicAir']]},
+  piano: {name:'KEYS',   grp:'piano',  poly:true,  oct:12, cls:'pno', arpStyle:'classic', bass:'hold',
+          trigger:(t,tr,n,v,l)=>triggerPianoStep(t,tr,n,v,l), live:(tr,n,v)=>prPianoOn(tr,n,v),
+          fields:{sound:'piano', tremolo:0}, undo:[], sounds:()=>KEY_SOUNDS},
+};
+function trInst(tr){ return (tr && INSTR[tr.inst||tr.id]) || null; }
+// Eigene Felder des Instruments: speichern (nur gesetzte), laden (fehlend/ungültig → Standard)
+function instSave(tr){ const I=trInst(tr), o={}; if(I) for(const k in I.fields) if(tr[k]!==undefined) o[k]=tr[k]; return o; }
+function instLoad(tr,sv){ const I=trInst(tr); if(!I) return;
+  for(const k in I.fields){ let v=sv?sv[k]:null; if(k==='sound' && I.sounds && !I.sounds()[v]) v=null; tr[k]=v!=null?v:I.fields[k]; } }
+// Gewählter Klang eines Instruments mit Klang-Auswahl (Keys); Ersatz = Standardklang
+function instSound(tr){ const I=trInst(tr), S=I&&I.sounds&&I.sounds(); return S ? (S[tr.sound]||S[I.fields.sound]) : null; }
 // Übersichts-Gruppen: jede Gruppe ist eine Zeile in der Song-Übersicht; Clips liegen weiterhin pro Stimme/Spur.
 const ARR_GROUPS=[
   ...DRUM_TRACKS.map(d=>({id:d.id, label:d.name, ids:d.rows})),
-  {id:'acid',  label:'ACID',  ids:['arp']},
-  {id:'cosmic',label:'COSMIC',ids:['cosmic']},
-  {id:'piano',label:'KEYS',ids:['piano']},
+  ...Object.keys(INSTR).map(k=>({id:INSTR[k].grp, label:INSTR[k].name, ids:[k]})),
   {id:'sample',label:'SAMPLE',ids:['mc']}
 ];
-// Polyphone Melodiespuren (Akkorde, keine Slides): Cosmic + Piano. trOct = Oktavlage der Namen/Töne
-function isPoly(tr){ return tr.id==='cosmic' || tr.id==='piano'; }
-function trOct(tr){ return tr.id==='cosmic'?24 : tr.id==='piano'?12 : 0; }
+// Spur einer Gruppe, deren Instrument eine Klang-Auswahl hat (Kit-Taste zeigt dann die Klänge), sonst null
+function grpSoundTr(gid){ const g=ARR_GROUPS.find(x=>x.id===gid), tr=g && TRACKS.find(t=>g.ids.indexOf(t.id)>=0), I=trInst(tr); return I && I.sounds ? tr : null; }
+// Polyphone Melodiespuren (Akkorde, keine Slides). trOct = Oktavlage der Namen/Töne
+function isPoly(tr){ const I=trInst(tr); return !!(I && I.poly); }
+function trOct(tr){ const I=trInst(tr); return I ? I.oct : 0; }
 function seqLength(){ return arrOn() ? arr.bars*16 : PATTERN_LENGTH; }
 // =========================================================================
 // NOTEN-EVENTS (v51) — melodische Spuren (Acid, Cosmic): tr.events = [{s, n, l, v, a, sl}]
@@ -307,9 +338,9 @@ function stopCosmicVoices(){
 }
 function triggerArpStep(time, tr, degreeSemis, velocity, slide, holdNext, modPos, accent, lenSteps, chordN){
   lenSteps=Math.max(1,lenSteps||1);
-  if(tr.id==='cosmic') { triggerCosmicArpStep(time,tr,degreeSemis,velocity,modPos,lenSteps,chordN); return; }
-  if(tr.id==='piano') { triggerPianoStep(time,tr,degreeSemis,velocity,lenSteps); return; }
-  ensureArpVoice(tr);
+  const I=trInst(tr);
+  if(I && I.trigger){ I.trigger(time,tr,degreeSemis,velocity,lenSteps,modPos,chordN); return; }
+  ensureArpVoice(tr); // ohne eigenen trigger: Acid-Stimme
   const freq=noteFreq(tr.rootNote + degreeSemis);
   const cutoffBase=300 + (tr.cutoff!=null?tr.cutoff:0.5)*4000;
   const envMod=tr.envMod!=null?tr.envMod:0.5;

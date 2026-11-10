@@ -227,9 +227,9 @@ const kitPickerList=document.getElementById('kitPickerList');
 const kitPickerOverlay=document.getElementById('kitPickerOverlay');
 const soundPickerOverlay=document.getElementById('soundPickerOverlay');
 function soundPickerRefresh(){
-  const tr=TRACKS.find(t=>t.id==='piano'), box=document.getElementById('soundPickerList'); box.innerHTML='';
-  Object.keys(KEY_SOUNDS).forEach(id=>{
-    const k=KEY_SOUNDS[id], chip=document.createElement('div'); chip.className='kit-chip'+(tr.sound===id?' active':'');
+  const tr=grpSoundTr(patternGroup), S=trInst(tr).sounds(), box=document.getElementById('soundPickerList'); box.innerHTML='';
+  Object.keys(S).forEach(id=>{
+    const k=S[id], chip=document.createElement('div'); chip.className='kit-chip'+(tr.sound===id?' active':'');
     chip.innerHTML='<div class="kn">'+k.name+'</div><div class="kd">'+k.desc+'</div>';
     chip.addEventListener('click', ()=>{ keysSetSound(tr,id); soundPickerRefresh(); });
     box.appendChild(chip);
@@ -261,7 +261,7 @@ Object.keys(KITS).forEach(kitId=>{
 smpChipIdle(); smpCheckCache();
 const lcdKitBtn=document.getElementById('lcdKitBtn');
 const kitPickerCloseBtn=document.getElementById('kitPickerCloseBtn');
-lcdKitBtn.addEventListener('click', ()=>{ closeAllOverlays(); if(patternGroup==='piano'){ soundPickerOverlay.classList.add('open'); syncBottomBarVisibility(); soundPickerRefresh(); return; } kitPickerOverlay.classList.add('open'); syncBottomBarVisibility(); smpOptCollapse(); kitPickerRefresh(); });
+lcdKitBtn.addEventListener('click', ()=>{ closeAllOverlays(); if(grpSoundTr(patternGroup)){ soundPickerOverlay.classList.add('open'); syncBottomBarVisibility(); soundPickerRefresh(); return; } kitPickerOverlay.classList.add('open'); syncBottomBarVisibility(); smpOptCollapse(); kitPickerRefresh(); });
 kitPickerCloseBtn.addEventListener('click', ()=>{ kitPickerOverlay.classList.remove('open'); syncBottomBarVisibility(); });
 const lcdPatternBtn=document.getElementById('lcdPatternBtn');
 const lcdPatternName=document.getElementById('lcdPatternName');
@@ -364,7 +364,7 @@ let taScope='page';
 let taUndo=null; // ein Schritt: Snapshot der aktiven Spur (steps + notes + slides) vor der letzten Aktion
 function taResetUndo(){ taUndo=null; taUndoBtn.disabled=true; }
 function taSnapshot(){
-  taUndo={ len:PATTERN_LENGTH, tracks:TRACKS.map(t=>({steps:t.steps.slice(), notes:t.notes?t.notes.slice():null, slides:t.slides?t.slides.slice():null, events:t.events?JSON.parse(JSON.stringify(t.events)):null, cutoff:t.cutoff, resonance:t.resonance, envMod:t.envMod, decay:t.decay, cosmicWidth:t.cosmicWidth, cosmicMotion:t.cosmicMotion, cosmicWarmth:t.cosmicWarmth, cosmicAir:t.cosmicAir, harm:t.harm?JSON.parse(JSON.stringify(t.harm)):null, harmOwn:t.harmOwn?JSON.parse(JSON.stringify(t.harmOwn)):null})),
+  taUndo={ len:PATTERN_LENGTH, tracks:TRACKS.map(t=>({steps:t.steps.slice(), notes:t.notes?t.notes.slice():null, slides:t.slides?t.slides.slice():null, events:t.events?JSON.parse(JSON.stringify(t.events)):null, cutoff:t.cutoff, resonance:t.resonance, envMod:t.envMod, decay:t.decay, inst:Object.fromEntries((trInst(t)||{undo:[]}).undo.map(k=>[k,t[k]])), harm:t.harm?JSON.parse(JSON.stringify(t.harm)):null, harmOwn:t.harmOwn?JSON.parse(JSON.stringify(t.harmOwn)):null})),
     harmony:JSON.parse(JSON.stringify(harmony)), hmTpl };
   taUndoBtn.disabled=false;
 }
@@ -393,7 +393,7 @@ taUndoBtn.addEventListener('click', ()=>{
   PATTERN_LENGTH=u.len; currentPage=Math.min(currentPage,totalPages()-1);
   TRACKS.forEach((tr,i)=>{ const d=u.tracks[i]; tr.steps=d.steps; if(d.events){ tr.events=d.events; delete tr.notes; delete tr.slides; tr._idx=null; } else { tr.notes=d.notes; tr.slides=d.slides; }
     if(tr.type==='arp'){ tr.harm=d.harm; if(d.harmOwn) tr.harmOwn=d.harmOwn; else delete tr.harmOwn; }
-    if(tr.type==='arp' && d.cutoff!=null){ tr.cutoff=d.cutoff; tr.resonance=d.resonance; tr.envMod=d.envMod; tr.decay=d.decay; tr.cosmicWidth=d.cosmicWidth; tr.cosmicMotion=d.cosmicMotion; tr.cosmicWarmth=d.cosmicWarmth; tr.cosmicAir=d.cosmicAir; renderArpControls(tr); } });
+    if(tr.type==='arp' && d.cutoff!=null){ tr.cutoff=d.cutoff; tr.resonance=d.resonance; tr.envMod=d.envMod; tr.decay=d.decay; Object.assign(tr,d.inst); renderArpControls(tr); } });
   if(u.harmony){ harmony=u.harmony; hmTpl=u.hmTpl||0; }
   renderLengthChips(); renderPageNav(); renderAllForPage(); if(prIsOpen()) prRender();
 });

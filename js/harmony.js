@@ -37,8 +37,8 @@ const hmChordName=c=>NOTE_NAMES[c.root]+(c.type==='madd9'?'m(add9)':c.type);
 const hmTrName=tr=>{ const n=prName(tr); return n[0]+n.slice(1).toLowerCase(); };
 function hmPcOf(tr){ return hmMod(9+(tr.rootNote||0),12); } // Tonklasse von n=0 dieser Spur
 let harmony={key:{root:9,scale:'minor'},chords:[]}, hmTpl=0, hmOpen=false, hmMoreOpen=false, hmSelIdx=-1, hmSheetSnap=false;
-function hmDefaultTrack(tr){ return {mode:'off', seed:1+Math.floor(Math.random()*1e6), fill:false,
-  arp:{style:tr.id==='cosmic'?'cosmic':'classic', dir:'up', rate:1, oct:2, dens:75}, bass:{bstyle:tr.id==='arp'?'roll':'hold', lage:0}}; }
+function hmDefaultTrack(tr){ const I=trInst(tr)||{}; return {mode:'off', seed:1+Math.floor(Math.random()*1e6), fill:false,
+  arp:{style:I.arpStyle||'classic', dir:'up', rate:1, oct:2, dens:75}, bass:{bstyle:I.bass||'hold', lage:0}}; }
 function hmEnsure(tr){ if(!tr.harm) tr.harm=hmDefaultTrack(tr); return tr.harm; }
 function hmOn(tr){ return !!(tr && tr.type==='arp' && tr.harm && tr.harm.mode!=='off'); }
 function trOwnEvents(tr){ return hmOn(tr) ? (tr.harmOwn||[]) : tr.events; }
@@ -331,19 +331,13 @@ function renderArpControls(tr){
   arpEnvEl.appendChild(envKnob.el);
   arpDecayEl.appendChild(decayKnob.el);
   if(arpCosmicControlsEl){
-    const isCosmic=tr.id==='cosmic';
-    arpCosmicControlsEl.style.display=isCosmic?'flex':'none';
-    if(isCosmic){
-      const addCosmicKnob=(id,label,key,fmt)=>{
-        const el=document.getElementById(id); el.innerHTML='';
-        const k=makeKnob({label,size:'26px',min:0,max:1,value:tr[key]!=null?tr[key]:0.5,fmt:fmt|| (v=>Math.round(v*100)+'%'),onChange:v=>tr[key]=v});
-        el.appendChild(k.el);
-      };
-      addCosmicKnob('arpCosmicWidth','WIDTH','cosmicWidth');
-      addCosmicKnob('arpCosmicMotion','MOTION','cosmicMotion');
-      addCosmicKnob('arpCosmicWarmth','WARMTH','cosmicWarmth');
-      addCosmicKnob('arpCosmicAir','AIR','cosmicAir');
-    }
+    const knobs=(trInst(tr)||{}).knobs; // Zusatzregler des Instruments (Cosmic: Width/Motion/Warmth/Air)
+    arpCosmicControlsEl.style.display=knobs?'flex':'none';
+    if(knobs) knobs.forEach(([label,key])=>{
+      const el=document.getElementById('arpCosmic'+label); if(!el) return; el.innerHTML='';
+      const k=makeKnob({label:label.toUpperCase(),size:'26px',min:0,max:1,value:tr[key]!=null?tr[key]:0.5,fmt:v=>Math.round(v*100)+'%',onChange:v=>tr[key]=v});
+      el.appendChild(k.el);
+    });
   }
 }
 // Würfelt die vier Filterwerte (Cutoff/Reso/Env Mod/Decay) — in musikalischen Grenzen, voller Bereich würde pfeifen/übersteuern

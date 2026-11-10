@@ -258,7 +258,7 @@ function groupOfTrack(tr){ const g=ARR_GROUPS.find(x=>x.ids.indexOf(tr.id)>=0); 
 function setPatternGroup(gid, select){
   patternGroup=gid;
   grpSelRender();
-  { const kitOn=(gid==='drums'||gid==='perc'||gid==='piano'); $id('spurRow').classList.toggle('hasKit',kitOn); $id('lcdKitBtn').style.display=kitOn?'':'none'; $id('lcdKitBtn').classList.toggle('keys',gid==='piano'); $id('lcdKitBtn').classList.toggle('perc',!!(dtById(gid)&&dtById(gid).kind==='perc')); updateKitLabel(); $id('fillBtn').style.display=dtById(gid)&&dtById(gid).fill?'':'none'; }
+  { const snd=!!grpSoundTr(gid), kitOn=(!!dtById(gid)||snd); $id('spurRow').classList.toggle('hasKit',kitOn); $id('lcdKitBtn').style.display=kitOn?'':'none'; $id('lcdKitBtn').classList.toggle('keys',snd); $id('lcdKitBtn').classList.toggle('perc',!!(dtById(gid)&&dtById(gid).kind==='perc')); updateKitLabel(); $id('fillBtn').style.display=dtById(gid)&&dtById(gid).fill?'':'none'; }
   TRACKS.forEach(tr=>{ if(trUi(tr).ovRow) trUi(tr).ovRow.style.display = groupOfTrack(tr)===gid ? '' : 'none'; });
   if(select) selectTrack(TRACKS.findIndex(t=>groupOfTrack(t)===gid));
 }

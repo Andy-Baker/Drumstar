@@ -177,6 +177,25 @@ async def main():
     r=await pg.evaluate("({bd:TRACKS.find(t=>t.id==='bd').steps.slice(16,32).some(v=>v), page:currentPage})")
     ok('Seite kopieren: Rückgängig', not r['bd'] and r['page']==0, r)
     await pg.evaluate("setPatternLength(16); currentPage=0; renderPageNav(); renderAllForPage()")
+    # Instrument-Register (#24): Eigenschaften, eigene Felder speichern/laden, Klang-Sheet nach Register
+    r=await pg.evaluate("""(()=>{ const T=id=>TRACKS.find(t=>t.id===id), A=T('arp'), C=T('cosmic'), P=T('piano');
+      const meta=[A,C,P].map(t=>[prName(t),isPoly(t),trOct(t),trInst(t).grp]).concat([[trInst(T('bd'))]]);
+      C.cosmicWidth=.33; P.sound='rhodes'; P.tremolo=.4; const d=JSON.parse(JSON.stringify(collectPatternData('t','t')));
+      const sv=id=>d.tracks.find(t=>t.id===id), foreign=('cosmicWidth' in sv('arp'))||('cosmicWidth' in sv('piano'))||('sound' in sv('cosmic'));
+      C.cosmicWidth=.9; P.sound='piano'; P.tremolo=0; applyTrackAndFillData(d); const back=[C.cosmicWidth,P.sound,P.tremolo];
+      const bad=JSON.parse(JSON.stringify(d)); bad.tracks.find(t=>t.id==='piano').sound='gibtsnicht'; delete bad.tracks.find(t=>t.id==='cosmic').cosmicAir; applyTrackAndFillData(bad); const fix=[P.sound, C.cosmicAir];
+      const old=JSON.parse(JSON.stringify(d)); old.tracks=old.tracks.filter(t=>t.id!=='cosmic'); C.cosmicWidth=.1; C.vol=.2; applyTrackAndFillData(old);
+      const sheet=id=>{ klTr=T(id); klTab='sound'; klView.length=0; klMode='klang'; renderKlang(); const s=$id('klSheet');
+        return {cos:s.classList.contains('cos'), pno:s.classList.contains('pno'), xy:!!$id('klXy'), lab:[...document.querySelectorAll('#klRows label')].map(l=>l.textContent), seg:document.querySelectorAll('#klRows .am-seg button').length}; };
+      return {meta, foreign, back, fix, fresh:[C.cosmicWidth, C.vol, C.events.length], a:sheet('arp'), c:sheet('cosmic'), p:sheet('piano'), grp:[!!grpSoundTr('piano'), !!grpSoundTr('cosmic'), !!grpSoundTr('drums')]}; })()""")
+    ok('Register: Name/Akkorde/Oktave/Gruppe je Instrument, Drums ohne', r['meta']==[['ACID',False,0,'acid'],['COSMIC',True,24,'cosmic'],['KEYS',True,12,'piano'],[None]], r['meta'])
+    ok('Register: nur eigene Felder gespeichert und zurückgeladen', not r['foreign'] and r['back']==[.33,'rhodes',.4], r)
+    ok('Register: ungültiger Keys-Klang/fehlendes Cosmic-Feld → Standard', r['fix']==['piano',.18], r['fix'])
+    ok('Register: Pattern ohne Cosmic → Cosmic leer mit Werksklang', r['fresh']==[.62,.68,0], r['fresh'])
+    ok('Register: Klang-Sheet je Instrument (Acid XY+Accent, Cosmic Width, Keys Klangwahl)',
+       r['a']['xy'] and 'Accent' in r['a']['lab'] and not r['a']['cos'] and r['c']['cos'] and not r['c']['xy'] and 'Width' in r['c']['lab'] and 'Accent' not in r['c']['lab']
+       and r['p']['pno'] and r['p']['seg']>=3 and 'Ton' in r['p']['lab'], r)
+    ok('Register: Klang-Auswahl an der Kit-Taste nur bei Keys', r['grp']==[True,False,False], r['grp'])
     ok('Schrift überall ≥ 11 px (#19)', not fz.bad, fz.bad)
     ok('Keine Konsolenfehler', not errs, errs)
     await b.close()

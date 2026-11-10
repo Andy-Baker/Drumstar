@@ -48,7 +48,7 @@ function collectPatternData(name, id){
       reverbAmount: tr.reverbAmount || 0,
       feel: tr.feel || 0,
       delaySend: tr.delaySend || 0,
-      accentAmt: tr.accentAmt, rootNote: tr.rootNote, cutoff: tr.cutoff, resonance: tr.resonance, envMod: tr.envMod, decay: tr.decay, scale: tr.scale, cosmicWidth:tr.cosmicWidth, cosmicMotion:tr.cosmicMotion, cosmicWarmth:tr.cosmicWarmth, cosmicAir:tr.cosmicAir, sound:tr.sound, tremolo:tr.tremolo // neue Cosmic-Parameter sind optional für ältere Pattern
+      accentAmt: tr.accentAmt, rootNote: tr.rootNote, cutoff: tr.cutoff, resonance: tr.resonance, envMod: tr.envMod, decay: tr.decay, scale: tr.scale, ...instSave(tr) // eigene Felder des Instruments (#24), optional für ältere Pattern
     })),
     harmony: JSON.parse(JSON.stringify(harmony)), // v62: Akkordfolge + Tonart (optional, ältere Pattern: Standard-Vorlage)
     acidAuto: { shape: autoShape, bars: autoBars, depth: autoDepth },
@@ -97,26 +97,13 @@ function applyTrackAndFillData(data){
   currentPage=0;
   // Neue Spuren, die in älteren gespeicherten Patterns noch nicht existierten,
   // starten beim Laden leer statt den Zustand des zuvor geladenen Beats zu behalten.
-  const cosmicSaved=(data.tracks||[]).some(saved=>saved.id==='cosmic');
-  if(!cosmicSaved){
-    const cosmic=TRACKS.find(t=>t.id==='cosmic');
-    if(cosmic){
-      cosmic.steps=new Array(PATTERN_LENGTH).fill(VEL_OFF);
-      cosmic.events=[]; delete cosmic.notes; delete cosmic.slides; cosmic._idx=null;
-      cosmic.muted=false; cosmic.solo=false;
-      if(trUi(cosmic).ovRow) trUi(cosmic).ovRow.classList.remove('muted');
-      if(trUi(cosmic).mixMuteBtn) trUi(cosmic).mixMuteBtn.classList.remove('on'); if(trUi(cosmic).mixSoloBtn) trUi(cosmic).mixSoloBtn.classList.remove('on');
-      applyTrackSound(cosmic,{vol:0.68,tune:0.5,rootNote:0,cutoff:0.62,resonance:0.22,envMod:0.62,decay:0.42,scale:'minor',reverbAmount:0.24,delaySend:0.28,cosmicWidth:0.62,cosmicMotion:0.46,cosmicWarmth:0.22,cosmicAir:0.18});
-    }
-  }
-  if(!(data.tracks||[]).some(saved=>saved.id==='piano')){
-    const pn=TRACKS.find(t=>t.id==='piano');
-    if(pn){
-      pn.steps=new Array(PATTERN_LENGTH).fill(VEL_OFF); pn.events=[]; delete pn.notes; delete pn.slides; pn._idx=null; pn.muted=false; pn.solo=false;
-      ['mixMuteBtn','mixSoloBtn'].forEach(k=>{ if(trUi(pn)[k]) trUi(pn)[k].classList.remove('on'); }); if(trUi(pn).ovRow) trUi(pn).ovRow.classList.remove('muted');
-      applyTrackSound(pn,{vol:0.8,tune:0.5,rootNote:0,cutoff:0.55,resonance:0.2,envMod:0.5,decay:0.5,scale:'minor',reverbAmount:0.18,delaySend:0});
-    }
-  }
+  // Melodiespuren, die das Pattern nicht kennt (z. B. Cosmic/Keys vor ihrer Einführung): leer, Klang ab Werk (tr._snd0)
+  TRACKS.forEach(tr=>{
+    if(!trInst(tr) || (data.tracks||[]).some(saved=>saved.id===tr.id)) return;
+    tr.steps=new Array(PATTERN_LENGTH).fill(VEL_OFF); tr.events=[]; delete tr.notes; delete tr.slides; tr._idx=null; tr.muted=false; tr.solo=false;
+    const u=trUi(tr); ['mixMuteBtn','mixSoloBtn'].forEach(k=>{ if(u[k]) u[k].classList.remove('on'); }); if(u.ovRow) u.ovRow.classList.remove('muted');
+    applyTrackSound(tr, tr._snd0);
+  });
   TRACKS.forEach(tr=>{ if(tr.type==='arp'){ tr.harm=hmDefaultTrack(tr); delete tr.harmOwn; } });
   TRACKS.forEach(tr=>{ // Drum-Spuren, die es im gespeicherten Pattern noch nicht gab (z. B. Ride vor v72): leer
     if(tr.type==='arp' || (data.tracks||[]).some(s=>s.id===tr.id)) return;
@@ -156,11 +143,7 @@ function applyTrackAndFillData(data){
       tr.resonance = saved.resonance!=null ? saved.resonance : 0.35;
       tr.envMod = saved.envMod!=null ? saved.envMod : 0.5;
       tr.decay = saved.decay!=null ? saved.decay : 0.26;
-      tr.cosmicWidth = saved.cosmicWidth!=null ? saved.cosmicWidth : 0.62;
-      tr.cosmicMotion = saved.cosmicMotion!=null ? saved.cosmicMotion : 0.46;
-      tr.cosmicWarmth = saved.cosmicWarmth!=null ? saved.cosmicWarmth : 0.22;
-      tr.cosmicAir = saved.cosmicAir!=null ? saved.cosmicAir : 0.18;
-      if(tr.id==='piano'){ tr.sound=KEY_SOUNDS[saved.sound]?saved.sound:'piano'; tr.tremolo=saved.tremolo!=null?saved.tremolo:0; }
+      instLoad(tr,saved); // eigene Felder des Instruments (#24)
       tr.scale = SCALES[saved.scale] ? saved.scale : 'minor';
       tr.accentAmt = saved.accentAmt!=null ? saved.accentAmt : 0.5;
       tr.harm = hmSanTrack(tr, saved.harm);
