@@ -24,9 +24,13 @@ function beatTrackData(tr){
 // Ziel = gewählte Spur, wenn sie das Instrument spielt, sonst die erste solche Spur (null = keine da)
 function beatMelTrack(gid){ const k=instByGrp(gid); if(!k) return null; const a=TRACKS[activeTrackIdx];
   return a && trInstKey(a)===k ? a : TRACKS.find(t=>trInstKey(t)===k)||null; }
-function beatTracksOf(gid){ if(!instByGrp(gid)) return arrGroupTracks(gid); const t=beatMelTrack(gid); return t ? [t] : []; }
+function beatTracksOf(gid){ const dd=beatDrumTarget(gid); if(dd) return arrGroupTracks(dd.id); if(!instByGrp(gid)) return arrGroupTracks(gid); const t=beatMelTrack(gid); return t ? [t] : []; }
+// Beat-Reiter DRUMS/PERC gelten für alle Drum-Spuren dieser Art (#70): gewählte Spur, wenn sie passt, sonst die ab Werk.
+// Im Beat stehen die Zeilen unter ihrer Stimme ab Werk (rowBase), damit er in jede Spur der Art passt.
+function beatDrumTarget(gid){ if(!DRUM_TRACKS.some(d=>d.id===gid && !dtExtra(d))) return null; const a=dtActive(); return a.kind===dtById(gid).kind ? a : dtById(gid); }
 function beatCollect(gid, name){
-  const d={ id:genId(), kind:'beat', group:gid, name, savedAt:Date.now(), length:PATTERN_LENGTH, kitId:(dtById(gid)||DRUM_TRACKS[0]).kit, tracks:beatTracksOf(gid).map(beatTrackData) };
+  const d={ id:genId(), kind:'beat', group:gid, name, savedAt:Date.now(), length:PATTERN_LENGTH, kitId:(beatDrumTarget(gid)||DRUM_TRACKS[0]).kit,
+    tracks:beatTracksOf(gid).map(t=>Object.assign(beatTrackData(t),{id:rowBase(t.id)})) };
   if(gid==='acid') d.acidAuto={shape:autoShape, bars:autoBars, depth:autoDepth};
   if(gid==='sample') d.sampleId=sampleTrackSampleId;
   return d;
@@ -50,14 +54,15 @@ function applyTrackSound(tr, sv){
 async function beatApply(d, withSound){
   if(isPlaying) stop();
   if(d.length>PATTERN_LENGTH) setPatternLength(d.length); // nur erweitern, nie kürzen
-  arrGroupTracks(d.group).forEach(tr=>{ // Spuren der Gruppe, die der Beat noch nicht kannte (z. B. Ride vor v72): leer
-    if(tr.type!=='arp' && !d.tracks.some(sv=>sv.id===tr.id)){ tr.steps.fill(VEL_OFF); if(tr.notes) tr.notes.fill(0); }
+  const dd=beatDrumTarget(d.group), dRows=dd ? arrGroupTracks(dd.id) : null;
+  (dRows||arrGroupTracks(d.group)).forEach(tr=>{ // Spuren der Gruppe, die der Beat noch nicht kannte (z. B. Ride vor v72): leer
+    if(tr.type!=='arp' && !d.tracks.some(sv=>sv.id===rowBase(tr.id))){ tr.steps.fill(VEL_OFF); if(tr.notes) tr.notes.fill(0); }
   });
   const k=instByGrp(d.group); let mt=k ? beatMelTrack(d.group) : null;
   if(k && !mt){ if(melCount()>=MEL_MAX){ showPatternIOStatus('Keine '+INSTR[k].name+'-Spur und kein Platz für eine neue', true); return; }
     mt=trAddNew({k, label:melSuggest(INSTR[k].name)}); } // Instrument-Spur gelöscht: neu anlegen
   d.tracks.forEach(sv=>{
-    const tr=k ? mt : TRACKS.find(t=>t.id===sv.id); if(!tr) return;
+    const tr=k ? mt : dRows ? dRows.find(t=>rowBase(t.id)===sv.id) : TRACKS.find(t=>t.id===sv.id); if(!tr) return;
     tr.steps=migrateStepsToVelocity(sv.steps, tr.id, undefined, PATTERN_LENGTH);
     if(tr.type!=='arp') tr.notes=artLoad(tr, sv.notes);
     if(tr.type==='arp'){
@@ -134,7 +139,7 @@ const DS_IDS=['bd','sd','ch','oh','lt','ht','rs','hc','cy','rd','cb','cl','mr'];
 function dtActive(){ return (typeof patternGroup!=='undefined' && dtById(patternGroup)) || DRUM_TRACKS[0]; }
 const dtCustom=d=>!d.set.name && d.rows.some(r=>drumSet.voices[r]);
 function kitFits(k, d){ // Kit spielt mindestens eine Zeile der Spur selbst (eigene Stimme oder Standard-Belegung)
-  const K=KITS[k], own=dsKitVoices(k); return d.rows.some(r=>(K.rows && K.rows[r]) || own.indexOf(r)>=0);
+  const K=KITS[k], own=dsKitVoices(k); return d.rows.some(r=>(K.rows && K.rows[rowBase(r)]) || own.indexOf(rowBase(r))>=0);
 }
 let dsCur=null, dsMode='syn', dsMsgTimer=null, kitPending=null;
 function dsSay(m){ dsStatus.textContent=m; clearTimeout(dsMsgTimer); dsMsgTimer=setTimeout(()=>{ dsStatus.textContent=''; },3000); }
@@ -204,7 +209,7 @@ async function dsSaveCurrent(){
   const d=dtActive(), S=d.set;
   const others=new Set((await dsAll()).filter(s=>s.id!==S.id && s.kind===d.kind).map(s=>s.name));
   const name=uniqueName((S.name||'').trim()||'Mein '+d.setT, others), id=S.id||genId(), v={};
-  d.rows.forEach(r=>{ if(drumSet.voices[r]) v[r]=JSON.parse(JSON.stringify(drumSet.voices[r])); });
+  d.rows.forEach(r=>{ if(drumSet.voices[r]) v[rowBase(r)]=JSON.parse(JSON.stringify(drumSet.voices[r])); }); // Set unter Stimme ab Werk (#70: passt in jede Spur der Art)
   await dsPut({id, kind:d.kind, name, savedAt:Date.now(), baseKitId:d.kit, voices:v});
   d.set={id, name, dirty:false}; updateKitLabel(); return name;
 }
@@ -229,7 +234,7 @@ function applyStandardKit(kitId){ // nur die gewählte Drum-Spur; die anderen be
 async function applyOwnSet(s){
   const d=dtActive(), V=s.voices||{};
   if(KITS[s.baseKitId]) d.kit=s.baseKitId;
-  dtClear(d); d.rows.forEach(r=>{ if(V[r]) drumSet.voices[r]=JSON.parse(JSON.stringify(V[r])); });
+  dtClear(d); d.rows.forEach(r=>{ const b=rowBase(r); if(V[b]) drumSet.voices[r]=JSON.parse(JSON.stringify(V[b])); });
   d.set={id:s.id,name:s.name,dirty:false};
   updateKitLabel(); await drumSetLoadBuffers();
 }
@@ -316,9 +321,9 @@ function dsKitVoices(k){ // Stimmen, die ein Kit wirklich eigen spielt (Sample-K
 }
 function dsRender(){
   dsRows.innerHTML='';
-  [dtActive().id].forEach(gk=>{ // #68: nur die Zeilen der gewählten Drum-Spur
-    const ids=DS_IDS.filter(id=>GRP_DEF[gk].ids.indexOf(id)>=0); if(!ids.length) return;
-    const h=document.createElement('div'); h.className='ds-grp ds-grp-'+gk; h.innerHTML='<i></i>'+GRP_DEF[gk].ab; dsRows.appendChild(h);
+  [dtActive()].forEach(D=>{ // #68: nur die Zeilen der gewählten Drum-Spur; #70: Reihenfolge nach Stimme ab Werk, Farbe nach Art
+    const gk=D.kind, ids=D.rows.slice().sort((a,b)=>DS_IDS.indexOf(rowBase(a))-DS_IDS.indexOf(rowBase(b))); if(!ids.length) return;
+    const h=document.createElement('div'); h.className='ds-grp ds-grp-'+gk; h.innerHTML='<i></i>'+D.name; dsRows.appendChild(h);
     ids.forEach(id=>{
       const tr=TRACKS.find(t=>t.id===id), v=drumSet.voices[id], sw=trSwap(tr), d=document.createElement('div');
       d.className='ds-row ds-'+gk+(v?' sw':'');
@@ -326,7 +331,7 @@ function dsRender(){
       if(v && v.t==='smp'){ smp=true; name=(drumSet.buffers[id] && drumSet.buffers[id].name) || 'Sample (lädt…)'; sub=drumSet.buffers[id] ? 'Sample · aus Bibliothek' : 'Sample fehlt — Synth als Ersatz'; }
       else if(v){ name=dsVName(trVoice(tr)); sub=KITS[v.kitId].name; }
       else { name=trLabel(tr); sub=KITS[rowKit(id)].name+' (Original)'; }
-      d.innerHTML='<b>'+trShort(tr)+(sw?'<s>statt '+id.toUpperCase()+'</s>':'')+'</b><div class="ds-src'+(smp?' smp':'')+'"><span></span><small>'+(smp?'':'<em class="ds-rl">'+dsVGroup(trVoice(tr))+'</em>')+'<i></i></small></div><button class="ds-pv" aria-label="Anhören">'+UI_IC.play+'</button>';
+      d.innerHTML='<b>'+trShort(tr)+(sw?'<s>statt '+rowBase(id).toUpperCase()+'</s>':'')+'</b><div class="ds-src'+(smp?' smp':'')+'"><span></span><small>'+(smp?'':'<em class="ds-rl">'+dsVGroup(trVoice(tr))+'</em>')+'<i></i></small></div><button class="ds-pv" aria-label="Anhören">'+UI_IC.play+'</button>';
       d.querySelector('span').textContent=name; d.querySelector('small i').textContent=sub;
       d.querySelector('.ds-pv').onclick=e=>{ e.stopPropagation(); dsPreview(id); };
       d.onclick=()=>dsOpenSheet(id); dsRows.appendChild(d);
@@ -336,7 +341,7 @@ function dsRender(){
 function dsPick(id, o){ // o = {t:'syn',kitId,v} oder null = Original; Rückgängig im Toast
   const S=dtOfRow(id).set, prev=drumSet.voices[id], wasDirty=S.dirty;
   if(o && o.kitId===rowKit(id) && o.v===rowDefVoice(id)) o=null; // = Original
-  if(o){ if(o.v===id) o={t:'syn',kitId:o.kitId}; drumSet.voices[id]=o; } else delete drumSet.voices[id];
+  if(o){ if(o.v===rowBase(id)) o={t:'syn',kitId:o.kitId}; drumSet.voices[id]=o; } else delete drumSet.voices[id];
   delete drumSet.buffers[id]; dsMarkDirty(id); dsRender(); dsRenderList(); dsPreview(id);
   const tr=TRACKS.find(t=>t.id===id);
   hmToast(id.toUpperCase()+' spielt jetzt '+dsVName(trVoice(tr))+(o?' · '+KITS[o.kitId].name:''), true, async()=>{

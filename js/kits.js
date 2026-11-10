@@ -228,15 +228,17 @@ const ROLE_GROUP={ kick:'Kick', snare:'Snare', rim:'Snare', hat:'Hi-Hat', openha
 // Stufe 2: drumSet.voices[id]={t:'syn',kitId,v} = Zeile spielt Stimme v aus Kit kitId (ohne v: dieselbe Stimme).
 // Mixer-Kanal, Gruppe, Noten, Tune/Laut bleiben an der Zeile; Klang, Rolle, Spielweisen und Name folgen der Stimme.
 function trSwap(tr){
-  const o=drumSet.voices[tr.id];
-  if(!o){ const m=rowDefVoice(tr.id); return m!==tr.id ? m : null; } // Standard-Belegung des Basis-Kits (z. B. Latin auf PERC)
-  return (o.t==='syn' && o.v && o.v!==tr.id && VOICE_FNS[o.v]) ? o.v : null;
+  const o=drumSet.voices[tr.id], b=rowBase(tr.id);
+  if(!o){ const m=rowDefVoice(tr.id); return m!==b ? m : null; } // Standard-Belegung des Basis-Kits (z. B. Latin auf PERC)
+  return (o.t==='syn' && o.v && o.v!==b && VOICE_FNS[o.v]) ? o.v : null;
 }
-function trVoice(tr){ return trSwap(tr)||tr.id; }
+function trVoice(tr){ return trSwap(tr)||rowBase(tr.id); }
 function trLabel(tr){ const s=trSwap(tr); return s ? voiceName(s) : tr.name; }
-function trShort(tr){ const s=trSwap(tr); return s ? voiceShort(s) : (tr.short||tr.id.toUpperCase()); }
+function trShort(tr){ const s=trSwap(tr); return s ? voiceShort(s) : (tr.short||rowBase(tr.id).toUpperCase()); }
 function trRole(tr){ return VOICE_ROLE[trVoice(tr)]||'perc'; }
-function roleTracks(role){ return TRACKS.filter(t=>t.type!=='arp' && !t.isSample && trRole(t)===role); }
+// Zeilen einer Rolle in DRUMS/PERC ab Werk (weitere Drum-Spuren #70 bekommen den Fill über fillLayer)
+function roleTracks(role){ return TRACKS.filter(t=>t.type!=='arp' && !t.isSample && trRole(t)===role && !dtExtra(ROW_DT[t.id])); }
+function dtExtra(d){ return !!d && d.id!=='drums' && d.id!=='perc'; }
 const ART={ ch:[{k:'Z',n:'Zu',v:'ch'},{k:'L',n:'Locker',v:'hl'},{k:'P',n:'Pedal',v:'hf'}],
             rd:[{k:'F',n:'Fläche',v:'rd'},{k:'B',n:'Bell',v:'rb'}],
             // Crash (#56): frei ausklingen oder mit der Hand abstoppen — sofort, nach 1/16 oder nach 1/8 (tempoabhängig)
@@ -281,12 +283,13 @@ const VOICE_FNS={
 // ohne Eintrag folgt die Stimme dem Basis-Kit ihrer Drum-Spur (DRUM_TRACKS[].kit, #68). drumSet.buffers[id] = dekodierte Samples. Fehlt ein Sample: Fallback auf Synth.
 // Geladenes eigenes Set je Drum-Spur: DRUM_TRACKS[].set = {id,name,dirty} (id/name null = Standard-Kit).
 const drumSet={voices:{}, buffers:{}};
-let lastOpenSample=null;
+let lastOpenSample={}; // klingende offene Sample-Hi-Hat je Drum-Spur (Choke nur innerhalb der Spur, #70)
+let chokeKey='drums'; // Drum-Spur des gerade ausgelösten Schlags (triggerTrack)
 function rowKit(id){ const k=dtOfRow(id).kit; return KITS[k] ? k : 'rock'; }
-function rowDefVoice(id){ const R=KITS[rowKit(id)].rows, m=R && R[id]; return m && VOICE_FNS[m] ? m : id; }
+function rowDefVoice(id){ const b=rowBase(id), R=KITS[rowKit(id)].rows, m=R && R[b]; return m && VOICE_FNS[m] ? m : b; }
 function voiceKitId(id){ const v=drumSet.voices[id]; return (v && v.t==='syn' && KITS[v.kitId]) ? v.kitId : rowKit(id); }
 function chokeOpenSample(time){
-  if(!lastOpenSample) return; const o=lastOpenSample; lastOpenSample=null;
+  const o=lastOpenSample[chokeKey]; if(!o) return; delete lastOpenSample[chokeKey];
   try{ o.g.gain.cancelScheduledValues(time); o.g.gain.setValueAtTime(o.g.gain.value, time); o.g.gain.linearRampToValueAtTime(0.0001, time+0.025); o.src.stop(time+0.03); }catch(e){}
 }
 function playDrumSample(tr, time, velocity){
@@ -295,7 +298,7 @@ function playDrumSample(tr, time, velocity){
   const g=audioCtx.createGain(); g.gain.value=Math.max(0.0001, tr.vol*velocity*0.8);
   src.connect(g).connect(getBus());
   src.start(time, Math.min(b.offset||0, Math.max(0,b.buffer.duration-0.01)));
-  if(tr.id==='oh') lastOpenSample={src,g};
+  if(rowBase(tr.id)==='oh') lastOpenSample[chokeKey]={src,g};
   return true;
 }
 // =========================================================================
@@ -398,7 +401,7 @@ function smpRoom(dest){ // ein Raum je AudioContext (Live und WAV-Export getrenn
 }
 // Spielt einen Sample-Schlag. false = (noch) keine Aufnahme → Aufrufer nimmt den Synth.
 function smpPlay(kid, tr, time, velocity, choked, vid){
-  vid=vid||tr.id; const set=smpSet(kid,vid); if(!set || !audioCtx) return false;
+  vid=vid||rowBase(tr.id); const set=smpSet(kid,vid); if(!set || !audioCtx) return false;
   let l=2, fine;
   if(smpOpt.layers){ l=0; for(let i=1;i<4;i++) if(Math.abs(STUDIO_LAYER_VEL[i]-velocity)<Math.abs(STUDIO_LAYER_VEL[l]-velocity)) l=i;
     fine=Math.pow(Math.max(0.05,velocity)/STUDIO_LAYER_VEL[l],0.7); } // Zwischenwerte (Humanize, Pads)
@@ -415,7 +418,7 @@ function smpPlay(kid, tr, time, velocity, choked, vid){
   src.connect(g); g.connect(getBus()); g.connect(smpRoom(grpIn(tr)));
   src.start(time, s.off, s.dur);
   if(choked){ const h=typeof choked==='number' ? Math.max(0.06,choked) : 0.06; g.gain.setValueAtTime(gv,time+h); g.gain.linearRampToValueAtTime(0.0001,time+h+0.04); src.stop(time+h+0.05); } // choked: true = kurz, Zahl = Sekunden bis zum Abgreifen
-  if(vid==='oh' || vid==='hl') lastOpenSample={src,g}; // offene/lockere Hi-Hat: nächster Hi-Hat-Schlag würgt ab
+  if(vid==='oh' || vid==='hl') lastOpenSample[chokeKey]={src,g}; // offene/lockere Hi-Hat: nächster Hi-Hat-Schlag würgt ab
   return true;
 }
 // Regler „Klang“ in der Kit-Auswahl (Mockup kit-klang-mockup.html, Variante B, eingeklappt)
@@ -444,6 +447,7 @@ function smpOptRender(){ document.querySelectorAll('#kitPickerList .kit-opts').f
 function smpOptCollapse(){ document.querySelectorAll('#kitPickerList .kit-opts').forEach(b=>{ b.hidden=true; const k=b.parentNode.querySelector('.kit-kl'); if(k) k.setAttribute('aria-expanded','false'); }); }
 function triggerTrack(tr, time, velocity, art){
   currentTrackBus = tr.bus || master;
+  if(ROW_DT[tr.id]) chokeKey=ROW_DT[tr.id].id;
   const vid=trVoice(tr);
   if(vid==='ch') chokeOpenSample(time); // Closed Hat kappt ein klingendes Open-Hat-Sample
   if(tr.type==='arp'){ triggerArpStep(time, tr, 0, velocity, false); return; } // Preview: Grundton

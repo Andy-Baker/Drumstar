@@ -226,7 +226,45 @@ async def main():
     ok('#13 gelöschte Original-Spur bleibt beim Laden weg', r['ld']=='cosmic:COSMIC cosmic2:PAD piano:KEYS piano2:E-PIANO', r['ld'])
     ok('#13 Keys-Beat lädt in Keys-Spur, Acid-Beat legt fehlende Acid-Spur an', r['ba']==2 and r['ac'].endswith('arp:ACID'), [r['ba'],r['ac']])
     ok('#13 höchstens 7 Melodiespuren', r['go'] is True, r)
-    ok('#13 Standard laden → 3 Melodiespuren; Menü/Song mit Aktionen', r['back']=='arp:ACID cosmic:COSMIC piano:KEYS' and r['menu']=='3/true' and r['song']=='3/true', [r['back'],r['menu'],r['song']])
+    ok('#13 Standard laden → 3 Melodiespuren; Menü/Song mit Aktionen', r['back']=='arp:ACID cosmic:COSMIC piano:KEYS' and r['menu']=='5/true' and r['song']=='5/true', [r['back'],r['menu'],r['song']])
+    # Weitere Drum-/Perc-Spuren (#70): Zeilen wählen, Stimme ab Werk, eigenes Kit/Gruppe, Choke je Spur, Fill-Schichtung, Beats/Sets, Speichern/Laden, Löschen
+    r=await pg.evaluate("""(async()=>{ const G=()=>ARR_GROUPS.map(g=>g.id+'('+g.ids.length+')').join(','), T=id=>TRACKS.find(t=>t.id===id);
+      const base=JSON.parse(JSON.stringify(collectPatternData('t0','t0'))); const D=dtById('drums');
+      const d2=dtAddNew({kind:'drums',name:'DRUMS 2',kit:'fm909',rows:['bd','sd','ch','oh'],src:D,notes:true});
+      const add=[G(), d2.rows.map(r=>trVoice(T(r))+':'+trRole(T(r))+':'+trShort(T(r))+':'+voiceKitId(r)).join(' '), T('bd_2').steps.join()===T('bd').steps.join(), patternGroup, trGrp(T('sd_2')), GRP_KEYS.join(',')];
+      setPatternGroup('drums2',true); applyStandardKit('fm808'); const kit=[D.kit,d2.kit]; updateKitLabel();
+      const bt=beatCollect('drums','b'); const beat=[bt.tracks.map(x=>x.id).join(','), bt.kitId];
+      fillIntensity=.7; const f=generateFillOverride(8); const fill=['bd_2','sd_2'].every(k=>f[k] && JSON.stringify(f[k])===JSON.stringify(f[rowBase(k)]));
+      drumSet.voices.sd_2={t:'syn',kitId:'fm909',v:'rs'}; d2.set={id:null,name:null,dirty:false};
+      const p2=dtAddNew({kind:'perc',name:'CONGA',kit:'latin',rows:['hc','cb']}); const perc=p2.rows.map(r=>trVoice(T(r))).join(',');
+      arr.bars=8; arrStamp('drums2',4,4); const sd=JSON.parse(JSON.stringify(songCollect('s','s')));
+      dtDelete(d2); const del=[G(), GRP_KEYS.indexOf('drums2'), Object.keys(drumSet.voices).filter(k=>/_2$/.test(k)&&!/^(hc|cb)/.test(k)).length]; hmToastFn(); const und=[G(), (dtById('drums2')||{}).kit, (T('bd_2')||{steps:[]}).steps.filter(v=>v>0).length];
+      const old=JSON.parse(JSON.stringify(sd)); delete old.drt; applyPatternData(old); const lo=G();
+      songApply(sd); const ls=[G(), dtById('drums2').kit, JSON.stringify(drumSet.voices.sd_2), (arr.clips.bd_2||[]).length, dtById('perc2').name];
+      let n=0; while(dtExtras().length<DT_MAX_EXTRA){ dtAddNew({kind:'drums',name:'X'+(n++),rows:['bd']}); } dtAddSheet('drums'); const full=$id('trGo').disabled; closeSheets();
+      grpSelRender(); const menu=[...document.querySelectorAll('#grpMenu > button')].filter(b=>b.querySelector('.grp-dots')).length;
+      dtActSheet(dtById('drums')); const orig=!!trSheet.querySelector('[data-a=del][disabled]') && !trSheet.querySelector('[data-a=ren]'); closeSheets();
+      // Choke nur innerhalb der Spur: Nachklang der offenen Hi-Hat (DRUMS) nach Closed Hat von DRUMS 2 bzw. DRUMS
+      applyPatternData(base); const c2=dtAddNew({kind:'drums',name:'DRUMS 2',kit:'rock',rows:['ch']}); D.kit='rock';
+      TRACKS.forEach(t=>{ if(t.steps) t.steps.fill(0); if(t.type==='arp'){ t.events=[]; t._idx=null; evTouch(t); } t.muted=false; t.solo=false; });
+      const tail=async()=>{ const b=await renderPatternToWav(), L=b.getChannelData(0), sr=b.sampleRate; let e=0; for(let i=Math.floor(sr*.55);i<Math.floor(sr*1.2);i++) e+=L[i]*L[i]; return e; };
+      T('oh').steps[0]=VEL_NORMAL; const oh=await tail(); T('ch_2').steps[2]=VEL_NORMAL; const other=await tail(); T('ch_2').steps[2]=0; T('ch').steps[2]=VEL_NORMAL; const same=await tail();
+      applyPatternData(base); const back=[G(), GRP_KEYS.join(',')];
+      return {add,kit,beat,fill,perc,del,und,lo,ls,full,menu,orig,choke:[oh,other,same],back}; })()""")
+    ok('#70 Drum-Spur mit gewählten Zeilen: Stimme/Rolle/Name ab Werk, eigenes Kit, Noten kopiert, eigene Gruppe',
+       r['add'][0]=='drums(8),drums2(4),perc(5),acid(1),cosmic(1),piano(1),sample(1)' and r['add'][1]=='bd:kick:BD:fm909 sd:snare:SD:fm909 ch:hat:CH:fm909 oh:openhat:OH:fm909'
+       and r['add'][2] is True and r['add'][3]=='drums2' and r['add'][4]=='drums2' and r['add'][5]=='drums,perc,drums2', r['add'])
+    ok('#70 Kit-Taste wirkt nur auf die gewählte Drum-Spur', r['kit']==['rock','fm808'], r['kit'])
+    ok('#70 DRUMS-Beat aus DRUMS 2 speichert Stimmen ab Werk + Kit', r['beat']==['bd,sd,ch,oh','fm808'], r['beat'])
+    ok('#70 Fill von DRUMS auf DRUMS 2 geschichtet', r['fill'] is True, r)
+    ok('#70 Perc-Spur mit Latin-Kit spielt Conga/Bongo', r['perc']=='cgh,bgh', r['perc'])
+    ok('#70 Löschen räumt Gruppe/Tausch ab, Rückgängig stellt Kit + Noten her', r['del'][1]==-1 and r['del'][2]==0 and 'drums2' not in r['del'][0] and r['und'][1]=='fm808' and r['und'][2]>0, [r['del'],r['und']])
+    ok('#70 alter Stand ohne drt → keine weiteren Drum-Spuren', r['lo']=='drums(8),perc(5),acid(1),cosmic(1),piano(1),sample(1)', r['lo'])
+    ok('#70 Song laden: Spuren, Kit, Tausch, Clips, Name', r['ls'][0]=='drums(8),drums2(4),perc(5),perc2(2),acid(1),cosmic(1),piano(1),sample(1)' and r['ls'][1]=='fm808'
+       and r['ls'][2]=='{"t":"syn","kitId":"fm909","v":"rs"}' and r['ls'][3]==1 and r['ls'][4]=='CONGA', r['ls'])
+    ok('#70 höchstens 3 zusätzliche; DRUMS/PERC ab Werk nicht löschbar', r['full'] is True and r['orig'] is True, r)
+    ok('#70 Hi-Hat-Choke nur innerhalb der Spur', r['choke'][0]>0 and r['choke'][1]>0.8*r['choke'][0] and r['choke'][2]<0.1*r['choke'][0], r['choke'])
+    ok('#70 Standard laden → nur DRUMS/PERC', r['back']==['drums(8),perc(5),acid(1),cosmic(1),piano(1),sample(1)','drums,perc'], r['back'])
     ok('Schrift überall ≥ 11 px (#19)', not fz.bad, fz.bad)
     ok('Keine Konsolenfehler', not errs, errs)
     await b.close()

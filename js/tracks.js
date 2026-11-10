@@ -27,6 +27,7 @@ const TRACKS=[
 TRACKS.forEach(t=>{ t._def={vol:t.vol, tune:t.tune, reverbAmount:t.reverbAmount||0, delaySend:t.delaySend||0}; }); // Standardwerte je Spur (Zurücksetzen im Klang-Sheet)
 // Melodiespur ab Werk = Vorlage des Instruments (neue Spuren #13, Laden eines Patterns ohne diese Spur); bleibt, auch wenn die Original-Spur gelöscht ist
 TRACKS.forEach(t=>{ const I=INSTR[t.id]; if(I){ I.tpl=Object.assign({},t); I.def=Object.assign({},t._def); } });
+const ROW_TPL={}; TRACKS.forEach(t=>{ if(ROW_DT[t.id]) ROW_TPL[t.id]=Object.assign({},t,{_def:Object.assign({},t._def)}); }); // Drum-Zeile ab Werk (weitere Drum-Spuren #70)
 function instTpl(tr){ return trInst(tr).tpl; }
 arrGroupsBuild();
 // steps[s] speichert die Velocity eines Steps direkt als Zahl:
@@ -201,7 +202,16 @@ function generateFillOverride(len){
   put(toms[0],lt); put(toms[1]||toms[0],ht); put(roleTracks('snare')[0],sd); put(roleTracks('kick')[0],bd);
   put(roleTracks('crash')[0],cy,{chokeSteps});
   ['hat','openhat','ride'].forEach(r=>roleTracks(r).forEach(t=>{ if(!override[t.id]) set(t.id,new Array(len).fill(VEL_OFF)); }));
+  fillLayer(override);
   return override;
+}
+// #70: weitere Drum-Spuren (Art mit Fill), die im Pattern spielen, bekommen denselben Fill auf die Zeilen gleicher Stimme ab Werk
+function fillLayer(override){
+  DRUM_TRACKS.filter(d=>dtExtra(d) && d.fill).forEach(d=>{
+    const rows=d.rows.map(id=>TRACKS.find(t=>t.id===id)).filter(Boolean);
+    if(!rows.some(t=>t.steps.some(v=>v>0))) return;
+    Object.keys(override).forEach(id=>rows.forEach(t=>{ if(rowBase(t.id)===rowBase(id) && !override[t.id]) override[t.id]=JSON.parse(JSON.stringify(override[id])); }));
+  });
 }
 // Passt alle Track-Step-Arrays auf eine neue Länge an (behält vorhandene Steps,
 // füllt neue mit "aus", kürzt überschüssige beim Verkleinern).

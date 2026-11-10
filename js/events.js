@@ -56,8 +56,9 @@ function trTitle(tr){ const I=trInst(tr); return tr.label || (I ? I.name : tr.na
 function instByGrp(g){ return Object.keys(INSTR).find(k=>INSTR[k].grp===g)||null; } // Beat-Reiter → Instrument
 function arrGroupsBuild(){
   const mel=TRACKS.filter(t=>trInst(t)).map(t=>({id:trGrpId(t), label:trTitle(t), ids:[t.id]}));
-  const base=ARR_GROUPS_BASE.filter(g=>!instByGrp(g.id));
-  ARR_GROUPS.length=0; ARR_GROUPS.push(...base.filter(g=>g.id!=='sample'), ...mel, ...base.filter(g=>g.id==='sample'));
+  const base=ARR_GROUPS_BASE.filter(g=>!instByGrp(g.id)), drum=[];
+  base.filter(g=>dtById(g.id)).forEach(g=>{ drum.push(g); DRUM_TRACKS.filter(d=>d.id!==g.id && d.kind===dtById(g.id).kind).forEach(d=>drum.push({id:d.id, label:d.name, ids:d.rows})); }); // #70: weitere Drum-Spuren hinter ihre Art
+  ARR_GROUPS.length=0; ARR_GROUPS.push(...drum, ...base.filter(g=>!dtById(g.id) && g.id!=='sample'), ...mel, ...base.filter(g=>g.id==='sample'));
   if(typeof TR_UI!=='undefined') TRACKS.forEach((t,i)=>{ const r=TR_UI.get(t.id); if(r && r.ovRow) r.ovRow.dataset.idx=i; }); // Zeilen-Index = Platz in TRACKS
 }
 // Spur einer Gruppe, deren Instrument eine Klang-Auswahl hat (Kit-Taste zeigt dann die Klänge), sonst null

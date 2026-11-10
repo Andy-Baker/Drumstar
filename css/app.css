@@ -1405,7 +1405,7 @@ html,body{min-height:100%;height:100%;}
 .mix-head{height:38px;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;width:100%}
 .mix-strip .mix-head .mix-name{padding:0;font-size:12px;letter-spacing:.05em}
 .mix-sub{font-size:11px;letter-spacing:.06em;color:var(--dim);margin-top:1px}
-.mix-grp{background:none;border:0;color:var(--white);font:700 12px 'Rajdhani',sans-serif;letter-spacing:.05em;display:flex;align-items:center;gap:2px;cursor:pointer;padding:0}
+.mix-grp{background:none;border:0;color:var(--white);font:700 12px 'Rajdhani',sans-serif;letter-spacing:.05em;white-space:nowrap;display:flex;align-items:center;gap:2px;cursor:pointer;padding:0}
 .mix-grp svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;transition:transform .18s}
 .grp-strip.open .mix-grp svg{transform:rotate(180deg)}
 .mix-btns{height:24px;align-items:center;margin-top:6px}
@@ -1488,3 +1488,8 @@ html,body{min-height:100%;height:100%;}
 .ov-add{display:flex;align-items:center;justify-content:center;gap:8px;min-height:46px;margin-top:6px;border-radius:10px;border:1px dashed rgba(63,169,255,.45);background:rgba(63,169,255,.06);color:var(--blue-2);font:700 14px 'Rajdhani',sans-serif;letter-spacing:.08em;cursor:pointer;width:100%}
 .ov-add .uic{width:18px;height:18px}
 .ar-lab.tap>span:first-child{text-decoration:underline dotted rgba(143,212,255,.6);text-underline-offset:3px;cursor:pointer}
+
+/* #70 weitere Drum-/Perc-Spuren: Kit- und Zeilen-Chips (Mockup docs/mockups/issue-70.html B) */
+.trs-chips{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 6px}
+.trs-chip{min-height:40px;padding:0 12px;border-radius:20px;border:1px solid rgba(255,255,255,.12);background:var(--panel);color:var(--metal);font:600 14px 'Rajdhani',sans-serif;letter-spacing:.04em;cursor:pointer}
+.trs-chip.on{border-color:var(--c);color:var(--white);background:color-mix(in srgb,var(--c) 18%,transparent)}

@@ -55,6 +55,7 @@ function collectPatternData(name, id){
                sets: Object.fromEntries(DRUM_TRACKS.map(d=>[d.id, {id:d.set.id, name:d.set.name}])) },
     patternLength: PATTERN_LENGTH,
     tracks: TRACKS.map(trSave),
+    drt: DRUM_TRACKS.filter(dtExtra).map(dtEntry), // #70: weitere Drum-/Perc-Spuren (fehlt = keine)
     mel: TRACKS.filter(trInst).map(melEntry), // #13: Melodiespuren in Reihenfolge (fehlt bei älteren Ständen = ACID, COSMIC, KEYS)
     harmony: JSON.parse(JSON.stringify(harmony)), // v62: Akkordfolge + Tonart (optional, ältere Pattern: Standard-Vorlage)
     acidAuto: { shape: autoShape, bars: autoBars, depth: autoDepth },
@@ -133,6 +134,7 @@ function trLoadSaved(tr, saved, accentSteps){
   }
 }
 function applyTrackAndFillData(data){
+  dtSync(data.drt); // #70: weitere Drum-Spuren zuerst (Kits, Sets, Gruppen und Spuren unten rechnen mit ihnen)
   { const K=data.kits||{}; // #68: Kit je Drum-Spur; ältere Stände: alle Spuren mit kitId (klingt wie bisher)
     DRUM_TRACKS.forEach(d=>{ const k=K[d.id]||data.kitId; if(KITS[k]) d.kit=k; }); }
 

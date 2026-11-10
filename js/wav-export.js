@@ -25,8 +25,8 @@ async function renderPatternToWav(){
   // Bugfix: ohne Sichern/Zurücksetzen zeigte diese globale Choke-Group-Referenz nach dem Export
   // ggf. noch auf einen Gain-Node des bereits verworfenen OfflineAudioContext — der nächste
   // Live-Choke-Versuch scheiterte dann still (von try/catch abgefangen, aber ein verschluckter Choke).
-  const liveOpenHatGain=lastOpenHatGain; lastOpenHatGain=null;
-  const liveOpenSample=lastOpenSample; lastOpenSample=null; // dito für die offene Sample-Hi-Hat
+  const liveOpenHatGain=lastOpenHatGain; lastOpenHatGain={};
+  const liveOpenSample=lastOpenSample; lastOpenSample={}; // dito für die offene Sample-Hi-Hat
   const BUS_KEYS=['bus','eqHp','eqLow','eqMid','eqHigh','post','panner','analyser','sendGain','delaySendGain','_fxN','_eqIn'];
   const busBackup=TRACKS.map(tr=>{ const o={arpOsc:tr._arpOsc, arpFilter:tr._arpFilter, arpAmp:tr._arpAmp, arpLastFreq:tr._arpLastFreq}; BUS_KEYS.forEach(k=>o[k]=tr[k]); return o; });
 

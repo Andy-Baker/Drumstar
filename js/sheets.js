@@ -9,7 +9,7 @@ document.addEventListener('click', e=>{ if(!e.target.closest('.lcdsel')) closeMe
 function grpSelRender(){
   const m=$id('grpMenu'); if(!m) return; m.innerHTML='';
   ARR_GROUPS.forEach(g=>{ const b=document.createElement('button'); b.setAttribute('role','option'); if(g.id===patternGroup) b.className='cur';
-    b.innerHTML=g.label+'<small>'+g.ids.map(i=>i.toUpperCase()).join(' ')+'</small>';
+    b.innerHTML=g.label+'<small>'+g.ids.map(i=>rowBase(i).toUpperCase()).join(' ')+'</small>';
     b.onclick=()=>{ closeMenus(); setPatternGroup(g.id,true); }; m.appendChild(b); });
   if(typeof trMenuDecorate==='function') trMenuDecorate(m); // #13: ⋯ je Melodiespur + „Spur hinzufügen“ (js/spuren.js)
   const g=ARR_GROUPS.find(x=>x.id===patternGroup)||ARR_GROUPS[0], n=g.ids.length;

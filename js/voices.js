@@ -7,7 +7,7 @@
 // mode: 'closed' | 'open' | 'cymbal' (Hi-Hat und Crash teilen sich dieselbe
 // Oszillatorbank, nur Filter/Hüllkurve unterscheiden sich).
 // =========================================================================
-let lastOpenHatGain=null; // für Choke-Group: laufender Open-Hat-Gain-Node
+let lastOpenHatGain={}; // für Choke-Group: laufender Open-Hat-Gain-Node je Drum-Spur (chokeKey, #70)
 function playMetallicSix(time, vol, tune, velocity, kp, mode){
   const g=velocity;
   const isAccentEnv = velocity>=1.1;
@@ -50,15 +50,15 @@ function playMetallicSix(time, vol, tune, velocity, kp, mode){
   // Choke Group: Closed-Hat kappt sofort einen noch klingenden Open-Hat —
   // physikalisch korrekt, weil es am echten Kit dieselbe Metallscheibe ist.
   if(mode==='open'){
-    lastOpenHatGain=amp;
-  } else if(mode==='closed' && kp.choke && lastOpenHatGain){
+    lastOpenHatGain[chokeKey]=amp;
+  } else if(mode==='closed' && kp.choke && lastOpenHatGain[chokeKey]){
     try{
-      const stillRinging=lastOpenHatGain;
+      const stillRinging=lastOpenHatGain[chokeKey];
       stillRinging.gain.cancelScheduledValues(time);
       stillRinging.gain.setValueAtTime(stillRinging.gain.value, time);
       stillRinging.gain.linearRampToValueAtTime(0.0001, time+0.025);
     }catch(e){}
-    lastOpenHatGain=null;
+    delete lastOpenHatGain[chokeKey];
   }
 }
 

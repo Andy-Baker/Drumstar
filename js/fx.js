@@ -66,7 +66,8 @@ masterFx=mfxDefault();
 const fxSave=list=>(list||[]).map(f=>({t:f.t,on:f.on,p:Object.assign({},f.p)}));
 // Gruppen (Busse): Spuren → Gruppe (Effekte → Laut) → Master. ids = ARR_GROUPS
 const GRP_COL={drums:'#2a5a86',perc:'#1f6f68'}; // je Drum-Spur (#68)
-const GRP_DEF={}; DRUM_TRACKS.forEach(d=>GRP_DEF[d.id]={n:d.name.charAt(0)+d.name.slice(1).toLowerCase(),ab:d.name,ids:d.rows,color:GRP_COL[d.kind]});
+const grpDefOf=d=>({n:d.name.charAt(0)+d.name.slice(1).toLowerCase(),ab:d.name.length>6 ? d.name.replace(/\s+/g,'') : d.name,ids:d.rows,color:GRP_COL[d.kind]});
+const GRP_DEF={}; DRUM_TRACKS.forEach(d=>GRP_DEF[d.id]=grpDefOf(d)); // weitere Drum-Spuren: grpAdd/grpRemove (#70)
 const GRP_KEYS=Object.keys(GRP_DEF);
 const grpNew=k=>({grp:true,k,vol:1,muted:false,fx:[],eqOn:true,eqLc:0,eqLowGain:0,eqMidGain:0,eqMf:EQ_MF_DEF,eqHighGain:0});
 const EQ_KEYS=['eqOn','eqLc','eqLowGain','eqMidGain','eqMf','eqHighGain'];
@@ -94,10 +95,18 @@ function buildFxBuses(){ const c=audioCtx;
   fxDelayBuild(); delayInputNode=FXG.dlIn; delayOutputGain=FXG.dlOut;
   padDelaySendGain=c.createGain(); padDelaySendGain.gain.value=padDelayAmount; padDelaySendGain.connect(FXG.dlIn);
   // Gruppen: Eingang → Effekte → Laut (+Meter) → Master
-  FXG.g={}; GRP_KEYS.forEach(k=>{ const G=grps[k], o=FXG.g[k]={i:c.createGain(),v:c.createGain(),an:c.createAnalyser(),n:[]};
-    eqNodes(o,c); o.v.gain.value=G.muted?0:G.vol; o.an.fftSize=2048; o.an.smoothingTimeConstant=.82; o.v.connect(master); o.v.connect(o.an); eqSetNodes(o,G,c); grpFxRebuild(k);
-    o.sr=c.createGain(); o.sd=c.createGain(); o.sr.gain.value=o.sd.gain.value=G.muted?0:1; o.sr.connect(FXG.revIn); o.sd.connect(FXG.dlIn); });
+  FXG.g={}; GRP_KEYS.forEach(k=>grpBusMake(k,c));
 }
+function grpBusMake(k,c){ const G=grps[k], o=FXG.g[k]={i:c.createGain(),v:c.createGain(),an:c.createAnalyser(),n:[]};
+  eqNodes(o,c); o.v.gain.value=G.muted?0:G.vol; o.an.fftSize=2048; o.an.smoothingTimeConstant=.82; o.v.connect(master); o.v.connect(o.an); eqSetNodes(o,G,c); grpFxRebuild(k);
+  o.sr=c.createGain(); o.sd=c.createGain(); o.sr.gain.value=o.sd.gain.value=G.muted?0:1; o.sr.connect(FXG.revIn); o.sd.connect(FXG.dlIn); }
+// Gruppe einer weiteren Drum-Spur anlegen/entfernen (#70); Bus live sofort, im WAV-Export über buildFxBuses
+function grpAdd(d, saved){ GRP_DEF[d.id]=grpDefOf(d); if(GRP_KEYS.indexOf(d.id)<0) GRP_KEYS.push(d.id);
+  grps[d.id]=saved ? Object.assign(grpNew(d.id), JSON.parse(JSON.stringify(saved))) : (grps[d.id]||grpNew(d.id));
+  if(audioCtx && FXG.g && FXG.revIn && !FXG.g[d.id]) grpBusMake(d.id, audioCtx); }
+function grpRemove(k){ const o=FXG.g&&FXG.g[k];
+  if(o){ [o.i,o.v,o.an,o.sr,o.sd,o.eqHigh].concat(o.n.map(n=>n.o)).forEach(n=>{ try{ n&&n.disconnect(); }catch(e){} }); delete FXG.g[k]; }
+  const i=GRP_KEYS.indexOf(k); if(i>=0) GRP_KEYS.splice(i,1); delete GRP_DEF[k]; delete grps[k]; }
 // Gruppe: i → EQ (nur wenn nicht neutral) → Inserts → v (Laut) → Master
 function grpFxRebuild(k){ const o=FXG.g&&FXG.g[k], G=grps[k]; if(!o) return; const c=audioCtx; try{o.i.disconnect();}catch(e){} try{o.eqHigh.disconnect();}catch(e){} o.n.forEach(n=>{ try{n.o.disconnect();}catch(e){} });
   o.n=G.fx.filter(f=>f.on&&!f._byp).map(f=>{ const n=FXDEF[f.t].build(c); n.u(f.p); n.id=f.id; return n; });

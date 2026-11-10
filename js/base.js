@@ -11,6 +11,10 @@ const DRUM_TRACKS=[
    kitT:'Perc-Kit', ownT:'Eigene Perc-Kits', newT:'＋ Neues Perc-Kit aus dem aktuellen Kit', setT:'Perc-Kit', kit:'rock', set:{id:null,name:null,dirty:false}}];
 const ROW_DT={}; DRUM_TRACKS.forEach(d=>d.rows.forEach(r=>ROW_DT[r]=d));
 const dtById=id=>DRUM_TRACKS.find(d=>d.id===id)||null;
+// Weitere Drum-/Perc-Spuren (#70): Zeile „bd_2“ = Stimme „bd“ in der Spur drums2. rowBase = Stimme ab Werk der Zeile
+// (Rolle, Kit-Belegung, Spielweisen, eigene Sets und Beats rechnen damit), ROW_DT ordnet die Zeile ihrer Spur zu.
+const rowBase=id=>id.replace(/_\d+$/,'');
+const DT_MAX_EXTRA=3; // zusätzliche Drum-/Perc-Spuren (Handy-Last, Speicher der Sample-Kits)
 const dtOfRow=id=>ROW_DT[id]||DRUM_TRACKS[0];
 
 // Kurzform für document.getElementById (wird schon beim Laden gebraucht, daher hier)
