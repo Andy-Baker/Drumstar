@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sampler auf Tasten (#8)</title>
+<link rel="stylesheet" href="../../fonts.css">
+<style>
+/* Mockup zu Issue #8: Sampler über die Klaviatur. Die echte App läuft im Rahmen; das neue Instrument SAMPLER wird dort
+   zur Laufzeit ins Instrument-Register (INSTR) eingetragen. Es klingt wirklich (Noteneditor, Abspielen, Live-Spiel). */
+:root{color-scheme:dark;--bg:#050507;--blue:#3fa9ff;--blue-2:#8fd4ff;--white:#f4f5f7;--dim:#7d818c;--metal:#c7cbd4}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--white);font-family:'Rajdhani',system-ui,sans-serif}
+#mbar{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:calc(6px + env(safe-area-inset-top,0px)) 10px 6px;background:repeating-linear-gradient(135deg,#0b1622 0 8px,#0d1a28 8px 16px);border-bottom:1px dashed rgba(63,169,255,.45);font:700 11px 'JetBrains Mono',monospace;color:var(--blue-2)}
+#mbar .g{display:flex;align-items:center;gap:4px}
+#mbar button{height:30px;padding:0 7px;border-radius:6px;border:1px solid rgba(63,169,255,.45);background:rgba(63,169,255,.12);font:700 11px 'JetBrains Mono',monospace;color:var(--blue-2);cursor:pointer}
+#mbar button.on{background:var(--blue);color:#042c53}
+#mbar .sp{flex:1}
+#stage{position:fixed;top:44px;left:0;right:0;bottom:0;display:flex;justify-content:center;align-items:flex-start;gap:28px;overflow:auto}
+.ph{display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;width:100%}
+iframe{border:0;width:100%;height:100%;background:#050507;display:block}
+#side{display:none;width:320px;font-size:14px;color:var(--metal);line-height:1.45;padding-top:20px}
+#side h3,#info h3{font:700 11px 'Rajdhani';letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin:16px 0 6px}
+#side p,#info p{margin:0 0 8px} #side b,#info b{color:var(--white)}
+#side ul,#info ul{margin:0 0 8px;padding-left:18px} #side li,#info li{margin:3px 0}
+#info{position:fixed;inset:44px 0 0 0;z-index:190;background:#07080bf2;overflow:auto;padding:8px 18px 40px;font-size:14.5px;color:var(--metal);line-height:1.45;display:none}
+#info.open{display:block}
+@media (min-width:900px) and (min-height:900px){
+  #stage{padding:14px 0}
+  .ph{width:auto;height:auto}
+  iframe{width:390px;height:844px;border-radius:30px;border:8px solid #1a1e26;box-shadow:0 30px 80px rgba(0,0,0,.75);box-sizing:content-box}
+  #side{display:block} #infoBtn{display:none}
+}
+</style>
+</head>
+<body>
+<div id="mbar">
+  <span>#8</span>
+  <div class="g"><button data-v="a" class="on">A Eigene Spur</button><button data-v="b">B Sample-Spur</button></div>
+  <span class="sp"></span>
+  <button id="exBtn">Beispiel</button>
+  <button id="infoBtn">ⓘ</button>
+</div>
+<div id="stage">
+  <div class="ph"><iframe id="fR" src="../../index.html" title="App mit Vorschlag"></iframe></div>
+  <div id="side"></div>
+</div>
+<div id="info"></div>
+<template id="notes">
+  <h3>Was das ist</h3>
+  <p>Die <b>echte App</b> mit einem neuen Instrument <b>SAMPLER</b> (grün): ein Sample, über die Klaviatur gespielt, <b>mehrstimmig</b> (Akkorde wie bei KEYS). Noten, Abspielen, Live-Spiel im Noteneditor, Harmonie und Song funktionieren wie bei jeder Melodiespur.</p>
+  <p><b>Beispiel</b> oben: legt einen Sampler mit dem Demo-Sample „Vox“ und einer kleinen Akkordfolge an und öffnet den Noteneditor. Play drücken oder Tasten links antippen.</p>
+  <h3>Klang-Sheet · Sound (Klang-Taste im Noteneditor)</h3>
+  <ul>
+    <li><b>Tasten</b>: ein Sample, chromatisch transponiert. <b>Pads</b>: das Sample in 8 Stücke zerlegt, Taste C, C#, D … = Stück 1–8 in Original-Tonhöhe (Übergang zu #11 „Zerschneiden, auf Pads verteilen“; Demo „Break“).</li>
+    <li><b>Sample</b>: Demo-Samples + deine Bibliothek (Aufnahmen/Importe).</li>
+    <li><b>Grundton am Sample</b>: − / + oder <b>Erkennen</b> (Tonhöhe automatisch). Er gehört zum Bibliothekseintrag, nicht zur Spur: dasselbe Sample klingt in jedem Beat richtig gestimmt. Im Mockup nur im Speicher, im Bau mit dem Eintrag gespeichert.</li>
+    <li><b>Attack / Release</b>; eine Schleife aus dem Sample-Editor wird beim Halten gespielt (Demo „Vox“ hat eine).</li>
+  </ul>
+  <h3>Varianten (wo der Sampler wohnt)</h3>
+  <ul>
+    <li><b>A · Eigene Spur</b>: SAMPLER ist eine neue Kachel in „Spur hinzufügen“ (wie ACID/COSMIC/KEYS), zählt zu den höchstens 7 Melodiespuren. Die bisherige SAMPLE-Spur bleibt, wie sie ist (Step-Raster, eine Note pro Step).</li>
+    <li><b>B · Sample-Spur umschaltbar</b>: keine neue Kachel; im Klang-Sheet der SAMPLE-Spur gibt es oben „Raster · Tasten“. „Tasten“ macht daraus eine Melodiespur mit Noteneditor. Im Mockup wird dafür beim Umschalten ein Sampler an Stelle der SAMPLE-Zeile angelegt.</li>
+  </ul>
+  <h3>Meine Empfehlung: A</h3>
+  <p><b>Pro:</b> Passt in das Instrument-Register (#24) und „Spur hinzufügen“ (#13), nichts Bestehendes ändert sich, alte Beats bleiben gleich. Mehrere Sampler (Vox, Bass, Streicher #61) gehen sofort.</p>
+  <p><b>Contra:</b> Zwei Orte für Samples (SAMPLE-Spur + Sampler). Die SAMPLE-Spur könnte später im Sampler aufgehen (Modus „Pads“), das wäre ein eigener Aufräumschritt.</p>
+  <h3>Klang und Handy</h3>
+  <p>Je Note nur 2 Knoten (Sample + Hüllkurve), deutlich weniger als KEYS/COSMIC. Höchstens 8 Stimmen gleichzeitig, die älteste wird ausgeblendet. Speicher: jedes gewählte Sample bleibt dekodiert im Speicher (wie heute an der Sample-Spur).</p>
+  <h3>Im Mockup nicht drin</h3>
+  <ul>
+    <li>Speichern/Laden des Samplers mit dem Beat, WAV-Export.</li>
+    <li>Namen der Pads/Stücke an der Klaviatur-Leiste im Modus Pads.</li>
+  </ul>
+</template>
+<script>
+// ===== Läuft im globalen Scope der App (per eval im Rahmen) =====
+function MK(){
+  if(window.__mk) return;
+  let V='a';
+  const K='sampler', MAXV=8, NN=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+  const midiName=m=>NN[((m%12)+12)%12]+(Math.floor(m/12)-1);
+  // ---- Demo-Samples (im Rahmen synthetisiert; Grundton bekannt) ----
+  const SMP={}; // id → {name, buf, root (MIDI), loop:[a,b]|null, lib}
+  function synth(sec, fn){ const sr=audioCtx.sampleRate, n=Math.round(sr*sec), b=audioCtx.createBuffer(1,n,sr), d=b.getChannelData(0); fn(d,sr); let p=0; for(let i=0;i<n;i++) p=Math.max(p,Math.abs(d[i])); for(let i=0;i<n;i++) d[i]*=0.8/p; return b; }
+  function demos(){
+    if(SMP.vox) return; if(!audioCtx) initAudio();
+    SMP.vox={name:'Vox', root:57, loop:[0.45,1.25], buf:synth(1.6,(d,sr)=>{ // „Ahh“ A3, Formanten über Teiltongewichte
+      const f0=220, F=[[750,1],[1200,.55],[2600,.25]];
+      for(let i=0;i<d.length;i++){ const t=i/sr, vib=1+0.006*Math.sin(2*Math.PI*5.2*t)*Math.min(1,t/0.3); let s=0;
+        for(let k=1;k<=24;k++){ const f=f0*k; let a=0; F.forEach(([c,g])=>a+=g*Math.exp(-Math.pow((f-c)/180,2))); s+=(a+0.02/k)*Math.sin(2*Math.PI*f*vib*t+k); }
+        d[i]=s*Math.min(1,t/0.06)*(t>1.45?Math.max(0,(1.6-t)/0.15):1); } })};
+    SMP.glas={name:'Glas', root:72, loop:null, buf:synth(2.2,(d,sr)=>{ const f=523.25, P=[[1,1,1.4],[2.76,.5,.5],[5.4,.25,.25],[8.9,.12,.12]];
+      for(let i=0;i<d.length;i++){ const t=i/sr; let s=0; P.forEach(([r,a,tau])=>s+=a*Math.exp(-t/tau)*Math.sin(2*Math.PI*f*r*t)); d[i]=s*Math.min(1,t/0.002); } })};
+    SMP.bass={name:'Bass', root:36, loop:null, buf:synth(1.4,(d,sr)=>{ const N=Math.round(sr/65.41), ring=new Float32Array(N); for(let i=0;i<N;i++) ring[i]=Math.random()*2-1; let p=0;
+      for(let i=0;i<d.length;i++){ const a=ring[p], b=ring[(p+1)%N]; ring[p]=0.5*(a+b)*0.996; d[i]=a; p=(p+1)%N; } })};
+    SMP.brk={name:'Break', root:60, loop:null, pads:true, buf:synth(2,(d,sr)=>{ // 1 Takt bei 120 BPM: Kick/Snare/Hat in Achteln
+      const hit=(t0,fn,len)=>{ const a=Math.round(t0*sr); for(let i=0;i<len*sr && a+i<d.length;i++) d[a+i]+=fn(i/sr); };
+      const kick=t=>Math.sin(2*Math.PI*(50*t+90*(1-Math.exp(-t/0.03))*0.03))*Math.exp(-t/0.18);
+      const snare=t=>((Math.random()*2-1)*0.7+Math.sin(2*Math.PI*190*t)*0.5)*Math.exp(-t/0.09);
+      const hat=t=>(Math.random()*2-1)*Math.exp(-t/0.025)*0.35;
+      [0,0.75,1.25].forEach(t=>hit(t,kick,0.45)); [0.5,1.5].forEach(t=>hit(t,snare,0.3)); for(let k=0;k<8;k++) hit(k*0.25,hat,0.1); })};
+  }
+  const curSmp=tr=>{ demos(); return SMP[tr.smp]||SMP.vox; };
+  // ---- Stimme: 2 Knoten je Note (BufferSource → Gain → Spur-Bus) ----
+  function smpVoice(tr, time, n, vel, holdSec){
+    if(!audioCtx || !tr.bus) return null; demos();
+    const S=curSmp(tr), pads=tr.smpMode==='pads';
+    const midi=33+tr.rootNote+n+12; // wie KEYS: Spur-Grundton + Note + Oktavlage, 33 = A1
+    const src=audioCtx.createBufferSource(); src.buffer=S.buf;
+    let off=0, dur=null;
+    if(pads){ const sl=((midi%12)+12)%12; if(sl>7) return null; const L=S.buf.duration/8; off=sl*L; dur=L; }
+    else { src.playbackRate.value=Math.pow(2,(midi-S.root)/12); if(S.loop){ src.loop=true; src.loopStart=S.loop[0]; src.loopEnd=S.loop[1]; } }
+    const g=audioCtx.createGain(), peak=0.9*Math.max(0.05,Math.min(1.2,vel)), atk=Math.max(0.002,tr.smpAtk||0.005), rel=Math.max(0.02,tr.smpRel!=null?tr.smpRel:0.25);
+    g.gain.setValueAtTime(0.0001,time); g.gain.linearRampToValueAtTime(peak,time+atk);
+    src.connect(g).connect(tr.bus); src.start(time, off);
+    const voice={amp:g, oscs:[src], t0:time, rel(at){ const now=Math.max(time+atk,at!=null?at:audioCtx.currentTime);
+      try{ g.gain.cancelScheduledValues(now); g.gain.setValueAtTime(peak,now); g.gain.setTargetAtTime(0.0001,now,rel/4); src.stop(now+rel+0.05); }catch(e){} }};
+    src.onended=()=>{ try{ g.disconnect(); }catch(e){} const l=tr._cosVoices; if(l){ const i=l.indexOf(voice); if(i>=0) l.splice(i,1); } };
+    const L=(tr._cosVoices=tr._cosVoices||[]); L.push(voice);
+    while(L.length>MAXV){ const o=L.shift(); try{ o.amp.gain.cancelScheduledValues(time); o.amp.gain.setTargetAtTime(0.0001,time,0.02); o.oscs[0].stop(time+0.1); }catch(e){} }
+    if(pads && holdSec==null) holdSec=dur; // Pads ohne Halten: Stück zu Ende
+    if(holdSec!=null) voice.rel(time+(pads?Math.min(holdSec,dur):holdSec));
+    else if(!S.loop) { try{ src.stop(time+S.buf.duration/src.playbackRate.value+0.05); }catch(e){} }
+    return voice;
+  }
+  // ---- Instrument eintragen (Weg für den echten Bau: nur INSTR + Felder, keine tr.id-Abfragen) ----
+  INSTR[K]={name:'SAMPLER', grp:K, poly:true, oct:12, cls:'smp', arpStyle:'classic', bass:'hold',
+    trigger:(t,tr,n,v,l)=>smpVoice(tr,t,n,v,Math.max(0.08,stepDuration()*Math.max(1,l||1)*0.96)),
+    live:(tr,n,v)=>smpVoice(tr,audioCtx.currentTime+0.005,n,v,null),
+    fields:{smp:'vox', smpMode:'keys', smpAtk:0.005, smpRel:0.25}, undo:[]};
+  const tpl=Object.assign({},INSTR.piano.tpl,{id:K,name:'SAMPLER',short:'SMP',color:'#8be86a',reverbAmount:0.12,delaySend:0,smp:'vox',smpMode:'keys',smpAtk:0.005,smpRel:0.25});
+  delete tpl.sound; delete tpl.tremolo;
+  INSTR[K].tpl=tpl; INSTR[K].def=Object.assign({},INSTR.piano.def,{reverbAmount:0.12,delaySend:0});
+  const oSub=prSubName; prSubName=tr=>trInst(tr)===INSTR[K] ? curSmp(tr).name+(tr.smpMode==='pads'?' · Pads':'') : oSub(tr);
+  const oTiles=trTiles;
+  trTiles=()=>{ const o=oTiles().map(t=>t.k===K?Object.assign({},t,{d:'Sample auf Tasten'}):t); return V==='a'?o:o.filter(t=>t.k!==K); };
+  // ---- Klang-Sheet · Sound ----
+  const lib={}; // Bibliothek: id → Eintrag (dekodiert bei Wahl)
+  async function libLoad(){ try{ (await listSampleLibrary()).forEach(e=>{ if(!lib[e.id]) lib[e.id]=e; }); }catch(e){} }
+  async function pick(tr,id){
+    if(id.startsWith('lib:')){ const e=lib[id.slice(4)], key=id;
+      if(!SMP[key]){ await Promise.resolve(initAudio()); const b=await audioCtx.decodeAudioData(await e.blob.arrayBuffer());
+        const s0=e.offsetStart||0, ls=e.loopStart, le=e.loopEnd;
+        SMP[key]={name:e.name||'Sample', buf:b, root:60, loop:(e.playMode==='loop'&&ls!=null&&le!=null)?[s0+ls,s0+le]:null, lib:1, off:s0};
+        SMP[key].root=detect(SMP[key])||60; } }
+    tr.smp=id; renderKlang(); if(prIsOpen()) prRenderChrome(); prev(tr);
+  }
+  function prev(tr){ Promise.resolve(initAudio()).then(()=>{ if(audioCtx.state!=='running') audioCtx.resume(); const S=curSmp(tr);
+    if(tr.smpMode==='pads') smpVoice(tr,audioCtx.currentTime+0.01,(60-33-12-tr.rootNote),1,null);
+    else smpVoice(tr,audioCtx.currentTime+0.01,(S.root-33-12-tr.rootNote),1,0.6); }); }
+  // Tonhöhe erkennen: Autokorrelation (normiert) auf 80 ms nach dem Anschlag, 50–1000 Hz
+  function detect(S){
+    const d=S.buf.getChannelData(0), sr=S.buf.sampleRate, a=Math.round(((S.off||0)+0.06)*sr), N=Math.min(Math.round(0.08*sr), d.length-a-Math.round(sr/50)); if(N<512) return null;
+    let best=0, bl=0; const lo=Math.round(sr/1000), hi=Math.round(sr/50);
+    for(let L=lo;L<=hi;L++){ let s=0,e1=0,e2=0; for(let i=0;i<N;i+=2){ const x=d[a+i], y=d[a+i+L]; s+=x*y; e1+=x*x; e2+=y*y; } const r=s/Math.sqrt(e1*e2+1e-12); if(r>best*1.0001 && r>0.6){ best=r; bl=L; } if(best>0.9 && r<best*0.7) break; }
+    if(!bl) return null; return Math.round(69+12*Math.log2(sr/bl/440));
+  }
+  const oKl=renderKlang;
+  renderKlang=function(){
+    oKl(); const tr=klTr, I=trInst(tr), sh=$id('klSheet');
+    sh.classList.toggle('smp', !!I && I===INSTR[K] && !klView.length && klMode==='klang');
+    if(!I || I!==INSTR[K] || klView.length || klMode!=='klang' || klTab!=='sound') return;
+    demos(); const box=$id('klRows'); box.innerHTML='';
+    const grp=t=>{ const g=document.createElement('div'); g.className='grp'; g.textContent=t; box.appendChild(g); return g; };
+    const seg=(items,cur,on)=>{ const s=document.createElement('div'); s.className='am-seg'; items.forEach(([v,l])=>{ const b=document.createElement('button'); b.textContent=l; if(v===cur) b.classList.add('on'); b.onclick=()=>on(v); s.appendChild(b); }); box.appendChild(s); };
+    if(V==='b'){ grp('Sample-Spur'); seg([['grid','RASTER'],['keys','TASTEN']],'keys',v=>{ if(v==='grid'){ closeSheets(); toB(false); } }); }
+    grp('Spielweise'); seg([['keys','TASTEN'],['pads','PADS']],tr.smpMode,v=>{ tr.smpMode=v; if(v==='pads' && !curSmp(tr).pads && SMP.brk) tr.smp='brk'; renderKlang(); if(prIsOpen()) prRenderChrome(); prev(tr); });
+    if(tr.smpMode==='pads'){ const h=document.createElement('div'); h.className='mk-hint'; h.textContent='Sample in 8 Stücke zerlegt: Taste C, C#, D … G = Stück 1–8, Original-Tonhöhe.'; box.appendChild(h); }
+    grp('Sample');
+    const ch=document.createElement('div'); ch.className='mk-kits';
+    const ids=['vox','glas','bass','brk'].concat(Object.keys(lib).map(i=>'lib:'+i));
+    ids.forEach(id=>{ const b=document.createElement('button'); b.className='mk-chip'+(tr.smp===id?' on':''); b.textContent=SMP[id]?SMP[id].name:(lib[id.slice(4)].name||'Sample'); b.onclick=()=>pick(tr,id); ch.appendChild(b); });
+    const rec=document.createElement('button'); rec.className='mk-chip mk-add'; rec.innerHTML='<svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Aufnehmen'; rec.onclick=()=>{ closeSheets(); try{ openSampleEditor(); }catch(e){} }; ch.appendChild(rec);
+    box.appendChild(ch);
+    const S=curSmp(tr);
+    if(tr.smpMode!=='pads'){
+      grp('Grundton am Sample');
+      const r=document.createElement('div'); r.className='mk-root';
+      r.innerHTML='<button data-d="-1" aria-label="Tiefer">−</button><b>'+midiName(S.root)+'</b><button data-d="1" aria-label="Höher">+</button><button class="mk-det" data-x="det"><svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h3l3-7 4 14 3-7h5"/></svg>Erkennen</button><button class="mk-det" data-x="hear" aria-label="Anhören"><svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><polygon points="7,5 19,12 7,19" fill="currentColor"/></svg></button>';
+      r.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{ S.root+=+b.dataset.d; renderKlang(); prev(tr); });
+      r.querySelector('[data-x=det]').onclick=()=>{ const m=detect(S); if(m!=null){ S.root=m; renderKlang(); prev(tr); } else hmToast('Keine klare Tonhöhe erkannt',false); };
+      r.querySelector('[data-x=hear]').onclick=()=>prev(tr);
+      box.appendChild(r);
+      const h=document.createElement('div'); h.className='mk-hint'; h.textContent='Gehört zum Sample, gilt in jeder Spur und jedem Beat.'+(S.loop?' Schleife beim Halten.':''); box.appendChild(h);
+    }
+    grp('Hüllkurve');
+    const ms=v=>v<1000?v+' ms':(v/1000).toFixed(1)+' s';
+    box.appendChild(soundRow('Attack',2,500,Math.round((tr.smpAtk||0.005)*1000),5,ms,v=>tr.smpAtk=v/1000));
+    box.appendChild(soundRow('Release',20,2000,Math.round((tr.smpRel!=null?tr.smpRel:0.25)*1000),250,ms,v=>tr.smpRel=v/1000));
+  };
+  const oOpen=openKlang; openKlang=function(tr,tab){ libLoad().then(()=>{ if(klTr && trInst(klTr)===INSTR[K]) renderKlang(); }); return oOpen(tr,tab); };
+  // ---- Variante B: Sample-Spur umschaltbar (Mockup: Sampler ersetzt die SAMPLE-Zeile) ----
+  let bTr=null;
+  function toB(on){
+    if(isPlaying) stop();
+    if(on && !bTr){ bTr=trCreate(K,{label:'SAMPLE'}); trAttach(bTr, TRACKS.length); melChanged(bTr); }
+    if(!on && bTr){ const t=bTr; bTr=null; trDetach(t); melChanged(TRACKS.find(x=>x.isSample)); }
+  }
+  const oKl2=renderKlang; renderKlang=function(){ oKl2(); const tr=klTr; if(V!=='b' || !tr || !tr.isSample || klView.length || klMode!=='klang') return;
+    const box=$id('klRows'), g=document.createElement('div'); g.className='grp'; g.textContent='Sample-Spur';
+    const s=document.createElement('div'); s.className='am-seg'; s.innerHTML='<button class="on">RASTER</button><button>TASTEN</button>';
+    s.children[1].onclick=()=>{ closeSheets(); toB(true); setTimeout(()=>prOpen(bTr),50); };
+    box.prepend(s); box.prepend(g); };
+  const st=document.createElement('style');
+  st.textContent='#klSheet.smp input[type=range]{accent-color:#8be86a}#klSheet.smp .am-seg button.on{border-color:#8be86a;color:#f4f5f7;background:color-mix(in srgb,#8be86a 18%,transparent)}'
+    +'.mk-kits{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 6px}.mk-chip{display:inline-flex;align-items:center;gap:4px;min-height:40px;padding:0 12px;border-radius:20px;border:1px solid rgba(255,255,255,.12);background:var(--panel);color:var(--metal);font:600 14px Rajdhani,sans-serif;letter-spacing:.04em;cursor:pointer}.mk-chip.on{border-color:#8be86a;color:var(--white);background:color-mix(in srgb,#8be86a 18%,transparent)}.mk-add{border-style:dashed}.mk-chip .uic{width:16px;height:16px}'
+    +'.mk-root{display:flex;align-items:center;gap:6px;margin:2px 0 4px}.mk-root button{min-width:44px;height:40px;border-radius:8px;border:1px solid rgba(63,169,255,.35);background:rgba(63,169,255,.08);color:var(--white);font:700 18px Rajdhani,sans-serif;cursor:pointer}.mk-root b{min-width:56px;text-align:center;font:700 20px "JetBrains Mono",monospace;color:#8be86a}.mk-root .mk-det{display:inline-flex;align-items:center;gap:5px;padding:0 10px;font-size:14px}.mk-root .mk-det .uic{width:18px;height:18px}'
+    +'.mk-hint{font:500 12px Rajdhani,sans-serif;color:var(--dim);margin:0 0 8px}';
+  document.head.appendChild(st);
+  function setV(v){ V=v; closeSheets(); if(v==='a') toB(false); grpSelRender(); }
+  function example(){
+    if(isPlaying) stop(); closeSheets(); if(prIsOpen()) prClose();
+    let tr=V==='b' ? (toB(true), bTr) : TRACKS.find(t=>trInst(t)===INSTR[K]);
+    if(!tr){ if(melCount()>=MEL_MAX){ hmToast('Höchstens '+MEL_MAX+' Melodiespuren',false); return; } tr=trAddNew({k:K, label:melSuggest('SAMPLER')}); }
+    tr.smp='vox'; tr.smpMode='keys'; tr.rootNote=0; tr.scale='minor'; tr.harm=hmDefaultTrack(tr); tr.harmOwn=null;
+    const C=[[0,3,7],[-4,0,3],[-2,2,5],[-5,-2,2]], ev=[]; // Am · F · G · Em, je 4 Steps
+    for(let i=0;i<PATTERN_LENGTH;i+=4){ const c=C[(i/4)%4]; c.forEach(n=>ev.push({s:i,n,l:4,v:0.9})); }
+    tr.events=ev; evTouch(tr); melChanged(tr); setTimeout(()=>prOpen(tr),80);
+    hmToast('Sampler „Vox“: Am · F · G · Em – Play drücken',false);
+  }
+  window.__mk={setV,example};
+}
+
+// ===== Rahmen-Steuerung =====
+const fR=document.getElementById('fR');
+let V='a';
+function hook(){ const w=fR.contentWindow; try{ if(!w||w.eval('typeof TRACKS')!=='object') return null; if(!w.__mk) w.eval('('+MK.toString()+')()'); }catch(e){ console.error(e); return null; } return w.__mk; }
+function apply(){ const m=hook(); if(m) m.setV(V); document.querySelectorAll('[data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v===V)); }
+fR.addEventListener('load',()=>setTimeout(apply,700));
+document.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{ V=b.dataset.v; apply(); });
+document.getElementById('exBtn').onclick=()=>{ const m=hook(); if(m) m.example(); };
+const notes=document.getElementById('notes').innerHTML; document.getElementById('side').innerHTML=notes; const info=document.getElementById('info'); info.innerHTML=notes;
+document.getElementById('infoBtn').onclick=()=>info.classList.toggle('open');
+const fitTop=()=>{ const h=document.getElementById('mbar').offsetHeight; document.getElementById('stage').style.top=h+'px'; info.style.top=h+'px'; }; addEventListener('resize',fitTop); fitTop();
+</script>
+</body>
+</html>
