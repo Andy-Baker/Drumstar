@@ -237,7 +237,7 @@ function trLabel(tr){ const s=trSwap(tr); return s ? voiceName(s) : tr.name; }
 function trShort(tr){ const s=trSwap(tr); return s ? voiceShort(s) : (tr.short||rowBase(tr.id).toUpperCase()); }
 function trRole(tr){ return VOICE_ROLE[trVoice(tr)]||'perc'; }
 // Zeilen einer Rolle in DRUMS/PERC ab Werk (weitere Drum-Spuren #70 bekommen den Fill über fillLayer)
-function roleTracks(role){ return TRACKS.filter(t=>t.type!=='arp' && !t.isSample && trRole(t)===role && !dtExtra(ROW_DT[t.id])); }
+function roleTracks(role){ return TRACKS.filter(t=>t.type!=='arp' && trRole(t)===role && !dtExtra(ROW_DT[t.id])); }
 function dtExtra(d){ return !!d && d.id!=='drums' && d.id!=='perc'; }
 const ART={ ch:[{k:'Z',n:'Zu',v:'ch'},{k:'L',n:'Locker',v:'hl'},{k:'P',n:'Pedal',v:'hf'}],
             rd:[{k:'F',n:'Fläche',v:'rd'},{k:'B',n:'Bell',v:'rb'}],
@@ -451,7 +451,6 @@ function triggerTrack(tr, time, velocity, art){
   const vid=trVoice(tr);
   if(vid==='ch') chokeOpenSample(time); // Closed Hat kappt ein klingendes Open-Hat-Sample
   if(tr.type==='arp'){ triggerArpStep(time, tr, 0, velocity, false); return; } // Preview: Grundton
-  if(tr.isSample){ playSample(time, tr.vol, tr.tune, velocity); return; }
   const ov=drumSet.voices[tr.id];
   if(ov && ov.t==='smp' && playDrumSample(tr, time, velocity)) return;
   if(vid==='cy' && art>0){ const C=ART.cy[art]; triggerChokedCrash(time, tr, velocity, C&&C.st ? C.st*stepDuration() : 0); return; }

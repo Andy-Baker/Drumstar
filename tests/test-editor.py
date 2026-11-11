@@ -218,7 +218,7 @@ async def main():
       ovRender(); const song=document.querySelectorAll('#ovRows .ar-lab.tap').length+'/'+!!document.querySelector('#ovRows .ov-add');
       return {add,ren,del,und,lo,ls,ld,ba,ac,full,go,back,menu,song}; })()""")
     ok('#13 Spur kopieren/anlegen: hinter Original, Klang, Noten, Auswahl', r['add'][0]=='arp:ACID cosmic:COSMIC cosmic2:PAD piano:KEYS piano2:RHODES' and r['add'][1:4]==['rhodes',2,True]
-       and r['add'][4]=='drums,perc,acid,cosmic,cosmic2,piano,piano2,sample', r['add'])
+       and r['add'][4]=='drums,perc,acid,cosmic,cosmic2,piano,piano2', r['add'])
     ok('#13 Umbenennen + Namensprüfung', r['ren']==['E-PIANO','E-P','E-PIANO',False,False,True], r['ren'])
     ok('#13 Original löschen + Rückgängig', r['del']==['cosmic:COSMIC cosmic2:PAD piano:KEYS piano2:E-PIANO',False] and r['und'].startswith('arp:ACID '), [r['del'],r['und']])
     ok('#13 alter Stand ohne mel → ACID, COSMIC, KEYS', r['lo']=='arp:ACID cosmic:COSMIC piano:KEYS', r['lo'])
@@ -252,19 +252,59 @@ async def main():
       applyPatternData(base); const back=[G(), GRP_KEYS.join(',')];
       return {add,kit,beat,fill,perc,del,und,lo,ls,full,menu,orig,choke:[oh,other,same],back}; })()""")
     ok('#70 Drum-Spur mit gewählten Zeilen: Stimme/Rolle/Name ab Werk, eigenes Kit, Noten kopiert, eigene Gruppe',
-       r['add'][0]=='drums(8),drums2(4),perc(5),acid(1),cosmic(1),piano(1),sample(1)' and r['add'][1]=='bd:kick:BD:fm909 sd:snare:SD:fm909 ch:hat:CH:fm909 oh:openhat:OH:fm909'
+       r['add'][0]=='drums(8),drums2(4),perc(5),acid(1),cosmic(1),piano(1)' and r['add'][1]=='bd:kick:BD:fm909 sd:snare:SD:fm909 ch:hat:CH:fm909 oh:openhat:OH:fm909'
        and r['add'][2] is True and r['add'][3]=='drums2' and r['add'][4]=='drums2' and r['add'][5]=='drums,perc,drums2', r['add'])
     ok('#70 Kit-Taste wirkt nur auf die gewählte Drum-Spur', r['kit']==['rock','fm808'], r['kit'])
     ok('#70 DRUMS-Beat aus DRUMS 2 speichert Stimmen ab Werk + Kit', r['beat']==['bd,sd,ch,oh','fm808'], r['beat'])
     ok('#70 Fill von DRUMS auf DRUMS 2 geschichtet', r['fill'] is True, r)
     ok('#70 Perc-Spur mit Latin-Kit spielt Conga/Bongo', r['perc']=='cgh,bgh', r['perc'])
     ok('#70 Löschen räumt Gruppe/Tausch ab, Rückgängig stellt Kit + Noten her', r['del'][1]==-1 and r['del'][2]==0 and 'drums2' not in r['del'][0] and r['und'][1]=='fm808' and r['und'][2]>0, [r['del'],r['und']])
-    ok('#70 alter Stand ohne drt → keine weiteren Drum-Spuren', r['lo']=='drums(8),perc(5),acid(1),cosmic(1),piano(1),sample(1)', r['lo'])
-    ok('#70 Song laden: Spuren, Kit, Tausch, Clips, Name', r['ls'][0]=='drums(8),drums2(4),perc(5),perc2(2),acid(1),cosmic(1),piano(1),sample(1)' and r['ls'][1]=='fm808'
+    ok('#70 alter Stand ohne drt → keine weiteren Drum-Spuren', r['lo']=='drums(8),perc(5),acid(1),cosmic(1),piano(1)', r['lo'])
+    ok('#70 Song laden: Spuren, Kit, Tausch, Clips, Name', r['ls'][0]=='drums(8),drums2(4),perc(5),perc2(2),acid(1),cosmic(1),piano(1)' and r['ls'][1]=='fm808'
        and r['ls'][2]=='{"t":"syn","kitId":"fm909","v":"rs"}' and r['ls'][3]==1 and r['ls'][4]=='CONGA', r['ls'])
     ok('#70 höchstens 3 zusätzliche; DRUMS/PERC ab Werk nicht löschbar', r['full'] is True and r['orig'] is True, r)
     ok('#70 Hi-Hat-Choke nur innerhalb der Spur', r['choke'][0]>0 and r['choke'][1]>0.8*r['choke'][0] and r['choke'][2]<0.1*r['choke'][0], r['choke'])
-    ok('#70 Standard laden → nur DRUMS/PERC', r['back']==['drums(8),perc(5),acid(1),cosmic(1),piano(1),sample(1)','drums,perc'], r['back'])
+    ok('#70 Standard laden → nur DRUMS/PERC', r['back']==['drums(8),perc(5),acid(1),cosmic(1),piano(1)','drums,perc'], r['back'])
+    # Sampler (#8): Spur nur über „Spur hinzufügen“, Akkord, Grundton am Sample, Speichern/Laden, alte SAMPLE-Spur → Sampler, Beats
+    r=await pg.evaluate("""(async()=>{ const L=()=>TRACKS.filter(trInst).map(t=>t.id+':'+trTitle(t)).join(' ');
+      const base=JSON.parse(JSON.stringify(collectPatternData('t0','t0')));
+      const def=[L(), TRACKS.some(t=>t.id==='mc'), ARR_GROUPS.some(g=>g.id==='sample'), trTiles().some(o=>o.k==='sampler')];
+      const S=trAddNew({k:'sampler',label:melSuggest('SAMPLER')}); S.events=[0,4,7].map(n=>({s:0,n,l:4,v:.9,a:false})).concat([{s:8,n:12,l:2,v:.8,a:false}]); S._idx=null; evTouch(S);
+      const add=[L(), isPoly(S), S.smp, prSubName(S), groupOfTrack(S), S.color];
+      klTr=S; klTab='sound'; klView.length=0; klMode='klang'; renderKlang();
+      const sheet=[$id('klSheet').classList.contains('smp'), document.querySelectorAll('#klRows .smp-chip').length, [...document.querySelectorAll('#klRows label')].map(l=>l.textContent).join(','), !!document.querySelector('#klRows .smp-root')];
+      S.smp='glas'; S.smpRel=.5; const d=JSON.parse(JSON.stringify(collectPatternData('s','s'))); const sv=d.tracks.find(t=>t.id===S.id);
+      const saved=[d.mel.map(e=>e.inst).join(','), sv.smp, sv.smpRel, sv.events.length, 'sound' in sv];
+      applyPatternData(base); const gone=L(); applyPatternData(d); const T=TRACKS.find(t=>t.id==='sampler');
+      const back=[L(), T.smp, T.smpRel, T.events.length];
+      const bad=JSON.parse(JSON.stringify(d)); bad.tracks.find(t=>t.id==='sampler').smp=7; applyPatternData(bad); const fix=TRACKS.find(t=>t.id==='sampler').smp;
+      // Grundton am Sample: Note auf Grundton = Originaltonhöhe; Erkennen auf Werksample
+      const W=samplerGet('vox'), Ba=samplerGet('bass'), sr=44100, tb=new AudioBuffer({length:sr,numberOfChannels:1,sampleRate:sr}), td=tb.getChannelData(0);
+      for(let i=0;i<sr;i++){ const t=i/sr; let v=0; for(let k=1;k<=12;k++) v+=Math.sin(2*Math.PI*329.63*k*t)/k; td[i]=0.3*v*Math.exp(-t*2); } // E4 mit Obertönen (wie Saite)
+      const det=[smpDetect(W), smpDetect({buf:tb,off:0}), smpDetect(Ba)];
+      // alte SAMPLE-Spur: mit Sample-Zuordnung → Sampler-Spur „SAMPLE“, ohne → weg
+      localStorage.setItem('mrm44_sampleTrackId','p_test');
+      const old=JSON.parse(JSON.stringify(base)); delete old.mel; old.tracks.push({id:'mc',steps:[0,0,0.85,0,1.3,0,0,0,0,0,0,0,0,0,0,0],vol:.7,tune:.5,reverbAmount:.1});
+      old.kind='song'; old.arrangement={enabled:true,bars:4,clips:{mc:[{start:1,bars:1,steps:[0.85,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]}]}};
+      songApply(old); const M=TRACKS.find(t=>t.id==='sampler');
+      const mig=M ? [L(), M.smp, M.vol, M.events.map(e=>e.s+':'+(33+M.rootNote+e.n+12)+(e.a?'A':'')).join(' '), (arr.clips.sampler||[]).map(c=>c.start+':'+c.events.length).join(), !!arr.clips.mc] : null;
+      localStorage.removeItem('mrm44_sampleTrackId');
+      const old2=JSON.parse(JSON.stringify(base)); delete old2.mel; old2.tracks.push({id:'mc',steps:[0.85,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],vol:.9,tune:.5}); applyPatternData(old2); const nomig=L();
+      const ob=mcBeat({id:'b1',kind:'beat',group:'sample',name:'alt',length:16,sampleId:'p_x',tracks:[{id:'mc',steps:[0.85,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],vol:.8,tune:.5}]});
+      const beat=[ob.group, ob.tracks.length, ob.tracks[0].smp, ob.tracks[0].events.length, 'sampleId' in ob];
+      applyPatternData(base);
+      return {def,add,sheet,saved,gone,back,fix,det,mig,nomig,beat}; })()""")
+    ok('#8 Sampler nicht ab Werk, keine SAMPLE-Spur mehr, Kachel in „Spur hinzufügen“', r['def']==['arp:ACID cosmic:COSMIC piano:KEYS',False,False,True], r['def'])
+    ok('#8 Sampler-Spur: mehrstimmig, Werksample VOX, eigene Gruppe, grün', r['add']==['arp:ACID cosmic:COSMIC piano:KEYS sampler:SAMPLER',True,'vox','VOX','sampler','#8be86a'], r['add'])
+    ok('#8 Klang-Sheet: Sample-Chips, Grundton, Attack/Release', r['sheet'][0] and r['sheet'][1]>=4 and r['sheet'][2]=='Attack,Release' and r['sheet'][3], r['sheet'])
+    ok('#8 Speichern: mel + eigene Felder, kein Keys-Klang', r['saved']==['arp,cosmic,piano,sampler','glas',.5,4,False], r['saved'])
+    ok('#8 Laden: Standard ohne Sampler, Beat mit Sampler stellt ihn her', r['gone']=='arp:ACID cosmic:COSMIC piano:KEYS' and r['back']==['arp:ACID cosmic:COSMIC piano:KEYS sampler:SAMPLER','glas',.5,4], [r['gone'],r['back']])
+    ok('#8 ungültiges Sample → Werksample', r['fix']=='vox', r['fix'])
+    ok('#8 Tonhöhe erkennen: VOX A3 (ohne Grundton im Spektrum), Saite E4, BASS C2', r['det']==[57,64,36], r['det'])
+    ok('#8 alte SAMPLE-Spur → Sampler „SAMPLE“: Sample, Laut, Noten auf C4, Song-Clips', r['mig'] is not None and r['mig'][0]=='arp:ACID cosmic:COSMIC piano:KEYS sampler:SAMPLE'
+       and r['mig'][1:4]==['lib:p_test',.7,'2:60 4:60A'] and r['mig'][4]=='1:1' and r['mig'][5] is False, r['mig'])
+    ok('#8 alte SAMPLE-Spur ohne Sample (war stumm) → entfällt', r['nomig']=='arp:ACID cosmic:COSMIC piano:KEYS', r['nomig'])
+    ok('#8 Beat aus Reiter „Sample“ → Sampler-Beat', r['beat']==['sampler',1,'lib:p_x',1,False], r['beat'])
     ok('Schrift überall ≥ 11 px (#19)', not fz.bad, fz.bad)
     ok('Keine Konsolenfehler', not errs, errs)
     await b.close()

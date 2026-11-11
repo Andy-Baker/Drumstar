@@ -75,7 +75,7 @@ function collectPatternData(name, id){
 // korrekt auf die aktuelle Pattern-Länge aufgefüllt bzw. gekürzt werden.
 // Spielweisen der Drum-Spuren laden (tr.notes): nur gültige Werte, sonst 0 = Standard
 function artLoad(tr, saved){
-  const n=(tr.type!=='arp' && !tr.isSample) ? Math.max(...Object.values(ART).map(l=>l.length)) : 0, out=new Array(PATTERN_LENGTH).fill(0);
+  const n=tr.type!=='arp' ? Math.max(...Object.values(ART).map(l=>l.length)) : 0, out=new Array(PATTERN_LENGTH).fill(0);
   if(n && saved) for(let i=0;i<Math.min(saved.length,PATTERN_LENGTH);i++){ const a=saved[i]|0; out[i]= a>0&&a<n ? a : 0; }
   return out;
 }
@@ -134,6 +134,7 @@ function trLoadSaved(tr, saved, accentSteps){
   }
 }
 function applyTrackAndFillData(data){
+  mcMigrate(data); // #8: alte SAMPLE-Spur → Sampler-Spur (vor melSync)
   dtSync(data.drt); // #70: weitere Drum-Spuren zuerst (Kits, Sets, Gruppen und Spuren unten rechnen mit ihnen)
   { const K=data.kits||{}; // #68: Kit je Drum-Spur; ältere Stände: alle Spuren mit kitId (klingt wie bisher)
     DRUM_TRACKS.forEach(d=>{ const k=K[d.id]||data.kitId; if(KITS[k]) d.kit=k; }); }
@@ -189,6 +190,7 @@ function applyTrackAndFillData(data){
   renderPageNav();
   selectTrack(activeTrackIdx);
   renderAllForPage();
+  samplerSync(); // Samples der Sampler-Spuren schon jetzt dekodieren (sonst erste Noten stumm)
 }
 function applyPatternData(data){
   clipEditEnd();

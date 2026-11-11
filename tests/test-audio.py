@@ -191,6 +191,30 @@ async def main():
     x,sr,st,pc=await acid([{'s':0,'n':0},{'s':4,'n':0,'a':1}],0.5,0.35)
     a=np.abs(x[int(0.05*sr):int((0.05+st)*sr)]).max(); b2=np.abs(x[int((0.05+4*st)*sr):int((0.05+5*st)*sr)]).max(); acc=20*math.log10(b2/a)
     ok('Acid: Accent lauter (≥ +2 dB)', acc>=2, f'{acc:+.1f} dB')
+    # ---------- Sampler (#8, über den WAV-Export): Tonhöhe = Rate, Akkord ohne Clipping, „Halten“ endet mit der Note, fehlendes Sample stumm
+    r=await pg.evaluate("""async ()=>{
+      const base=JSON.parse(JSON.stringify(collectPatternData('t0','t0'))); setBpm(120); swing=0;
+      TRACKS.forEach(t=>{ if(t.steps) t.steps.fill(0); if(t.type==='arp'){ t.events=[]; t._idx=null; evTouch(t); } t.muted=false; t.solo=false; });
+      const S=trAddNew({k:'sampler',label:melSuggest('SAMPLER')}); S.reverbAmount=0; S.delaySend=0; trApplyNodes(S);
+      const set=(smp,ev)=>{ S.smp=smp; S.events=ev; S._idx=null; evTouch(S); };
+      const R=async()=>{ const b=await renderPatternToWav(); return {L:b.getChannelData(0), R:b.getChannelData(1), sr:b.sampleRate}; };
+      const seg=(o,a,z)=>Array.from(o.L.subarray(Math.floor(a*o.sr),Math.floor(z*o.sr)));
+      const pk=o=>{ let m=0, nan=false; for(let i=0;i<o.L.length;i++){ const v=Math.max(Math.abs(o.L[i]),Math.abs(o.R[i])); if(!isFinite(v)) nan=true; else m=Math.max(m,v); } return [m,nan]; };
+      const rms=(o,a,z)=>{ let e=0,n=0; for(let i=Math.floor(a*o.sr);i<Math.floor(z*o.sr);i++){ e+=o.L[i]*o.L[i]; n++; } return Math.sqrt(e/n); };
+      set('glas',[{s:0,n:27,l:1,v:.9,a:false},{s:8,n:39,l:1,v:.9,a:false}]); let o=await R(); // Grundton C5 und eine Oktave höher
+      const pitch={sr:o.sr, a:seg(o,0.1,0.4), b:seg(o,1.1,1.4)};
+      set('glas',[0,4,7,11].map(n=>({s:0,n:27+n,l:4,v:1,a:true}))); o=await R(); const chord=pk(o);
+      set('bass',[{s:0,n:-9,l:2,v:.9,a:false}]); S.smpRel=0.05; o=await R(); const hold=[rms(o,0.06,0.25), rms(o,0.45,0.7)];
+      set('lib:gibtsnicht',[{s:0,n:15,l:4,v:1,a:false}]); await samplerSync(); o=await R(); const miss=pk(o)[0];
+      applyPatternData(base); return {pitch, chord, hold, miss}; }""")
+    def fpk(x,sr):
+      x=np.array(x); X=np.abs(np.fft.rfft(x*np.hanning(len(x)))); f=np.fft.rfftfreq(len(x),1/sr); return float(f[int(X.argmax())])
+    fa,fb=fpk(r['pitch']['a'],r['pitch']['sr']),fpk(r['pitch']['b'],r['pitch']['sr'])
+    ok('Sampler: Note auf Grundton = Originaltonhöhe (GLAS C5 ≈ 523 Hz)', abs(fa-523.25)<12, f'{fa:.0f} Hz')
+    ok('Sampler: Oktave höher = doppelte Frequenz', abs(fb/fa-2)<0.05, f'{fb:.0f} Hz')
+    ok('Sampler: Akkord aus 4 Akzent-Noten ohne NaN/Clipping', not r['chord'][1] and 0.05<r['chord'][0]<0.99, round(r['chord'][0],3))
+    ok('Sampler: „Halten“ endet mit der Note (≥ 30 dB leiser danach)', r['hold'][0]>1e-3 and 20*math.log10((r['hold'][1]+1e-9)/r['hold'][0])<-30, [f'{20*math.log10(v+1e-9):.0f} dB' for v in r['hold']])
+    ok('Sampler: fehlendes Sample bleibt stumm', r['miss']<1e-4, r['miss'])
     # ---------- Master (#51, v95): sichtbarer Kompressor „Drumstar“ = alter versteckter Kompressor, Notbremse am Ausgang
     MJ="""async (lvl)=>{ const sr=48000, N=sr*2;
      const mk=async(build)=>{ const c=new OfflineAudioContext(2,N,sr), b=c.createBuffer(2,N,sr);

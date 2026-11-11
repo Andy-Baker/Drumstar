@@ -399,10 +399,5 @@ taScopeEl.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>
   taScopeEl.querySelectorAll('button').forEach(x=>x.classList.toggle('on', x===b));
 }));
 
-const sampleControls=document.getElementById('sampleControls');
-const scStatusRow=document.getElementById('scStatusRow');
-const scBtnsRow=document.getElementById('scBtnsRow');
-const scHint=document.getElementById('scHint');
-const recDur=document.getElementById('recDur');
 const arpControls=document.getElementById('arpControls');
 const NOTE_NAMES=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];

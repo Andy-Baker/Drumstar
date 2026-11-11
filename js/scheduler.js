@@ -131,7 +131,7 @@ function start(){
 function stop(){
   isPlaying=false; clearTimeout(timerID);
   if(tickWorker) tickWorker.postMessage(0);
-  stopLoopingSampleTrack(); stopCosmicVoices();
+  stopCosmicVoices();
   // Acid-Stimme: gehaltene (Slide-)Noten würden sonst weiterklingen; bereits eingeplante Events werden verworfen
   TRACKS.forEach(t=>{
     if(t._arpAmp && audioCtx){

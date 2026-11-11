@@ -22,7 +22,7 @@ async def main():
     async def grp(n):
         await pg.click('#grpBtn'); await pg.click(f'#grpMenu button:has-text("{n}")'); await pg.wait_for_timeout(200)
     await pg.screenshot(path=f'{OUT}/00_start.png', full_page=True)
-    for g in ['DRUMS','PERC','ACID','COSMIC','SAMPLE','KEYS']:
+    for g in ['DRUMS','PERC','ACID','COSMIC','KEYS']:
         try: await grp(g); await pg.screenshot(path=f'{OUT}/01_{g}.png', full_page=True); log.append('ok   grp '+g)
         except Exception as e: log.append('FAIL grp '+g+' '+str(e)[:100])
         await step(g+' sound sheet', C('tbSound'), f'02_sound_{g}')

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>MRM-44 — Mobile Rhythm Machine</title>
 <link rel="stylesheet" href="./fonts.css">
-<link rel="stylesheet" href="./css/app.css?v=111">
+<link rel="stylesheet" href="./css/app.css?v=112">
 
 
 <!-- Drumstar PWA -->
@@ -128,7 +128,7 @@
           </div>
         </div>
         <div class="kp-sec">Gespeicherte Beats</div>
-        <div id="beatTabs"><button data-t="all" class="on">Gesamt</button><button data-t="drums">Drums</button><button data-t="perc">Perc</button><button data-t="acid">Acid</button><button data-t="sample">Sample</button><button data-t="cosmic">Cosmic</button><button data-t="piano">Keys</button></div>
+        <div id="beatTabs"><button data-t="all" class="on">Gesamt</button><button data-t="drums">Drums</button><button data-t="perc">Perc</button><button data-t="acid">Acid</button><button data-t="cosmic">Cosmic</button><button data-t="piano">Keys</button><button data-t="sampler">Sampler</button></div>
         <div id="patternSaveRow">
           <input type="text" id="patternNameInput" placeholder="Name für aktuellen Beat…" maxlength="40">
           <button id="grpSaveBtn">Speichern</button>
@@ -215,7 +215,7 @@
 
         <div id="seAssignLabel">5 · Verwenden als</div>
         <div id="seAssignRow">
-          <div class="se-assign-chip" id="seAssignTrackChip"><svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h2M7 8v8M11 5v14M15 9v6M19 11v2"/></svg>Sample-Spur</div>
+          <div class="se-assign-chip" id="seAssignTrackChip"><svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h2M7 8v8M11 5v14M15 9v6M19 11v2"/></svg><span id="seAssignTrackName">Sampler</span></div>
         </div>
         <div id="sePadGrid"></div>
 
@@ -271,20 +271,6 @@
             </svg>
           </div>
           <button class="ib" id="tbSound" aria-label="Klang der Spur" title="Klang der Spur"><svg viewBox="0 0 24 24"><path d="M5 4v16M12 4v16M19 4v16"/><circle cx="5" cy="14" r="2" fill="currentColor"/><circle cx="12" cy="8" r="2" fill="currentColor"/><circle cx="19" cy="15" r="2" fill="currentColor"/></svg></button>
-        </div>
-
-        <div id="sampleControls">
-          <div class="sc-status-row" id="scStatusRow" style="display:none;">
-            <span class="sc-status" id="recStatus">kein Sample</span>
-            <span class="sc-dur" id="recDur" style="display:none;"></span>
-          </div>
-          <div class="sc-btns" id="scBtnsRow">
-            <button id="samplePreviewBtn" class="sc-btn">▶ Hören</button>
-            <button id="trimBtn" class="sc-btn">✂ Trimmen</button>
-            <button id="sampleClearBtn" class="sc-btn danger">✕ Löschen</button>
-          </div>
-          <button id="recBtn" class="sc-btn rec big">● Aufnehmen (max. 4s)</button>
-          <div class="sc-hint" id="scHint">Kein Sample gespeichert — Button antippen zum Aufnehmen</div>
         </div>
 
         <div id="arpControls" style="display:none;">
@@ -537,29 +523,30 @@
       </div>
 </div>
 
-<script src="./js/base.js?v=111"></script>
-<script src="./js/audio.js?v=111"></script>
-<script src="./js/fx.js?v=111"></script>
-<script src="./js/voices.js?v=111"></script>
-<script src="./js/events.js?v=111"></script>
-<script src="./js/kits.js?v=111"></script>
-<script src="./js/tracks.js?v=111"></script>
-<script src="./js/controls.js?v=111"></script>
-<script src="./js/harmony.js?v=111"></script>
-<script src="./js/editor.js?v=111"></script>
-<script src="./js/sheets.js?v=111"></script>
-<script src="./js/sample-track.js?v=111"></script>
-<script src="./js/wav-export.js?v=111"></script>
-<script src="./js/mixer.js?v=111"></script>
-<script src="./js/sample-editor.js?v=111"></script>
-<script src="./js/storage.js?v=111"></script>
-<script src="./js/beats.js?v=111"></script>
-<script src="./js/spuren.js?v=111"></script>
-<script src="./js/pianoroll.js?v=111"></script>
-<script src="./js/scheduler.js?v=111"></script>
-<script src="./js/transport-ui.js?v=111"></script>
-<script src="./js/tempo-detect.js?v=111"></script>
-<script src="./js/main.js?v=111"></script>
+<script src="./js/base.js?v=112"></script>
+<script src="./js/audio.js?v=112"></script>
+<script src="./js/fx.js?v=112"></script>
+<script src="./js/voices.js?v=112"></script>
+<script src="./js/events.js?v=112"></script>
+<script src="./js/kits.js?v=112"></script>
+<script src="./js/tracks.js?v=112"></script>
+<script src="./js/controls.js?v=112"></script>
+<script src="./js/harmony.js?v=112"></script>
+<script src="./js/editor.js?v=112"></script>
+<script src="./js/sheets.js?v=112"></script>
+<script src="./js/sample-track.js?v=112"></script>
+<script src="./js/wav-export.js?v=112"></script>
+<script src="./js/sampler.js?v=112"></script>
+<script src="./js/mixer.js?v=112"></script>
+<script src="./js/sample-editor.js?v=112"></script>
+<script src="./js/storage.js?v=112"></script>
+<script src="./js/beats.js?v=112"></script>
+<script src="./js/spuren.js?v=112"></script>
+<script src="./js/pianoroll.js?v=112"></script>
+<script src="./js/scheduler.js?v=112"></script>
+<script src="./js/transport-ui.js?v=112"></script>
+<script src="./js/tempo-detect.js?v=112"></script>
+<script src="./js/main.js?v=112"></script>
 
 <script>
 // Drumstar PWA service worker

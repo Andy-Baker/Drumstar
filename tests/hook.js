@@ -4,7 +4,7 @@
 window.__T=TRACKS; window.__sel=()=>activeTrackIdx; window.__pv=pianoVoice; window.__setCtx=c=>{audioCtx=c};
 window.__audio={
   kits:()=>Object.keys(KITS).filter(k=>!KITS[k].samples), // Sample-Kits: eigener Test unten
-  drumIds:()=>TRACKS.filter(t=>t.type!=='arp' && !t.isSample && VOICE_FNS[t.id]).map(t=>t.id),
+  drumIds:()=>TRACKS.filter(t=>t.type!=='arp' && VOICE_FNS[t.id]).map(t=>t.id),
   // Eine Drum-Stimme offline rendern (worklet=true: FM-Worklet wie live, false: nativer Fallback wie WAV-Export)
   async drum(id,kit,worklet,dur){
     const sr=48000, c=new OfflineAudioContext(2,Math.ceil(sr*dur),sr);
@@ -73,7 +73,7 @@ window.__audio.smpLoad=async function(kid){
 window.__audio.exportPattern=async function(kit,pat,bpmv,vol){
   DRUM_TRACKS.forEach(d=>d.kit=kit); drumSet.voices={}; drumSet.buffers={}; bpm=bpmv||100; swing=0; humanize=0; PATTERN_LENGTH=16;
   const V=[0,VEL_GHOST_SOFT,VEL_GHOST,VEL_NORMAL,VEL_ACCENT];
-  TRACKS.forEach(t=>{ t.solo=false; t.muted=(t.type==='arp'||t.isSample||!VOICE_FNS[t.id]);
+  TRACKS.forEach(t=>{ t.solo=false; t.muted=(t.type==='arp'||!VOICE_FNS[t.id]);
     if(!t.muted){ t.steps=t.steps.map(()=>0); if(t.notes) t.notes=t.notes.map(()=>0); } t.feel=0; t.reverbAmount=0; t.delaySend=0;
     if(t.sendGain) t.sendGain.gain.value=0; if(t.delaySendGain) t.delaySendGain.gain.value=0; });
   // Schlüssel = Spur oder Sample-Stimme einer Spielweise (hl/hf → Hi-Hat, rb → Ride)
@@ -112,7 +112,7 @@ window.__audio.smpDrop=function(){ smpFree([]); return Object.keys(smp); };
 window.__audio.exportSong=async function(kit,clips,bars,bpmv){
   DRUM_TRACKS.forEach(d=>d.kit=kit); drumSet.voices={}; drumSet.buffers={}; bpm=bpmv||100; swing=0; humanize=0; PATTERN_LENGTH=16;
   const V=[0,VEL_GHOST_SOFT,VEL_GHOST,VEL_NORMAL,VEL_ACCENT];
-  TRACKS.forEach(t=>{ t.solo=false; t.muted=(t.type==='arp'||t.isSample||!VOICE_FNS[t.id]); t.feel=0; t.reverbAmount=0; t.delaySend=0;
+  TRACKS.forEach(t=>{ t.solo=false; t.muted=(t.type==='arp'||!VOICE_FNS[t.id]); t.feel=0; t.reverbAmount=0; t.delaySend=0;
     if(t.sendGain) t.sendGain.gain.value=0; if(t.delaySendGain) t.delaySendGain.gain.value=0; });
   const keep={enabled:arr.enabled, bars:arr.bars, clips:arr.clips}, ke=editClip;
   arr.clips={}; arr.bars=bars; arr.enabled=true; editClip=null;

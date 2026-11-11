@@ -248,7 +248,7 @@ async def main():
     await pg.click('#klX'); await pg.wait_for_timeout(150)
     # Rollen (#2 Stufe 1): Fill/Würfeln nach Rolle der Zeile, nicht nach fester ID
     r=await pg.evaluate("""(()=>{ const ks=o=>Object.keys(o).sort().join(','); const R={};
-      R.roles=TRACKS.filter(t=>t.type!=='arp'&&!t.isSample).map(t=>t.id+':'+trRole(t)).join(' ');
+      R.roles=TRACKS.filter(t=>t.type!=='arp').map(t=>t.id+':'+trRole(t)).join(' ');
       fillStyleEnabled.linear=true; R.std=ks(generateFillOverride(8));
       const orig=trVoice; trVoice=t=>t.id==='lt'?'mr':t.id; // simuliert getauschten Sound: Maracas auf der LT-Zeile
       const o=generateFillOverride(8); R.swap=ks(o); R.cyChoke=!!o.cy.chokeSteps;

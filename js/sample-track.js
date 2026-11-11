@@ -20,41 +20,11 @@ function randomizeTrackPattern(tr, from=0, to=PATTERN_LENGTH){
   }
 }
 // =========================================================================
-// MIC-SAMPLE-SPUR — Wiedergabe. Aufnahme/Import/Bearbeitung laufen jetzt zentral
-// über den Sample-Editor (s. u.); sampleBuffer bleibt hier der In-Memory-Cache
-// des aktuell zugewiesenen Bibliothekseintrags, exakt wie vorher für triggerTrack().
+// MIKROFON — Zugriff für Sample-Editor (Aufnahme) und Tempo erkennen. Die frühere SAMPLE-Spur
+// ist seit #8 durch den Sampler ersetzt (js/sampler.js).
 // =========================================================================
 const MAX_REC_SECONDS=4;
 let micStream=null;
-let sampleTrackSampleId=null; // welcher Bibliothekseintrag ist der Sample-Spur zugeordnet
-
-const recBtn=document.getElementById('recBtn');
-const recStatus=document.getElementById('recStatus');
-const sampleClearBtn=document.getElementById('sampleClearBtn');
-const samplePreviewBtn=document.getElementById('samplePreviewBtn');
-const trimBtn=document.getElementById('trimBtn');
-
-function updateRecStatus(){
-  if(sampleBuffer){
-    scStatusRow.style.display='flex';
-    recStatus.textContent='● Sample gespeichert';
-    recStatus.classList.add('has'); recStatus.classList.remove('err');
-    recDur.style.display=''; recDur.textContent=sampleBuffer.duration.toFixed(1)+'s';
-    scBtnsRow.style.display='flex';
-    scHint.style.display='none';
-    recBtn.textContent='● Neu aufnehmen / bearbeiten';
-    recBtn.classList.remove('big');
-  } else {
-    const inIframe=(()=>{ try{ return window.self!==window.top; }catch(e){ return true; } })();
-    scStatusRow.style.display='none';
-    scBtnsRow.style.display='none';
-    scHint.style.display='';
-    scHint.textContent = inIframe ? 'Vorschau blockiert das Mikrofon' : 'Kein Sample gespeichert — Button antippen zum Aufnehmen';
-    if(inIframe) recBtn.title='In dieser Vorschau blockiert — Datei herunterladen & lokal öffnen';
-    recBtn.textContent='● Aufnehmen (max. 4s)';
-    recBtn.classList.add('big');
-  }
-}
 
 async function ensureMicStream(){
   // Android beendet den Mikro-Track manchmal (Hintergrund, Rechte) → dann neu holen statt Stille aufzunehmen
@@ -83,26 +53,6 @@ function micErrorMessage(err){
       return inIframe ? 'Vorschau blockiert Mikro' : 'Mikro-Zugriff fehlgeschlagen';
   }
 }
-
-// Öffnet den zentralen Sample-Editor statt wie vorher direkt inline aufzunehmen —
-// Aufnehmen/Laden/Bearbeiten/Zuweisen passiert jetzt an einer einzigen Stelle.
-recBtn.addEventListener('click', ()=> openSampleEditor({sampleId:sampleTrackSampleId, forTrack:true}));
-trimBtn.addEventListener('click', ()=> openSampleEditor({sampleId:sampleTrackSampleId, forTrack:true}));
-samplePreviewBtn.addEventListener('click', ()=>{
-  if(!sampleBuffer) return;
-  Promise.resolve(initAudio()).then(()=>{
-    if(audioCtx.state!=='running') audioCtx.resume();
-    triggerTrack(TRACKS.find(t=>t.isSample), audioCtx.currentTime, VEL_NORMAL);
-  });
-});
-// Hebt nur die Zuordnung der Sample-Spur auf — der Bibliothekseintrag selbst bleibt
-// erhalten (könnte noch an Pads zugewiesen sein) und lässt sich im Sample-Editor
-// jederzeit wieder zuweisen, statt unwiderruflich gelöscht zu werden.
-sampleClearBtn.addEventListener('click', ()=>{
-  sampleBuffer=null; sampleStartOffset=0; sampleTrackSampleId=null;
-  try{ localStorage.removeItem('mrm44_sampleTrackId'); }catch(e){}
-  updateRecStatus();
-});
 
 // ---- WAV-Encoding (für IndexedDB-Speicherung als Blob) ----
 function audioBufferToWavBlob(buffer){

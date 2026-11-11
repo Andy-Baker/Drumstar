@@ -292,15 +292,10 @@ function renderTrackBar(){
   tbDot.style.background=tr.color; tbDot.style.boxShadow='0 0 6px '+tr.color;
   syncTbMS();
 
-  sampleControls.style.display='none';
   arpControls.style.display='none';
   arpModPanel.style.display='none';
   tbPreview.style.display='';
-  if(tr.isSample){
-    sampleControls.style.display='flex';
-    tbPreview.style.display='none';
-    updateRecStatus();
-  } else if(tr.type==='arp'){
+  if(tr.type==='arp'){
     arpControls.style.display='none'; // Filter-Regler liegen jetzt im Synth-Sheet
     arpModPanel.style.display=isPoly(tr)?'none':'flex';
     const xyBtn=document.getElementById('arpXyBtn');

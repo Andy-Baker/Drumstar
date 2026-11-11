@@ -10,7 +10,7 @@ async function beatDelete(id){ const db=await idbOpen(); db.transaction(IDB_BEAT
 async function beatAll(){
   const db=await idbOpen(), out=[];
   await new Promise((res,rej)=>{ const q=db.transaction(IDB_BEATS,'readonly').objectStore(IDB_BEATS).openCursor(); q.onsuccess=e=>{ const c=e.target.result; if(c){ out.push(c.value); c.continue(); } else res(); }; q.onerror=()=>rej(q.error); });
-  return out.sort((a,b)=>b.savedAt-a.savedAt);
+  return out.map(mcBeat).sort((a,b)=>b.savedAt-a.savedAt); // #8: Beats aus dem alten Reiter „Sample“ → Sampler
 }
 function beatTrackData(tr){
   return { id:tr.id, steps:tr.steps.slice(), events:tr.events?JSON.parse(JSON.stringify(tr.events)):undefined, notes:tr.notes?tr.notes.slice():undefined, slides:tr.slides?tr.slides.slice():undefined,
@@ -32,7 +32,6 @@ function beatCollect(gid, name){
   const d={ id:genId(), kind:'beat', group:gid, name, savedAt:Date.now(), length:PATTERN_LENGTH, kitId:(beatDrumTarget(gid)||DRUM_TRACKS[0]).kit,
     tracks:beatTracksOf(gid).map(t=>Object.assign(beatTrackData(t),{id:rowBase(t.id)})) };
   if(gid==='acid') d.acidAuto={shape:autoShape, bars:autoBars, depth:autoDepth};
-  if(gid==='sample') d.sampleId=sampleTrackSampleId;
   return d;
 }
 function applyTrackSound(tr, sv){
@@ -73,8 +72,7 @@ async function beatApply(d, withSound){
     if(withSound) applyTrackSound(tr, sv);
   });
   if(withSound && d.acidAuto){ autoShape=d.acidAuto.shape||'off'; autoBars=d.acidAuto.bars||4; autoDepth=d.acidAuto.depth!=null?d.acidAuto.depth:0.6; syncAutoUI(); }
-  if(withSound && d.sampleId){ try{ const e=await loadSampleLibraryEntry(d.sampleId); if(e) await applySampleToTrack(e); }catch(err){ console.warn('Sample zum Beat nicht gefunden', err); } }
-  selectTrack(activeTrackIdx); renderAllForPage(); ovRender();
+  selectTrack(activeTrackIdx); renderAllForPage(); ovRender(); samplerSync();
 }
 async function beatSaveGroup(typed){
   if(!beatTracksOf(beatTab).length){ showPatternIOStatus('Keine Spur für diesen Reiter', true); return; }
@@ -114,7 +112,7 @@ async function beatSplitLegacy(item){
     if(g.id==='acid' && data.acidAuto) d.acidAuto=data.acidAuto;
     await beatPut(d); all.push(d); made++;
   }
-  showPatternIOStatus(made ? '„'+item.name+'“ aufgeteilt in '+made+' Beat'+(made===1?'':'s')+' (Reiter Drums, Perc, Acid, Sample)' : 'Nichts zum Aufteilen gefunden', !made);
+  showPatternIOStatus(made ? '„'+item.name+'“ aufgeteilt in '+made+' Beat'+(made===1?'':'s')+' (Reiter Drums, Perc, Acid, Cosmic, Keys)' : 'Nichts zum Aufteilen gefunden', !made);
 }
 document.querySelectorAll('#beatTabs button').forEach(b=>b.addEventListener('click', ()=>{
   beatTab=b.dataset.t;

@@ -29,6 +29,7 @@ Zusammengeführt am 28.10.2026 aus DECISIONS-2/-3, ARCHITECTURE-11/-12 und ROADM
 **Klang & Instrumente**
 - Samples bleiben in den Drums erlaubt (Drum-Rack-Prinzip: Pad = Container für Synth oder Sample). Ein ausgebauter Sampler ist ein zweites Werkzeug.
 - Pro Spur eigener Grundton und eigene Skala.
+- Sampler (11.11., #8, Mockup `issue-8.html` Variante A): eigene Melodiespur „SAMPLER“ über „Spur hinzufügen“ (nicht ab Werk, zählt zu den 7). Die SAMPLE-Spur entfällt (wurde nicht genutzt; ein Sample auf einer Taste kann dasselbe, rhythmische One-Shots gehen über Drum-Zeilen mit eigenem Sample); alte Stände werden zur Sampler-Spur „SAMPLE“. Grundton gehört zum Sample (Bibliothekseintrag), einstellbar nur im Klang-Sheet (− / + / Erkennen). Transponieren nur per Tonhöhe (Länge ändert sich mit), Time-Stretch und Modus „Pads“ (Sample in Stücke) erst mit #11. Wiedergabe-Art kommt aus dem Sample-Editor (Einmal/Halten/Schleife). Drei synthetisierte Werksamples (VOX, GLAS, BASS), damit die Spur ohne eigene Aufnahme klingt. Verworfen: Variante B (SAMPLE-Spur umschaltbar Raster ↔ Tasten).
 - Piano Roll (6.11., #59): „Nur Skalentöne“ ab Werk aus, damit die Klaviatur-Leiste schwarze Tasten zeigt; Fremdtöne als dunkle Zeilen. Schalter bleibt in den Optionen.
 - Cosmic klingt gut und bleibt so; Performance auf dem Handy spürbar, läuft aber.
 - Realistische Drums über Samples statt Synthese: Studio Kit (SM Drums, Public Domain), mindestens 4 Lautstärke-Layer je Stimme (= 4 Velocity-Stufen), Round Robin. Nur frei lizenzierte Bibliotheken (Public Domain/CC0; CC-BY mit Nennung), kein CC-BY-SA. Kits laden erst bei Auswahl. Im Hörtest übernommen: Studio 67, Hybrid, Rusty, Vintage 73; verworfen: Besen (Swirly, Kick klingt nach Snare). Mehrmikrofon-Bibliotheken nur zeitlich ausgerichtet und polaritätskorrigiert mischen.
@@ -93,7 +94,8 @@ Zusammengeführt am 28.10.2026 aus DECISIONS-2/-3, ARCHITECTURE-11/-12 und ROADM
 
 ## Bekannte Einschränkungen
 - iOS-Stummschalter kann Web Audio stumm halten; Gerätetasten regeln nur die Systemausgabe.
-- Sample-Quellen in Drums und Sample-Spur einstimmig (eine Note pro Step).
+- Sample-Quellen in Drums einstimmig (eine Note pro Step); der Sampler (#8) ist mehrstimmig.
+- Grundton erkennen trifft bei Glocken/unharmonischen Klängen evtl. daneben (dann − / +).
 - Schriftgrößen < 11 px an vielen Stellen (entschieden: auf 11 px anheben, #19).
 - Rechtstexte (Impressum/Datenschutz) nicht anwaltlich geprüft.
 

@@ -5,8 +5,8 @@
 // Gespeichert als data.mel=[{id,inst,label}] (melEntry); Laden legt an/entfernt (melSync). Ohne mel: ACID, COSMIC, KEYS.
 // Drum-/Perc-Spuren hinzufügen = Stufe 2 (eigenes Issue).
 // =========================================================================
-const MEL_BASE=Object.keys(INSTR).map(k=>({id:k}));
-const RESERVED_NAMES=['DRUMS','PERC','SAMPLE'];
+const MEL_BASE=Object.keys(INSTR).filter(k=>!INSTR[k].extra).map(k=>({id:k})); // ab Werk: ACID, COSMIC, KEYS (Sampler nur über „Spur hinzufügen“)
+const RESERVED_NAMES=['DRUMS','PERC'];
 function melEntry(tr){ const e={id:tr.id, inst:trInstKey(tr)}; if(tr.label) e.label=tr.label; return e; }
 function melShort(l){ const s=l.replace(/\s+/g,'').toUpperCase(); return /\d$/.test(s) && s.length>3 ? s.slice(0,2)+s.slice(-1) : s.slice(0,3); }
 function melCount(){ return TRACKS.filter(trInst).length; }
@@ -55,6 +55,7 @@ function melChanged(sel){
   if(idx<0) idx=0;
   activeTrackIdx=idx; setPatternGroup(groupOfTrack(TRACKS[idx]), false); selectTrack(idx);
   mixerRebuild(); ovRender(); refreshSoloVisuals(); renderAllForPage(); if(prIsOpen()) prBuildMenu();
+  samplerSync();
 }
 // Laden: Melodiespuren wie gespeichert (fehlende anlegen, überzählige entfernen, Reihenfolge). Leere Liste = alle gelöscht.
 function melSync(list){
@@ -127,7 +128,7 @@ function trTiles(){
   const out=[];
   Object.keys(INSTR).forEach(k=>{ const I=INSTR[k], c=I.tpl.color, S=I.sounds&&I.sounds();
     if(S) Object.keys(S).forEach(s=>out.push({k, sound:s, n:S[s].name, d:I.name, c}));
-    else out.push({k, n:I.name, d:{arp:'303-Bass', cosmic:'Fläche · Arp'}[k]||'', c}); });
+    else out.push({k, n:I.name, d:I.desc||{arp:'303-Bass', cosmic:'Fläche · Arp'}[k]||'', c}); });
   DRUM_TRACKS.filter(d=>!dtExtra(d)).forEach(d=>out.push({drum:d.kind, n:d.name, d:'eigenes Kit', c:DT_COL[d.kind]}));
   return out;
 }
@@ -163,8 +164,8 @@ function trRenameSheet(tr){
   go.onclick=()=>{ if(go.disabled) return; trRename(tr, nm.value.trim().toUpperCase()); closeSheets(); };
 }
 function trActSheet(tr){
-  const s=instSound(tr), I=trInst(tr), full=melCount()>=MEL_MAX;
-  const ti=trTitle(tr), sub=[I.name, s&&s.name].filter((x,i,a)=>x && x!==ti && a.indexOf(x)===i);
+  const s=instSub(tr), I=trInst(tr), full=melCount()>=MEL_MAX;
+  const ti=trTitle(tr), sub=[I.name, s].filter((x,i,a)=>x && x!==ti && a.indexOf(x)===i);
   trSheetOpen([ti].concat(sub).join(' · '),
     '<button class="nb-opt" data-a="ren">'+TR_IC.pen+'<span><b>Umbenennen</b><small>Name in Spur-Menü, Song und Mixer.</small></span></button>'
     +'<button class="nb-opt" data-a="cp"'+(full?' disabled':'')+'>'+TR_IC.copy+'<span><b>Als neue Spur kopieren</b><small>'+(full?'Höchstens '+MEL_MAX+' Melodiespuren.':'Gleiche Noten und Einstellungen, Instrument wählbar – z. B. zum Schichten.')+'</small></span></button>'
@@ -178,7 +179,7 @@ function trMenuDecorate(m){
   [...m.children].forEach((b,i)=>{ const g=ARR_GROUPS[i], d=g && dtById(g.id);
     if(d){ b.querySelector('small').textContent=KITS[d.kit] ? KITS[d.kit].name : ''; trDots(b, g.label, ()=>dtActSheet(d)); return; } });
   [...m.children].forEach((b,i)=>{ const g=ARR_GROUPS[i], tr=g && TRACKS.find(t=>t.id===g.ids[0]), I=trInst(tr); if(!I) return;
-    const s=instSound(tr); b.querySelector('small').textContent=(g.label!==I.name ? I.name+(s?' · ':'') : '')+(s ? s.name : (g.label!==I.name ? '' : I.name));
+    const s=instSub(tr); b.querySelector('small').textContent=(g.label!==I.name ? I.name+(s?' · ':'') : '')+(s ? s : (g.label!==I.name ? '' : I.name));
     trDots(b, g.label, ()=>trActSheet(tr)); });
   const a=document.createElement('button'); a.className='grp-add'; a.innerHTML=TR_IC.plus+'Spur hinzufügen';
   a.onclick=()=>{ closeMenus(); trAddSheet(null); }; m.appendChild(a);

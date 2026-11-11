@@ -144,7 +144,7 @@ function fxBindChain(root,owner){ const L=owner?owner.fx:masterFx, find=id=>L.fi
 function mixFxBody(tr,box){ const arp=tr.type==='arp';
   box.appendChild(soundRow('Laut',0,100,tr.vol*100,Math.round(tr._def.vol*100),v=>v,v=>setTrackVol(tr,v/100)));
   box.appendChild(soundRow('Pan',-100,100,(tr.pan||0)*100,0,v=>v===0?'C':(v<0?'L':'R')+Math.abs(v),v=>{ tr.pan=v/100; if(tr.panner) tr.panner.pan.value=tr.pan; }));
-  if(!arp) box.appendChild(soundRow('Tune',0,100,tr.tune*100,Math.round(tr._def.tune*100),v=>tr.isSample?Math.round(Math.pow(2,(v/100-0.5)*2)*100)+'%':v,v=>tr.tune=v/100));
+  if(!arp) box.appendChild(soundRow('Tune',0,100,tr.tune*100,Math.round(tr._def.tune*100),v=>v,v=>tr.tune=v/100));
   const sb=fxSec(box,'Sends');
   [['hall','reverbAmount','sendGain'],['delay','delaySend','delaySendGain']].forEach(([k,prop,node])=>{
     const r=soundRow(FX_SEND[k].n,0,100,(tr[prop]||0)*100,Math.round((tr._def[prop]||0)*100),v=>v,v=>{ tr[prop]=v/100; if(tr[node]) tr[node].gain.value=tr[prop]; });
@@ -241,24 +241,26 @@ function eqDraw(tr){ eqStop(); const cv=$id('fxEqCv'); if(!cv) return; const dpr
   cv.onpointerup=cv.onpointercancel=()=>{ drag=null; };
   frame(); }
 // Klang-Sheet (v64): ein Einstieg für alle Spuren. Melodiespuren mit Reitern Sound / Mix & FX / Tonart,
-// Drums/Perc/Sample nur Mix-Regler (+ Tune). Werte direkt auf tr.*
+// Drums/Perc nur Mix-Regler (+ Tune). Werte direkt auf tr.*
 let klTab='sound', klTr=null;
 function openKlang(tr,tab){
-  klTr=tr||TRACKS[activeTrackIdx]; if(tab) klTab=tab; klMode='klang'; klView=[]; klResetUI();
+  klTr=tr||TRACKS[activeTrackIdx];
+  if(trInstKey(klTr)==='sampler') samplerLibRefresh().then(()=>{ if(klTr && trInstKey(klTr)==='sampler' && $id('klSheet').classList.contains('open')) renderKlang(); }); if(tab) klTab=tab; klMode='klang'; klView=[]; klResetUI();
   renderKlang(); openSheet('klSheet');
 }
 function renderKlang(){
   const box=$id('klRows'); eqStop(); $id('klBack').hidden=!klView.length;
-  if(klView.length || klMode!=='klang'){ box.innerHTML=''; $id('klTabs').style.display='none'; $id('klSheet').classList.remove('cos','pno'); fxRenderView(box,klView.length?klView[klView.length-1]:{v:klMode}); return; }
+  if(klView.length || klMode!=='klang'){ box.innerHTML=''; $id('klTabs').style.display='none'; $id('klSheet').classList.remove('cos','pno','smp'); fxRenderView(box,klView.length?klView[klView.length-1]:{v:klMode}); return; }
   const tr=klTr, arp=tr.type==='arp', I=trInst(tr); box.innerHTML='';
   const tab=arp?klTab:'fx';
   $id('klT').textContent='Klang · '+(arp?prName(tr):tr.name);
   $id('klTabs').style.display=arp?'':'none';
   $id('klTabs').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
-  ['cos','pno'].forEach(c=>$id('klSheet').classList.toggle(c,!!I && I.cls===c)); // Instrumentfarbe
+  ['cos','pno','smp'].forEach(c=>$id('klSheet').classList.toggle(c,!!I && I.cls===c)); // Instrumentfarbe
   const grp=t=>{ const g=document.createElement('div'); g.className='grp'; g.textContent=t; box.appendChild(g); };
   const pct=v=>v+'%', num=(v,d)=>v!=null?v:d;
   if(tab==='sound'){
+    if(I.klang){ I.klang(tr,box,grp); return; } // Instrument mit eigenem Reiter (Sampler)
     if(I.sounds){ // Instrument mit Klang-Auswahl (Keys)
       const KS=I.sounds(), cur=instSound(tr);
       grp('Instrument');

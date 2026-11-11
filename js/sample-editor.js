@@ -147,7 +147,7 @@ let seOriginalBuffer=null;   // unveränderte Fassung, für "Zurücksetzen"
 let seWorkingBuffer=null;    // aktuelle Arbeitskopie, auf die Tools angewendet werden
 let seTrimStart=0, seTrimEnd=0;
 let seZoomFactor=1; // 1..8 — horizontaler Zoom der Wellenform, echte Breite (nicht nur optisch)
-let seAssignTrack=false, seAssignPads=new Set();
+let seAssignTrack=false, seAssignPads=new Set(), seSmpTr=null; // seAssignTrack = Sampler-Spur seSmpTr bekommt das Sample (#8)
 let seIsRecording=false, seRecStartTime=0, seRecTimerId=null;
 let seMicSourceNode=null, seMicRecorderNode=null, seMicSilentGain=null;
 let seMediaRecorder=null, seMediaChunks=[], seRecChunksFloat=[];
@@ -442,7 +442,7 @@ seImportInput.addEventListener('change', async (e)=>{
   }
 });
 
-// ---- Zuweisung: Sample-Spur (ein Chip) + beliebige Pads (Mehrfachauswahl-Grid) ----
+// ---- Zuweisung: Sampler-Spur (ein Chip, nur wenn es eine gibt) + beliebige Pads (Mehrfachauswahl-Grid) ----
 const sePadChips=[];
 for(let i=0;i<PAD_COUNT;i++){
   const chip=document.createElement('div'); chip.className='se-pad-chip'; chip.textContent=i+1;
@@ -457,6 +457,8 @@ seAssignTrackChip.addEventListener('click', ()=>{
   seAssignTrackChip.classList.toggle('on', seAssignTrack);
 });
 function renderSEAssignUI(){
+  seAssignTrackChip.style.display=seSmpTr ? '' : 'none';
+  if(seSmpTr) $id('seAssignTrackName').textContent=trTitle(seSmpTr)==='SAMPLER' ? 'Sampler' : 'Sampler · '+trTitle(seSmpTr);
   seAssignTrackChip.classList.toggle('on', seAssignTrack);
   sePadChips.forEach((chip,i)=> chip.classList.toggle('on', seAssignPads.has(i)));
 }
@@ -476,7 +478,6 @@ sePreviewBtn.addEventListener('click', ()=>{
 });
 
 function deriveSampleName(){
-  if(seAssignTrack) return 'Sample-Spur';
   const firstPad=[...seAssignPads][0];
   if(firstPad!=null) return 'Pad '+(firstPad+1);
   return 'Sample '+new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
@@ -488,18 +489,15 @@ seSaveBtn.addEventListener('click', async ()=>{
   const finalBuffer=bufferSlice(seWorkingBuffer, seTrimStart, seTrimEnd);
   const blob=audioBufferToWavBlob(finalBuffer);
   const entryId=seEditingId || genId();
+  const old=seEditingId ? await loadSampleLibraryEntry(seEditingId).catch(()=>null) : null; // Name und Grundton bleiben beim Bearbeiten
   const hasLoop=seLoopBuf===seWorkingBuffer && seLoopStart!=null && seLoopEnd!=null;
   const [la,lb]=seLoopBounds();
-  const entry={id:entryId, name:deriveSampleName(), blob, offsetStart:0, offsetEnd:null, savedAt:Date.now(),
+  const entry={id:entryId, name:(old && old.name) || deriveSampleName(), root:old && old.root!=null ? old.root : undefined, blob, offsetStart:0, offsetEnd:null, savedAt:Date.now(),
     playMode:sePlayMode, overlap:seOverlap, loopStart:hasLoop ? la-seTrimStart : null, loopEnd:hasLoop ? lb-seTrimStart : null};
+  if(entry.root===undefined) delete entry.root;
   await saveSampleLibraryEntry(entry);
-
-  if(seAssignTrack) await applySampleToTrack(entry);
-  else if(sampleTrackSampleId===entryId){
-    sampleBuffer=null; sampleStartOffset=0; sampleTrackSampleId=null;
-    try{ localStorage.removeItem('mrm44_sampleTrackId'); }catch(e){}
-    updateRecStatus();
-  }
+  if(old) samplerInvalidate(entryId); // Sampler-Spuren mit diesem Sample laden neu
+  if(seAssignTrack && seSmpTr && TRACKS.indexOf(seSmpTr)>=0) await samplerPick(seSmpTr, 'lib:'+entryId, true);
   for(let i=0;i<PAD_COUNT;i++){
     if(seAssignPads.has(i)) await applySampleToPad(i, entry);
     else if(padSampleId[i]===entryId){
@@ -517,7 +515,7 @@ seSaveBtn.addEventListener('click', async ()=>{
 // ---- Öffnen/Schließen — öffnet mit dem übergebenen Bibliothekseintrag (oder leer für ein
 // neues Sample) und erkennt bestehende Zuweisungen automatisch (Spur/Pads, die diesen
 // Eintrag bereits nutzen, sind beim Öffnen schon als Chip markiert). ----
-async function openSampleEditor({sampleId=null, forTrack=false, forPad=null, buffer=null, label=''}={}){
+async function openSampleEditor({sampleId=null, forSampler=null, forPad=null, buffer=null, label=''}={}){
   closeAllOverlays();
   seEditingId=sampleId;
   if(sampleId){
@@ -547,7 +545,9 @@ async function openSampleEditor({sampleId=null, forTrack=false, forPad=null, buf
     seStatus.textContent='Kein Sample geladen — aufnehmen oder Datei laden';
     seStatus.classList.remove('err');
   }
-  seAssignTrack = forTrack || (sampleId!=null && sampleId===sampleTrackSampleId);
+  { const a=TRACKS[activeTrackIdx], isS=t=>t && trInstKey(t)==='sampler';
+    seSmpTr=isS(forSampler) ? forSampler : isS(a) ? a : TRACKS.find(isS)||null; }
+  seAssignTrack = !!forSampler || (sampleId!=null && !!seSmpTr && seSmpTr.smp==='lib:'+sampleId);
   seAssignPads = new Set(sampleId!=null ? padSampleId.map((id,idx)=> id===sampleId ? idx : null).filter(x=>x!=null) : []);
   if(forPad!=null) seAssignPads.add(forPad);
   renderSEAssignUI();

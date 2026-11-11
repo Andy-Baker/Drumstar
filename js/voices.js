@@ -77,16 +77,11 @@ function playMaracas(time,vol,tune,velocity,kp){
 }
 
 // =========================================================================
-// MIC-SAMPLE — aufgenommener Sound als eigene Spur (kein FM-Preset)
+// SAMPLE-PADS — Stimmen-Verwaltung
 // =========================================================================
-let sampleBuffer=null; // AudioBuffer des zuletzt aufgenommenen Samples
-let sampleStartOffset=0; // Trim-Startpunkt in Sekunden
-
-// Stimmen-Verwaltung für Sample-Spur und Pads: pro "Slot" (Spur bzw. Pad) wird die zuletzt gestartete
+// Stimmen-Verwaltung für die Pads: pro "Slot" (Pad) wird die zuletzt gestartete
 // Stimme gemerkt. Ohne Überlagern schneidet ein neuer Treffer sie mit kurzem Fade ab (gegen Knackser);
 // Halten/Schleife-Pads werden beim Loslassen mit Fade beendet.
-const sampleTrackSlot={voice:null};
-let sampleMode='oneshot', sampleOverlap=false, sampleLoopStart=null, sampleLoopEnd=null;
 function cutVoice(v, when, fade){
   if(!v || v.dead) return; v.dead=true;
   try{
@@ -112,17 +107,6 @@ function releaseVoice(slot){
   const v=slot.voice; if(!v || !audioCtx) return;
   cutVoice(v, Math.max(audioCtx.currentTime, v.start+0.02), 0.02);
   slot.voice=null;
-}
-function stopLoopingSampleTrack(){
-  const v=sampleTrackSlot.voice;
-  if(v && v.looping && audioCtx){ cutVoice(v, audioCtx.currentTime, 0.02); sampleTrackSlot.voice=null; }
-}
-function playSample(time,vol,tune,velocity){
-  if(!sampleBuffer || !audioCtx) return;
-  const bus=getBus();
-  startSampleVoice(sampleTrackSlot, {buffer:sampleBuffer, offset:sampleStartOffset,
-    mode: sampleMode==='loop' ? 'loop' : 'oneshot', overlap:sampleOverlap, loopStart:sampleLoopStart, loopEnd:sampleLoopEnd,
-    rate:Math.pow(2,(tune-0.5)*2), vol:vol*velocity, connect:g=>g.connect(bus)}, time);
 }
 
 // =========================================================================

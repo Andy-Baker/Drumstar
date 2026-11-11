@@ -438,31 +438,8 @@
   .tab-item:active .ti-ico{ color:var(--white); filter:drop-shadow(0 0 8px rgba(63,169,255,.9)); }
 
 
-  /* ---------- MIC-SAMPLE AUFNAHME (eigene Zeile unter #trackBar, analog #arpControls) ----------
-     Vorher lag die komplette Rec-Bedienung (Status + ▶/✂/✕/Rec) in der einzeiligen #trackBar,
-     zusammen mit Name + 5 Mini-Knobs. Auf dem Phone reichte die Breite nicht — #panelMain hat
-     overflow-x:hidden, der Überschuss wurde also abgeschnitten statt umzubrechen. ✕ (Löschen) und
-     oft auch ● Rec landeten dadurch in einem kaum noch klickbaren Streifen am rechten Rand.
-     Fix: eigene, umbruchfähige Zeile mit ausreichend großen Touch-Targets (≥38px). */
-  #sampleControls{ display:none; flex-direction:column; gap:10px; margin-top:8px;
-    background:var(--panel); border-radius:8px; padding:10px 12px; }
-  .sc-status-row{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
-  .sc-status{ font-size:12px; color:var(--dim); font-family:'JetBrains Mono',monospace; letter-spacing:.02em; }
-  .sc-status.has{ color:var(--blue-2); }
-  .sc-status.err{ color:var(--white); text-shadow:0 0 6px rgba(255,255,255,.5); }
-  .sc-dur{ font-size:12px; color:var(--blue-2); font-family:'JetBrains Mono',monospace; }
-  .sc-hint{ font-size:11px; color:var(--dim); text-align:center; letter-spacing:.02em; }
-  .sc-btns{ display:none; gap:8px; flex-wrap:wrap; }
-  .sc-btn{ flex:1; min-width:64px; min-height:38px; border-radius:8px; border:1px solid rgba(255,255,255,.12);
-    background:var(--panel-inset); color:var(--dim); font-weight:700; font-size:11px; letter-spacing:.03em;
-    text-transform:uppercase; display:flex; align-items:center; justify-content:center; gap:5px; cursor:pointer; }
-  .sc-btn:active{ transform:scale(.96); border-color:rgba(63,169,255,.5); }
-  .sc-btn.rec{ border-color:rgba(63,169,255,.4); color:var(--blue-2); background:rgba(63,169,255,.1); }
-  .sc-btn.rec.big{ min-height:46px; font-size:12px; }
-  .sc-btn.rec.recording{ background:var(--blue); color:#04121e; border-color:var(--blue);
-    box-shadow:0 0 14px rgba(63,169,255,.7); animation:recpulse 1s infinite; }
+
   @keyframes recpulse{ 0%,100%{opacity:1;} 50%{opacity:.55;} }
-  .sc-btn.danger{ color:#ff9d7a; border-color:rgba(255,157,122,.3); }
 
   /* ---------- SAMPLE-EDITOR (diese Session, ersetzt den alten schwebenden #trimPanel) —
      eigenes Vollbild-Overlay wie Beats/Kit-Picker/Tempo statt fixierter Box am unteren Rand.
@@ -1155,6 +1132,21 @@ html,body{min-height:100%;height:100%;}
 #klSheet .srow{grid-template-columns:72px 1fr 86px}
 #klSheet.cos input[type=range]{accent-color:#b88cff}
 #klSheet.pno input[type=range]{accent-color:#ffd166}
+/* Sampler (#8): Sample-Auswahl, Grundton am Sample */
+#klSheet.smp input[type=range]{accent-color:#8be86a}
+.smp-chips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 2px}
+.smp-chip{display:inline-flex;align-items:center;gap:6px;min-height:42px;max-width:100%;padding:0 12px;border-radius:21px;border:1px solid rgba(255,255,255,.12);background:var(--panel-inset);color:var(--metal);cursor:pointer;font-family:inherit}
+.smp-chip b{font:700 14px 'Rajdhani',sans-serif;letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
+.smp-chip small{font:500 11px 'Rajdhani',sans-serif;color:var(--dim);white-space:nowrap}
+.smp-chip.on{border-color:#8be86a;color:var(--white);background:rgba(139,232,106,.16)}
+.smp-chip.smp-add{border-style:dashed;color:var(--blue-2)}
+.smp-chip .uic{width:16px;height:16px}
+.smp-root{display:flex;align-items:center;gap:6px;margin:4px 0 2px}
+.smp-root button{min-width:44px;height:42px;border-radius:8px;border:1px solid rgba(63,169,255,.35);background:rgba(63,169,255,.08);color:var(--white);font:700 18px 'Rajdhani',sans-serif;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:5px}
+.smp-root button:disabled{opacity:.35;pointer-events:none}
+.smp-root b{min-width:54px;text-align:center;font:700 19px 'JetBrains Mono',monospace;color:#8be86a}
+.smp-root .smp-det{padding:0 10px;font-size:14px}
+.smp-root .smp-det .uic{width:18px;height:18px}
 .srow b.def{opacity:.45}
 .srow b.rs{justify-self:end;display:flex;align-items:center;gap:4px;height:36px;padding:0 4px;border:1px solid transparent;border-radius:8px;white-space:nowrap}
 .srow b.rs:not(.def){border-color:rgba(63,169,255,.4);background:rgba(63,169,255,.1);padding:0 6px 0 8px;cursor:pointer}

@@ -16,6 +16,7 @@ async function renderPatternToWav(){
   if(audioCtx.state!=='running') await audioCtx.resume();
   // Sample-Kits erst fertig laden — sonst landet still der Synth-Ersatz im WAV (#12). Fehlgeschlagene Kits → Synth wie live.
   await Promise.all(smpKitsInUse().map(smpLoad));
+  await samplerSync(); // Sampler-Spuren (#8): Samples erst fertig dekodieren, sonst fehlen sie im WAV
 
   // ---- Live-Zustand sichern ----
   const liveCtx=audioCtx, liveMaster=master, liveComp=comp, liveNoise=noiseBuf;
@@ -182,18 +183,7 @@ async function migrateLegacySamplesIfNeeded(){
     localStorage.setItem('mrm44_padSampleIds', JSON.stringify(ids));
   }
 }
-// Dekodiert einen Bibliothekseintrag und weist ihn der Sample-Spur bzw. einem Pad zu —
-// aktualisiert dabei genau die Variablen, die triggerTrack()/playPad() ohnehin schon lesen.
-async function applySampleToTrack(entry){
-  await Promise.resolve(initAudio());
-  const arr=await entry.blob.arrayBuffer();
-  sampleBuffer=await audioCtx.decodeAudioData(arr);
-  sampleStartOffset=entry.offsetStart||0;
-  sampleMode=entry.playMode||'oneshot'; sampleOverlap=!!entry.overlap; sampleLoopStart=entry.loopStart!=null?entry.loopStart:null; sampleLoopEnd=entry.loopEnd!=null?entry.loopEnd:null;
-  sampleTrackSampleId=entry.id;
-  try{ localStorage.setItem('mrm44_sampleTrackId', entry.id); }catch(e){}
-  if(TRACKS[activeTrackIdx] && TRACKS[activeTrackIdx].isSample) updateRecStatus();
-}
+// Dekodiert einen Bibliothekseintrag und weist ihn einem Pad zu — aktualisiert genau die Variablen, die playPad() liest.
 async function applySampleToPad(i, entry){
   await Promise.resolve(initAudio());
   const arr=await entry.blob.arrayBuffer();
@@ -210,13 +200,9 @@ async function applySampleToPad(i, entry){
   updatePadUI(i);
 }
 // Lädt beim Start: erst die einmalige Migration, dann die zuletzt gespeicherten Zuordnungen
-// für Sample-Spur und Pads (ersetzt die alten loadSampleFromIndexedDB()/loadPadsFromIndexedDB()).
+// der Pads (mrm44_sampleTrackId bleibt nur für die Umwandlung alter SAMPLE-Spuren, #8) (ersetzt die alten loadSampleFromIndexedDB()/loadPadsFromIndexedDB()).
 async function restoreSampleAssignments(){
   await migrateLegacySamplesIfNeeded();
-  try{
-    const trackId=localStorage.getItem('mrm44_sampleTrackId');
-    if(trackId){ const entry=await loadSampleLibraryEntry(trackId); if(entry) await applySampleToTrack(entry); }
-  }catch(err){ console.warn('Sample-Spur-Zuordnung konnte nicht geladen werden:', err); }
   try{
     const ids=JSON.parse(localStorage.getItem('mrm44_padSampleIds')||'[]');
     for(let i=0;i<PAD_COUNT;i++){

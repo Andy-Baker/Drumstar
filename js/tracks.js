@@ -16,7 +16,6 @@ const TRACKS=[
   {id:'cb', name:'COWBELL',  color:'#14b8a6', tune:0.5, vol:0.75},
   {id:'cl', name:'CLAVES',   color:'#99f6e4', tune:0.5, vol:0.7},
   {id:'mr', name:'MARACAS',  color:'#7ff0dc', tune:0.5, vol:0.65},
-  {id:'mc', name:'MIC SAMPLE', color:'#8be86a', tune:0.5, vol:0.9, isSample:true},
   {id:'arp', name:'ACID BASS', color:'#ff6b35', tune:0.5, vol:0.8, type:'arp',
    rootNote:0, cutoff:0.5, resonance:0.35, envMod:0.5, decay:0.26, scale:'minor'},
   {id:'cosmic', name:'COSMIC', short:'COS', color:'#b88cff', tune:0.5, vol:0.68, type:'arp',
@@ -27,6 +26,10 @@ const TRACKS=[
 TRACKS.forEach(t=>{ t._def={vol:t.vol, tune:t.tune, reverbAmount:t.reverbAmount||0, delaySend:t.delaySend||0}; }); // Standardwerte je Spur (Zurücksetzen im Klang-Sheet)
 // Melodiespur ab Werk = Vorlage des Instruments (neue Spuren #13, Laden eines Patterns ohne diese Spur); bleibt, auch wenn die Original-Spur gelöscht ist
 TRACKS.forEach(t=>{ const I=INSTR[t.id]; if(I){ I.tpl=Object.assign({},t); I.def=Object.assign({},t._def); } });
+// Instrumente ohne Spur ab Werk (Sampler, #8): Vorlage aus einem anderen Instrument (tplOf) + eigene Felder
+Object.keys(INSTR).forEach(k=>{ const I=INSTR[k], o=I.tplOf; if(I.tpl || !o) return;
+  I.tpl=Object.assign({}, INSTR[o.base].tpl, {id:k}, o.set, I.fields); (o.del||[]).forEach(x=>delete I.tpl[x]);
+  I.def={vol:I.tpl.vol, tune:I.tpl.tune, reverbAmount:I.tpl.reverbAmount||0, delaySend:I.tpl.delaySend||0}; });
 const ROW_TPL={}; TRACKS.forEach(t=>{ if(ROW_DT[t.id]) ROW_TPL[t.id]=Object.assign({},t,{_def:Object.assign({},t._def)}); }); // Drum-Zeile ab Werk (weitere Drum-Spuren #70)
 function instTpl(tr){ return trInst(tr).tpl; }
 arrGroupsBuild();
