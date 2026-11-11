@@ -3,7 +3,8 @@
 // SAMPLER (#8, Mockup docs/mockups/issue-8.html Variante A): ein Sample über die Klaviatur spielen, mehrstimmig.
 // Instrument-Eintrag INSTR.sampler (js/events.js), Spur nur über „Spur hinzufügen“ (zählt zu MEL_MAX). Ersetzt die
 // frühere SAMPLE-Spur (id 'mc'); alte Stände werden beim Laden umgewandelt (mcMigrate).
-//   tr.smp     Sample: Werksample ('vox' | 'glas' | 'bass') oder Bibliothekseintrag 'lib:<id>'
+//   tr.smp     Sample: Werk-Instrument (SMP_INSTR in js/sampler-werk.js: 'str' | 'piz' | 'kb' | 'kba', echte Aufnahmen, #61),
+//              synthetisiertes Werksample ('vox' | 'glas' | 'bass') oder Bibliothekseintrag 'lib:<id>'
 //   tr.smpAtk / tr.smpRel   Hüllkurve in Sekunden (Release nur bei „Halten“/„Schleife“)
 // Grundton (MIDI) gehört zum Sample: Bibliothekseintrag.root (fehlt = 60 = C4; beim ersten Wählen im Klang-Sheet
 // wird er erkannt und gespeichert). Wiedergabe-Art aus dem Sample-Editor (entry.playMode): „Einmal“ spielt bis zum
@@ -12,13 +13,16 @@
 // Stimme = BufferSource → Gain → tr.bus (2 Knoten je Note), höchstens SMP_MAXV gleichzeitig, Stopp über tr._cosVoices.
 // =========================================================================
 const SMP_MAXV=8, SMP_ROOT_DEF=60;
+// Werk-Instrumente (#61): mehrere Töne (Zonen) × Lautstärke-Stufen × Round Robin aus einer MP3 (Format: tools/build-instr.py).
+// Ton → nächste Zone (bei Gleichstand die tiefere), Stufe → nächste Ziel-Velocity (log), Round Robin zufällig ohne Wiederholung.
+const SMP_LVEL={1:[0.85],2:[0.4,1.1],3:[0.3,0.75,1.2],4:[0.15,0.35,0.85,1.3]}, SMP_IGAIN=0.3; // Pegel: Streicher-Dreiklang ≈ KEYS-Dreiklang (+2 dB), tests/test-audio.py
 const SMP_NN=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 function midiName(m){ return SMP_NN[((m%12)+12)%12]+(Math.floor(m/12)-1); }
 // Werksamples: beim ersten Gebrauch synthetisiert (kein Download), Grundton bekannt
 const SMP_WERK={
   vox: {name:'VOX',  root:57, mode:'loop', loop:[0.45,1.25], sec:1.6, desc:'Chor „Ahh“'},
   glas:{name:'GLAS', root:72, mode:'oneshot', sec:2.2, desc:'Glocke'},
-  bass:{name:'BASS', root:36, mode:'hold', sec:1.4, desc:'gezupft'},
+  bass:{name:'SYNTH-BASS', root:36, mode:'hold', sec:1.4, desc:'gezupft'},
 };
 function smpWerkBuf(k){
   const sr=audioCtx ? audioCtx.sampleRate : 44100, W=SMP_WERK[k], n=Math.round(sr*W.sec);
@@ -46,9 +50,29 @@ const SMPL={};
 function samplerGet(key){
   if(!key) return null;
   let S=SMPL[key]; if(S) return S;
+  if(typeof SMP_INSTR!=='undefined' && SMP_INSTR[key]){ const I=SMP_INSTR[key];
+    S=SMPL[key]={name:I.name, multi:true, werk:true, I, mode:I.mode, state:'load', rr:{}}; S.p=samplerLoadInstr(S); return S; }
   if(SMP_WERK[key]){ const W=SMP_WERK[key]; S=SMPL[key]={name:W.name, root:W.root, mode:W.mode, loop:W.loop||null, off:0, state:'ok', werk:true, buf:smpWerkBuf(key)}; return S; }
   if(key.startsWith('lib:')){ S=SMPL[key]={name:'…', state:'load', id:key.slice(4)}; S.p=samplerLoadLib(S); return S; }
   return SMPL[key]={name:'?', state:'missing'};
+}
+async function samplerLoadInstr(S){
+  try{
+    const Ctor=window.OfflineAudioContext||window.webkitOfflineAudioContext, dc=new Ctor(1,1,44100); // nur Dekodieren, kein Tipp nötig
+    const r=await fetch(S.I.file); if(!r.ok) throw new Error(r.status);
+    const ab=await r.arrayBuffer(), b=await new Promise((res,rej)=>{ const q=dc.decodeAudioData(ab,res,rej); if(q && q.then) q.then(res,rej); });
+    const d=b.getChannelData(0), sr=b.sampleRate; let c=0; while(c<d.length && c<sr*0.3 && Math.abs(d[c])<0.4) c++; // Sync-Klick, MP3-Vorlauf egal
+    Object.assign(S, {buf:b, t0:c/sr+0.1, state:'ok'});
+  }catch(err){ console.warn('Sampler: Instrument nicht ladbar', S.I.file, err); S.state='err'; S.offline=navigator.onLine===false || err instanceof TypeError; }
+  samplerChanged();
+}
+// Slot für einen Ton: {root, s:[Start, Länge, Cent], l (Stufe), n (Stufen)}
+function smpSlot(S, midi, vel){
+  const Z=S.I.z; let zi=0; for(let i=1;i<Z.length;i++) if(Math.abs(Z[i][0]-midi)<Math.abs(Z[zi][0]-midi)) zi=i;
+  const L=Z[zi][1], T=SMP_LVEL[L.length]||L.map((_,i)=>0.15+1.15*i/Math.max(1,L.length-1)); let l=0;
+  for(let i=1;i<L.length;i++) if(Math.abs(Math.log(T[i]/vel))<Math.abs(Math.log(T[l]/vel))) l=i;
+  const rr=L[l], k=zi+'_'+l, last=S.rr[k]; let r=0; if(rr.length>1) do{ r=Math.floor(Math.random()*rr.length); }while(r===last); S.rr[k]=r;
+  return {root:Z[zi][0], l, s:rr[r], fine:Math.pow(Math.max(0.05,vel)/T[l],0.7)};
 }
 async function samplerLoadLib(S){
   try{
@@ -61,14 +85,19 @@ async function samplerLoadLib(S){
   }catch(err){ console.warn('Sampler: Sample nicht ladbar', S.id, err); S.state='err'; S.name='Sample fehlt'; }
   samplerChanged();
 }
-const smpRoot=S=>S && S.root!=null ? S.root : SMP_ROOT_DEF;
+const smpRoot=S=>S && S.root!=null ? S.root : SMP_ROOT_DEF; // Werk-Instrumente: kein einzelner Grundton (Anhören auf C4)
 // Nach dem Laden: Namen in Noteneditor, Spur-Menü und Klang-Sheet auffrischen
 function samplerChanged(){
   if(typeof prIsOpen==='function' && prIsOpen() && prTr && trInstKey(prTr)==='sampler') prRenderChrome();
   if(typeof klTr!=='undefined' && klTr && trInstKey(klTr)==='sampler' && $id('klSheet').classList.contains('open')) renderKlang();
 }
 // Alle Samples der Sampler-Spuren laden; Promise erst fertig, wenn alle da sind (WAV-Export)
-function samplerSync(){ return Promise.all(TRACKS.filter(t=>trInstKey(t)==='sampler').map(t=>{ const S=samplerGet(t.smp); return S && S.p; })); }
+// Werk-Instrumente ohne Spur werden freigegeben (dekodiert 15–30 MB je Instrument), fehlgeschlagene neu versucht.
+function samplerSync(){
+  const used=new Set(TRACKS.filter(t=>trInstKey(t)==='sampler').map(t=>t.smp));
+  Object.keys(SMPL).forEach(k=>{ const S=SMPL[k]; if(S.multi && S.state!=='load' && (!used.has(k) || S.state==='err')) delete SMPL[k]; });
+  return Promise.all([...used].map(k=>{ const S=samplerGet(k); return S && S.p; }));
+}
 // Eintrag im Sample-Editor neu gespeichert: Puffer neu laden
 function samplerInvalidate(id){ delete SMPL['lib:'+id]; samplerSync(); }
 async function samplerSetRoot(S, m){
@@ -93,14 +122,20 @@ function smpDetect(S){
 function samplerVoice(tr, time, n, vel, holdSec){
   if(!audioCtx || !tr.bus) return null;
   const S=samplerGet(tr.smp); if(!S || S.state!=='ok') return null;
-  const midi=33+(tr.rootNote||0)+n+12, rate=Math.pow(2,(midi-smpRoot(S))/12);
-  const src=audioCtx.createBufferSource(); src.buffer=S.buf; src.playbackRate.value=rate;
-  const looping=S.mode==='loop' && !!S.loop, oneshot=S.mode==='oneshot';
-  if(looping){ src.loop=true; src.loopStart=S.loop[0]; src.loopEnd=S.loop[1]; }
-  const g=audioCtx.createGain(), peak=Math.max(0.0001, Math.min(1.2, vel*tr.vol));
+  const midi=33+(tr.rootNote||0)+n+12, src=audioCtx.createBufferSource(); src.buffer=S.buf;
+  const oneshot=S.mode==='oneshot'; let peak, at0, dur=null;
+  if(S.multi){ // Werk-Instrument: Zone/Stufe/Round Robin, Stimmung je Slot
+    const z=smpSlot(S, midi, vel); src.playbackRate.value=Math.pow(2,(midi-z.root-z.s[2]/100)/12);
+    at0=S.t0+z.s[0]; peak=Math.min(1.6, tr.vol*z.fine*SMP_IGAIN*(S.I.g||1));
+    if(S.mode==='loop' && S.I.loop){ src.loop=true; src.loopStart=at0+S.I.loop[0]; src.loopEnd=at0+S.I.loop[1]-0.001; } else dur=z.s[1];
+  } else {
+    src.playbackRate.value=Math.pow(2,(midi-smpRoot(S))/12); at0=Math.min(S.off||0, Math.max(0, S.buf.duration-0.01)); peak=Math.min(1.2, vel*tr.vol);
+    if(S.mode==='loop' && S.loop){ src.loop=true; src.loopStart=S.loop[0]; src.loopEnd=S.loop[1]; }
+  }
+  const g=audioCtx.createGain(); peak=Math.max(0.0001, peak);
   const atk=Math.max(0.002, tr.smpAtk!=null ? tr.smpAtk : 0.005), rel=Math.max(0.02, tr.smpRel!=null ? tr.smpRel : 0.25);
   g.gain.setValueAtTime(0, time); g.gain.linearRampToValueAtTime(peak, time+atk);
-  src.connect(g).connect(tr.bus); src.start(time, Math.min(S.off||0, Math.max(0, S.buf.duration-0.01)));
+  src.connect(g).connect(tr.bus); if(dur!=null) src.start(time, at0, dur); else src.start(time, at0);
   const voice={amp:g, oscs:[src], t0:time, rel(at){
     if(oneshot || voice.done) return; voice.done=true; // „Einmal“: spielt bis zum Ende
     const now=Math.max(time, at!=null ? at : audioCtx.currentTime), lvl=now<time+atk ? peak*(now-time)/atk : peak;
@@ -116,12 +151,15 @@ function samplerVoice(tr, time, n, vel, holdSec){
 function samplerPreview(tr){
   Promise.resolve(initAudio()).then(()=>{ if(audioCtx.state!=='running') audioCtx.resume(); ensureTrackBuses();
     const S=samplerGet(tr.smp); if(!S || S.state!=='ok') return;
-    samplerVoice(tr, audioCtx.currentTime+0.01, smpRoot(S)-45-(tr.rootNote||0), 0.9, 0.7); });
+    samplerVoice(tr, audioCtx.currentTime+0.01, (S.multi ? 60 : smpRoot(S))-45-(tr.rootNote||0), 0.9, S.multi ? 1.2 : 0.7); });
 }
-function samplerSub(tr){ const S=samplerGet(tr.smp); return S ? (S.state==='missing'||S.state==='err' ? 'Sample fehlt' : S.name) : ''; }
+function samplerSub(tr){ const S=samplerGet(tr.smp); return S ? (S.multi || !(S.state==='missing'||S.state==='err') ? S.name : 'Sample fehlt') : ''; }
 // Sample wählen. Bibliothek ohne Grundton: erkennen (sonst C4) und am Eintrag speichern.
 async function samplerPick(tr, key, quiet){
+  if(SMPL[key] && SMPL[key].state==='err') delete SMPL[key]; // erneut versuchen (z. B. wieder online)
   tr.smp=key; const S=samplerGet(key);
+  if(S.multi){ tr.smpAtk=S.I.atk; tr.smpRel=S.I.rel; } // Hüllkurve passend zum Instrument
+  samplerSync(); renderKlang();
   if(S.p) await S.p;
   if(S.state==='ok' && S.id && S.root==null) await samplerSetRoot(S, smpDetect(S) || SMP_ROOT_DEF);
   samplerChanged(); renderKlang(); if(typeof prIsOpen==='function' && prIsOpen()) prRenderChrome(); trMenuRefresh();
@@ -138,6 +176,7 @@ function samplerKlang(tr, box, grp){
   const ch=document.createElement('div'); ch.className='smp-chips';
   const chip=(key, label, sub)=>{ const b=document.createElement('button'); b.className='smp-chip'+(tr.smp===key?' on':''); b.innerHTML='<b></b>'+(sub?'<small></small>':'');
     b.querySelector('b').textContent=label; if(sub) b.querySelector('small').textContent=sub; b.onclick=()=>samplerPick(tr, key); ch.appendChild(b); };
+  if(typeof SMP_INSTR!=='undefined') Object.keys(SMP_INSTR).forEach(k=>chip(k, SMP_INSTR[k].name, SMP_INSTR[k].desc));
   Object.keys(SMP_WERK).forEach(k=>chip(k, SMP_WERK[k].name, SMP_WERK[k].desc));
   SMP_LIB.forEach(e=>chip('lib:'+e.id, e.name, ''));
   if(tr.smp.startsWith('lib:') && !SMP_LIB.some(e=>'lib:'+e.id===tr.smp)) chip(tr.smp, S.name, ''); // fehlt in der Bibliothek
@@ -145,7 +184,16 @@ function samplerKlang(tr, box, grp){
   rec.onclick=()=>{ closeSheets(); openSampleEditor({forSampler:tr}); }; ch.appendChild(rec);
   box.appendChild(ch);
   const hint=t=>{ const h=document.createElement('div'); h.className='kl-note'; h.textContent=t; box.appendChild(h); };
-  if(S.state==='missing' || S.state==='err'){ hint('Dieses Sample gibt es auf diesem Gerät nicht (mehr). Die Spur bleibt stumm, bis du ein anderes wählst.'); }
+  if(S.multi){
+    const Z=S.I.z, nl=Math.max(...Z.map(z=>z[1].length)), nr=Math.max(...Z.map(z=>Math.max(...z[1].map(l=>l.length))));
+    const info='Echte Aufnahme: '+Z.length+' Töne ('+midiName(Z[0][0])+'–'+midiName(Z[Z.length-1][0])+') × '+nl+' Lautstärken'+(nr>1?' × '+nr+' Varianten':'')+'. ';
+    if(S.state==='load') hint(info+'Wird geladen …');
+    else if(S.state==='err') hint(S.offline ? 'Offline: Instrument noch nicht auf dem Gerät. Mit Internet einmal antippen, danach geht es offline.' : 'Laden fehlgeschlagen. Zum erneuten Versuch antippen.');
+    else { hint(info+(S.mode==='loop' ? 'Klingt so lang wie die Note.' : 'Klingt aus, Notenlänge egal.'));
+      const a=document.createElement('div'); a.className='acts'; a.innerHTML='<button class="act">'+'<svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><polygon points="7,5 19,12 7,19" fill="currentColor"/></svg>Anhören (C4)</button>';
+      a.querySelector('button').onclick=()=>samplerPreview(tr); box.appendChild(a); }
+  }
+  else if(S.state==='missing' || S.state==='err'){ hint('Dieses Sample gibt es auf diesem Gerät nicht (mehr). Die Spur bleibt stumm, bis du ein anderes wählst.'); }
   else if(S.state==='load'){ hint('Sample wird geladen …'); }
   else {
     grp('Grundton am Sample');
@@ -166,7 +214,7 @@ function samplerKlang(tr, box, grp){
   grp('Hüllkurve');
   const ms=v=>v<1000 ? v+' ms' : (v/1000).toFixed(1)+' s';
   box.appendChild(soundRow('Attack',2,500,Math.round((tr.smpAtk!=null?tr.smpAtk:0.005)*1000),5,ms,v=>tr.smpAtk=v/1000));
-  box.appendChild(soundRow('Release',20,2000,Math.round((tr.smpRel!=null?tr.smpRel:0.25)*1000),250,ms,v=>tr.smpRel=v/1000));
+  box.appendChild(soundRow('Release',20,2000,Math.round((tr.smpRel!=null?tr.smpRel:0.4)*1000),400,ms,v=>tr.smpRel=v/1000));
 }
 
 // ---- Umwandlung alter Stände: SAMPLE-Spur (id 'mc', ein Sample für alle Beats in localStorage) → Sampler-Spur ----

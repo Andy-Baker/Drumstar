@@ -215,6 +215,34 @@ async def main():
     ok('Sampler: Akkord aus 4 Akzent-Noten ohne NaN/Clipping', not r['chord'][1] and 0.05<r['chord'][0]<0.99, round(r['chord'][0],3))
     ok('Sampler: „Halten“ endet mit der Note (≥ 30 dB leiser danach)', r['hold'][0]>1e-3 and 20*math.log10((r['hold'][1]+1e-9)/r['hold'][0])<-30, [f'{20*math.log10(v+1e-9):.0f} dB' for v in r['hold']])
     ok('Sampler: fehlendes Sample bleibt stumm', r['miss']<1e-4, r['miss'])
+    # ---------- Werk-Instrumente (#61): Stimmung je Zone, Lautstärke-Stufen, Schleife hält, Pegel wie KEYS
+    r=await pg.evaluate("""async ()=>{
+      const base=JSON.parse(JSON.stringify(collectPatternData('t0','t0'))); setBpm(120); swing=0;
+      TRACKS.forEach(t=>{ if(t.steps) t.steps.fill(0); if(t.type==='arp'){ t.events=[]; t._idx=null; evTouch(t); } t.muted=false; t.solo=false; });
+      const S=trAddNew({k:'sampler',label:melSuggest('SAMPLER')}); S.reverbAmount=0; S.delaySend=0; trApplyNodes(S);
+      const R=async()=>{ const b=await renderPatternToWav(); return {L:b.getChannelData(0), sr:b.sampleRate}; };
+      const seg=(o,a,z)=>Array.from(o.L.subarray(Math.floor(a*o.sr),Math.floor(z*o.sr)));
+      const rms=(o,a,z)=>{ let e=0,n=0; for(let i=Math.floor(a*o.sr);i<Math.floor(z*o.sr);i++){ e+=o.L[i]*o.L[i]; n++; } return Math.sqrt(e/n); };
+      const set=async(smp,ev)=>{ S.smp=smp; S.events=ev; S._idx=null; evTouch(S); await samplerSync(); };
+      const M=m=>m-45; // MIDI → n bei Grundton 0
+      const pitch={};
+      for(const [k,m] of [['kb',45],['kb',47],['str',64],['str',76],['piz',69]]){ await set(k,[{s:0,n:M(m),l:8,v:.85,a:false}]); const o=await R(); pitch[k+m]={sr:o.sr, x:seg(o,k==='str'?0.6:0.08,k==='str'?1.4:(k==='kb'?1.2:0.5))}; }
+      await set('kb',[{s:0,n:M(40),l:2,v:.15,a:false},{s:8,n:M(40),l:2,v:.85,a:true}]); let o=await R(); const lay=[rms(o,0,0.25), rms(o,1,1.25)];
+      await set('str',[{s:0,n:M(57),l:16,v:.85,a:false}]); o=await R(); const hold=[rms(o,0.8,1.2), rms(o,2.5,2.9)]; // Note 2 s (+ Release), Slot 3 s
+      setBpm(60); await set('str',[{s:0,n:M(57),l:16,v:.85,a:false}]); o=await R(); const loop=[rms(o,1.0,1.5), rms(o,3.4,3.9)]; setBpm(120); // Note 4 s > Slot
+      await set('kba',[[0,48],[0,52],[0,55]].map(([s,m])=>({s,n:M(m),l:8,v:.85,a:false}))); o=await R(); const kba=rms(o,0.3,1.0);
+      await set('str',[60,64,67].map(m=>({s:0,n:M(m),l:8,v:.85,a:false}))); o=await R(); const strL=rms(o,0.3,1.0);
+      trDelete(S); const K=TRACKS.find(t=>t.id==='piano'); K.reverbAmount=0; K.delaySend=0; trApplyNodes(K);
+      K.events=[60,64,67].map(m=>({s:0,n:M(m),l:8,v:.85,a:false})); K._idx=null; evTouch(K); o=await R(); const keysL=rms(o,0.3,1.0);
+      applyPatternData(base); return {pitch, lay, hold, loop, kba, strL, keysL}; }""")
+    for k,want in [('kb45',110),('kb47',123.47),('str64',329.63),('str76',659.26),('piz69',440)]:
+      fz=fpk(r['pitch'][k]['x'],r['pitch'][k]['sr']); m=12*math.log2(fz/want); m-=12*round(m/12)  # Tonklasse (Grundton kann schwach sein)
+      ok(f'Werk-Instrument {k}: gestimmt (±30 Cent)', abs(m)<0.3, f'{fz:.1f} Hz, {m*100:+.0f} Cent')
+    db=lambda v:20*math.log10(v+1e-9)
+    ok('Kontrabass: leise Note = leisere Aufnahme (≥ 8 dB Abstand)', db(r['lay'][1])-db(r['lay'][0])>8, [f'{db(v):.0f} dB' for v in r['lay']])
+    ok('Streicher: Note endet mit der Note (Release)', db(r['hold'][1])-db(r['hold'][0])<-20, [f'{db(v):.0f} dB' for v in r['hold']])
+    ok('Streicher: Schleife hält länger als die Aufnahme (4 s)', abs(db(r['loop'][1])-db(r['loop'][0]))<6, [f'{db(v):.0f} dB' for v in r['loop']])
+    ok('Streicher/Bass Arco: Pegel ähnlich KEYS (±6 dB)', abs(db(r['strL'])-db(r['keysL']))<6 and abs(db(r['kba'])-db(r['keysL']))<6, [f'{db(r[k]):.0f} dB' for k in ('strL','kba','keysL')])
     # ---------- Master (#51, v95): sichtbarer Kompressor „Drumstar“ = alter versteckter Kompressor, Notbremse am Ausgang
     MJ="""async (lvl)=>{ const sr=48000, N=sr*2;
      const mk=async(build)=>{ const c=new OfflineAudioContext(2,N,sr), b=c.createBuffer(2,N,sr);

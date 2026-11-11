@@ -9,6 +9,9 @@ Alle Aufnahmen sind frei nutzbar (Public Domain bzw. CC0, keine Namensnennung n�
 | LATIN PERC (`latin`, #60) – Conga, Tumba, Bongos, Timbales, Schellenkranz | **Virtuosity Drums** (Versilian Studios; Aux-Percussion aus VSCO 2 Pro, Timbales von Karoryfer) – github.com/sfzinstruments/virtuosity_drums; Bongos gedämpft und Schellenkranz Schlag/Wirbel aus **VCSL** – github.com/sgossner/VCSL | CC0 1.0 |
 | VINTAGE 73 (`vintage`) | **Gogodze Phu Vol II**, Karoryfer Samples – github.com/sfzinstruments/karoryfer.gogodze-phu-vol-ii | CC0 1.0 |
 
+| Sampler-Instrumente (`instr`, #61) – STREICHER, PIZZICATO (Celli/Bratschen/Violinen) | **VSCO 2 Community Edition**, Versilian Studios – github.com/sgossner/VSCO-2-CE | CC0 1.0 |
+| Sampler-Instrumente (`instr`, #61) – KONTRABASS, BASS ARCO | **Meatbass**, Karoryfer Samples (Otto Rubner 1958) – github.com/sfzinstruments/karoryfer.meatbass | CC0 1.0 |
+
 ## Format
 `<kit>/<stimme>.mp3`, mono 44,1 kHz, LAME VBR q4: Sync-Klick bei 0 s, ab 0,1 s zwölf Slots
 (Layer 1–4 × Round Robin 1–3) zu je `SMP_LEN[stimme]` Sekunden (bd 0,9 · sd 0,7 · rs 0,6 · ch 0,5 · hl 0,9 · hf 0,6 · oh 2,5 · lt 2,0 · ht 1,8 · cy 4,0 · rd 3,5 · rb 3,5).
@@ -31,3 +34,10 @@ tih/til Timbal 13″/14″ · tb Schellenkranz schütteln · tbh Schlag · tbr W
 Virtuosity: Nah- + Mittel-Mikro ausgerichtet gemischt (Timbales: Overhead), 8 bzw. 4 Round Robins (3 je Stufe genutzt, Stufen nehmen verschiedene).
 Lautheit der Akzent-Stufe wie die Studio-Stimme (Congas/Tumba wie Low Tom, Bongos wie High Tom, Timbales wie Snare, Schellenkranz wie Hi-Hat),
 Peak-Limiter höchstens 3 dB (Bongos, Conga gedämpft), damit der Anschlag knackig bleibt. Neu bauen: `VD=… VCSL=… python3 tools/build-latin.py [stimmen]`.
+
+## Sampler-Instrumente (`instr`, #61, `tools/build-instr.py`)
+Eine MP3 je Instrument (`<id>-<hash>.mp3`, Hash = neuer Dateiname bei Neubau, wegen Cache), Karte in `js/sampler-werk.js`.
+STREICHER: Ensemble gestrichen (susvib), Celli bis F3, Bratschen bis F4, Violinen darüber, 16 Töne C2–D6, 2 Lautstärken, Schleife eingebacken.
+PIZZICATO: dieselben Töne gezupft, 2 Lautstärken × 2 Varianten. KONTRABASS: Meatbass pizz, 12 Töne C1–A3 (kleine Terzen), 4 Lautstärken × 2 Varianten.
+BASS ARCO: Meatbass arco (Abstrich), 12 Töne, 3 Lautstärken, Schleife eingebacken. Je Ton gleiche Lautheit der lautesten Stufe, Stimmung je Aufnahme gemessen (Cent in der Karte).
+Neu bauen: `VSCO=… MB=… python3 tools/build-instr.py [id,…]` (blobless Klone).

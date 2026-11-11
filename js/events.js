@@ -36,7 +36,7 @@ const INSTR={
   sampler:{name:'SAMPLER', grp:'sampler', poly:true, oct:12, cls:'smp', arpStyle:'classic', bass:'hold', extra:true, desc:'Sample auf Tasten',
           trigger:(t,tr,n,v,l)=>samplerVoice(tr,t,n,v,Math.max(0.08,stepDuration()*Math.max(1,l||1)*0.96)),
           live:(tr,n,v)=>samplerVoice(tr,audioCtx.currentTime+0.005,n,v,null)||{rel(){}},
-          fields:{smp:'vox', smpAtk:0.005, smpRel:0.25}, undo:[], valid:{smp:v=>typeof v==='string' && v.length>0},
+          fields:{smp:'str', smpAtk:0.005, smpRel:0.4}, undo:[], valid:{smp:v=>typeof v==='string' && v.length>0},
           klang:(tr,box,grp)=>samplerKlang(tr,box,grp), sub:tr=>samplerSub(tr),
           tplOf:{base:'piano', del:['sound','tremolo'], set:{name:'SAMPLER', short:'SMP', color:'#8be86a', vol:0.85, reverbAmount:0.12, delaySend:0}}},
 };

@@ -271,6 +271,8 @@ async def main():
       const def=[L(), TRACKS.some(t=>t.id==='mc'), ARR_GROUPS.some(g=>g.id==='sample'), trTiles().some(o=>o.k==='sampler')];
       const S=trAddNew({k:'sampler',label:melSuggest('SAMPLER')}); S.events=[0,4,7].map(n=>({s:0,n,l:4,v:.9,a:false})).concat([{s:8,n:12,l:2,v:.8,a:false}]); S._idx=null; evTouch(S);
       const add=[L(), isPoly(S), S.smp, prSubName(S), groupOfTrack(S), S.color];
+      await samplerSync(); const kb0=samplerGet('kb'); await kb0.p; const st=samplerGet('str'); const werk=[st.state, Object.keys(SMP_INSTR).join(), smpSlot(st,60,0.2).l, smpSlot(st,60,1.3).l, smpSlot(st,61,0.85).root, smpSlot(samplerGet('kb'),40,0.15).l, samplerGet('kb').state];
+      await samplerSync(); const freed=[!!SMPL.kb, !!SMPL.str];
       klTr=S; klTab='sound'; klView.length=0; klMode='klang'; renderKlang();
       const sheet=[$id('klSheet').classList.contains('smp'), document.querySelectorAll('#klRows .smp-chip').length, [...document.querySelectorAll('#klRows label')].map(l=>l.textContent).join(','), !!document.querySelector('#klRows .smp-root')];
       S.smp='glas'; S.smpRel=.5; const d=JSON.parse(JSON.stringify(collectPatternData('s','s'))); const sv=d.tracks.find(t=>t.id===S.id);
@@ -293,13 +295,15 @@ async def main():
       const ob=mcBeat({id:'b1',kind:'beat',group:'sample',name:'alt',length:16,sampleId:'p_x',tracks:[{id:'mc',steps:[0.85,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],vol:.8,tune:.5}]});
       const beat=[ob.group, ob.tracks.length, ob.tracks[0].smp, ob.tracks[0].events.length, 'sampleId' in ob];
       applyPatternData(base);
-      return {def,add,sheet,saved,gone,back,fix,det,mig,nomig,beat}; })()""")
+      return {def,add,werk,freed,sheet,saved,gone,back,fix,det,mig,nomig,beat}; })()""")
     ok('#8 Sampler nicht ab Werk, keine SAMPLE-Spur mehr, Kachel in „Spur hinzufügen“', r['def']==['arp:ACID cosmic:COSMIC piano:KEYS',False,False,True], r['def'])
-    ok('#8 Sampler-Spur: mehrstimmig, Werksample VOX, eigene Gruppe, grün', r['add']==['arp:ACID cosmic:COSMIC piano:KEYS sampler:SAMPLER',True,'vox','VOX','sampler','#8be86a'], r['add'])
-    ok('#8 Klang-Sheet: Sample-Chips, Grundton, Attack/Release', r['sheet'][0] and r['sheet'][1]>=4 and r['sheet'][2]=='Attack,Release' and r['sheet'][3], r['sheet'])
+    ok('#8 Sampler-Spur: mehrstimmig, Standard STREICHER, eigene Gruppe, grün', r['add']==['arp:ACID cosmic:COSMIC piano:KEYS sampler:SAMPLER',True,'str','STREICHER','sampler','#8be86a'], r['add'])
+    ok('#61 Werk-Instrumente geladen, Stufe nach Velocity, nächste Zone', r['werk']==['ok','str,piz,kb,kba',0,1,62,0,'ok'], r['werk'])
+    ok('#61 Instrument ohne Spur wird freigegeben', r['freed']==[False,True], r['freed'])
+    ok('#8 Klang-Sheet: Sample-Chips (Instrumente + Werksamples), Attack/Release', r['sheet'][0] and r['sheet'][1]>=8 and r['sheet'][2]=='Attack,Release' and not r['sheet'][3], r['sheet'])
     ok('#8 Speichern: mel + eigene Felder, kein Keys-Klang', r['saved']==['arp,cosmic,piano,sampler','glas',.5,4,False], r['saved'])
     ok('#8 Laden: Standard ohne Sampler, Beat mit Sampler stellt ihn her', r['gone']=='arp:ACID cosmic:COSMIC piano:KEYS' and r['back']==['arp:ACID cosmic:COSMIC piano:KEYS sampler:SAMPLER','glas',.5,4], [r['gone'],r['back']])
-    ok('#8 ungültiges Sample → Werksample', r['fix']=='vox', r['fix'])
+    ok('#8 ungültiges Sample → Standard STREICHER', r['fix']=='str', r['fix'])
     ok('#8 Tonhöhe erkennen: VOX A3 (ohne Grundton im Spektrum), Saite E4, BASS C2', r['det']==[57,64,36], r['det'])
     ok('#8 alte SAMPLE-Spur → Sampler „SAMPLE“: Sample, Laut, Noten auf C4, Song-Clips', r['mig'] is not None and r['mig'][0]=='arp:ACID cosmic:COSMIC piano:KEYS sampler:SAMPLE'
        and r['mig'][1:4]==['lib:p_test',.7,'2:60 4:60A'] and r['mig'][4]=='1:1' and r['mig'][5] is False, r['mig'])
