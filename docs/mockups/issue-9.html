@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sample-Editor: Griffe am Handy (#9)</title>
+<link rel="stylesheet" href="../../fonts.css">
+<style>
+/* Mockup zu Issue #9: Die echte App läuft im Rahmen, der Sample-Editor öffnet sich mit einem Demo-Sample.
+   Die Varianten ändern dort zur Laufzeit nur das Greifen/Ziehen von S/E (und L1/L2 im Loop-Modus). */
+:root{color-scheme:dark;--bg:#050507;--blue:#3fa9ff;--blue-2:#8fd4ff;--white:#f4f5f7;--dim:#7d818c;--metal:#c7cbd4}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--white);font-family:'Rajdhani',system-ui,sans-serif}
+#mbar{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:calc(6px + env(safe-area-inset-top,0px)) 10px 6px;background:repeating-linear-gradient(135deg,#0b1622 0 8px,#0d1a28 8px 16px);border-bottom:1px dashed rgba(63,169,255,.45);font:700 11px 'JetBrains Mono',monospace;color:var(--blue-2)}
+#mbar .g{display:flex;align-items:center;gap:4px}
+#mbar button{height:30px;padding:0 7px;border-radius:6px;border:1px solid rgba(63,169,255,.45);background:rgba(63,169,255,.12);font:700 11px 'JetBrains Mono',monospace;color:var(--blue-2);cursor:pointer}
+#mbar button.on{background:var(--blue);color:#042c53}
+#mbar label{display:flex;align-items:center;gap:4px;cursor:pointer}
+#mbar .sp{flex:1}
+#stage{position:fixed;top:44px;left:0;right:0;bottom:0;display:flex;justify-content:center;align-items:flex-start;gap:28px;overflow:auto}
+.ph{display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;width:100%}
+iframe{border:0;width:100%;height:100%;background:#050507;display:block}
+#side{display:none;width:330px;font-size:14px;color:var(--metal);line-height:1.45;padding-top:20px}
+#side h3,#info h3{font:700 11px 'Rajdhani';letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin:16px 0 6px}
+#side p,#info p{margin:0 0 8px} #side b,#info b{color:var(--white)}
+#side ul,#info ul{margin:0 0 8px;padding-left:18px} #side li,#info li{margin:3px 0}
+#info{position:fixed;inset:44px 0 0 0;z-index:190;background:#07080bf2;overflow:auto;padding:8px 18px 40px;font-size:14.5px;color:var(--metal);line-height:1.45;display:none}
+#info.open{display:block}
+@media (min-width:900px) and (min-height:900px){
+  #stage{padding:14px 0}
+  .ph{width:auto;height:auto}
+  iframe{width:390px;height:844px;border-radius:30px;border:8px solid #1a1e26;box-shadow:0 30px 80px rgba(0,0,0,.75);box-sizing:content-box}
+  #side{display:block} #infoBtn{display:none}
+}
+</style>
+</head>
+<body>
+<div id="mbar">
+  <span>#9</span>
+  <div class="g"><button data-v="" >Heute</button><button data-v="a" class="on">A Griff-Leiste</button><button data-v="b">B Ganze Welle</button></div>
+  <span class="sp"></span>
+  <label><input type="checkbox" id="mk"> Neu</label>
+  <button id="demoBtn">Demo</button>
+  <button id="infoBtn">ⓘ</button>
+</div>
+<div id="stage">
+  <div class="ph"><iframe id="fR" src="../../index.html" title="App mit Vorschlag"></iframe></div>
+  <div id="side"></div>
+</div>
+<div id="info"></div>
+<template id="notes">
+  <h3>Was das ist</h3>
+  <p>Die <b>echte App</b>, Sample-Editor mit einem Demo-Sample (Kick, Snare, Ton). Ziehen, Zoom, Loop-Modus, Vorhören, Rückgängig funktionieren. Geändert wird nur das <b>Greifen der Griffe</b> S/E (Zuschneiden) bzw. L1/L2 (Loop). „Demo“ öffnet den Editor neu, „Neu“ umrandet die neuen Teile gelb.</p>
+  <h3>Warum es heute hakt</h3>
+  <ul>
+    <li>Antippen setzt den Griff sofort <b>unter den Finger</b> – er springt, und der Finger verdeckt die Linie.</li>
+    <li>Greiffläche nur 32 px; am Anfang/Ende liegt die <b>Hälfte außerhalb</b> der Welle.</li>
+    <li>Liegen S und E nah beieinander, liegt <b>E obenauf</b> – S ist nicht mehr zu fassen.</li>
+    <li>Kein Feinmodus, die ±-Tasten sind nur 24 px groß.</li>
+  </ul>
+  <h3>Beide Varianten</h3>
+  <ul>
+    <li>Griffe springen nicht mehr: Ziehen <b>verschiebt</b> den Griff um die Fingerbewegung.</li>
+    <li><b>Lupe</b> über der Welle beim Ziehen: stark vergrößerter Ausschnitt um den Griff, Zeit in Sekunden – man sieht, was der Finger verdeckt.</li>
+    <li><b>Feinmodus</b>: Finger beim Ziehen nach unten aus der Welle bewegen → ¼ Tempo, weiter unten 1/10 (Lupe zeigt „FEIN“).</li>
+    <li>Gezoomt: Griff am Rand schiebt die Ansicht mit.</li>
+    <li>±-Tasten 36 px statt 24 px.</li>
+  </ul>
+  <h3>A · Griff-Leiste</h3>
+  <p>Unter der Welle eine eigene Leiste mit großen Griff-Tasten (46 × 40 px). <b>S hängt links</b> an seiner Linie, <b>E rechts</b> – so überdecken sie sich nie, auch nicht am Rand oder wenn beide fast aufeinanderliegen. Die Welle selbst bleibt zum Scrollen (gezoomt) frei. Kostet 48 px Höhe.</p>
+  <h3>B · Ganze Welle</h3>
+  <p>Irgendwo in die Welle tippen und ziehen: der <b>nächste Griff</b> folgt (liegen beide übereinander, entscheidet die Zugrichtung: links = S, rechts = E). Nur Antippen verschiebt nichts. Weil die Welle dann nicht mehr scrollt, gibt es darunter eine schmale <b>Übersicht</b> mit Fenster zum Verschieben (gezoomt). Kein zusätzlicher Platz außer der Übersicht.</p>
+  <h3>Zur Entscheidung</h3>
+  <ul>
+    <li>A oder B?</li>
+    <li>Feinmodus (Finger nach unten) behalten, oder reicht die Lupe?</li>
+    <li>Soll S/E auch knackfrei auf Nulldurchgänge einrasten (heute nur L1/L2)?</li>
+  </ul>
+</template>
+<script>
+// ===== Läuft im Rahmen der echten App (per eval im Fenster der App) =====
+function MK(){
+  const SH=48; // Höhe Griff-Leiste (A)
+  let V='a';
+  const css=document.createElement('style');
+  css.textContent=`
+  html.mk-a #seWaveWrap{height:${130+SH}px}
+  html.mk-a .se-handle, html.mk-a .se-dim, html.mk-a .se-loopband, html.mk-a .se-cursor{bottom:${SH}px}
+  html.mk-a .se-handle .seh-flag{display:none} html.mk-a .se-handle .seh-line{top:0;bottom:0}
+  html.mk-a .se-handle, html.mk-b .se-handle{pointer-events:none!important}
+  html.mk-a .se-nudge, html.mk-b .se-nudge{width:36px;height:36px;font-size:16px;color:var(--white)}
+  #mkStrip{position:absolute;left:0;bottom:0;height:${SH}px;width:100%;background:#0d0f14;border-top:1px solid rgba(255,255,255,.08);display:none}
+  html.mk-a #mkStrip{display:block}
+  .mk-tab{position:absolute;top:4px;width:46px;height:40px;border-radius:8px;background:color-mix(in srgb,var(--hc) 22%,#0d0f14);border:1.5px solid var(--hc);color:var(--white);
+    display:flex;align-items:center;justify-content:center;gap:3px;font:700 13px 'JetBrains Mono',monospace;touch-action:none;cursor:ew-resize;user-select:none;-webkit-user-select:none}
+  .mk-tab svg{width:12px;height:16px;stroke:var(--hc);stroke-width:2;fill:none;stroke-linecap:round}
+  .mk-tab.on{background:var(--hc);color:#04121e;box-shadow:0 0 14px var(--hc)} .mk-tab.on svg{stroke:#04121e}
+  .mk-tab.start{--hc:#3fa9ff} .mk-tab.end{--hc:#ff6fa8} .mk-tab.lp{--hc:#ffc247;display:none}
+  #sampleEditorOverlay.mode-loop .mk-tab.t{display:none} #sampleEditorOverlay.mode-loop .mk-tab.lp{display:flex}
+  .mk-stem.lp{display:none} #sampleEditorOverlay.mode-loop .mk-stem.t{display:none} #sampleEditorOverlay.mode-loop .mk-stem.lp{display:block}
+  .mk-stem{position:absolute;top:0;width:2px;margin-left:-1px;height:8px;background:var(--hc)}
+  #mkTouch{position:absolute;left:0;top:0;bottom:0;width:100%;z-index:5;touch-action:none;display:none}
+  html.mk-b #mkTouch{display:block}
+  #mkOv{height:26px;border-radius:6px;background:var(--panel-inset);position:relative;flex-shrink:0;touch-action:none;display:none;margin-top:-4px}
+  html.mk-b #mkOv{display:block}
+  #mkOv canvas{position:absolute;inset:0;width:100%;height:100%}
+  #mkLoupe{position:fixed;z-index:80;width:240px;height:96px;border-radius:10px;background:#0a0a0dF2;border:1.5px solid var(--hc,#3fa9ff);
+    box-shadow:0 8px 30px rgba(0,0,0,.7),0 0 12px color-mix(in srgb,var(--hc,#3fa9ff) 40%,transparent);pointer-events:none;display:none;overflow:hidden}
+  #mkLoupe canvas{position:absolute;left:0;top:0;width:240px;height:74px}
+  #mkLoupe .lb{position:absolute;left:0;right:0;bottom:0;height:22px;display:flex;align-items:center;justify-content:space-between;padding:0 8px;
+    font:700 12px 'JetBrains Mono',monospace;color:var(--white);border-top:1px solid rgba(255,255,255,.08)}
+  #mkLoupe .lb i{font-style:normal;color:#04121e;background:var(--hc);border-radius:4px;padding:0 5px;font-size:11px;visibility:hidden}
+  #mkLoupe.fine .lb i{visibility:visible}
+  html.mkmark .mk-new{outline:1.5px dashed #ffc247!important;outline-offset:1px}`;
+  document.head.appendChild(css);
+  const ov=sampleEditorOverlay;
+  // --- neue Elemente ---
+  const strip=document.createElement('div'); strip.id='mkStrip'; strip.className='mk-new';
+  const GRIP='<svg viewBox="0 0 12 16"><path d="M4 2v12M8 2v12"/></svg>';
+  const TABS={};
+  [['start','S','t'],['end','E','t'],['l1','L1','lp'],['l2','L2','lp']].forEach(([h,l,c])=>{
+    const cls=(h==='start'||h==='end')?h:'';
+    const st=document.createElement('div'); st.className='mk-stem '+cls+' '+(c==='lp'?'lp':'t'); st.style.setProperty('--hc', h==='start'?'#3fa9ff':h==='end'?'#ff6fa8':'#ffc247');
+    const t=document.createElement('div'); t.className='mk-tab '+cls+' '+c; t.dataset.h=h; t.innerHTML=(h==='start'||h==='l1')?l+GRIP:GRIP+l;
+    strip.appendChild(st); strip.appendChild(t); TABS[h]={t,st};
+    t.addEventListener('pointerdown', e=>dragStart(e,h,t));
+  });
+  seWaveInner.appendChild(strip);
+  const touch=document.createElement('div'); touch.id='mkTouch'; touch.className='mk-new'; seWaveInner.appendChild(touch);
+  touch.addEventListener('pointerdown', e=>dragStart(e,null,touch));
+  const ovBar=document.createElement('div'); ovBar.id='mkOv'; ovBar.className='mk-new'; ovBar.innerHTML='<canvas></canvas>';
+  seWaveWrap.after(ovBar); const ovCv=ovBar.firstChild;
+  const loupe=document.createElement('div'); loupe.id='mkLoupe'; loupe.innerHTML='<canvas width="480" height="148"></canvas><div class="lb"><span></span><i>FEIN</i></div>';
+  document.body.appendChild(loupe); const lCv=loupe.firstChild, lCx=lCv.getContext('2d'), lLb=loupe.querySelector('span');
+  // --- Hilfen ---
+  const COL={start:'#3fa9ff',end:'#ff6fa8',l1:'#ffc247',l2:'#ffc247'}, NAME={start:'S',end:'E',l1:'L1',l2:'L2'};
+  const dur=()=>seWorkingBuffer?seWorkingBuffer.duration:1;
+  const hT=h=>{ if(h==='start') return seTrimStart; if(h==='end') return seTrimEnd; const [a,b]=seLoopBounds(); return h==='l1'?a:b; };
+  const pair=()=>seEditMode==='loop'?['l1','l2']:['start','end'];
+  function setH(h,t){
+    const d=dur();
+    if(h==='start') seTrimStart=Math.min(Math.max(0,t), seTrimEnd-0.02);
+    else if(h==='end') seTrimEnd=Math.max(Math.min(d,t), seTrimStart+0.02);
+    else { const [a,b]=seLoopBounds(), sn=seSnapZero(t); seLoopBuf=seWorkingBuffer;
+      if(h==='l1'){ seLoopStart=Math.min(Math.max(sn,seTrimStart),b-0.02); seLoopEnd=b; }
+      else { seLoopEnd=Math.max(Math.min(sn,seTrimEnd),a+0.02); seLoopStart=a; } }
+    updateSETrimUI();
+  }
+  function follow(h){ // gezoomt: Ansicht schiebt mit, wenn der Griff an den Rand kommt
+    const x=hT(h)/dur()*seInnerWidth(), sl=seWaveScroll.scrollLeft, vw=seWaveScroll.clientWidth, m=28;
+    if(x<sl+m) seWaveScroll.scrollLeft=Math.max(0,x-m); else if(x>sl+vw-m) seWaveScroll.scrollLeft=x-vw+m;
+  }
+  // --- Ziehen (relativ, mit Feinmodus und Lupe) ---
+  let D=null;
+  function dragStart(e,h,el){
+    if(!seWorkingBuffer || !V) return;
+    e.preventDefault(); e.stopPropagation();
+    const r=seWaveInner.getBoundingClientRect(), x=e.clientX-r.left, w=seInnerWidth();
+    let amb=false;
+    if(!h){ const [p,q]=pair(), xp=hT(p)/dur()*w, xq=hT(q)/dur()*w;
+      if(Math.abs(xp-xq)<10 && Math.abs(x-(xp+xq)/2)<24){ amb=true; h=p; } else h=Math.abs(x-xp)<=Math.abs(x-xq)?p:q; }
+    try{ el.setPointerCapture(e.pointerId); }catch(_){}
+    D={h,amb,el,id:e.pointerId,lx:e.clientX,x0:e.clientX,t:hT(h),st:seHistState(),moved:false};
+    mark(h,true);
+  }
+  function mark(h,on){ const o={start:seHandleStartEl,end:seHandleEndEl,l1:seHandleL1El,l2:seHandleL2El}[h]; o&&o.classList.toggle('dragging',on); TABS[h]&&TABS[h].t.classList.toggle('on',on); }
+  window.addEventListener('pointermove', e=>{
+    if(!D || e.pointerId!==D.id) return;
+    const dx=e.clientX-D.lx; D.lx=e.clientX;
+    if(!D.moved && Math.abs(e.clientX-D.x0)<3) return;
+    if(!D.moved){ D.moved=true;
+      if(D.amb){ const [p,q]=pair(); const nh=(e.clientX<D.x0)?p:q; if(nh!==D.h){ mark(D.h,false); D.h=nh; D.t=hT(nh); mark(nh,true); } } }
+    const wr=seWaveWrap.getBoundingClientRect(), dy=e.clientY-wr.bottom;
+    const f=dy>110?0.1:dy>30?0.25:1;
+    D.t+=dx*f*dur()/seInnerWidth(); D.t=Math.min(dur(),Math.max(0,D.t));
+    setH(D.h,D.t); follow(D.h); showLoupe(D.h,e.clientX,f<1?f:0);
+  });
+  const end=e=>{ if(!D || (e && e.pointerId!==D.id)) return; mark(D.h,false);
+    if(!seHistSame(D.st, seHistState())) seHistPush(D.st); D=null; loupe.style.display='none'; };
+  window.addEventListener('pointerup', end); window.addEventListener('pointercancel', end);
+  // --- Lupe ---
+  function showLoupe(h,cx,fine){
+    const wr=seWaveWrap.getBoundingClientRect(), W=240, H=96, vw=innerWidth;
+    let top=wr.top-H-8; if(top<6) top=wr.bottom+8;
+    loupe.style.left=Math.min(vw-W-8,Math.max(8,cx-W/2))+'px'; loupe.style.top=top+'px';
+    loupe.style.setProperty('--hc',COL[h]); loupe.style.display='block'; loupe.classList.toggle('fine',!!fine);
+    loupe.querySelector('i').textContent=fine===0.1?'FEIN 1/10':'FEIN ¼';
+    const t=hT(h), span=0.05, d=seWorkingBuffer.getChannelData(0), sr=seWorkingBuffer.sampleRate;
+    const cw=lCv.width, ch=lCv.height, mid=ch/2; lCx.clearRect(0,0,cw,ch);
+    // Bereich außerhalb (abgedunkelt) zeigen: S links dunkel, E rechts dunkel
+    lCx.fillStyle='rgba(255,255,255,.035)'; lCx.fillRect(0,0,cw,ch);
+    lCx.strokeStyle='rgba(255,255,255,.08)'; lCx.beginPath(); lCx.moveTo(0,mid); lCx.lineTo(cw,mid); lCx.stroke();
+    lCx.strokeStyle='#3fa9ff'; lCx.lineWidth=2; lCx.beginPath();
+    const i0=(t-span/2)*sr, per=span*sr/cw;
+    for(let x=0;x<cw;x++){ let mn=1,mx=-1; const a=Math.floor(i0+x*per), b=Math.max(a+1,Math.floor(i0+(x+1)*per));
+      for(let i=a;i<b;i++){ const s=(i>=0&&i<d.length)?d[i]:0; if(s<mn)mn=s; if(s>mx)mx=s; }
+      lCx.moveTo(x,mid-mx*mid*.9); lCx.lineTo(x,mid-mn*mid*.9+1); }
+    lCx.stroke();
+    const dim=(h==='start'||h==='l1')?[0,cw/2]:[cw/2,cw/2]; lCx.fillStyle='rgba(0,0,0,.5)'; lCx.fillRect(dim[0],0,dim[1],ch);
+    // anderer Griff, falls im Ausschnitt
+    const o={start:'end',end:'start',l1:'l2',l2:'l1'}[h], to=hT(o);
+    if(Math.abs(to-t)<span/2){ const xo=cw/2+(to-t)/span*cw; lCx.fillStyle=COL[o]; lCx.fillRect(xo-1,0,3,ch); }
+    lCx.fillStyle=COL[h]; lCx.fillRect(cw/2-2,0,4,ch);
+    lLb.textContent=NAME[h]+'  '+t.toFixed(3).replace('.',',')+' s';
+  }
+  // --- Griff-Leiste (A): S hängt links an der Linie, E rechts, nie überdeckt ---
+  function syncStrip(){
+    if(V!=='a') return; const w=seInnerWidth(), TW=46;
+    const place=(p,q)=>{ const xp=hT(p)/dur()*w, xq=hT(q)/dur()*w;
+      let lp=Math.max(0,Math.min(w-2*TW,xp-TW)), lq=Math.min(w-TW,Math.max(0,xq));
+      if(lq<lp+TW){ lq=Math.min(w-TW,lp+TW); lp=Math.min(lp,lq-TW); }
+      TABS[p].t.style.left=lp+'px'; TABS[q].t.style.left=lq+'px'; TABS[p].st.style.left=xp+'px'; TABS[q].st.style.left=xq+'px'; };
+    place('start','end'); place('l1','l2');
+  }
+  // --- Übersicht (B): ganze Welle klein + sichtbares Fenster, ziehen = scrollen ---
+  function drawOv(){
+    if(V!=='b') return; const dpr=devicePixelRatio, w=ovBar.clientWidth, h=ovBar.clientHeight; if(!w) return;
+    ovCv.width=w*dpr; ovCv.height=h*dpr; const c=ovCv.getContext('2d'); c.setTransform(dpr,0,0,dpr,0,0); c.clearRect(0,0,w,h);
+    if(!seWorkingBuffer) return; const d=seWorkingBuffer.getChannelData(0), st=Math.max(1,Math.floor(d.length/w)), m=h/2;
+    c.strokeStyle='rgba(63,169,255,.55)'; c.beginPath();
+    for(let x=0;x<w;x++){ let mn=1,mx=-1; for(let i=x*st;i<(x+1)*st&&i<d.length;i+=4){ const s=d[i]; if(s<mn)mn=s; if(s>mx)mx=s; } c.moveTo(x,m-mx*m*.85); c.lineTo(x,m-mn*m*.85+1); }
+    c.stroke();
+    const [p,q]=pair(); [p,q].forEach(k=>{ c.fillStyle=COL[k]; c.fillRect(hT(k)/dur()*w-1,0,2,h); });
+    const iw=seInnerWidth(), a=seWaveScroll.scrollLeft/iw*w, b=(seWaveScroll.scrollLeft+seWaveScroll.clientWidth)/iw*w;
+    c.fillStyle='rgba(0,0,0,.45)'; c.fillRect(0,0,a,h); c.fillRect(b,0,w-b,h);
+    c.strokeStyle='#8fd4ff'; c.lineWidth=1.5; c.strokeRect(a+.75,.75,Math.max(4,b-a)-1.5,h-1.5);
+  }
+  let OD=null;
+  ovBar.addEventListener('pointerdown',e=>{ OD={id:e.pointerId}; ovBar.setPointerCapture(e.pointerId); ovMove(e); e.preventDefault(); });
+  ovBar.addEventListener('pointermove',e=>{ if(OD&&OD.id===e.pointerId) ovMove(e); });
+  ovBar.addEventListener('pointerup',()=>OD=null);
+  function ovMove(e){ const r=ovBar.getBoundingClientRect(), f=(e.clientX-r.left)/r.width; seWaveScroll.scrollLeft=f*seInnerWidth()-seWaveScroll.clientWidth/2; drawOv(); }
+  seWaveScroll.addEventListener('scroll',drawOv);
+  // --- App-Funktionen erweitern ---
+  const oDraw=drawSEWave, oUpd=updateSETrimUI, oMode=seSetMode;
+  drawSEWave=function(){
+    if(V!=='a') return oDraw();
+    // wie das Original, nur die Welle über der Griff-Leiste
+    const w=seInnerWidth(), h=seWaveWrap.clientHeight-SH;
+    seWaveInner.style.width=w+'px';
+    seWaveCanvas.width=w*devicePixelRatio; seWaveCanvas.height=h*devicePixelRatio;
+    seWaveCanvas.style.width=w+'px'; seWaveCanvas.style.height=h+'px';
+    seWaveCtx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0); seWaveCtx.clearRect(0,0,w,h);
+    if(!seWorkingBuffer) return;
+    const data=seWorkingBuffer.getChannelData(0), step=Math.max(1,Math.floor(data.length/w)), mid=h/2;
+    seWaveCtx.strokeStyle='#3fa9ff'; seWaveCtx.lineWidth=1; seWaveCtx.beginPath();
+    for(let x=0;x<w;x++){ let min=1,max=-1; const s0=x*step; for(let i=0;i<step;i++){ const s=data[s0+i]; if(s===undefined) break; if(s<min)min=s; if(s>max)max=s; }
+      seWaveCtx.moveTo(x,mid+min*mid*0.9); seWaveCtx.lineTo(x,mid+max*mid*0.9); }
+    seWaveCtx.stroke();
+  };
+  updateSETrimUI=function(){ oUpd(); syncStrip(); drawOv(); };
+  const HINT={a:{trim:'Zieh S und E unten an der Leiste. Finger nach unten = fein.',loop:'Zieh L1 und L2 unten an der Leiste. Finger nach unten = fein.'},
+              b:{trim:'Irgendwo in die Welle tippen und ziehen: der nächste Griff (S/E) folgt.',loop:'Irgendwo in die Welle tippen und ziehen: L1 oder L2 folgt.'}};
+  seSetMode=function(m){ oMode(m); if(V) seHintEl.textContent=HINT[V][m]; drawOv(); };
+  // --- Demo-Sample: Kick · Snare · Kick Kick · Snare · Ton ---
+  function demo(){
+    const sr=44100, n=Math.round(sr*2.6), b=new AudioBuffer({length:n,numberOfChannels:1,sampleRate:sr}), d=b.getChannelData(0);
+    let seed=7; const rnd=()=>((seed=(seed*16807)%2147483647)/2147483647)*2-1;
+    const kick=(t0,g)=>{ let ph=0; for(let i=0;i<sr*.45;i++){ const t=i/sr, f=48+110*Math.exp(-t/.04); ph+=2*Math.PI*f/sr; const k=Math.round((t0+t)*sr); if(k<n) d[k]+=g*Math.sin(ph)*Math.exp(-t/.14); } };
+    const snare=(t0,g)=>{ for(let i=0;i<sr*.3;i++){ const t=i/sr, k=Math.round((t0+t)*sr); if(k<n) d[k]+=g*(rnd()*.7*Math.exp(-t/.07)+.5*Math.sin(2*Math.PI*190*t)*Math.exp(-t/.04)); } };
+    kick(.06,.8); snare(.56,.6); kick(1.06,.75); kick(1.31,.45); snare(1.56,.65);
+    for(let i=0;i<sr*.6;i++){ const t=i/sr, k=Math.round((1.95+t)*sr); if(k>=n) break; const env=Math.min(1,t/.03)*Math.min(1,(.6-t)/.15), f=220*(1+.006*Math.sin(2*Math.PI*5.5*t));
+      let s=0; for(let hh=1;hh<=6;hh++) s+=Math.sin(2*Math.PI*f*hh*t)/(hh*hh*.6+.4); d[k]+=.32*env*s; }
+    for(let i=0;i<n;i++) d[i]+=rnd()*.004;
+    openSampleEditor({buffer:b,label:'Demo'});
+  }
+  function setV(v){ V=v; document.documentElement.classList.toggle('mk-a',v==='a'); document.documentElement.classList.toggle('mk-b',v==='b');
+    if(ov.classList.contains('open')){ seSetMode(seEditMode); if(!v) seHintEl.textContent=seEditMode==='loop'?'Zieh L1 und L2: Dieser Teil wird wiederholt.':'Zieh S und E: Nur dieser Teil wird übernommen.';
+      requestAnimationFrame(()=>{ drawSEWave(); updateSETrimUI(); }); } }
+  function setMark(on){ document.documentElement.classList.toggle('mkmark',on); document.querySelectorAll('.se-nudge').forEach(b=>b.classList.add('mk-new')); }
+  window.__mk={setV,demo,setMark};
+}
+
+// ===== Rahmen-Steuerung =====
+const fR=document.getElementById('fR');
+let V='a';
+function hook(){ const w=fR.contentWindow; try{ if(!w||w.eval('typeof openSampleEditor')!=='function') return null; if(!w.__mk) w.eval('('+MK.toString()+')()'); }catch(e){ console.error(e); return null; } return w.__mk; }
+function apply(){ const m=hook(); if(m) m.setV(V); document.querySelectorAll('[data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v===V)); }
+fR.addEventListener('load',()=>setTimeout(()=>{ const m=hook(); if(!m) return; apply(); m.demo(); },800));
+document.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{ V=b.dataset.v; apply(); });
+document.getElementById('demoBtn').onclick=()=>{ const m=hook(); if(m){ m.demo(); m.setV(V); } };
+document.getElementById('mk').onchange=e=>{ const m=hook(); if(m) m.setMark(e.target.checked); };
+const notes=document.getElementById('notes').innerHTML; document.getElementById('side').innerHTML=notes; const info=document.getElementById('info'); info.innerHTML=notes;
+document.getElementById('infoBtn').onclick=()=>info.classList.toggle('open');
+const fitTop=()=>{ const h=document.getElementById('mbar').offsetHeight; document.getElementById('stage').style.top=h+'px'; info.style.top=h+'px'; }; addEventListener('resize',fitTop); fitTop();
+</script>
+</body>
+</html>
