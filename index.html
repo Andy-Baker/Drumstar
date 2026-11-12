@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>MRM-44 — Mobile Rhythm Machine</title>
 <link rel="stylesheet" href="./fonts.css">
-<link rel="stylesheet" href="./css/app.css?v=113">
+<link rel="stylesheet" href="./css/app.css?v=114">
 
 
 <!-- Drumstar PWA -->
@@ -160,14 +160,16 @@
               <div class="se-dim" id="seDimLeft"></div>
               <div class="se-dim" id="seDimRight"></div>
               <div class="se-loopband" id="seLoopBand"></div>
-              <div class="se-handle lp" id="seHandleL1"><div class="seh-flag top">L1</div><div class="seh-line"></div><div class="seh-flag bot">L1</div></div>
-              <div class="se-handle lp" id="seHandleL2"><div class="seh-flag top">L2</div><div class="seh-line"></div><div class="seh-flag bot">L2</div></div>
-              <div class="se-handle start" id="seHandleStart">
-                <div class="seh-flag top">S</div><div class="seh-line"></div><div class="seh-flag bot">S</div>
-              </div>
+              <div class="se-handle lp" id="seHandleL1"><div class="seh-line"></div></div>
+              <div class="se-handle lp" id="seHandleL2"><div class="seh-line"></div></div>
+              <div class="se-handle start" id="seHandleStart"><div class="seh-line"></div></div>
               <div class="se-cursor" id="seCursor"></div>
-              <div class="se-handle end" id="seHandleEnd">
-                <div class="seh-flag top">E</div><div class="seh-line"></div><div class="seh-flag bot">E</div>
+              <div class="se-handle end" id="seHandleEnd"><div class="seh-line"></div></div>
+              <div id="seGrip">
+                <div class="se-stem start t"></div><div class="se-tab start t" data-h="start">S<svg viewBox="0 0 12 16"><path d="M4 2v12M8 2v12"/></svg></div>
+                <div class="se-stem end t"></div><div class="se-tab end t" data-h="end"><svg viewBox="0 0 12 16"><path d="M4 2v12M8 2v12"/></svg>E</div>
+                <div class="se-stem lp"></div><div class="se-tab lp" data-h="l1">L1<svg viewBox="0 0 12 16"><path d="M4 2v12M8 2v12"/></svg></div>
+                <div class="se-stem lp"></div><div class="se-tab lp" data-h="l2"><svg viewBox="0 0 12 16"><path d="M4 2v12M8 2v12"/></svg>L2</div>
               </div>
             </div>
           </div>
@@ -201,8 +203,9 @@
             <div class="se-tf lp" style="flex:1"><div class="se-tf-lbl">L1 Start</div><div class="se-tf-row"><input id="seFieldL1" inputmode="decimal" value="0.00"></div></div>
             <div class="se-tf lp" style="flex:1"><div class="se-tf-lbl">L2 Ende</div><div class="se-tf-row"><input id="seFieldL2" inputmode="decimal" value="0.00"></div></div>
           </div>
-          <div id="seSnapBtn" class="on" role="switch"><span>Knackfrei einrasten</span><span class="se-sw"><span></span></span></div>
         </div>
+
+        <div id="seSnapBtn" class="on" role="switch"><span>Knackfrei einrasten</span><span class="se-sw"><span></span></span></div>
 
         <div class="se-lb">3 · Bearbeiten</div>
         <div id="seToolsRow"><button class="se-tool-btn" id="seNormalizeBtn" title="Auf maximale Lautstärke anheben"><svg class="se-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M9 20V4M14 20V8M19 20V12"/></svg><span>Lauter</span></button><button class="se-tool-btn" id="seReverseBtn" title="Rückwärts abspielen"><svg class="se-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h18M7 8l-4 4 4 4M17 8l4 4-4 4"/></svg><span>Rückwärts</span></button><button class="se-tool-btn" id="seFadeInBtn" title="Anfang sanft einblenden"><svg class="se-ico" viewBox="0 0 24 24" aria-hidden="true"><polygon points="3,19 21,19 21,5"/></svg><span>Einblenden</span></button><button class="se-tool-btn" id="seFadeOutBtn" title="Ende sanft ausblenden"><svg class="se-ico" viewBox="0 0 24 24" aria-hidden="true"><polygon points="3,5 3,19 21,19"/></svg><span>Ausblenden</span></button></div>
@@ -523,31 +526,31 @@
       </div>
 </div>
 
-<script src="./js/base.js?v=113"></script>
-<script src="./js/audio.js?v=113"></script>
-<script src="./js/fx.js?v=113"></script>
-<script src="./js/voices.js?v=113"></script>
-<script src="./js/events.js?v=113"></script>
-<script src="./js/kits.js?v=113"></script>
-<script src="./js/tracks.js?v=113"></script>
-<script src="./js/controls.js?v=113"></script>
-<script src="./js/harmony.js?v=113"></script>
-<script src="./js/editor.js?v=113"></script>
-<script src="./js/sheets.js?v=113"></script>
-<script src="./js/sample-track.js?v=113"></script>
-<script src="./js/wav-export.js?v=113"></script>
-<script src="./js/sampler-werk.js?v=113"></script>
-<script src="./js/sampler.js?v=113"></script>
-<script src="./js/mixer.js?v=113"></script>
-<script src="./js/sample-editor.js?v=113"></script>
-<script src="./js/storage.js?v=113"></script>
-<script src="./js/beats.js?v=113"></script>
-<script src="./js/spuren.js?v=113"></script>
-<script src="./js/pianoroll.js?v=113"></script>
-<script src="./js/scheduler.js?v=113"></script>
-<script src="./js/transport-ui.js?v=113"></script>
-<script src="./js/tempo-detect.js?v=113"></script>
-<script src="./js/main.js?v=113"></script>
+<script src="./js/base.js?v=114"></script>
+<script src="./js/audio.js?v=114"></script>
+<script src="./js/fx.js?v=114"></script>
+<script src="./js/voices.js?v=114"></script>
+<script src="./js/events.js?v=114"></script>
+<script src="./js/kits.js?v=114"></script>
+<script src="./js/tracks.js?v=114"></script>
+<script src="./js/controls.js?v=114"></script>
+<script src="./js/harmony.js?v=114"></script>
+<script src="./js/editor.js?v=114"></script>
+<script src="./js/sheets.js?v=114"></script>
+<script src="./js/sample-track.js?v=114"></script>
+<script src="./js/wav-export.js?v=114"></script>
+<script src="./js/sampler-werk.js?v=114"></script>
+<script src="./js/sampler.js?v=114"></script>
+<script src="./js/mixer.js?v=114"></script>
+<script src="./js/sample-editor.js?v=114"></script>
+<script src="./js/storage.js?v=114"></script>
+<script src="./js/beats.js?v=114"></script>
+<script src="./js/spuren.js?v=114"></script>
+<script src="./js/pianoroll.js?v=114"></script>
+<script src="./js/scheduler.js?v=114"></script>
+<script src="./js/transport-ui.js?v=114"></script>
+<script src="./js/tempo-detect.js?v=114"></script>
+<script src="./js/main.js?v=114"></script>
 
 <script>
 // Drumstar PWA service worker

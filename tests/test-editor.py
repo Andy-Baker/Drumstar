@@ -309,6 +309,60 @@ async def main():
        and r['mig'][1:4]==['lib:p_test',.7,'2:60 4:60A'] and r['mig'][4]=='1:1' and r['mig'][5] is False, r['mig'])
     ok('#8 alte SAMPLE-Spur ohne Sample (war stumm) → entfällt', r['nomig']=='arp:ACID cosmic:COSMIC piano:KEYS', r['nomig'])
     ok('#8 Beat aus Reiter „Sample“ → Sampler-Beat', r['beat']==['sampler',1,'lib:p_x',1,False], r['beat'])
+    # #9 Sample-Editor: Griff-Leiste (S links an der Linie, E rechts), relatives Ziehen, Feinmodus, Lupe, Einrasten, ein Undo je Zug
+    await pg.evaluate("""(()=>{ const sr=44100, n=sr*2, b=new AudioBuffer({length:n,numberOfChannels:1,sampleRate:sr}), d=b.getChannelData(0);
+      for(let i=0;i<n;i++) d[i]=0.6*Math.sin(2*Math.PI*100*i/sr+0.3); openSampleEditor({buffer:b,label:'Test'}); })()""")
+    await pg.wait_for_timeout(400)
+    await pg.evaluate("document.getElementById('seWaveWrap').scrollIntoView({block:'center'})"); await pg.wait_for_timeout(200)
+    TABS="""(()=>{ const r=e=>{const q=e.getBoundingClientRect(); return {l:q.left,r:q.right,t:q.top,b:q.bottom,w:q.width,h:q.height,cx:q.left+q.width/2,cy:q.top+q.height/2};};
+      const S=document.querySelector('.se-tab[data-h=start]'), E=document.querySelector('.se-tab[data-h=end]'), W=document.getElementById('seWaveWrap');
+      const hit=t=>{const q=r(t); return document.elementFromPoint(q.cx,q.cy)?.closest('.se-tab')===t;};
+      return {S:r(S),E:r(E),W:r(W),hitS:hit(S),hitE:hit(E),ts:seTrimStart,te:seTrimEnd,iw:seInnerWidth(),undo:seUndoStack.length,
+        nud:document.querySelector('.se-nudge').getBoundingClientRect().width, snap:!!document.getElementById('seSnapBtn').offsetParent}; })()"""
+    g=await pg.evaluate(TABS)
+    ok('#9 Griff-Tasten groß, in der Welle, nicht übereinander', g['S']['w']>=44 and g['S']['h']>=38 and g['S']['l']>=g['W']['l']-1 and g['E']['r']<=g['W']['r']+1 and g['S']['r']<=g['E']['l']+.5 and g['hitS'] and g['hitE'], g)
+    ok('#9 ±-Tasten 36 px, Knackfrei-Schalter auch beim Zuschneiden', abs(g['nud']-36)<1 and g['snap'], [g['nud'],g['snap']])
+    await s('se_grip')
+    # Antippen ohne Bewegung: nichts springt
+    await pg.mouse.move(g['S']['cx'],g['S']['cy']); await pg.mouse.down(); await pg.mouse.up()
+    g1=await pg.evaluate(TABS)
+    ok('#9 Antippen verschiebt nichts', g1['ts']==0 and g1['undo']==0, g1['ts'])
+    # Ziehen um 80 px (mehrere Schritte) → S ≈ 80/iw·dur, eingerastet auf Nulldurchgang, Lupe sichtbar, ein Undo-Schritt
+    await pg.mouse.move(g['S']['cx'],g['S']['cy']); await pg.mouse.down()
+    for i in range(1,9): await pg.mouse.move(g['S']['cx']+10*i,g['S']['cy'])
+    lp=await pg.evaluate("(()=>{const l=document.getElementById('seLoupe'); return {vis:getComputedStyle(l).display!=='none', txt:l.querySelector('span').textContent, top:l.getBoundingClientRect().top};})()")
+    await s('se_drag_loupe')
+    await pg.mouse.up()
+    g2=await pg.evaluate(TABS); want=80/g2['iw']*2
+    zc=await pg.evaluate("(()=>{const d=seWorkingBuffer.getChannelData(0), i=Math.round(seTrimStart*44100); return (d[i-1]<=0&&d[i]>0)||(d[i-1]>=0&&d[i]<0);})()")
+    ok('#9 Ziehen relativ (kein Sprung unter den Finger)', abs(g2['ts']-want)<0.012, [g2['ts'],want])
+    ok('#9 S rastet auf Nulldurchgang ein', zc)
+    ok('#9 Lupe beim Ziehen mit Zeit, danach weg', lp['vis'] and lp['txt'].startswith('S') and ' s' in lp['txt'] and lp['top']>=0
+       and await pg.evaluate("getComputedStyle(document.getElementById('seLoupe')).display")=='none', lp)
+    ok('#9 ein Undo-Schritt pro Zug', g2['undo']==1, g2['undo'])
+    # Feinmodus: Finger 140 px unter die Welle → 1/10
+    await pg.evaluate("document.getElementById('seSnapBtn').click()")
+    t0=g2['ts']; E0=g2['E']
+    await pg.mouse.move(E0['cx'],E0['cy']); await pg.mouse.down()
+    await pg.mouse.move(E0['cx'],g2['W']['b']+140,steps=4); await pg.mouse.move(E0['cx']-100,g2['W']['b']+140,steps=10)
+    fine=await pg.evaluate("document.getElementById('seLoupe').classList.contains('fine') && document.querySelector('#seLoupe i').textContent")
+    await pg.mouse.up()
+    g3=await pg.evaluate(TABS); wantE=2-100*0.1/g3['iw']*2
+    ok('#9 Feinmodus: Finger nach unten = 1/10', abs(g3['te']-wantE)<0.004 and fine=='FEIN 1/10', [g3['te'],wantE,fine])
+    # S und E fast übereinander: beide Tasten greifbar, E-Taste rechts von S
+    await pg.evaluate("seTrimStart=1.0; seTrimEnd=1.03; updateSETrimUI()")
+    g4=await pg.evaluate(TABS)
+    ok('#9 S≈E: beide greifbar, S links, E rechts', g4['hitS'] and g4['hitE'] and g4['S']['r']<=g4['E']['l']+.5, [g4['S'],g4['E']])
+    await s('se_grip_close')
+    # Am Rand: Ende = Schluss → E-Taste bleibt in der Welle
+    await pg.evaluate("seTrimStart=1.97; seTrimEnd=2; updateSETrimUI()")
+    g5=await pg.evaluate(TABS)
+    ok('#9 Griffe am Rand bleiben ganz in der Welle', g5['E']['r']<=g5['W']['r']+1 and g5['S']['l']>=g5['W']['l']-1 and g5['hitS'] and g5['hitE'], [g5['S'],g5['E']])
+    # Loop-Modus: L1/L2-Tasten statt S/E
+    await pg.evaluate("document.getElementById('seSnapBtn').click(); document.getElementById('seModeLoop').click()")
+    lpm=await pg.evaluate("[...document.querySelectorAll('.se-tab')].filter(t=>t.offsetParent).map(t=>t.dataset.h).join()")
+    ok('#9 Loop-Modus zeigt L1/L2-Tasten', lpm=='l1,l2', lpm)
+    await pg.evaluate("closeSampleEditor()")
     ok('Schrift überall ≥ 11 px (#19)', not fz.bad, fz.bad)
     ok('Keine Konsolenfehler', not errs, errs)
     await b.close()

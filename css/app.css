@@ -465,25 +465,39 @@
     box-shadow:0 0 14px rgba(63,169,255,.7); animation:recpulse 1s infinite; }
   #seStatus{ font-size:11px; color:var(--dim); font-family:'JetBrains Mono',monospace; text-align:center; flex-shrink:0; }
   #seStatus.err{ color:var(--white); text-shadow:0 0 6px rgba(255,255,255,.5); }
-  #seWaveWrap{ height:130px; border-radius:8px; background:var(--panel-inset); position:relative;
+  /* #9: Welle 130 px + Griff-Leiste 48 px darunter. Linien/Abdunklung/Loop/Cursor nur über der Welle;
+     gegriffen wird nur an den Tasten der Leiste (S links an der Linie, E rechts → nie übereinander). */
+  #seWaveWrap{ --sgh:48px; height:178px; border-radius:8px; background:var(--panel-inset); position:relative;
     overflow:hidden; flex-shrink:0; }
   #seWaveScroll{ position:absolute; inset:0; overflow-x:auto; overflow-y:hidden; touch-action:pan-x; }
   #seWaveInner{ position:relative; height:100%; }
-  #seWaveCanvas{ position:absolute; inset:0; width:100%; height:100%; display:block; }
-  .se-dim{ position:absolute; top:0; bottom:0; background:rgba(0,0,0,.55); pointer-events:none; }
-  /* Grabzone 32px statt vorher 14px — unsichtbar breiter, die schlanke Linie bleibt optisch
-     gleich. Flaggen oben UND unten (vorher nur oben), farbcodiert (Start blau, Ende pink),
-     damit beide Enden der Wellenform aus greifbar und auf einen Blick unterscheidbar sind. */
-  .se-handle{ position:absolute; top:0; bottom:0; width:32px; margin-left:-16px; cursor:ew-resize; touch-action:none; }
-  .se-handle .seh-line{ position:absolute; top:18px; bottom:18px; left:50%; width:2px; margin-left:-1px;
+  #seWaveCanvas{ position:absolute; left:0; top:0; display:block; }
+  .se-dim{ position:absolute; top:0; bottom:var(--sgh); background:rgba(0,0,0,.55); pointer-events:none; }
+  .se-handle{ position:absolute; top:0; bottom:var(--sgh); width:0; pointer-events:none; }
+  .se-handle .seh-line{ position:absolute; top:0; bottom:0; left:0; width:2px; margin-left:-1px;
     background:var(--hc); box-shadow:0 0 6px var(--hc); }
-  .se-handle .seh-flag{ position:absolute; left:50%; margin-left:-15px; width:30px; height:18px; border-radius:5px;
-    background:var(--hc); color:#04121e; font:700 11px 'JetBrains Mono',monospace;
-    display:flex; align-items:center; justify-content:center; box-shadow:0 0 8px var(--hc); }
-  .se-handle .seh-flag.top{ top:0; } .se-handle .seh-flag.bot{ bottom:0; }
   .se-handle.start{ --hc:#3fa9ff; } .se-handle.end{ --hc:#ff6fa8; }
-  .se-handle.dragging .seh-line{ width:3px; box-shadow:0 0 12px var(--hc), 0 0 20px var(--hc); }
-  .se-handle.dragging .seh-flag{ transform:scale(1.15); }
+  .se-handle.dragging .seh-line{ width:3px; margin-left:-1.5px; box-shadow:0 0 12px var(--hc), 0 0 20px var(--hc); }
+  #seGrip{ position:absolute; left:0; right:0; bottom:0; height:var(--sgh); background:#0d0f14; border-top:1px solid rgba(255,255,255,.08); }
+  .se-stem{ position:absolute; top:0; width:2px; margin-left:-1px; height:8px; background:var(--hc); pointer-events:none; }
+  .se-tab{ position:absolute; top:4px; width:46px; height:40px; border-radius:8px; box-sizing:border-box;
+    background:color-mix(in srgb,var(--hc) 22%,#0d0f14); border:1.5px solid var(--hc); color:var(--white);
+    display:flex; align-items:center; justify-content:center; gap:3px; font:700 13px 'JetBrains Mono',monospace;
+    touch-action:none; cursor:ew-resize; user-select:none; -webkit-user-select:none; }
+  .se-tab svg{ width:12px; height:16px; stroke:var(--hc); stroke-width:2; fill:none; stroke-linecap:round; }
+  .se-tab.on{ background:var(--hc); color:#04121e; box-shadow:0 0 14px var(--hc); } .se-tab.on svg{ stroke:#04121e; }
+  .se-tab.start,.se-stem.start{ --hc:#3fa9ff; } .se-tab.end,.se-stem.end{ --hc:#ff6fa8; } .se-tab.lp,.se-stem.lp{ --hc:#ffc247; display:none; }
+  #sampleEditorOverlay.mode-loop .se-tab.t, #sampleEditorOverlay.mode-loop .se-stem.t{ display:none; }
+  #sampleEditorOverlay.mode-loop .se-tab.lp{ display:flex; } #sampleEditorOverlay.mode-loop .se-stem.lp{ display:block; }
+  /* Lupe beim Ziehen: vergrößerter Ausschnitt um den Griff + Zeit; „FEIN“ im Feinmodus (Finger nach unten) */
+  #seLoupe{ position:fixed; z-index:80; width:240px; height:96px; border-radius:10px; background:#0a0a0df2;
+    border:1.5px solid var(--hc,#3fa9ff); box-shadow:0 8px 30px rgba(0,0,0,.7),0 0 12px color-mix(in srgb,var(--hc,#3fa9ff) 40%,transparent);
+    pointer-events:none; display:none; overflow:hidden; }
+  #seLoupe canvas{ position:absolute; left:0; top:0; width:240px; height:74px; }
+  #seLoupe .lb{ position:absolute; left:0; right:0; bottom:0; height:22px; display:flex; align-items:center; justify-content:space-between;
+    padding:0 8px; font:700 12px 'JetBrains Mono',monospace; color:var(--white); border-top:1px solid rgba(255,255,255,.08); }
+  #seLoupe .lb i{ font-style:normal; color:#04121e; background:var(--hc); border-radius:4px; padding:0 5px; font-size:11px; visibility:hidden; }
+  #seLoupe.fine .lb i{ visibility:visible; }
   #seZoomRow{ display:flex; align-items:center; gap:8px; flex-shrink:0; }
   #seZoomRow span{ font-size:11px; letter-spacing:.06em; color:var(--dim); flex-shrink:0; }
   #seZoomRow input[type=range]{ flex:1; accent-color:var(--blue); }
@@ -496,8 +510,8 @@
   .se-tf-row{ display:flex; align-items:center; gap:4px; margin-top:2px; }
   .se-tf input{ width:100%; background:transparent; border:0; outline:0; color:var(--white);
     font:700 14px 'JetBrains Mono',monospace; text-align:center; }
-  .se-nudge{ width:24px; height:24px; border-radius:6px; border:1px solid rgba(255,255,255,.12);
-    background:var(--panel-inset); color:var(--dim); font-size:12px; cursor:pointer; flex-shrink:0; }
+  .se-nudge{ width:36px; height:36px; border-radius:6px; border:1px solid rgba(255,255,255,.12);
+    background:var(--panel-inset); color:var(--white); font-size:16px; cursor:pointer; flex-shrink:0; }
   .se-nudge:active{ transform:scale(.9); }
   #seToolsRow{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; flex-shrink:0; }
   .se-tool-btn{ min-height:40px; border-radius:8px; border:1px solid rgba(255,255,255,.12);
@@ -517,11 +531,11 @@
   #seModeRow button{ flex:1; min-height:40px; border:0; background:var(--panel); color:var(--dim); font:700 12px inherit; font-family:inherit; cursor:pointer; }
   #seModeRow button.on{ background:rgba(63,169,255,.2); color:var(--blue-2); }
   #sampleEditorOverlay.mode-loop #seModeRow button.on{ background:rgba(255,194,71,.2); color:#ffc247; }
-  .se-cursor{ position:absolute; top:0; bottom:0; width:2px; margin-left:-1px; background:#fff; box-shadow:0 0 6px #fff; pointer-events:none; display:none; }
-  .se-loopband{ position:absolute; top:0; bottom:0; background:rgba(255,194,71,.12); pointer-events:none; display:none; }
+  .se-cursor{ position:absolute; top:0; bottom:var(--sgh); width:2px; margin-left:-1px; background:#fff; box-shadow:0 0 6px #fff; pointer-events:none; display:none; }
+  .se-loopband{ position:absolute; top:0; bottom:var(--sgh); background:rgba(255,194,71,.12); pointer-events:none; display:none; }
   .se-handle.lp{ --hc:#ffc247; display:none; }
   #sampleEditorOverlay.mode-loop .se-handle.lp, #sampleEditorOverlay.mode-loop .se-loopband{ display:block; }
-  #sampleEditorOverlay.mode-loop .se-handle.start, #sampleEditorOverlay.mode-loop .se-handle.end{ pointer-events:none; opacity:.3; }
+  #sampleEditorOverlay.mode-loop .se-handle.start, #sampleEditorOverlay.mode-loop .se-handle.end{ opacity:.3; }
   #sampleEditorOverlay.mode-loop #seTrimFields{ display:none; }
   #seLoopPanel{ display:none; flex-direction:column; gap:8px; flex-shrink:0; }
   #sampleEditorOverlay.mode-loop #seLoopPanel{ display:flex; }

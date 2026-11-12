@@ -48,7 +48,7 @@ let seCursorRAF=null, seCursorT0=0;
 const SE_ICON_PLAY='<svg class="se-ico" viewBox="0 0 24 24" aria-hidden="true"><polygon points="6,4 20,12 6,20" fill="currentColor"/></svg>Vorhören', SE_ICON_STOP='<svg class="se-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="1" fill="currentColor"/></svg>Stopp';
 // ---- Undo/Redo (5 Schritte): Zustände sind nur Referenzen auf unveränderliche Puffer + Trim/Loop-Werte ----
 const SE_HIST_MAX=5;
-let seUndoStack=[], seRedoStack=[], seDragStartState=null, seHistLastKey=null, seHistLastTime=0;
+let seUndoStack=[], seRedoStack=[], seHistLastKey=null, seHistLastTime=0;
 const seUndoBtn=document.getElementById('seUndoBtn'), seRedoBtn=document.getElementById('seRedoBtn');
 function seHistState(){ return {buf:seWorkingBuffer, ts:seTrimStart, te:seTrimEnd, ls:seLoopStart, le:seLoopEnd, lb:seLoopBuf}; }
 function seHistSame(a,b){ return a.buf===b.buf && a.ts===b.ts && a.te===b.te && a.ls===b.ls && a.le===b.le; }
@@ -97,7 +97,7 @@ function updateSELoopUI(){
 function seSetMode(m){
   seEditMode=m;
   sampleEditorOverlay.classList.toggle('mode-loop', m==='loop');
-  seHintEl.textContent = m==='loop' ? 'Zieh L1 und L2: Dieser Teil wird wiederholt.' : 'Zieh S und E: Nur dieser Teil wird übernommen.';
+  seHintEl.textContent = m==='loop' ? 'Zieh L1 und L2 unten an der Leiste: Dieser Teil wird wiederholt.' : 'Zieh S und E unten an der Leiste: Nur dieser Teil wird übernommen.';
   seHintEl.style.color = m==='loop' ? '#ffc247' : '#8fd4ff';
   seModeTrimBtn.classList.toggle('on', m==='trim'); seModeLoopBtn.classList.toggle('on', m==='loop');
 }
@@ -256,7 +256,7 @@ function seSetZoom(z, anchorTime){
 seZoomEl.addEventListener('input', ()=> seSetZoom(parseFloat(seZoomEl.value)));
 
 function drawSEWave(){
-  const w=seInnerWidth(), h=seWaveWrap.clientHeight;
+  const w=seInnerWidth(), h=Math.max(10, seWaveWrap.clientHeight-seGripEl.offsetHeight);
   seWaveInner.style.width=w+'px';
   seWaveCanvas.width=w*devicePixelRatio; seWaveCanvas.height=h*devicePixelRatio;
   seWaveCanvas.style.width=w+'px'; seWaveCanvas.style.height=h+'px';
@@ -286,59 +286,110 @@ function updateSETrimUI(){
   if(document.activeElement!==seFieldStart) seFieldStart.value=seTrimStart.toFixed(2);
   if(document.activeElement!==seFieldEnd) seFieldEnd.value=seTrimEnd.toFixed(2);
   updateSELoopUI();
+  seGripPlace();
 }
-let seDragHandle=null; // 'start' | 'end' | null
-function seSetHandleFromX(clientX){
-  const rect=seWaveInner.getBoundingClientRect();
-  const x=Math.min(rect.width, Math.max(0, clientX-rect.left));
-  const dur=seWorkingBuffer ? seWorkingBuffer.duration : 1;
-  const t=(x/rect.width)*dur;
-  if(seDragHandle==='start') seTrimStart=Math.min(t, seTrimEnd-0.02);
-  else if(seDragHandle==='end') seTrimEnd=Math.max(t, seTrimStart+0.02);
-  else if(seDragHandle==='l1' || seDragHandle==='l2'){
-    const [a,b]=seLoopBounds(), sn=seSnapZero(t); seLoopBuf=seWorkingBuffer;
-    if(seDragHandle==='l1'){ seLoopStart=Math.min(Math.max(sn,seTrimStart),b-0.02); seLoopEnd=b; }
-    else { seLoopEnd=Math.max(Math.min(sn,seTrimEnd),a+0.02); seLoopStart=a; }
-  }
+// ---- Griff-Leiste (#9, Mockup docs/mockups/issue-9.html A): unter der Welle je Griff eine Taste, S/L1 hängt links
+// an seiner Linie, E/L2 rechts — überdecken sich nie, auch am Rand oder bei S≈E nicht. Ziehen ist relativ (Griff
+// springt nicht unter den Finger); Finger nach unten aus der Welle = Feinmodus ¼ bzw. 1/10; Lupe zeigt den
+// verdeckten Ausschnitt; gezoomt schiebt der Griff am Rand die Ansicht mit. S/E rasten wie L1/L2 auf
+// Nulldurchgänge ein (Schalter „Knackfrei einrasten“). Ein Zug = ein Undo-Schritt. Nur Pointer-Events. ----
+const seGripEl=document.getElementById('seGrip'), SE_TAB_W=46;
+const SE_TABS={}; seGripEl.querySelectorAll('.se-tab').forEach(t=>{ SE_TABS[t.dataset.h]={t, st:t.previousElementSibling}; });
+const SE_HCOL={start:'#3fa9ff', end:'#ff6fa8', l1:'#ffc247', l2:'#ffc247'}, SE_HNAME={start:'S', end:'E', l1:'L1', l2:'L2'};
+const SE_HEL={start:seHandleStartEl, end:seHandleEndEl, l1:seHandleL1El, l2:seHandleL2El};
+const seLoupe=document.createElement('div'); seLoupe.id='seLoupe';
+seLoupe.innerHTML='<canvas width="480" height="148"></canvas><div class="lb"><span></span><i>FEIN</i></div>';
+document.body.appendChild(seLoupe);
+const seLoupeCx=seLoupe.firstChild.getContext('2d'), seLoupeLb=seLoupe.querySelector('span'), seLoupeTag=seLoupe.querySelector('i');
+function seDur(){ return seWorkingBuffer ? seWorkingBuffer.duration : 1; }
+function seHT(h){ if(h==='start') return seTrimStart; if(h==='end') return seTrimEnd; const [a,b]=seLoopBounds(); return h==='l1'?a:b; }
+// Griff auf Zeit t setzen (Rohwert; Einrasten hier, damit sich die Fingerbewegung nicht am Raster aufhängt)
+function seSetHandle(h, t){
+  const d=seDur();
+  if(h==='start'){ const v=t<=0 ? 0 : seSnapZero(t); seTrimStart=Math.min(Math.max(0,v), seTrimEnd-0.02); }
+  else if(h==='end'){ const v=t>=d ? d : seSnapZero(t); seTrimEnd=Math.max(Math.min(d,v), seTrimStart+0.02); }
+  else { const [a,b]=seLoopBounds(), sn=seSnapZero(t); seLoopBuf=seWorkingBuffer;
+    if(h==='l1'){ seLoopStart=Math.min(Math.max(sn,seTrimStart),b-0.02); seLoopEnd=b; }
+    else { seLoopEnd=Math.max(Math.min(sn,seTrimEnd),a+0.02); seLoopStart=a; } }
   updateSETrimUI();
 }
-// Grabzone ist per CSS auf 32px verbreitert (vorher 14px); zusätzlich hält
-// setPointerCapture den Handle auch dann fest, wenn der Finger beim schnellen Ziehen kurz
-// die Element-Fläche verlässt — beides zusammen war die Hauptursache für "schlecht greifbar".
-function seHandleDown(which, el){ return (e)=>{
-  seDragHandle=which; seDragStartState=seHistState();
-  el.classList.add('dragging');
-  if(e.pointerId!=null && el.setPointerCapture){ try{ el.setPointerCapture(e.pointerId); }catch(err){} }
-  seSetHandleFromX(e.touches?e.touches[0].clientX:e.clientX);
-  e.preventDefault();
-}; }
-function seHandleMove(e){ if(!seDragHandle) return; seSetHandleFromX(e.touches?e.touches[0].clientX:e.clientX); e.preventDefault&&e.preventDefault(); }
-function seHandleUp(){ [seHandleStartEl,seHandleEndEl,seHandleL1El,seHandleL2El].forEach(el=>el.classList.remove('dragging'));
-  if(seDragHandle && seDragStartState && !seHistSame(seDragStartState, seHistState())) seHistPush(seDragStartState);
-  seDragStartState=null; seDragHandle=null; }
-seHandleStartEl.addEventListener('pointerdown', seHandleDown('start', seHandleStartEl));
-seHandleEndEl.addEventListener('pointerdown', seHandleDown('end', seHandleEndEl));
-window.addEventListener('pointermove', seHandleMove);
-window.addEventListener('pointerup', seHandleUp);
-seHandleStartEl.addEventListener('touchstart', seHandleDown('start', seHandleStartEl), {passive:false});
-seHandleEndEl.addEventListener('touchstart', seHandleDown('end', seHandleEndEl), {passive:false});
-window.addEventListener('touchmove', seHandleMove, {passive:false});
-window.addEventListener('touchend', seHandleUp);
-
-seHandleL1El.addEventListener('pointerdown', seHandleDown('l1', seHandleL1El));
-seHandleL2El.addEventListener('pointerdown', seHandleDown('l2', seHandleL2El));
-seHandleL1El.addEventListener('touchstart', seHandleDown('l1', seHandleL1El), {passive:false});
-seHandleL2El.addEventListener('touchstart', seHandleDown('l2', seHandleL2El), {passive:false});
+function seGripPlace(){
+  const w=seInnerWidth(), d=seDur();
+  const place=(p,q)=>{ const xp=seHT(p)/d*w, xq=seHT(q)/d*w;
+    let lp=Math.max(0, Math.min(w-2*SE_TAB_W, xp-SE_TAB_W)), lq=Math.min(w-SE_TAB_W, Math.max(0, xq));
+    if(lq<lp+SE_TAB_W){ lq=Math.min(w-SE_TAB_W, lp+SE_TAB_W); lp=Math.min(lp, lq-SE_TAB_W); }
+    SE_TABS[p].t.style.left=lp+'px'; SE_TABS[q].t.style.left=lq+'px'; SE_TABS[p].st.style.left=xp+'px'; SE_TABS[q].st.style.left=xq+'px'; };
+  place('start','end'); place('l1','l2');
+}
+function seFollow(h){
+  if(seZoomFactor<=1) return;
+  const x=seHT(h)/seDur()*seInnerWidth(), sl=seWaveScroll.scrollLeft, vw=seWaveScroll.clientWidth, m=28;
+  if(x<sl+m) seWaveScroll.scrollLeft=Math.max(0, x-m); else if(x>sl+vw-m) seWaveScroll.scrollLeft=x-vw+m;
+}
+function seMark(h, on){ SE_HEL[h].classList.toggle('dragging', on); SE_TABS[h].t.classList.toggle('on', on); }
+let seDrag=null; // {h, id, lx, x0, t (roh), st (Undo-Zustand), moved}
+function seDragStart(e){
+  const h=e.currentTarget.dataset.h;
+  if(!seWorkingBuffer || seDrag) return;
+  e.preventDefault(); e.stopPropagation();
+  try{ e.currentTarget.setPointerCapture(e.pointerId); }catch(err){}
+  seDrag={h, id:e.pointerId, lx:e.clientX, x0:e.clientX, t:seHT(h), st:seHistState(), moved:false};
+  seMark(h, true);
+}
+function seFineFactor(clientY){ const dy=clientY-seWaveWrap.getBoundingClientRect().bottom; return dy>110 ? 0.1 : dy>30 ? 0.25 : 1; }
+function seDragMove(e){
+  const D=seDrag; if(!D || e.pointerId!==D.id) return;
+  const dx=e.clientX-D.lx; D.lx=e.clientX;
+  if(!D.moved && Math.abs(e.clientX-D.x0)<3) return; // Antippen verschiebt nichts
+  D.moved=true; e.preventDefault();
+  const f=seFineFactor(e.clientY), d=seDur();
+  D.t=Math.min(d, Math.max(0, D.t+dx*f*d/seInnerWidth()));
+  seSetHandle(D.h, D.t); seFollow(D.h); seLoupeShow(D.h, e.clientX, f);
+}
+function seDragEnd(e){
+  const D=seDrag; if(!D || (e && e.pointerId!==D.id)) return;
+  seMark(D.h, false); seDrag=null; seLoupe.style.display='none';
+  if(!seHistSame(D.st, seHistState())) seHistPush(D.st);
+}
+Object.values(SE_TABS).forEach(({t})=>t.addEventListener('pointerdown', seDragStart));
+window.addEventListener('pointermove', seDragMove, {passive:false});
+window.addEventListener('pointerup', seDragEnd);
+window.addEventListener('pointercancel', seDragEnd);
+// Lupe: 50 ms um den Griff, abgeschnittene Seite dunkel, anderer Griff falls im Ausschnitt
+function seLoupeShow(h, cx, fine){
+  const wr=seWaveWrap.getBoundingClientRect(), W=240, H=96;
+  let top=wr.top-H-8; if(top<6) top=wr.bottom+8;
+  seLoupe.style.left=Math.min(innerWidth-W-8, Math.max(8, cx-W/2))+'px'; seLoupe.style.top=top+'px';
+  seLoupe.style.setProperty('--hc', SE_HCOL[h]); seLoupe.style.display='block';
+  seLoupe.classList.toggle('fine', fine<1); seLoupeTag.textContent=fine<=0.1 ? 'FEIN 1/10' : 'FEIN ¼';
+  const c=seLoupeCx, cw=c.canvas.width, ch=c.canvas.height, mid=ch/2, t=seHT(h), span=0.05;
+  const data=seWorkingBuffer.getChannelData(0), sr=seWorkingBuffer.sampleRate;
+  c.clearRect(0,0,cw,ch); c.fillStyle='rgba(255,255,255,.035)'; c.fillRect(0,0,cw,ch);
+  c.strokeStyle='rgba(255,255,255,.08)'; c.lineWidth=1; c.beginPath(); c.moveTo(0,mid); c.lineTo(cw,mid); c.stroke();
+  c.strokeStyle='#3fa9ff'; c.lineWidth=2; c.beginPath();
+  const i0=(t-span/2)*sr, per=span*sr/cw;
+  for(let x=0;x<cw;x++){ let mn=1, mx=-1; const a=Math.floor(i0+x*per), b=Math.max(a+1, Math.floor(i0+(x+1)*per));
+    for(let i=a;i<b;i++){ const v=(i>=0 && i<data.length) ? data[i] : 0; if(v<mn) mn=v; if(v>mx) mx=v; }
+    c.moveTo(x, mid-mx*mid*.9); c.lineTo(x, mid-mn*mid*.9+1); }
+  c.stroke();
+  c.fillStyle='rgba(0,0,0,.5)'; if(h==='start'||h==='l1') c.fillRect(0,0,cw/2,ch); else c.fillRect(cw/2,0,cw/2,ch);
+  const o={start:'end', end:'start', l1:'l2', l2:'l1'}[h], to=seHT(o);
+  if(Math.abs(to-t)<span/2){ c.fillStyle=SE_HCOL[o]; c.fillRect(cw/2+(to-t)/span*cw-1, 0, 3, ch); }
+  c.fillStyle=SE_HCOL[h]; c.fillRect(cw/2-2, 0, 4, ch);
+  seLoupeLb.textContent=SE_HNAME[h]+'  '+t.toFixed(3).replace('.',',')+' s';
+}
 // ---- Zahlenfelder (exakte Eingabe) + Nudge ±10ms — Alternative zum Ziehen, wenn das zu
 // ungenau ist. Feld-Änderung übernimmt sofort, geklammert an Puffergrenzen/Mindestabstand.
 function seCommitFieldStart(){
   const dur=seWorkingBuffer ? seWorkingBuffer.duration : 0;
-  seTrimStart=Math.min(Math.max(0, parseFloat(seFieldStart.value)||0), seTrimEnd-0.02);
+  const v=parseFloat(seFieldStart.value)||0;
+  seTrimStart=Math.min(Math.max(0, v>0 ? seSnapZero(v) : 0), seTrimEnd-0.02);
   updateSETrimUI();
 }
 function seCommitFieldEnd(){
   const dur=seWorkingBuffer ? seWorkingBuffer.duration : 0;
-  seTrimEnd=Math.max(Math.min(dur, parseFloat(seFieldEnd.value)||dur), seTrimStart+0.02);
+  const v=parseFloat(seFieldEnd.value)||dur;
+  seTrimEnd=Math.max(Math.min(dur, v<dur ? seSnapZero(v) : dur), seTrimStart+0.02);
   updateSETrimUI();
 }
 seFieldStart.addEventListener('change', ()=>seWithHist(seCommitFieldStart));
