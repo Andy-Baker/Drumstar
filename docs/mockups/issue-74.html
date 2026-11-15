@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="de"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Mixer → Beat #74</title>
+<style>
+  :root{ --bg:#0a0d12; --panel:#121820; --line:#1e2733; --tx:#e6e9ef; --dim:#7d8898; }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ margin:0; height:100%; background:var(--bg); color:var(--tx); font:14px/1.35 -apple-system,system-ui,sans-serif; }
+  body{ display:flex; flex-direction:column; }
+  #top{ padding:8px 10px 6px; flex:none; }
+  h1{ font-size:15px; margin:0 0 6px; }
+  .seg{ display:flex; background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:3px; gap:3px; }
+  .seg button{ flex:1; font:inherit; font-size:12.5px; color:var(--dim); background:none; border:0; border-radius:7px; padding:7px 4px; }
+  .seg button.on{ background:#1b2634; color:var(--tx); box-shadow:inset 0 0 0 1px #2c3c50; }
+  #note{ font-size:12px; color:#b9c2cf; margin-top:6px; min-height:32px; }
+  #note b{ color:var(--tx); }
+  #app{ flex:1; border:0; width:100%; display:block; background:#000; }
+</style></head><body>
+<div id="top">
+  <h1>Mixer: direkt in den Beat springen (#74)</h1>
+  <div class="seg" id="seg">
+    <button data-v="A" class="on">A · Name</button>
+    <button data-v="B">B · Geteilt</button>
+    <button data-v="C">C · Eigene Taste</button>
+  </div>
+  <div id="note"></div>
+</div>
+<iframe id="app" src="../../index.html"></iframe>
+<script>
+const NOTES={
+  A:'<b>Kanalname antippen</b> (kleines Pattern-Symbol darunter) → Pattern-Seite mit der Spur. Kein Platzverlust. Gruppe: Pfeil klappt auf, Symbol springt.',
+  B:'<b>Unterer Knopf geteilt:</b> links Beat, rechts Kanal-Einstellungen. Kein Platzverlust, aber zwei schmale Tasten nebeneinander.',
+  C:'<b>Eigene Taste</b> über den Einstellungen. Am deutlichsten, Fader wird etwas kürzer.'
+};
+let cur='A';
+const seg=document.getElementById('seg'), note=document.getElementById('note'), fr=document.getElementById('app');
+function setV(v){ cur=v; seg.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===v)); note.innerHTML=NOTES[v];
+  const w=fr.contentWindow; if(w&&w.__mx74) w.__mx74(v); }
+seg.addEventListener('click',e=>{ const b=e.target.closest('button'); if(b) setV(b.dataset.v); });
+note.innerHTML=NOTES.A;
+
+// Variante wird in die echte App (gleiche Herkunft) eingespielt — nichts davon wird gespeichert.
+const INJECT=`
+(function(){
+  const IC='<svg class="mx74i" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="3.2" rx="1"/><rect x="4" y="10.4" width="16" height="3.2" rx="1"/><rect x="4" y="15.8" width="10" height="3.2" rx="1"/></svg>';
+  const css=document.createElement('style'); css.textContent=\`
+    .mx74i{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+    .mx74-a{background:none;border:0;padding:0;margin:0;color:var(--white);display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;width:100%;height:100%;justify-content:center}
+    .mx74-a .mx74i{width:12px;height:12px;color:var(--blue-2);opacity:.85}
+    .mx74-a .mix-name{padding:0;font-size:12px;letter-spacing:.05em;font-weight:700}
+    .mx74-gj{background:none;border:0;padding:0;color:var(--blue-2);display:flex;align-items:center;gap:3px;font:11px 'Rajdhani',sans-serif;letter-spacing:.06em;cursor:pointer}
+    .mx74-gj .mx74i{width:11px;height:11px}
+    .mx74-b{display:flex;gap:4px;margin-top:6px;flex-shrink:0}
+    .mx74-b .mix-set{width:27px;margin-top:0}
+    .mx74-b .mix-set .mx-dots{gap:1px}.mx74-b .mix-set .mx-dots i{width:3px;height:3px}
+    .mx74-c{width:46px;height:30px;margin-top:6px;border-radius:8px;border:1px solid rgba(63,169,255,.4);background:rgba(63,169,255,.1);color:var(--blue-2);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;flex-shrink:0}
+    .mx74-btn{border-radius:8px;border:1px solid rgba(63,169,255,.4);background:rgba(63,169,255,.1);color:var(--blue-2);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+    .mx74-b .mx74-btn{width:27px;height:38px}
+    #mx74back{position:fixed;left:50%;transform:translateX(-50%);bottom:84px;z-index:999;background:#1b2634;color:#e6e9ef;border:1px solid #2c3c50;border-radius:18px;padding:8px 14px;font:600 13px system-ui;display:none}
+  \`; document.head.appendChild(css);
+  let V='A';
+  const back=document.createElement('button'); back.id='mx74back'; back.textContent='← Mixer'; document.body.appendChild(back);
+  back.onclick=()=>{ back.style.display='none'; switchTab('mixer'); };
+  // Sprung = so würde es auch in der App laufen
+  function jumpTr(tr){ switchTab('pattern'); selectTrack(TRACKS.indexOf(tr)); window.scrollTo(0,0); back.style.display='block'; }
+  function jumpGrp(k){ switchTab('pattern'); setPatternGroup(k,true); window.scrollTo(0,0); back.style.display='block'; }
+  const origStrip=mxStrip;
+  mxStrip=function(o){ const r=origStrip(o); r.el.dataset.k=o.key||''; return r; };
+  function deco(){
+    mixerChannels.querySelectorAll('.mix-strip').forEach(s=>{
+      const k=s.dataset.k||''; let fn=null;
+      if(k.startsWith('tr:')){ const tr=TRACKS.find(t=>t.id===k.slice(3)); if(tr) fn=()=>jumpTr(tr); }
+      else if(k.startsWith('grp:')){ const g=k.slice(4); fn=()=>jumpGrp(g); }
+      if(!fn) return;
+      const set=s.querySelector('.mix-set'), head=s.querySelector('.mix-head');
+      if(V==='A'){
+        if(k.startsWith('tr:')){ const nm=head.querySelector('.mix-name'); const b=document.createElement('button'); b.className='mx74-a'; b.setAttribute('aria-label','Beat bearbeiten');
+          b.innerHTML=nm.outerHTML+IC; head.innerHTML=''; head.appendChild(b); b.onclick=fn; }
+        else { const sub=head.querySelector('.mix-sub'); const b=document.createElement('button'); b.className='mx74-gj'; b.setAttribute('aria-label','Beat bearbeiten'); b.innerHTML=IC+'BEAT'; sub.replaceWith(b); b.onclick=fn; }
+      } else if(V==='B'){
+        const row=document.createElement('div'); row.className='mx74-b'; const b=document.createElement('button'); b.className='mx74-btn'; b.setAttribute('aria-label','Beat bearbeiten'); b.innerHTML=IC; b.onclick=fn;
+        set.replaceWith(row); row.append(b,set);
+      } else {
+        const b=document.createElement('button'); b.className='mx74-c'; b.setAttribute('aria-label','Beat bearbeiten'); b.innerHTML=IC; b.onclick=fn; set.before(b);
+      }
+    });
+  }
+  const origBuild=buildMixerChannels;
+  buildMixerChannels=function(){ origBuild(); deco(); mixerFit(); };
+  window.__mx74=v=>{ V=v; back.style.display='none'; switchTab('mixer'); buildMixerChannels(); };
+  window.__mx74(window.__mx74start||'A');
+})();`;
+fr.addEventListener('load',()=>{
+  const w=fr.contentWindow, d=fr.contentDocument; let n=0;
+  const t=setInterval(()=>{ n++;
+    if(w.document.getElementById('appVer') && typeof w.buildMixerChannels==='function' && typeof w.switchTab==='function'){
+      clearInterval(t); w.__mx74start=cur; const s=d.createElement('script'); s.textContent=INJECT; d.body.appendChild(s); }
+    if(n>100) clearInterval(t);
+  },100);
+});
+</script>
+</body></html>
