@@ -44,6 +44,10 @@ const grpTracks=k=>TRACKS.filter(t=>trGrp(t)===k);
 function grpSoloOn(k){ const L=grpTracks(k); return L.length>0 && L.every(t=>t.solo); }
 function toggleGrpSolo(k){ const on=!grpSoloOn(k); grpTracks(k).forEach(t=>{ t.solo=on; if(trUi(t).mixSoloBtn) trUi(t).mixSoloBtn.classList.toggle('on',on); }); refreshSoloVisuals(); }
 function mixerSyncGrpSolo(){ Object.keys(mxGrpSolo).forEach(k=>{ if(mxGrpSolo[k]) mxGrpSolo[k].classList.toggle('on',grpSoloOn(k)); }); }
+// Sprung in den Beat (v115, #74, Mockup issue-74.html A): Kanalname bzw. „BEAT“ am Gruppenkanal → Pattern-Seite mit der Spur/Gruppe (Step-Grid bzw. Vorschau, nicht Piano Roll)
+const MX_BEAT_ICO='<svg class="mx-bi" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="3.2" rx="1"/><rect x="4" y="10.4" width="16" height="3.2" rx="1"/><rect x="4" y="15.8" width="10" height="3.2" rx="1"/></svg>';
+function mxJumpTrack(tr){ const i=TRACKS.indexOf(tr); if(i<0) return; switchTab('pattern'); selectTrack(i); $id('panelMain').scrollTop=0; }
+function mxJumpGroup(k){ if(!ARR_GROUPS.some(g=>g.id===k)) return; switchTab('pattern'); setPatternGroup(k,true); $id('panelMain').scrollTop=0; }
 const MX_ICO='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4v16M12 4v16M19 4v16"/><circle cx="5" cy="14" r="2" fill="currentColor"/><circle cx="12" cy="8" r="2" fill="currentColor"/><circle cx="19" cy="15" r="2" fill="currentColor"/></svg>';
 const mxDots=L=>'<span class="mx-dots">'+Array.from({length:FX_MAX},(_,i)=>'<i class="'+(L&&L[i]?(L[i].on?'on':'by'):'')+'"></i>').join('')+'</span>';
 // Skala −48 … 0 dBFS (oben). Zonen wie Pro Tools/Cubase: grün < −12, gelb −12…−3, rot ab −3; > 0 dBFS = CLIP-LED.
@@ -94,15 +98,18 @@ function buildMixerChannels(){
   mxGrpMeters={}; mxGrpSolo={}; const done={};
   const grpStrip=k=>{ const G=grps[k], D=GRP_DEF[k], op=mxGrpOpen[k];
     const g=mxStrip({key:'grp:'+k,cls:'grp-strip grp-'+k+(op?' open':''),color:D.color,label:'Gruppe '+D.n,vol:G.vol,parent:ch,
-      head:'<button class="mix-grp" aria-expanded="'+op+'" aria-label="'+D.n+'-Kanäle '+(op?'zuklappen':'aufklappen')+'">'+D.ab+'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button><div class="mix-sub">'+(op?'Gruppe':D.ids.length+' Spuren')+'</div>',
+      head:'<button class="mix-grp" aria-expanded="'+op+'" aria-label="'+D.n+'-Kanäle '+(op?'zuklappen':'aufklappen')+'">'+D.ab+'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button><button class="mix-beat-g" aria-label="Beat '+D.n+' bearbeiten">'+MX_BEAT_ICO+'BEAT</button>',
       onVol:v=>{ G.vol=v; grpUpdate(k); }, mute:{on:G.muted,fn:e=>{ G.muted=!G.muted; e.currentTarget.classList.toggle('on',G.muted); grpUpdate(k); }}, solo:{on:grpSoloOn(k),fn:()=>toggleGrpSolo(k)},
       set:()=>openFxRoot('grp',k), dots:G.fx});
     g.el.querySelector('.mix-grp').onclick=()=>{ mxGrpOpen[k]=!op; buildMixerChannels(); };
+    g.el.querySelector('.mix-beat-g').onclick=()=>mxJumpGroup(k);
     mxGrpMeters[k]=g.meter; mxGrpSolo[k]=g.solo; };
   TRACKS.forEach(tr=>{ const k=trGrp(tr); if(k&&!done[k]){ done[k]=1; grpStrip(k); } if(k&&!mxGrpOpen[k]) return;
-    const r=mxStrip({key:'tr:'+tr.id,cls:k?'in-grp in-'+k:'',color:tr.color,name:trShort(tr),label:trLabel(tr),vol:tr.vol,parent:ch,
+    const r=mxStrip({key:'tr:'+tr.id,cls:k?'in-grp in-'+k:'',color:tr.color,label:trLabel(tr),vol:tr.vol,parent:ch,
+      head:'<button class="mix-beat" aria-label="Beat '+trLabel(tr)+' bearbeiten"><span class="mix-name">'+trShort(tr)+'</span>'+MX_BEAT_ICO+'</button>',
       onVol:v=>setTrackVol(tr,v), mute:{on:tr.muted,fn:()=>toggleTrackMute(tr)}, solo:{on:tr.solo,fn:()=>toggleTrackSolo(tr)},
       set:()=>openKanal(tr), dots:tr.fx||[]});
+    r.el.querySelector('.mix-beat').onclick=()=>mxJumpTrack(tr);
     const u=trUi(tr); u.mixFaderEl=r.fader; u.mixMeter=r.meter; u.mixMuteBtn=r.mute; u.mixSoloBtn=r.solo; });
   const sep=document.createElement('div'); sep.className='mix-sep'; ch.appendChild(sep);
   mxRetMeters={};
@@ -119,12 +126,17 @@ let mxRbf=0; function mixerRebuild(){ if(mxRbf) return; mxRbf=requestAnimationFr
 function mixerRebuildSoft(){ const c=mixerChannels.querySelectorAll('.ret-strip .mix-chip'); if(c[0]) c[0].textContent=FX_SEND.hall.chip(fxHall); if(c[1]) c[1].textContent=FX_SEND.delay.chip(fxDelay).replace(' PP',''); }
 function mixerSyncGroup(k){ const s=mixerChannels.querySelector('.grp-strip.grp-'+k), f=s&&s.querySelector('.mix-fader'); if(f){ f.value=grps[k].vol; const d=s.querySelector('.mix-db-readout'); if(d) d.textContent=dbLabel(grps[k].vol)+'dB'; } }
 // Fader/Meter nutzen die verfügbare Höhe (v65): --fh am Mixer-Tab
-function mixerFit(){ requestAnimationFrame(()=>{ const mo=document.getElementById('mixerOverlay'); if(!mo.classList.contains('open')) return;
-  const tb=document.getElementById('bottomTabBar'), top=document.getElementById('mixerChannels').getBoundingClientRect().top;
-  const avail=(tb&&tb.offsetHeight?tb.getBoundingClientRect().top:window.innerHeight)-top-14; // bis kurz über die Tab-Leiste
+function mixerFit(){ requestAnimationFrame(()=>{ const mo=$id('mixerOverlay'); if(!mo.classList.contains('open')) return;
+  const pm=$id('panelMain'), tb=$id('bottomTabBar'), top=$id('mixerChannels').getBoundingClientRect().top;
+  pm.scrollTop=0; tb.classList.remove('hidden');
+  // v115 (#74): Seite scrollt im Mixer nicht mehr; frei = bis zur Tab-Leiste am unteren Rand von #panelMain
+  const avail=pm.getBoundingClientRect().bottom-(tb&&tb.offsetHeight?tb.offsetHeight:0)-8-top-10;
   const strip=document.querySelector('#mixerChannels .mix-strip'), fw=document.querySelector('#mixerChannels .mix-fader-wrap');
   const other=strip&&fw ? strip.offsetHeight-fw.offsetHeight : 190;
-  mo.style.setProperty('--fh', Math.round(Math.max(160,Math.min(640,avail-other)))+'px'); }); }
+  const set=h=>mo.style.setProperty('--fh', Math.round(Math.max(120,Math.min(900,h)))+'px');
+  set(avail-other);
+  // Nachmessen: steht doch etwas über (Rundung, Scrollleiste), Fader um den Überstand kürzen
+  const over=pm.scrollHeight-pm.clientHeight; if(over>0) set(avail-other-over); }); }
 window.addEventListener('resize', ()=>{ if(document.getElementById('mixerOverlay').classList.contains('open')) mixerFit(); });
 buildMixerChannels();
 

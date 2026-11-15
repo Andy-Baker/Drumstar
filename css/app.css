@@ -1430,6 +1430,16 @@ html,body{min-height:100%;height:100%;}
 .mix-strip.ret-strip{background:linear-gradient(180deg,#121722,#0d1018);border-color:rgba(63,169,255,.22)}
 .mix-strip.ret-strip .mix-name{color:var(--blue-2)}
 .mix-strip.master-strip{width:62px}
+/* Sprung in den Beat (v115, #74): Kanalname antippbar, Pattern-Symbol darunter; Gruppenkanal „BEAT“ statt Spurzahl */
+.mix-beat{background:none;border:0;padding:0;margin:0;color:var(--white);width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer}
+.mix-beat .mix-name{padding:0;font-size:12px;letter-spacing:.05em;font-weight:700}
+.mx-bi{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;color:var(--blue-2);opacity:.85;flex:none}
+.mix-beat-g{background:none;border:0;padding:2px 4px;margin-top:1px;color:var(--blue-2);display:flex;align-items:center;gap:3px;font:11px 'Rajdhani',sans-serif;letter-spacing:.06em;cursor:pointer}
+.mix-beat-g .mx-bi{width:11px;height:11px}
+/* Mixer-Tab (v115, #74): Seite scrollt nicht, Tab-Leiste bleibt stehen, Fader füllen die freie Höhe (mixerFit) */
+#panelMain:has(#mixerOverlay.open){overflow:hidden}
+#panelMain:has(#mixerOverlay.open) #panelContent{flex:1 1 auto;min-height:0;padding-bottom:8px}
+#panelMain:has(#mixerOverlay.open) #bottomTabBar{transform:none}
 /* ---------- Tempo erkennen (v97, #53, Mockup issue-53.html A) ---------- */
 #tempoOverlayScreen{position:relative}
 #tdTag{position:absolute;left:12px;top:9px;font:600 11px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#4d6175}

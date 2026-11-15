@@ -107,6 +107,15 @@ async def main():
     ok('Master überlappt keinen Kanal', r[0]>=r[1]-1, r)
     fh=await pg.evaluate("getComputedStyle(document.getElementById('mixerOverlay')).getPropertyValue('--fh')"); ok('Fader-Höhe angepasst', fh.strip()!='', fh)
     await pg.screenshot(path=OUT+'/mixer.png'); await fz(pg,'Mixer')
+    # #74: Mixer scrollt nicht, Tab-Leiste bleibt sichtbar; Kanalname springt in den Beat der Spur
+    r=await pg.evaluate("(()=>{const pm=document.getElementById('panelMain'),tb=document.getElementById('bottomTabBar'),s=document.querySelector('#mixerChannels .mix-strip').getBoundingClientRect(); return {over:pm.scrollHeight-pm.clientHeight, ov:getComputedStyle(pm).overflowY, hid:getComputedStyle(tb).transform, gap:Math.round(tb.getBoundingClientRect().top-s.bottom)}})()")
+    ok('Mixer: kein Hoch/Runter-Scrollen, Leiste sichtbar, Fader bis zur Leiste', r['over']<=0 and r['ov']=='hidden' and r['hid']=='none' and 0<=r['gap']<=40, r)
+    t=await pg.evaluate("(()=>{const b=document.querySelector('#mixerChannels .mix-beat'); const id=b.closest('.mix-strip').querySelector('.mix-fader').getAttribute('aria-label'); b.click(); return [tabPattern.classList.contains('open'), trLabel(TRACKS[activeTrackIdx])+' Lautstärke'===id, document.getElementById('prWin').classList.contains('open')]})()")
+    ok('Mixer: Kanalname → Pattern-Seite mit der Spur, keine Piano Roll', t==[True,True,False], t)
+    await pg.click('#mixerToggleBtn'); await pg.wait_for_timeout(300)
+    g=await pg.evaluate("(()=>{const b=document.querySelector('#mixerChannels .grp-perc .mix-beat-g'); if(!b) return null; b.click(); return [tabPattern.classList.contains('open'), patternGroup]})()")
+    ok('Mixer: BEAT am Gruppenkanal → Pattern-Seite mit der Gruppe', g==[True,'perc'], g)
+    await pg.click('#mixerToggleBtn'); await pg.wait_for_timeout(300)
     # Song
     await pg.click('#songToggleBtn'); await pg.wait_for_timeout(400)
     await pg.click('#arrHelpBtn'); ok('Hilfe klappt auf', await pg.evaluate("document.getElementById('arrHelp').classList.contains('open')"))
