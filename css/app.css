@@ -538,6 +538,13 @@
   #sampleEditorOverlay.mode-loop .se-handle.start, #sampleEditorOverlay.mode-loop .se-handle.end{ opacity:.3; }
   #sampleEditorOverlay.mode-loop #seTrimFields{ display:none; }
   #seLoopPanel{ display:none; flex-direction:column; gap:8px; flex-shrink:0; }
+  #seXf, #seXfSrc{ position:absolute; top:0; bottom:var(--sgh); pointer-events:none; display:none; }
+  #seXf{ background:repeating-linear-gradient(135deg,rgba(255,194,71,.32) 0 4px,rgba(255,194,71,.08) 4px 9px); border-right:2px solid #ffc247; }
+  #seXfSrc{ border:1.5px dashed rgba(255,194,71,.55); border-right:0; background:rgba(255,194,71,.05); }
+  #sampleEditorOverlay.mode-loop #seXf.on, #sampleEditorOverlay.mode-loop #seXfSrc.on{ display:block; }
+  #seXfNote{ display:none; font-size:12px; color:#ff9b6b; padding:0 2px; } #seXfNote.on{ display:block; }
+  #seSnapBtn i{ font-style:normal; } #seSnapBtn .se-snap-l{ display:none; }
+  #sampleEditorOverlay.mode-loop #seSnapBtn .se-snap-t{ display:none; } #sampleEditorOverlay.mode-loop #seSnapBtn .se-snap-l{ display:inline; }
   #sampleEditorOverlay.mode-loop #seLoopPanel{ display:flex; }
   #seLoopFields{ display:flex; gap:8px; }
   .se-tf.lp{ border-color:rgba(255,194,71,.4); } .se-tf.lp .se-tf-lbl{ color:#ffc247; }

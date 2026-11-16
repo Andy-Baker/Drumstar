@@ -79,9 +79,10 @@ async function samplerLoadLib(S){
     const e=await loadSampleLibraryEntry(S.id);
     if(!e){ S.state='missing'; S.name='Sample fehlt'; samplerChanged(); return; }
     await Promise.resolve(initAudio());
-    const buf=await audioCtx.decodeAudioData(await e.blob.arrayBuffer()), off=e.offsetStart||0;
-    Object.assign(S, {name:e.name||'Sample', buf, off, root:e.root!=null ? e.root : null,
-      mode:e.playMode||'oneshot', loop:(e.loopStart!=null && e.loopEnd!=null && e.loopEnd>e.loopStart) ? [off+e.loopStart, off+e.loopEnd] : null, state:'ok'});
+    let buf=await audioCtx.decodeAudioData(await e.blob.arrayBuffer()); const off=e.offsetStart||0, mode=e.playMode||'oneshot';
+    const loop=(e.loopStart!=null && e.loopEnd!=null && e.loopEnd>e.loopStart) ? [off+e.loopStart, off+e.loopEnd] : null;
+    if(mode==='loop' && loop && e.loopXf>0) buf=loopXfBake(buf, loop[0], loop[1], e.loopXf, off); // #10
+    Object.assign(S, {name:e.name||'Sample', buf, off, root:e.root!=null ? e.root : null, mode, loop, state:'ok'});
   }catch(err){ console.warn('Sampler: Sample nicht ladbar', S.id, err); S.state='err'; S.name='Sample fehlt'; }
   samplerChanged();
 }

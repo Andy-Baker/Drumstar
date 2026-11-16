@@ -115,6 +115,7 @@ async def main():
     await pg.click('#mixerToggleBtn'); await pg.wait_for_timeout(300)
     g=await pg.evaluate("(()=>{const b=document.querySelector('#mixerChannels .grp-perc .mix-beat-g'); if(!b) return null; b.click(); return [tabPattern.classList.contains('open'), patternGroup]})()")
     ok('Mixer: BEAT am Gruppenkanal → Pattern-Seite mit der Gruppe', g==[True,'perc'], g)
+    await pg.evaluate("setPatternGroup('drums',true)") # zurück, sonst fehlen später die Drum-Zeilen (RD) in der Übersicht
     await pg.click('#mixerToggleBtn'); await pg.wait_for_timeout(300)
     # Song
     await pg.click('#songToggleBtn'); await pg.wait_for_timeout(400)

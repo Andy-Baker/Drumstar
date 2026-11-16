@@ -86,11 +86,20 @@ function seSnapZero(t){
   }
   return best/sr;
 }
+// Überblendung (#10, A): automatisch mit „Knackfrei“, ¼ der Schleife, höchstens 0,3 s
+function seXfWant(){ const [a,b]=seLoopBounds(); return seSnap ? loopXfWant(a,b) : 0; }
+function seXfLen(){ const [a,b]=seLoopBounds(); return loopXfLen(a, b, seXfWant(), seTrimStart); }
+function seXfBuffer(){ const [a,b]=seLoopBounds(); return loopXfBake(seWorkingBuffer, a, b, seXfWant(), seTrimStart); }
+const seXfEl=$id('seXf'), seXfSrcEl=$id('seXfSrc'), seXfNoteEl=$id('seXfNote');
 function updateSELoopUI(){
   const w=seInnerWidth(), dur=seWorkingBuffer ? seWorkingBuffer.duration : 1;
   const [a,b]=seLoopBounds(), xa=a/dur*w, xb=b/dur*w;
   seHandleL1El.style.left=xa+'px'; seHandleL2El.style.left=xb+'px';
   seLoopBand.style.left=xa+'px'; seLoopBand.style.width=Math.max(0,xb-xa)+'px';
+  const X=seWorkingBuffer ? seXfLen() : 0, on=X>0.002, xw=X/dur*w;
+  seXfEl.classList.toggle('on',on); seXfSrcEl.classList.toggle('on',on);
+  if(on){ seXfEl.style.left=(xb-xw)+'px'; seXfEl.style.width=xw+'px'; seXfSrcEl.style.left=(xa-xw)+'px'; seXfSrcEl.style.width=xw+'px'; }
+  seXfNoteEl.classList.toggle('on', !!seWorkingBuffer && seXfWant()>0.002 && !on);
   if(document.activeElement!==seFieldL1) seFieldL1.value=a.toFixed(2);
   if(document.activeElement!==seFieldL2) seFieldL2.value=b.toFixed(2);
 }
@@ -113,7 +122,7 @@ sePlayOnceBtn.addEventListener('click', ()=>{ sePlayMode='oneshot'; seUpdatePlay
 sePlayHoldBtn.addEventListener('click', ()=>{ sePlayMode='hold'; seUpdatePlayModeUI(); });
 sePlayLoopBtn.addEventListener('click', ()=>{ sePlayMode='loop'; seUpdatePlayModeUI(); });
 seOverlapBtn.addEventListener('click', ()=>{ seOverlap=!seOverlap; seUpdatePlayModeUI(); });
-seSnapBtn.addEventListener('click', ()=>{ seSnap=!seSnap; seSnapBtn.classList.toggle('on', seSnap); });
+seSnapBtn.addEventListener('click', ()=>{ seSnap=!seSnap; seSnapBtn.classList.toggle('on', seSnap); if(seWorkingBuffer) updateSELoopUI(); });
 function seCommitLoopField(which){
   if(!seWorkingBuffer) return;
   const v=parseFloat((which===1?seFieldL1:seFieldL2).value);
@@ -520,7 +529,7 @@ sePreviewBtn.addEventListener('click', ()=>{
   if(!seWorkingBuffer || !audioCtx) return;
   const src=audioCtx.createBufferSource(); src.buffer=seWorkingBuffer; src.connect(master);
   const [la,lb]=seLoopBounds(), t0=audioCtx.currentTime;
-  if(sePlayMode==='loop'){ src.loop=true; src.loopStart=la; src.loopEnd=lb; src.start(t0, seTrimStart); }
+  if(sePlayMode==='loop'){ src.buffer=seXfBuffer(); src.loop=true; src.loopStart=la; src.loopEnd=lb; src.start(t0, seTrimStart); }
   else src.start(t0, seTrimStart, Math.max(0.02, seTrimEnd-seTrimStart));
   seCursorT0=t0;
   src.onended=()=>{ if(sePreviewSrc===src) seStopPreview(); };
@@ -544,7 +553,8 @@ seSaveBtn.addEventListener('click', async ()=>{
   const hasLoop=seLoopBuf===seWorkingBuffer && seLoopStart!=null && seLoopEnd!=null;
   const [la,lb]=seLoopBounds();
   const entry={id:entryId, name:(old && old.name) || deriveSampleName(), root:old && old.root!=null ? old.root : undefined, blob, offsetStart:0, offsetEnd:null, savedAt:Date.now(),
-    playMode:sePlayMode, overlap:seOverlap, loopStart:hasLoop ? la-seTrimStart : null, loopEnd:hasLoop ? lb-seTrimStart : null};
+    playMode:sePlayMode, overlap:seOverlap, loopStart:hasLoop ? la-seTrimStart : null, loopEnd:hasLoop ? lb-seTrimStart : null,
+    loopXf:hasLoop && seSnap ? +loopXfWant(la,lb).toFixed(4) : 0};
   if(entry.root===undefined) delete entry.root;
   await saveSampleLibraryEntry(entry);
   if(old) samplerInvalidate(entryId); // Sampler-Spuren mit diesem Sample laden neu
@@ -579,6 +589,7 @@ async function openSampleEditor({sampleId=null, forSampler=null, forPad=null, bu
       seTrimStart=0; seTrimEnd=seOriginalBuffer.duration;
       sePlayMode=entry.playMode||'oneshot'; seOverlap=!!entry.overlap;
       if(entry.loopStart!=null && entry.loopEnd!=null){ seLoopStart=entry.loopStart; seLoopEnd=entry.loopEnd; seLoopBuf=seWorkingBuffer; } else { seLoopStart=seLoopEnd=null; seLoopBuf=null; }
+      if(entry.loopStart!=null && entry.loopXf!=null){ seSnap=entry.loopXf>0; seSnapBtn.classList.toggle('on', seSnap); } // Überblendung aus = Schalter aus
       // Migrations-Altlast: alte Einträge tragen ihren Start-Offset noch separat statt
       // bereits "eingebrannt" — beim ersten erneuten Übernehmen wird das bereinigt.
       if(entry.offsetStart) seTrimStart=Math.min(entry.offsetStart, seTrimEnd-0.02);

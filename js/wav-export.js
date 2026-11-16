@@ -183,6 +183,23 @@ async function migrateLegacySamplesIfNeeded(){
     localStorage.setItem('mrm44_padSampleIds', JSON.stringify(ids));
   }
 }
+// Loop-Überblendung (#10, Mockup A): Ende der Schleife [b−X, b] mit dem Stück vor L1 [a−X, a]
+// mischen (gleiche Leistung, wie tools/build-instr.py). Nicht zerstörend: Eintrag speichert nur
+// die gewünschte Länge `loopXf`, gemischt wird beim Laden in eine Kopie. X begrenzt auf den Platz
+// vor L1 (ab `from`) und die halbe Schleife.
+const LOOP_XF_MAX=0.3;
+const loopXfWant=(a,b)=>Math.min(LOOP_XF_MAX, (b-a)/4);
+function loopXfLen(a, b, want, from=0){ return Math.max(0, Math.min(want||0, a-from, (b-a)/2)); }
+function loopXfBake(buf, a, b, want, from=0){
+  const X=loopXfLen(a, b, want, from); if(!buf || X<=0.002) return buf;
+  const sr=buf.sampleRate, ia=Math.round(a*sr), ib=Math.min(buf.length, Math.round(b*sr)), n=Math.min(Math.round(X*sr), ia, ib);
+  const out=audioCtx.createBuffer(buf.numberOfChannels, buf.length, sr);
+  for(let c=0;c<buf.numberOfChannels;c++){
+    const s=buf.getChannelData(c), o=out.getChannelData(c); o.set(s);
+    for(let i=0;i<n;i++){ const t=(i+0.5)/n; o[ib-n+i]=s[ib-n+i]*Math.cos(t*Math.PI/2)+s[ia-n+i]*Math.sin(t*Math.PI/2); }
+  }
+  return out;
+}
 // Dekodiert einen Bibliothekseintrag und weist ihn einem Pad zu — aktualisiert genau die Variablen, die playPad() liest.
 async function applySampleToPad(i, entry){
   await Promise.resolve(initAudio());
@@ -191,6 +208,8 @@ async function applySampleToPad(i, entry){
   padSamples[i].offset=entry.offsetStart||0;
   padSamples[i].mode=entry.playMode||'oneshot'; padSamples[i].overlap=!!entry.overlap;
   padSamples[i].loopStart=entry.loopStart!=null?entry.loopStart:null; padSamples[i].loopEnd=entry.loopEnd!=null?entry.loopEnd:null;
+  if(padSamples[i].mode==='loop' && entry.loopXf>0 && padSamples[i].loopEnd>padSamples[i].loopStart)
+    padSamples[i].buffer=loopXfBake(padSamples[i].buffer, padSamples[i].loopStart, padSamples[i].loopEnd, entry.loopXf, padSamples[i].offset);
   padSampleId[i]=entry.id;
   try{
     const ids=JSON.parse(localStorage.getItem('mrm44_padSampleIds')||'[]');

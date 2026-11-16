@@ -362,6 +362,29 @@ async def main():
     await pg.evaluate("document.getElementById('seSnapBtn').click(); document.getElementById('seModeLoop').click()")
     lpm=await pg.evaluate("[...document.querySelectorAll('.se-tab')].filter(t=>t.offsetParent).map(t=>t.dataset.h).join()")
     ok('#9 Loop-Modus zeigt L1/L2-Tasten', lpm=='l1,l2', lpm)
+    # #10 Loop-Überblendung (Mockup A): automatisch mit Knackfrei, ¼ Schleife ≤ 0,3 s, Original bleibt, Einstellung im Eintrag
+    xf=await pg.evaluate("""(async()=>{ seTrimStart=0; seTrimEnd=2; seLoopBuf=seWorkingBuffer; seLoopStart=0.8; seLoopEnd=1.6; updateSETrimUI();
+      const sr=44100, s=seWorkingBuffer.getChannelData(0), o=seXfBuffer().getChannelData(0), ia=Math.round(0.8*sr), ib=Math.round(1.6*sr);
+      const r={len:+seXfLen().toFixed(3), zone:document.getElementById('seXf').classList.contains('on') && !!document.getElementById('seXf').offsetParent,
+        end:Math.abs(o[ib-1]-s[ia-1])<0.01, before:o[ib-Math.round(0.2*sr)-5]===s[ib-Math.round(0.2*sr)-5], orig:seXfBuffer()!==seWorkingBuffer,
+        lbl:document.querySelector('#seSnapBtn .se-snap-l').offsetParent!==null};
+      seSnap=false; updateSETrimUI(); r.off=[seXfLen(), document.getElementById('seXf').classList.contains('on'), seXfBuffer()===seWorkingBuffer]; seSnap=true;
+      seLoopStart=0; updateSETrimUI(); r.note=document.getElementById('seXfNote').classList.contains('on'); seLoopStart=0.8; updateSETrimUI();
+      // Sampler + Pads: Eintrag mit loopXf → beim Laden überblendet, ohne → unverändert
+      const blob=audioBufferToWavBlob(seWorkingBuffer), E={id:'xf10',name:'xf',blob,offsetStart:0,offsetEnd:null,savedAt:1,playMode:'loop',overlap:false,loopStart:0.8,loopEnd:1.6,loopXf:0.2};
+      await saveSampleLibraryEntry(E);
+      const S={id:'xf10'}; await samplerLoadLib(S); const d=S.buf.getChannelData(0);
+      r.smp=[S.state, Math.abs(d[ib-1]-s[ia-1])<0.02];
+      await saveSampleLibraryEntry({...E, loopXf:0}); const S2={id:'xf10'}; await samplerLoadLib(S2); const d2=S2.buf.getChannelData(0);
+      r.smp0=Math.abs(d2[ib-1]-s[ib-1])<0.002;
+      const oldPad=padSamples[0].buffer, oldId=padSampleId[0]; await applySampleToPad(0, E); const pd=padSamples[0].buffer.getChannelData(0);
+      r.pad=Math.abs(pd[ib-1]-s[ia-1])<0.02; padSamples[0].buffer=oldPad; padSampleId[0]=oldId;
+      await deleteSampleLibraryEntry('xf10'); return r; })()""")
+    ok('#10 Überblendung: ¼ der Schleife, Ende ≈ Stück vor L1, davor unverändert, Original bleibt', xf['len']==0.2 and xf['zone'] and xf['end'] and xf['before'] and xf['orig'], xf)
+    ok('#10 Schalter heißt im Loop-Modus „einrasten + überblenden“; aus = keine Überblendung', xf['lbl'] and xf['off']==[0,False,True], [xf['lbl'],xf['off']])
+    ok('#10 L1 am Anfang → Hinweis', xf['note'])
+    ok('#10 Sampler und Pads überblenden beim Laden (loopXf), ohne bleibt es roh', xf['smp']==['ok',True] and xf['smp0'] and xf['pad'], [xf['smp'],xf['smp0'],xf['pad']])
+    await s('se_loop_xf')
     await pg.evaluate("closeSampleEditor()")
     ok('Schrift überall ≥ 11 px (#19)', not fz.bad, fz.bad)
     ok('Keine Konsolenfehler', not errs, errs)
