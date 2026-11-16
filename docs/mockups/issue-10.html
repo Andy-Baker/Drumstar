@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sample-Editor: Loop überblenden (#10)</title>
+<link rel="stylesheet" href="../../fonts.css">
+<style>
+/* Mockup zu Issue #10: Die echte App läuft im Rahmen, der Sample-Editor öffnet sich im Loop-Modus mit einem
+   gehaltenen Demo-Ton. Die Varianten ändern dort zur Laufzeit nur den Loop-Übergang (Überblendung) und Vorhören. */
+:root{color-scheme:dark;--bg:#050507;--blue:#3fa9ff;--blue-2:#8fd4ff;--white:#f4f5f7;--dim:#7d818c;--metal:#c7cbd4}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--white);font-family:'Rajdhani',system-ui,sans-serif}
+#mbar{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:calc(6px + env(safe-area-inset-top,0px)) 10px 6px;background:repeating-linear-gradient(135deg,#0b1622 0 8px,#0d1a28 8px 16px);border-bottom:1px dashed rgba(63,169,255,.45);font:700 11px 'JetBrains Mono',monospace;color:var(--blue-2)}
+#mbar .g{display:flex;align-items:center;gap:4px}
+#mbar button{height:30px;padding:0 7px;border-radius:6px;border:1px solid rgba(63,169,255,.45);background:rgba(63,169,255,.12);font:700 11px 'JetBrains Mono',monospace;color:var(--blue-2);cursor:pointer}
+#mbar button.on{background:var(--blue);color:#042c53}
+#mbar label{display:flex;align-items:center;gap:4px;cursor:pointer}
+#mbar .sp{flex:1}
+#stage{position:fixed;top:44px;left:0;right:0;bottom:0;display:flex;justify-content:center;align-items:flex-start;gap:28px;overflow:auto}
+.ph{display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;width:100%}
+iframe{border:0;width:100%;height:100%;background:#050507;display:block}
+#side{display:none;width:330px;font-size:14px;color:var(--metal);line-height:1.45;padding-top:20px}
+#side h3,#info h3{font:700 11px 'Rajdhani';letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin:16px 0 6px}
+#side p,#info p{margin:0 0 8px} #side b,#info b{color:var(--white)}
+#side ul,#info ul{margin:0 0 8px;padding-left:18px} #side li,#info li{margin:3px 0}
+#info{position:fixed;inset:44px 0 0 0;z-index:190;background:#07080bf2;overflow:auto;padding:8px 18px 40px;font-size:14.5px;color:var(--metal);line-height:1.45;display:none}
+#info.open{display:block}
+@media (min-width:900px) and (min-height:900px){
+  #stage{padding:14px 0}
+  .ph{width:auto;height:auto}
+  iframe{width:390px;height:844px;border-radius:30px;border:8px solid #1a1e26;box-shadow:0 30px 80px rgba(0,0,0,.75);box-sizing:content-box}
+  #side{display:block} #infoBtn{display:none}
+}
+</style>
+</head>
+<body>
+<div id="mbar">
+  <span>#10</span>
+  <div class="g"><button data-v="">Heute</button><button data-v="a" class="on">A Automatisch</button><button data-v="b">B Wählbar</button></div>
+  <span class="sp"></span>
+  <label><input type="checkbox" id="mk"> Neu</label>
+  <button id="demoBtn">Demo</button>
+  <button id="infoBtn">ⓘ</button>
+</div>
+<div id="stage">
+  <div class="ph"><iframe id="fR" src="../../index.html" title="App mit Vorschlag"></iframe></div>
+  <div id="side"></div>
+</div>
+<div id="info"></div>
+<template id="notes">
+  <h3>Was das ist</h3>
+  <p>Die <b>echte App</b>, Sample-Editor im <b>Loop-Modus</b> mit einem gehaltenen Demo-Ton (Streicher-artig, mit Vibrato und Schwellen). L1/L2 sind absichtlich an ungünstige Stellen gesetzt. <b>Vorhören</b> drücken, dann zwischen „Heute“ und A/B umschalten – die Wiedergabe startet neu. „Demo“ setzt alles zurück, „Neu“ umrandet die neuen Teile gelb.</p>
+  <h3>Warum es heute knackt</h3>
+  <ul>
+    <li>„Knackfrei einrasten“ setzt L1/L2 auf Nulldurchgänge. Das verhindert den harten Sprung, aber nicht, dass <b>Form, Lautstärke und Phase</b> der Welle an L2 anders sind als an L1 → hörbares Klopfen oder „Holpern“ bei jedem Durchlauf.</li>
+  </ul>
+  <h3>Beide Varianten</h3>
+  <ul>
+    <li>Das Ende der Schleife wird mit dem Stück <b>vor L1</b> überblendet (gleiche Leistung, wie bei den Werk-Instrumenten STREICHER/BASS ARCO). Der Sprung L2 → L1 ist dann nahtlos.</li>
+    <li>Die Überblend-Zone ist auf der Welle schraffiert, die Quelle vor L1 gestrichelt.</li>
+    <li>Wird beim <b>Übernehmen</b> in das Sample geschrieben → beim Spielen <b>keine zusätzliche Rechenlast</b>, kein neuer Audio-Knoten. Wirkt in Sampler-Spur und Pads.</li>
+    <li>Liegt L1 ganz am Anfang, gibt es nichts zum Überblenden → Hinweis, L1 etwas nach rechts ziehen.</li>
+  </ul>
+  <h3>A · Automatisch</h3>
+  <p>Kein neuer Regler. Der Schalter heißt „Knackfrei“ und macht beides: einrasten <b>und</b> überblenden (Länge automatisch: ¼ der Schleife, höchstens 0,3 s, so viel vor L1 da ist).</p>
+  <h3>B · Wählbar</h3>
+  <p>Im Loop-Bereich eine Zeile „Überblenden“ mit <b>Aus · Kurz · Mittel · Lang</b> (≈ 0,02 / 0,08 / 0,3 s). Kurz für rhythmische Loops, Lang für Flächen.</p>
+  <h3>Zur Entscheidung</h3>
+  <ul>
+    <li>A oder B?</li>
+    <li>Knackt es mit deinen eigenen Aufnahmen heute überhaupt noch hörbar (Handytest)?</li>
+    <li>Original behalten: Überblendung erst beim Laden anwenden (Sample bleibt unverändert, später wieder abschaltbar) oder fest beim Übernehmen hineinrechnen (einfacher)?</li>
+  </ul>
+</template>
+<script>
+// ===== Läuft im Rahmen der echten App (per eval im Fenster der App) =====
+function MK(){
+  let V='a', XB='m';
+  const XB_S={off:0,s:0.02,m:0.08,l:0.3};
+  const css=document.createElement('style');
+  css.textContent=`
+  #mkXf,#mkXfSrc{position:absolute;top:0;bottom:var(--sgh,48px);pointer-events:none;display:none}
+  #mkXf{background:repeating-linear-gradient(135deg,rgba(255,194,71,.32) 0 4px,rgba(255,194,71,.08) 4px 9px);border-right:2px solid #ffc247}
+  #mkXfSrc{border:1.5px dashed rgba(255,194,71,.55);border-right:0;background:rgba(255,194,71,.05)}
+  #sampleEditorOverlay.mode-loop #mkXf.on, #sampleEditorOverlay.mode-loop #mkXfSrc.on{display:block}
+  #mkXfRow{display:none;flex-direction:column;gap:6px}
+  html.mk-b #mkXfRow{display:flex}
+  #mkXfRow .lbl{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#c7cbd4;padding:0 2px}
+  #mkXfRow .lbl svg{width:18px;height:14px;stroke:#ffc247;stroke-width:1.8;fill:none;margin-right:6px;vertical-align:-2px}
+  #mkXfRow .val{font:700 11px 'JetBrains Mono',monospace;color:#ffc247}
+  #mkXfNote{font-size:12px;color:#ff9b6b;display:none;padding:0 2px}
+  #mkXfNote.on{display:block}
+  html.mkmark .mk-new{outline:1.5px dashed #ffc247!important;outline-offset:1px}`;
+  document.head.appendChild(css);
+  // --- neue Elemente ---
+  const xf=document.createElement('div'); xf.id='mkXf'; xf.className='mk-new';
+  const xs=document.createElement('div'); xs.id='mkXfSrc'; xs.className='mk-new';
+  seWaveInner.insertBefore(xs, seLoopBand.nextSibling); seWaveInner.insertBefore(xf, xs.nextSibling);
+  const row=document.createElement('div'); row.id='mkXfRow'; row.className='mk-new';
+  row.innerHTML='<div class="lbl"><span><svg viewBox="0 0 18 14"><path d="M1 2 L17 12 M1 12 L17 2"/></svg>Überblenden</span><span class="val"></span></div>'
+    +'<div class="se-seg"><button data-x="off">Aus</button><button data-x="s">Kurz</button><button data-x="m">Mittel</button><button data-x="l">Lang</button></div>';
+  $id('seLoopPanel').appendChild(row);
+  const note=document.createElement('div'); note.id='mkXfNote'; note.className='mk-new';
+  note.textContent='L1 liegt am Anfang: davor ist nichts zum Überblenden. L1 etwas nach rechts ziehen.';
+  $id('seLoopPanel').appendChild(note);
+  row.querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{ XB=b.dataset.x; sync(); restart(); });
+  const snapLbl=seSnapBtn.querySelector('span');
+  // --- Überblend-Länge ---
+  function want(){ const [a,b]=seLoopBounds(); if(!V) return 0; if(V==='a') return seSnap ? Math.min(0.3,(b-a)/4) : 0; return XB_S[XB]; }
+  function xfLen(){ const [a,b]=seLoopBounds(); return Math.max(0, Math.min(want(), a-seTrimStart, (b-a)/2)); }
+  function sync(){
+    if(!seWorkingBuffer) return;
+    const [a,b]=seLoopBounds(), d=seWorkingBuffer.duration, w=seInnerWidth(), X=xfLen(), on=!!V && X>0.002;
+    xf.classList.toggle('on',on); xs.classList.toggle('on',on);
+    if(on){ xf.style.left=(b-X)/d*w+'px'; xf.style.width=X/d*w+'px'; xs.style.left=(a-X)/d*w+'px'; xs.style.width=X/d*w+'px'; }
+    note.classList.toggle('on', !!V && want()>0 && X<=0.002);
+    row.querySelectorAll('[data-x]').forEach(b=>b.classList.toggle('on',b.dataset.x===XB));
+    row.querySelector('.val').textContent=XB==='off'?'':(X>0.002?X.toFixed(2).replace('.',',')+' s':'—');
+    snapLbl.textContent=V==='a'?'Knackfrei (einrasten + überblenden)':'Knackfrei einrasten';
+    seSnapBtn.classList.toggle('mk-new',V==='a');
+  }
+  // --- Puffer mit eingebackener Überblendung (gleiche Leistung), wie tools/build-instr.py ---
+  function baked(){
+    const [a,b]=seLoopBounds(), X=xfLen(), B=seWorkingBuffer;
+    if(X<=0.002) return B;
+    const sr=B.sampleRate, out=new AudioBuffer({length:B.length,numberOfChannels:B.numberOfChannels,sampleRate:sr});
+    const ia=Math.round(a*sr), ib=Math.round(b*sr), n=Math.round(X*sr);
+    for(let c=0;c<B.numberOfChannels;c++){
+      const s=B.getChannelData(c), o=out.getChannelData(c); o.set(s);
+      for(let i=0;i<n;i++){ const t=(i+0.5)/n, g1=Math.cos(t*Math.PI/2), g2=Math.sin(t*Math.PI/2);
+        o[ib-n+i]=s[ib-n+i]*g1+s[ia-n+i]*g2; }
+    }
+    return out;
+  }
+  // --- Vorhören abfangen (nur im Loop-Modus mit Schleife und Überblendung) ---
+  function play(){
+    if(!audioCtx) initAudio();
+    const [la,lb]=seLoopBounds(), src=audioCtx.createBufferSource(); src.buffer=baked(); src.connect(master);
+    const t0=audioCtx.currentTime; src.loop=true; src.loopStart=la; src.loopEnd=lb; src.start(t0, seTrimStart);
+    seCursorT0=t0; src.onended=()=>{ if(sePreviewSrc===src) seStopPreview(); };
+    sePreviewSrc=src; sePreviewBtn.innerHTML=SE_ICON_STOP; seCursorRAF=requestAnimationFrame(seCursorFrame);
+  }
+  sePreviewBtn.addEventListener('click', e=>{
+    if(!audioCtx) initAudio();
+    if(sePreviewSrc || !seWorkingBuffer || sePlayMode!=='loop' || !V) return; // Original übernimmt
+    e.stopImmediatePropagation(); play();
+  }, true);
+  function restart(){ if(!sePreviewSrc) return; seStopPreview(); sePreviewBtn.click(); }
+  // --- App-Funktionen erweitern ---
+  const oUpd=updateSETrimUI; updateSETrimUI=function(){ oUpd(); sync(); };
+  seSnapBtn.addEventListener('click', ()=>setTimeout(()=>{ sync(); restart(); },0));
+  let lastBounds='';
+  window.addEventListener('pointerup', ()=>{ const k=seLoopBounds().join(); if(k!==lastBounds){ lastBounds=k; restart(); } });
+  // --- Demo: gehaltener Ton, Vibrato, Schwellen, Rauschen; L1/L2 an ungünstigen Stellen ---
+  function demo(){
+    if(sePreviewSrc) seStopPreview();
+    const sr=44100, n=Math.round(sr*3.2), b=new AudioBuffer({length:n,numberOfChannels:1,sampleRate:sr}), d=b.getChannelData(0);
+    let seed=11; const rnd=()=>((seed=(seed*16807)%2147483647)/2147483647)*2-1;
+    let ph=0, lp=0;
+    for(let i=0;i<n;i++){ const t=i/sr;
+      const f=196*(1+.007*Math.sin(2*Math.PI*5.2*t)+.003*Math.sin(2*Math.PI*.7*t)); ph+=2*Math.PI*f/sr;
+      const env=Math.min(1,t/.12)*(0.65+0.35*Math.sin(2*Math.PI*.42*t+.3))*Math.min(1,(3.2-t)/.3);
+      const br=0.55+0.45*Math.sin(2*Math.PI*.31*t);
+      let s=0; for(let h=1;h<=9;h++) s+=Math.sin(h*ph+h*h*.37)*(h===1?1:br/(h*.9));
+      lp+=(rnd()-lp)*.08; d[i]=.22*env*s+.035*env*lp; }
+    openSampleEditor({buffer:b,label:'Demo'});
+    setTimeout(()=>{
+      seSetMode('loop'); sePlayMode='loop'; seUpdatePlayModeUI();
+      seLoopBuf=seWorkingBuffer; seLoopStart=seSnapZero(1.03); seLoopEnd=seSnapZero(2.21);
+      updateSETrimUI(); lastBounds=seLoopBounds().join();
+    },60);
+  }
+  function setV(v){ V=v; document.documentElement.classList.toggle('mk-a',v==='a'); document.documentElement.classList.toggle('mk-b',v==='b'); sync(); restart(); }
+  function setMark(on){ document.documentElement.classList.toggle('mkmark',on); }
+  window.__mk={setV,demo,setMark};
+}
+
+// ===== Rahmen-Steuerung =====
+const fR=document.getElementById('fR');
+let V='a';
+function hook(){ const w=fR.contentWindow; try{ if(!w||w.eval('typeof openSampleEditor')!=='function') return null; if(!w.__mk) w.eval('('+MK.toString()+')()'); }catch(e){ console.error(e); return null; } return w.__mk; }
+function apply(){ const m=hook(); if(m) m.setV(V); document.querySelectorAll('[data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v===V)); }
+fR.addEventListener('load',()=>setTimeout(()=>{ const m=hook(); if(!m) return; m.demo(); setTimeout(apply,150); },800));
+document.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{ V=b.dataset.v; apply(); });
+document.getElementById('demoBtn').onclick=()=>{ const m=hook(); if(m){ m.demo(); setTimeout(()=>m.setV(V),150); } };
+document.getElementById('mk').onchange=e=>{ const m=hook(); if(m) m.setMark(e.target.checked); };
+const notes=document.getElementById('notes').innerHTML; document.getElementById('side').innerHTML=notes; const info=document.getElementById('info'); info.innerHTML=notes;
+document.getElementById('infoBtn').onclick=()=>info.classList.toggle('open');
+const fitTop=()=>{ const h=document.getElementById('mbar').offsetHeight; document.getElementById('stage').style.top=h+'px'; info.style.top=h+'px'; }; addEventListener('resize',fitTop); fitTop();
+</script>
+</body>
+</html>
