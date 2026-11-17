@@ -34,7 +34,7 @@ const seAssignTrackChip=document.getElementById('seAssignTrackChip');
 const sePadGrid=document.getElementById('sePadGrid');
 const sePreviewBtn=document.getElementById('sePreviewBtn');
 const seSaveBtn=document.getElementById('seSaveBtn');
-const seModeTrimBtn=document.getElementById('seModeTrim'), seModeLoopBtn=document.getElementById('seModeLoop');
+const seModeTrimBtn=document.getElementById('seModeTrim'), seModeLoopBtn=document.getElementById('seModeLoop'), seModeSliceBtn=document.getElementById('seModeSlice');
 const seCursorEl=document.getElementById('seCursor'), seLoopBand=document.getElementById('seLoopBand');
 const seHandleL1El=document.getElementById('seHandleL1'), seHandleL2El=document.getElementById('seHandleL2');
 const seFieldL1=document.getElementById('seFieldL1'), seFieldL2=document.getElementById('seFieldL2');
@@ -105,10 +105,14 @@ function updateSELoopUI(){
 }
 function seSetMode(m){
   seEditMode=m;
-  sampleEditorOverlay.classList.toggle('mode-loop', m==='loop');
-  seHintEl.textContent = m==='loop' ? 'Zieh L1 und L2 unten an der Leiste: Dieser Teil wird wiederholt.' : 'Zieh S und E unten an der Leiste: Nur dieser Teil wird übernommen.';
-  seHintEl.style.color = m==='loop' ? '#ffc247' : '#8fd4ff';
-  seModeTrimBtn.classList.toggle('on', m==='trim'); seModeLoopBtn.classList.toggle('on', m==='loop');
+  sampleEditorOverlay.classList.toggle('mode-loop', m==='loop'); sampleEditorOverlay.classList.toggle('mode-slice', m==='slice');
+  seHintEl.textContent = m==='loop' ? 'Zieh L1 und L2 unten an der Leiste: Dieser Teil wird wiederholt.' : m==='slice' ? 'Tippen = Stück anhören. Schnitte unten an der Leiste ziehen.' : 'Zieh S und E unten an der Leiste: Nur dieser Teil wird übernommen.';
+  seHintEl.style.color = m==='loop' ? '#ffc247' : m==='slice' ? '#8be86a' : '#8fd4ff';
+  seModeTrimBtn.classList.toggle('on', m==='trim'); seModeLoopBtn.classList.toggle('on', m==='loop'); seModeSliceBtn.classList.toggle('on', m==='slice');
+  $id('seAssignLabel').textContent = m==='slice' ? '5 · Stücke verwenden' : '5 · Verwenden als';
+  if(m!=='slice') seCutStop();
+  if(m==='slice' && seWorkingBuffer && seCutBuf!==seWorkingBuffer) seCutAutoRun();
+  seCutDraw();
 }
 function seUpdatePlayModeUI(){
   [['oneshot',sePlayOnceBtn],['hold',sePlayHoldBtn],['loop',sePlayLoopBtn]].forEach(([m,b])=>b.classList.toggle('on', sePlayMode===m));
@@ -118,6 +122,7 @@ function seUpdatePlayModeUI(){
 }
 seModeTrimBtn.addEventListener('click', ()=>seSetMode('trim'));
 seModeLoopBtn.addEventListener('click', ()=>seSetMode('loop'));
+seModeSliceBtn.addEventListener('click', ()=>seSetMode('slice'));
 sePlayOnceBtn.addEventListener('click', ()=>{ sePlayMode='oneshot'; seUpdatePlayModeUI(); });
 sePlayHoldBtn.addEventListener('click', ()=>{ sePlayMode='hold'; seUpdatePlayModeUI(); });
 sePlayLoopBtn.addEventListener('click', ()=>{ sePlayMode='loop'; seUpdatePlayModeUI(); });
@@ -282,6 +287,7 @@ function drawSEWave(){
     seWaveCtx.moveTo(x, mid+min*mid*0.9); seWaveCtx.lineTo(x, mid+max*mid*0.9);
   }
   seWaveCtx.stroke();
+  seCutDraw();
 }
 function updateSETrimUI(){
   const w=seInnerWidth();
@@ -296,6 +302,7 @@ function updateSETrimUI(){
   if(document.activeElement!==seFieldEnd) seFieldEnd.value=seTrimEnd.toFixed(2);
   updateSELoopUI();
   seGripPlace();
+  seCutDraw();
 }
 // ---- Griff-Leiste (#9, Mockup docs/mockups/issue-9.html A): unter der Welle je Griff eine Taste, S/L1 hängt links
 // an seiner Linie, E/L2 rechts — überdecken sich nie, auch am Rand oder bei S≈E nicht. Ziehen ist relativ (Griff
@@ -507,6 +514,7 @@ const sePadChips=[];
 for(let i=0;i<PAD_COUNT;i++){
   const chip=document.createElement('div'); chip.className='se-pad-chip'; chip.textContent=i+1;
   chip.addEventListener('click', ()=>{
+    if(seEditMode==='slice'){ seCutPadTap(i); return; } // Schneiden: Pad-Kachel spielt das Stück, das dorthin kommt
     if(seAssignPads.has(i)) seAssignPads.delete(i); else seAssignPads.add(i);
     chip.classList.toggle('on', seAssignPads.has(i));
   });
@@ -546,6 +554,7 @@ function deriveSampleName(){
 // gleicht die Zuweisungen ab (neu hinzugekommene UND entfernte, s. u.) ----
 seSaveBtn.addEventListener('click', async ()=>{
   if(!seWorkingBuffer){ seStatus.textContent='Kein Sample zum Übernehmen'; seStatus.classList.add('err'); return; }
+  if(seEditMode==='slice' && seCutBounds().length>2){ await seSaveSlices(); return; }
   const finalBuffer=bufferSlice(seWorkingBuffer, seTrimStart, seTrimEnd);
   const blob=audioBufferToWavBlob(finalBuffer);
   const entryId=seEditingId || genId();
@@ -555,6 +564,7 @@ seSaveBtn.addEventListener('click', async ()=>{
   const entry={id:entryId, name:(old && old.name) || deriveSampleName(), root:old && old.root!=null ? old.root : undefined, blob, offsetStart:0, offsetEnd:null, savedAt:Date.now(),
     playMode:sePlayMode, overlap:seOverlap, loopStart:hasLoop ? la-seTrimStart : null, loopEnd:hasLoop ? lb-seTrimStart : null,
     loopXf:hasLoop && seSnap ? +loopXfWant(la,lb).toFixed(4) : 0};
+  if(old && old.src){ entry.src=old.src; entry.slice=old.slice; } // Stück bleibt Stück seines Originals
   if(entry.root===undefined) delete entry.root;
   await saveSampleLibraryEntry(entry);
   if(old) samplerInvalidate(entryId); // Sampler-Spuren mit diesem Sample laden neu
@@ -593,6 +603,7 @@ async function openSampleEditor({sampleId=null, forSampler=null, forPad=null, bu
       // Migrations-Altlast: alte Einträge tragen ihren Start-Offset noch separat statt
       // bereits "eingebrannt" — beim ersten erneuten Übernehmen wird das bereinigt.
       if(entry.offsetStart) seTrimStart=Math.min(entry.offsetStart, seTrimEnd-0.02);
+      seCutRestore(entry);
       seStatus.textContent=(entry.name||'Sample')+' geladen — '+seOriginalBuffer.duration.toFixed(1)+'s';
       seStatus.classList.remove('err');
     }
@@ -614,6 +625,7 @@ async function openSampleEditor({sampleId=null, forSampler=null, forPad=null, bu
   if(forPad!=null) seAssignPads.add(forPad);
   renderSEAssignUI();
   sampleEditorOverlay.classList.add('open');
+  if(!sampleId) seCutRestore(null);
   seSetMode('trim'); seUpdatePlayModeUI(); seHistReset();
   syncBottomBarVisibility();
   seZoomFactor=1; seZoomEl.value=1; seZoomValEl.textContent='1.0×';
@@ -621,8 +633,173 @@ async function openSampleEditor({sampleId=null, forSampler=null, forPad=null, bu
 }
 function closeSampleEditor(){
   if(seIsRecording) seStopRecording();
-  seStopPreview();
+  seStopPreview(); seCutStop();
   sampleEditorOverlay.classList.remove('open');
   syncBottomBarVisibility();
 }
 sampleEditorCloseBtn.addEventListener('click', closeSampleEditor);
+
+// ---- Modus Schneiden (v117, #11, Mockup docs/mockups/issue-11.html): Sample in Stücke teilen, jedes Stück wird ein
+// eigener Bibliothekseintrag `<Quelle>.s<n>` mit Verweis `src` aufs Original (Entscheidung #11: kein Eintrag mit
+// Schnittmarken — Pads, Sampler, Drum-Sets und Export bleiben unverändert). Das Original merkt sich die Schnitte
+// (`cuts`, relativ zum Anfang), erneutes Schneiden ersetzt die Stücke desselben Originals (gleiche IDs, Überzählige
+// werden gelöscht). Schnitte rasten knackfrei ein, jedes Stück bekommt zusätzlich 1,5 ms Ein- / 3 ms Ausblenden
+// (Stereo: Nulldurchgang gilt nur für Kanal 1). Stücke → Pads 1…12. ----
+let seCuts=[], seCutBuf=null, seCutSel=0, seCutTap=null, seCutAutoMode='hit', seCutSens=0.15, seCutToPads=true, seCutSrc=null, seCutDragS=null;
+const seCutPanel=$id('seSlicePanel'), seCutSensEl=$id('seCutSens'), seCutCntEl=$id('seCutCnt'), seCutWarnEl=$id('seCutWarn'), seSlicePadsChip=$id('seSlicePadsChip');
+const seCutBands=[], seCutTabs=[];
+function seCutRestore(entry){
+  seCutSel=0; seCutTap=null; seCutStop();
+  if(entry && Array.isArray(entry.cuts) && entry.cuts.length && seWorkingBuffer){
+    seCuts=entry.cuts.slice(); seCutBuf=seWorkingBuffer; seCutAutoMode=''; seCutSens=entry.cutSens!=null ? entry.cutSens : 0.15;
+  } else { seCuts=[]; seCutBuf=null; seCutAutoMode='hit'; seCutSens=0.15; }
+  seCutSensEl.value=seCutSens;
+}
+function seCutBounds(){
+  if(!seWorkingBuffer) return [0,0];
+  const c = seCutBuf===seWorkingBuffer ? seCuts.filter(t=>t>seTrimStart+0.01 && t<seTrimEnd-0.01) : [];
+  return [seTrimStart, ...c, seTrimEnd];
+}
+// Anschläge: Pegelsprung (dB) gegen die letzten ~23 ms über einer Pegel-Grenze (Empfindlichkeit), mind. 90 ms Abstand
+function seOnsets(buf, a, b, s){
+  const x=buf.getChannelData(0), sr=buf.sampleRate, H=256, i0=Math.floor(a*sr), i1=Math.floor(b*sr), D=[];
+  for(let i=i0;i+H<=i1;i+=H){ let e=0; for(let k=0;k<H;k++) e+=x[i+k]*x[i+k]; D.push(10*Math.log10(1e-12+e/H)); }
+  let top=-240; for(const v of D) if(v>top) top=v;
+  const floor=top-(6+s*34), gap=Math.round(0.09*sr/H), out=[]; let last=-gap;
+  for(let k=4;k<D.length;k++){ const pm=Math.max(D[k-1],D[k-2],D[k-3],D[k-4]);
+    if(D[k]>floor && D[k]-pm>4 && k-last>=gap){ const t=a+(k*H)/sr-0.006; if(t>a+0.03 && t<b-0.03) out.push(seSnapZero(t)); last=k; } }
+  return out;
+}
+function seCutAutoRun(){
+  if(!seWorkingBuffer) return;
+  const a=seTrimStart, b=seTrimEnd;
+  if(seCutAutoMode==='hit') seCuts=seOnsets(seWorkingBuffer, a, b, seCutSens);
+  else if(seCutAutoMode){ const n=+seCutAutoMode; seCuts=[]; for(let k=1;k<n;k++) seCuts.push(seSnapZero(a+(b-a)*k/n)); }
+  seCutBuf=seWorkingBuffer; seCutSel=0; seCutDraw();
+}
+function seCutReplacedPads(n){ // Pads mit fremdem Sample, die Stücke bekommen würden
+  const m=seCutToPads ? Math.min(n, PAD_COUNT) : 0, own=id=>seEditingId && (id===seEditingId || id.startsWith(seEditingId+'.s')), r=[];
+  for(let i=0;i<m;i++) if(padSampleId[i] && !own(padSampleId[i])) r.push(i+1);
+  return r;
+}
+function seCutDraw(){
+  const slice=seEditMode==='slice' && !!seWorkingBuffer;
+  if(slice && seCutBuf!==seWorkingBuffer){ seCutAutoRun(); return; }
+  const B=slice ? seCutBounds() : [], n=Math.max(0, B.length-1);
+  sePadChips.forEach((c,i)=>{ const has=slice && seCutToPads && i<n; c.classList.toggle('s', has); c.textContent=has ? 'S'+(i+1) : i+1; });
+  if(!slice){ seCutBands.forEach(e=>e.remove()); seCutBands.length=0; seCutTabs.forEach(e=>e.remove()); seCutTabs.length=0; return; }
+  if(seCutSel>=n) seCutSel=n-1;
+  const d=seWorkingBuffer.duration, w=seInnerWidth();
+  while(seCutBands.length<n){ const e=document.createElement('div'); e.className='se-cut-band'; e.innerHTML='<b></b>'; seWaveInner.insertBefore(e, seCursorEl); seCutBands.push(e); }
+  while(seCutBands.length>n) seCutBands.pop().remove();
+  seCutBands.forEach((e,i)=>{ e.style.left=B[i]/d*w+'px'; e.style.width=(B[i+1]-B[i])/d*w+'px'; e.querySelector('b').textContent=i+1; e.classList.toggle('sel', i===seCutSel); e.classList.toggle('first', i===0); });
+  while(seCutTabs.length<n-1){ const t=document.createElement('div'); t.className='se-cut-tab'; t.addEventListener('pointerdown', seCutTabDown); seGripEl.appendChild(t); seCutTabs.push(t); }
+  while(seCutTabs.length>n-1) seCutTabs.pop().remove();
+  let minSp=1e9; for(let k=1;k<B.length;k++) minSp=Math.min(minSp, (B[k]-B[k-1])/d*w);
+  const tw=Math.max(14, Math.min(34, minSp-3));
+  seCutTabs.forEach((t,i)=>{ t.style.left=B[i+1]/d*w+'px'; t.style.width=tw+'px'; t.style.marginLeft=(-tw/2)+'px'; t.textContent=tw>=22 ? i+2 : ''; t.dataset.i=i; });
+  seCutCntEl.textContent=n+(n===1 ? ' Stück' : ' Stücke');
+  seCutPanel.querySelectorAll('[data-a]').forEach(b=>b.classList.toggle('on', b.dataset.a===seCutAutoMode));
+  $id('seCutSensRow').style.opacity=seCutAutoMode==='hit' ? 1 : .4;
+  const warn=[];
+  if(n<2) warn.push('Noch keine Schnitte: Empfindlichkeit erhöhen, 4/8/16 wählen oder in die Welle tippen und + drücken.');
+  if(seCutToPads && n>PAD_COUNT) warn.push('Nur '+PAD_COUNT+' Pads: '+(n===PAD_COUNT+1 ? 'Stück '+n+' kommt' : 'Stück '+(PAD_COUNT+1)+'–'+n+' kommen')+' nur in die Bibliothek.');
+  const rp=n>1 ? seCutReplacedPads(n) : [];
+  if(rp.length) warn.push('Ersetzt Pad '+rp.join(', ')+' (deren Samples bleiben in der Bibliothek).');
+  seCutWarnEl.textContent=warn.join(' '); seCutWarnEl.classList.toggle('on', warn.length>0);
+}
+// Griffe der Schnitte ziehen (relativ, Feinmodus wie S/E, rastet knackfrei ein)
+function seCutTabDown(e){
+  e.preventDefault(); e.stopPropagation(); const i=+e.currentTarget.dataset.i, B=seCutBounds();
+  try{ e.currentTarget.setPointerCapture(e.pointerId); }catch(_){}
+  seCuts=B.slice(1,-1); seCutDragS={i, el:e.currentTarget, id:e.pointerId, lx:e.clientX, t:seCuts[i]}; seCutDragS.el.classList.add('on');
+}
+window.addEventListener('pointermove', e=>{
+  const D=seCutDragS; if(!D || e.pointerId!==D.id) return; e.preventDefault();
+  const d=seWorkingBuffer.duration, dx=e.clientX-D.lx; D.lx=e.clientX;
+  D.t+=dx*seFineFactor(e.clientY)*d/seInnerWidth();
+  const lo=(D.i ? seCuts[D.i-1] : seTrimStart)+0.02, hi=(D.i<seCuts.length-1 ? seCuts[D.i+1] : seTrimEnd)-0.02;
+  seCuts[D.i]=Math.min(hi, Math.max(lo, seSnapZero(D.t))); seCutAutoMode=''; seCutDraw();
+}, {passive:false});
+function seCutDragEnd(e){ const D=seCutDragS; if(!D || (e && e.pointerId!==D.id)) return; D.el.classList.remove('on'); seCutDragS=null; seCutSel=D.i+1; seCutDraw(); seCutPlay(seCutSel); }
+window.addEventListener('pointerup', seCutDragEnd); window.addEventListener('pointercancel', seCutDragEnd);
+// Antippen der Welle = Stück wählen und anhören; die Stelle merkt sich + für einen neuen Schnitt
+seWaveInner.addEventListener('pointerdown', e=>{
+  if(seEditMode!=='slice' || !seWorkingBuffer || e.target.closest('#seGrip')) return;
+  const r=seWaveInner.getBoundingClientRect(), t=(e.clientX-r.left)/r.width*seWorkingBuffer.duration; seCutTap=t;
+  const B=seCutBounds(), i=B.findIndex((b,k)=>k<B.length-1 && t>=b && t<B[k+1]); if(i<0) return;
+  seCutSel=i; seCutDraw(); seCutPlay(i);
+});
+seCutPanel.querySelectorAll('[data-a]').forEach(b=>b.addEventListener('click', ()=>{ seCutAutoMode=b.dataset.a; seCutAutoRun(); }));
+seCutSensEl.addEventListener('input', ()=>{ seCutSens=+seCutSensEl.value; seCutAutoMode='hit'; seCutAutoRun(); });
+$id('seCutAdd').addEventListener('click', ()=>{
+  if(seCutTap==null || !seWorkingBuffer) return; const t=seSnapZero(seCutTap), B=seCutBounds();
+  if(t<=seTrimStart+0.02 || t>=seTrimEnd-0.02 || B.some(c=>Math.abs(c-t)<0.02)) return;
+  seCuts=[...B.slice(1,-1), t].sort((a,b)=>a-b); seCutBuf=seWorkingBuffer; seCutSel=seCuts.indexOf(t)+1; seCutAutoMode=''; seCutDraw();
+});
+$id('seCutDel').addEventListener('click', ()=>{
+  const B=seCutBounds(); seCuts=B.slice(1,-1); if(!seCuts.length) return;
+  const i=Math.max(0, seCutSel-1); seCuts.splice(i,1); seCutSel=Math.max(0,i); seCutAutoMode=''; seCutDraw();
+});
+seSlicePadsChip.addEventListener('click', ()=>{ seCutToPads=!seCutToPads; seSlicePadsChip.classList.toggle('on', seCutToPads); seCutDraw(); });
+function seCutPadTap(i){
+  const n=seCutBounds().length-1; if(!seCutToPads || i>=n) return;
+  seCutSel=i; seCutDraw(); seCutPlay(i);
+  const c=sePadChips[i]; c.classList.add('pl'); setTimeout(()=>c.classList.remove('pl'), 180);
+}
+let seCutSrcNode=null;
+function seCutStop(){ if(seCutSrcNode){ try{ seCutSrcNode.stop(); }catch(_){} seCutSrcNode=null; } }
+function seCutPlay(i){
+  const B=seCutBounds(); if(!seWorkingBuffer || !audioCtx || i>=B.length-1) return;
+  seStopPreview(); seCutStop();
+  const s=audioCtx.createBufferSource(); s.buffer=seWorkingBuffer; s.connect(master); s.start(audioCtx.currentTime+0.01, B[i], B[i+1]-B[i]); seCutSrcNode=s;
+}
+// Stück als eigener Puffer, mit kurzem Ein-/Ausblenden gegen Knacken (auch im 2. Kanal)
+function seCutPiece(buf, a, b){
+  const out=bufferSlice(buf, a, b), sr=out.sampleRate, L=out.length;
+  const fi=Math.min(Math.round(sr*0.0015), L>>2), fo=Math.min(Math.round(sr*0.003), L>>2);
+  for(let c=0;c<out.numberOfChannels;c++){ const d=out.getChannelData(c);
+    for(let i=0;i<fi;i++) d[i]*=i/fi;
+    for(let i=0;i<fo;i++) d[L-1-i]*=i/fo; }
+  return out;
+}
+function sePadClear(i){
+  padSamples[i].buffer=null; padSamples[i].offset=0; padSampleId[i]=null;
+  try{ const ids=JSON.parse(localStorage.getItem('mrm44_padSampleIds')||'[]'); ids[i]=null; localStorage.setItem('mrm44_padSampleIds', JSON.stringify(ids)); }catch(e){}
+  updatePadUI(i);
+}
+async function seSaveSlices(){
+  const B=seCutBounds(), n=B.length-1, a0=seTrimStart, now=Date.now();
+  const srcId=seEditingId || genId();
+  const old=seEditingId ? await loadSampleLibraryEntry(seEditingId).catch(()=>null) : null;
+  const name=(old && old.name) || 'Loop '+new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
+  const hasLoop=seLoopBuf===seWorkingBuffer && seLoopStart!=null && seLoopEnd!=null, [la,lb]=seLoopBounds();
+  const src={id:srcId, name, blob:audioBufferToWavBlob(bufferSlice(seWorkingBuffer, seTrimStart, seTrimEnd)), offsetStart:0, offsetEnd:null, savedAt:now,
+    playMode:sePlayMode, overlap:seOverlap, loopStart:hasLoop ? la-a0 : null, loopEnd:hasLoop ? lb-a0 : null, loopXf:hasLoop && seSnap ? +loopXfWant(la,lb).toFixed(4) : 0,
+    cuts:B.slice(1,-1).map(t=>+(t-a0).toFixed(5)), cutSens:seCutSens};
+  if(old && old.root!=null) src.root=old.root;
+  if(old && old.src){ src.src=old.src; src.slice=old.slice; }
+  await saveSampleLibraryEntry(src);
+  const prev=(await listSampleLibrary()).filter(e=>e.src===srcId), kids=[];
+  for(let k=0;k<n;k++){
+    const e={id:srcId+'.s'+(k+1), name:name+' '+(k+1), src:srcId, slice:k+1, blob:audioBufferToWavBlob(seCutPiece(seWorkingBuffer, B[k], B[k+1])),
+      offsetStart:0, offsetEnd:null, savedAt:now, playMode:'oneshot', overlap:false, loopStart:null, loopEnd:null, loopXf:0};
+    await saveSampleLibraryEntry(e); kids.push(e);
+  }
+  const kidIds=new Set(kids.map(e=>e.id)), gone=prev.filter(e=>!kidIds.has(e.id));
+  for(const e of gone) await deleteSampleLibraryEntry(e.id);
+  [src, ...kids, ...gone].forEach(e=>{ delete SMPL['lib:'+e.id]; }); samplerSync(); // Sampler-Spuren mit Original/Stücken laden neu
+  const m=seCutToPads ? Math.min(n, PAD_COUNT) : 0, goneIds=new Set(gone.map(e=>e.id));
+  for(let i=0;i<PAD_COUNT;i++){
+    const id=padSampleId[i];
+    if(i<m) await applySampleToPad(i, kids[i]);
+    else if(!id) continue;
+    else if(kidIds.has(id)) await applySampleToPad(i, kids.find(e=>e.id===id));
+    else if(goneIds.has(id)) sePadClear(i);
+    else if(id===srcId) await applySampleToPad(i, src);
+  }
+  const ds=Object.values(drumSet.voices).some(v=>v && v.t==='smp' && (kidIds.has(v.sampleId) || goneIds.has(v.sampleId) || v.sampleId===srcId));
+  if(ds) await drumSetLoadBuffers();
+  closeSampleEditor();
+  hmToast(n+' Stücke von „'+name+'“ angelegt'+(m ? ' · Pad 1–'+m : ''), false);
+}

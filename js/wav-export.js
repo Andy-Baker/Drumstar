@@ -183,6 +183,14 @@ async function migrateLegacySamplesIfNeeded(){
     localStorage.setItem('mrm44_padSampleIds', JSON.stringify(ids));
   }
 }
+// Bibliothek gruppiert (#11): Stücke (`src` = Original) folgen ihrem Original nach Nummer; liegt das Original
+// selbst unter einem anderen oder fehlt es, steht das Stück oben. → [{e, kids:[…]}]
+const SMP_LIB_OPEN=new Set(); // aufgeklappte Originale (Bibliothek in Set-Editor und Sampler-Klang)
+function smpLibGroup(items){
+  const by=new Map(items.map(e=>[e.id,e])), isKid=e=>!!e.src && by.has(e.src) && !by.get(e.src).src, kids=new Map();
+  items.forEach(e=>{ if(isKid(e)){ if(!kids.has(e.src)) kids.set(e.src, []); kids.get(e.src).push(e); } });
+  return items.filter(e=>!isKid(e)).map(e=>({e, kids:(kids.get(e.id)||[]).sort((a,b)=>(a.slice||0)-(b.slice||0))}));
+}
 // Loop-Überblendung (#10, Mockup A): Ende der Schleife [b−X, b] mit dem Stück vor L1 [a−X, a]
 // mischen (gleiche Leistung, wie tools/build-instr.py). Nicht zerstörend: Eintrag speichert nur
 // die gewünschte Länge `loopXf`, gemischt wird beim Laden in eine Kopie. X begrenzt auf den Platz

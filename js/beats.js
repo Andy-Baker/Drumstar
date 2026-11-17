@@ -371,13 +371,19 @@ async function dsRenderList(){
     });
     if(dsList.children.length===1){ const e=document.createElement('div'); e.className='ds-it'; e.textContent='Keine Sounds mit dieser Rolle'; dsList.appendChild(e); }
   } else {
-    const items=await listSampleLibrary();
-    items.forEach(e=>{
-      const it=document.createElement('div'); it.className='ds-it'+(v && v.t==='smp' && v.sampleId===e.id?' on':'');
+    const items=await listSampleLibrary(), selId=v && v.t==='smp' ? v.sampleId : null;
+    const row=(e,sub)=>{
+      const it=document.createElement('div'); it.className='ds-it'+(sub?' sub':'')+(selId===e.id?' on':'');
       const nm=document.createElement('span'); nm.className='grow'; nm.textContent=e.name||'Sample'; it.appendChild(nm);
       const del=document.createElement('button'); del.innerHTML=UI_IC.del; del.title='Sample löschen'; del.setAttribute('aria-label','Sample löschen');
       del.onclick=ev=>{ ev.stopPropagation(); smpLibDelete(e); }; it.appendChild(del);
       it.onclick=async()=>{ drumSet.voices[id]={t:'smp',sampleId:e.id}; dsMarkDirty(id); await drumSetLoadBuffers(); dsRender(); dsRenderList(); dsPreview(id); }; dsList.appendChild(it);
+    };
+    smpLibGroup(items).forEach(({e,kids})=>{
+      row(e, false); if(!kids.length) return;
+      const open=SMP_LIB_OPEN.has(e.id) || kids.some(k=>k.id===selId), t=document.createElement('div'); t.className='ds-it sub subt';
+      t.textContent=(open?'▾ ':'▸ ')+kids.length+' Stücke'; t.onclick=()=>{ if(open) SMP_LIB_OPEN.delete(e.id); else SMP_LIB_OPEN.add(e.id); dsRenderList(); }; dsList.appendChild(t);
+      if(open) kids.forEach(k=>row(k, true));
     });
     if(!items.length){ const e=document.createElement('div'); e.className='ds-it'; e.textContent='Noch keine Samples in der Bibliothek'; dsList.appendChild(e); }
     const add=document.createElement('div'); add.className='ds-it add'; add.textContent='＋ Aufnehmen / Datei laden (Sample-Editor)';

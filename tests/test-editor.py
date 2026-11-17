@@ -386,6 +386,41 @@ async def main():
     ok('#10 Sampler und Pads überblenden beim Laden (loopXf), ohne bleibt es roh', xf['smp']==['ok',True] and xf['smp0'] and xf['pad'], [xf['smp'],xf['smp0'],xf['pad']])
     await s('se_loop_xf')
     await pg.evaluate("closeSampleEditor()")
+    # #11 Schneiden (v117): Anschläge erkennen, gleichmäßig, Stücke als eigene Einträge → Pads, neu schneiden ersetzt
+    await pg.evaluate("""(()=>{ const sr=44100, n=sr*2, b=new AudioBuffer({length:n,numberOfChannels:2,sampleRate:sr});
+      for(const c of [0,1]){ const d=b.getChannelData(c); let q=11+c; for(const t of [0,0.6,1.1,1.6]){ const s0=Math.round(t*sr); for(let i=0;i<sr*0.25;i++){ q=(q*16807)%2147483647; d[s0+i]=((q/2147483647)*2-1)*0.8*Math.exp(-i/sr*25); } } }
+      openSampleEditor({buffer:b,label:'Slice-Test'}); })()""")
+    await pg.wait_for_timeout(300)
+    await pg.click('#seModeSlice'); await pg.wait_for_timeout(150)
+    sl=await pg.evaluate("""(()=>({n:seCutBounds().length-1, bands:[...document.querySelectorAll('.se-cut-band')].filter(e=>e.offsetParent).length,
+      tabs:[...document.querySelectorAll('.se-cut-tab')].filter(e=>e.offsetParent).length, chips:sePadChips.slice(0,5).map(c=>c.textContent).join(),
+      se:[...document.querySelectorAll('.se-tab.t')].filter(t=>t.offsetParent).length, panel:!!document.getElementById('seSlicePanel').offsetParent,
+      cuts:seCutBounds().slice(1,-1).map(t=>+t.toFixed(2))}))()""")
+    ok('#11 Schneiden: 4 Anschläge → 4 Stücke, Bänder/Griffe/Pad-Kacheln S1–S4, S/E ausgeblendet', sl['n']==4 and sl['bands']==4 and sl['tabs']==3 and sl['chips']=='S1,S2,S3,S4,5' and sl['se']==0 and sl['panel'], sl)
+    ok('#11 Schnitte kurz vor den Anschlägen', all(abs(a-b)<0.03 for a,b in zip(sl['cuts'],[0.6,1.1,1.6])), sl['cuts'])
+    await s('se_slice')
+    await pg.click('#seCutAuto [data-a="16"]'); n16=await pg.evaluate("seCutBounds().length-1")
+    w16=await pg.evaluate("document.getElementById('seCutWarn').textContent")
+    ok('#11 gleichmäßig 16 → Hinweis Stück 13–16 nur Bibliothek', n16==16 and '13–16' in w16, [n16,w16])
+    await pg.click('#seCutAuto [data-a="hit"]')
+    sv=await pg.evaluate("""(async()=>{ seSaveBtn.click(); for(let i=0;i<100 && sampleEditorOverlay.classList.contains('open');i++) await new Promise(r=>setTimeout(r,50));
+      const L=await listSampleLibrary(), src=L.find(e=>e.cuts && e.name.startsWith('Loop ')), kids=L.filter(e=>e.src===src.id).sort((a,b)=>a.slice-b.slice);
+      const bufs=[]; for(const k of kids) bufs.push(await audioCtx.decodeAudioData(await k.blob.arrayBuffer()));
+      return {src:src.id, cuts:src.cuts.length, ids:kids.map(k=>k.id.slice(src.id.length)).join(), names:kids.map(k=>k.name.slice(src.name.length)).join(),
+        len:+bufs.reduce((a,b)=>a+b.duration,0).toFixed(2), edge:Math.max(...bufs.map(b=>Math.abs(b.getChannelData(1)[0]))), endz:Math.max(...bufs.map(b=>{const d=b.getChannelData(0); return Math.abs(d[d.length-1]);})),
+        pads:padSampleId.slice(0,5).map(id=>id && id.startsWith(src.id) ? id.slice(src.id.length) : id).join(), grp:smpLibGroup(L).find(g=>g.e.id===src.id).kids.length,
+        top:smpLibGroup(L).some(g=>g.e.src===src.id)}; })()""")
+    ok('#11 Übernehmen: Original mit Schnitten + 4 Einträge .s1–.s4 „Name 1–4“, zusammen volle Länge', sv['cuts']==3 and sv['ids']=='.s1,.s2,.s3,.s4' and sv['names']==' 1, 2, 3, 4' and abs(sv['len']-2)<0.01, sv)
+    ok('#11 Stücke knackfrei: Anfang/Ende ≈ 0 (auch Kanal 2)', sv['edge']<1e-6 and sv['endz']<1e-6, [sv['edge'],sv['endz']])
+    ok('#11 Pads 1–4 = Stücke, Pad 5 unberührt; Bibliothek gruppiert', sv['pads'].startswith('.s1,.s2,.s3,.s4,') and sv['grp']==4 and not sv['top'], sv['pads'])
+    rs=await pg.evaluate("""(async()=>{ const id='"""+sv['src']+"""'; await openSampleEditor({sampleId:id}); await new Promise(r=>setTimeout(r,200));
+      document.getElementById('seModeSlice').click(); const back=seCutBounds().length-1;
+      seCuts=[seCutBounds()[2]]; seCutDraw(); seSaveBtn.click(); for(let i=0;i<100 && sampleEditorOverlay.classList.contains('open');i++) await new Promise(r=>setTimeout(r,50));
+      const L=await listSampleLibrary(), kids=L.filter(e=>e.src===id);
+      const r={back, kids:kids.length, pads:padSampleId.slice(0,4).map(x=>x? x.slice(id.length):'-').join()};
+      for(const e of L.filter(e=>e.id===id||e.src===id)) await deleteSampleLibraryEntry(e.id);
+      for(let i=0;i<4;i++) sePadClear(i); return r; })()""")
+    ok('#11 Wieder öffnen: Schnitte zurück; neu schneiden ersetzt Stücke, Überzählige weg, deren Pads leer', rs['back']==4 and rs['kids']==2 and rs['pads']=='.s1,.s2,-,-', rs)
     ok('Schrift überall ≥ 11 px (#19)', not fz.bad, fz.bad)
     ok('Keine Konsolenfehler', not errs, errs)
     await b.close()

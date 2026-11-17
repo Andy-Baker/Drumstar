@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>MRM-44 — Mobile Rhythm Machine</title>
 <link rel="stylesheet" href="./fonts.css">
-<link rel="stylesheet" href="./css/app.css?v=116">
+<link rel="stylesheet" href="./css/app.css?v=117">
 
 
 <!-- Drumstar PWA -->
@@ -151,7 +151,7 @@
         <div id="seStatus">Kein Sample geladen</div>
 
         <div class="se-lb">2 · Bereich wählen</div>
-        <div id="seModeRow"><button id="seModeTrim" class="on"><svg class="se-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4L8.1 15.9M14.5 14.5L20 20M8.1 8.1L12 12"/></svg>Zuschneiden</button><button id="seModeLoop"><svg class="se-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/></svg>Loop</button></div>
+        <div id="seModeRow"><button id="seModeTrim" class="on"><svg class="se-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4L8.1 15.9M14.5 14.5L20 20M8.1 8.1L12 12"/></svg>Zuschneiden</button><button id="seModeLoop"><svg class="se-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/></svg>Loop</button><button id="seModeSlice"><svg class="se-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4v16M10 4v16M16 4v16M21 8v8"/></svg>Schneiden</button></div>
         <div id="seHint"></div>
         <div id="seWaveWrap">
           <div id="seWaveScroll">
@@ -199,6 +199,13 @@
           </div>
         </div>
 
+        <div id="seSlicePanel">
+          <div class="se-seg" id="seCutAuto"><button data-a="hit">Anschläge</button><button data-a="4">4</button><button data-a="8">8</button><button data-a="16">16</button></div>
+          <div class="se-cut-row" id="seCutSensRow"><span class="lbl">Empfindlichkeit</span><input type="range" id="seCutSens" min="0" max="1" step="0.01" value="0.15"></div>
+          <div class="se-cut-row"><button class="se-cut-ib" id="seCutDel" aria-label="Schnitt entfernen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button><span id="seCutCnt"></span><button class="se-cut-ib" id="seCutAdd" aria-label="Schnitt an getippter Stelle"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div>
+          <div id="seCutWarn"></div>
+        </div>
+
         <div id="seLoopPanel">
           <div id="seLoopFields">
             <div class="se-tf lp" style="flex:1"><div class="se-tf-lbl">L1 Start</div><div class="se-tf-row"><input id="seFieldL1" inputmode="decimal" value="0.00"></div></div>
@@ -221,6 +228,7 @@
         <div id="seAssignLabel">5 · Verwenden als</div>
         <div id="seAssignRow">
           <div class="se-assign-chip" id="seAssignTrackChip"><svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h2M7 8v8M11 5v14M15 9v6M19 11v2"/></svg><span id="seAssignTrackName">Sampler</span></div>
+          <div class="se-assign-chip on" id="seSlicePadsChip"><svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Stücke → Pads</div>
         </div>
         <div id="sePadGrid"></div>
 
@@ -528,31 +536,31 @@
       </div>
 </div>
 
-<script src="./js/base.js?v=116"></script>
-<script src="./js/audio.js?v=116"></script>
-<script src="./js/fx.js?v=116"></script>
-<script src="./js/voices.js?v=116"></script>
-<script src="./js/events.js?v=116"></script>
-<script src="./js/kits.js?v=116"></script>
-<script src="./js/tracks.js?v=116"></script>
-<script src="./js/controls.js?v=116"></script>
-<script src="./js/harmony.js?v=116"></script>
-<script src="./js/editor.js?v=116"></script>
-<script src="./js/sheets.js?v=116"></script>
-<script src="./js/sample-track.js?v=116"></script>
-<script src="./js/wav-export.js?v=116"></script>
-<script src="./js/sampler-werk.js?v=116"></script>
-<script src="./js/sampler.js?v=116"></script>
-<script src="./js/mixer.js?v=116"></script>
-<script src="./js/sample-editor.js?v=116"></script>
-<script src="./js/storage.js?v=116"></script>
-<script src="./js/beats.js?v=116"></script>
-<script src="./js/spuren.js?v=116"></script>
-<script src="./js/pianoroll.js?v=116"></script>
-<script src="./js/scheduler.js?v=116"></script>
-<script src="./js/transport-ui.js?v=116"></script>
-<script src="./js/tempo-detect.js?v=116"></script>
-<script src="./js/main.js?v=116"></script>
+<script src="./js/base.js?v=117"></script>
+<script src="./js/audio.js?v=117"></script>
+<script src="./js/fx.js?v=117"></script>
+<script src="./js/voices.js?v=117"></script>
+<script src="./js/events.js?v=117"></script>
+<script src="./js/kits.js?v=117"></script>
+<script src="./js/tracks.js?v=117"></script>
+<script src="./js/controls.js?v=117"></script>
+<script src="./js/harmony.js?v=117"></script>
+<script src="./js/editor.js?v=117"></script>
+<script src="./js/sheets.js?v=117"></script>
+<script src="./js/sample-track.js?v=117"></script>
+<script src="./js/wav-export.js?v=117"></script>
+<script src="./js/sampler-werk.js?v=117"></script>
+<script src="./js/sampler.js?v=117"></script>
+<script src="./js/mixer.js?v=117"></script>
+<script src="./js/sample-editor.js?v=117"></script>
+<script src="./js/storage.js?v=117"></script>
+<script src="./js/beats.js?v=117"></script>
+<script src="./js/spuren.js?v=117"></script>
+<script src="./js/pianoroll.js?v=117"></script>
+<script src="./js/scheduler.js?v=117"></script>
+<script src="./js/transport-ui.js?v=117"></script>
+<script src="./js/tempo-detect.js?v=117"></script>
+<script src="./js/main.js?v=117"></script>
 
 <script>
 // Drumstar PWA service worker

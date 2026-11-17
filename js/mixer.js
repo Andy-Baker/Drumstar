@@ -1,9 +1,9 @@
 "use strict";
 // =========================================================================
-// SAMPLE PAD — 9 unabhängige Live-Pads, eigenes Mikro-Sample pro Pad,
+// SAMPLE PAD — 12 unabhängige Live-Pads, eigenes Mikro-Sample pro Pad,
 // getrennt vom Step-Sequencer (sofortiges Antippen statt Timing-Raster).
 // =========================================================================
-const PAD_COUNT=9;
+const PAD_COUNT=12; // 3×4 (v117, #11)
 const padSamples=Array.from({length:PAD_COUNT}, ()=>({buffer:null, offset:0, slot:{voice:null}, mode:'oneshot', overlap:false, loopStart:null, loopEnd:null}));
 const padSampleId=new Array(PAD_COUNT).fill(null); // welcher Bibliothekseintrag ist diesem Pad zugeordnet
 
@@ -180,7 +180,7 @@ function mixerMeterLoop(){
 }
 // Mixer-Tab-Klick-Handler wird weiter unten zentral über switchTab() gesetzt.
 
-// Gemeinsamer Delay-Send für alle 9 Live-Pads (kein Sinn, jedes Pad einzeln zu
+// Gemeinsamer Delay-Send für alle Live-Pads (kein Sinn, jedes Pad einzeln zu
 // regeln — anders als Spuren werden Pads meist spontan/live gespielt).
 const padDelayIn=document.getElementById('padDelayIn');
 padDelayIn.value=Math.round(padDelayAmount*100); document.getElementById('padDelayV').textContent=padDelayIn.value+'%';

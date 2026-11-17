@@ -170,7 +170,7 @@ function trMenuRefresh(){ if(typeof grpSelRender==='function') try{ grpSelRender
 
 // ---- Klang-Sheet · Reiter Sound ----
 let SMP_LIB=[]; // Bibliothek (id, name) für die Auswahl; neu gelesen beim Öffnen
-async function samplerLibRefresh(){ try{ SMP_LIB=(await listSampleLibrary()).map(e=>({id:e.id, name:e.name||'Sample'})); }catch(e){ SMP_LIB=[]; } }
+async function samplerLibRefresh(){ try{ SMP_LIB=(await listSampleLibrary()).map(e=>({id:e.id, name:e.name||'Sample', src:e.src, slice:e.slice})); }catch(e){ SMP_LIB=[]; } }
 function samplerKlang(tr, box, grp){
   const S=samplerGet(tr.smp);
   grp('Sample');
@@ -179,7 +179,11 @@ function samplerKlang(tr, box, grp){
     b.querySelector('b').textContent=label; if(sub) b.querySelector('small').textContent=sub; b.onclick=()=>samplerPick(tr, key); ch.appendChild(b); };
   if(typeof SMP_INSTR!=='undefined') Object.keys(SMP_INSTR).forEach(k=>chip(k, SMP_INSTR[k].name, SMP_INSTR[k].desc));
   Object.keys(SMP_WERK).forEach(k=>chip(k, SMP_WERK[k].name, SMP_WERK[k].desc));
-  SMP_LIB.forEach(e=>chip('lib:'+e.id, e.name, ''));
+  smpLibGroup(SMP_LIB).forEach(({e,kids})=>{ chip('lib:'+e.id, e.name, ''); if(!kids.length) return; // Stücke (#11) eingeklappt unter dem Original
+    const open=SMP_LIB_OPEN.has(e.id) || kids.some(k=>tr.smp==='lib:'+k.id), t=document.createElement('button'); t.className='smp-chip subt';
+    t.innerHTML='<b></b>'; t.querySelector('b').textContent=(open?'▾ ':'▸ ')+kids.length+' Stücke';
+    t.onclick=()=>{ if(open) SMP_LIB_OPEN.delete(e.id); else SMP_LIB_OPEN.add(e.id); renderKlang(); }; ch.appendChild(t);
+    if(open) kids.forEach(k=>{ chip('lib:'+k.id, k.name, ''); ch.lastChild.classList.add('sub'); }); });
   if(tr.smp.startsWith('lib:') && !SMP_LIB.some(e=>'lib:'+e.id===tr.smp)) chip(tr.smp, S.name, ''); // fehlt in der Bibliothek
   const rec=document.createElement('button'); rec.className='smp-chip smp-add'; rec.innerHTML=TR_IC.plus+'<b>Aufnehmen / Laden</b>';
   rec.onclick=()=>{ closeSheets(); openSampleEditor({forSampler:tr}); }; ch.appendChild(rec);

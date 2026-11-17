@@ -100,6 +100,8 @@ async def main():
     q0=await pg.evaluate("document.getElementById('padQuantizeBtn').classList.contains('on')"); await pg.click('#padQuantizeBtn'); q1=await pg.evaluate("document.getElementById('padQuantizeBtn').classList.contains('on')")
     ok('Quantize umschalten', q0!=q1)
     gh=await pg.evaluate("document.getElementById('padGrid').offsetHeight"); ok('Pads füllen Höhe', gh>450, gh)
+    pg12=await pg.evaluate("(()=>{const p=[...document.querySelectorAll('#padGrid .pad')], l=p[p.length-1].getBoundingClientRect(), t=document.getElementById('bottomTabBar'); return [p.length, new Set(p.map(e=>Math.round(e.getBoundingClientRect().top))).size, Math.round(l.bottom), t?Math.round(t.getBoundingClientRect().top):9999]})()")
+    ok('12 Pads in 4 Reihen, letzte Reihe über der Tab-Leiste (#11)', pg12[0]==12 and pg12[1]==4 and pg12[2]<=pg12[3], pg12)
     await pg.screenshot(path=OUT+'/pads.png'); await fz(pg,'Pads')
     # Mixer
     await pg.click('#mixerToggleBtn'); await pg.wait_for_timeout(500)
