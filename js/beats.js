@@ -164,8 +164,8 @@ async function drumSetLoadBuffers(){
     try{
       const e=await loadSampleLibraryEntry(v.sampleId); if(!e) continue;
       await Promise.resolve(initAudio());
-      const buf=await audioCtx.decodeAudioData(await e.blob.arrayBuffer());
-      drumSet.buffers[id]={buffer:buf, offset:e.offsetStart||0, name:e.name};
+      const r=ptEntry(await audioCtx.decodeAudioData(await e.blob.arrayBuffer()), e, e.offsetStart||0, null); // #11 Tonhöhe/Tempo
+      drumSet.buffers[id]={buffer:r.buf, offset:r.off, name:e.name};
     }catch(err){ console.warn('Drum-Set-Sample nicht ladbar:', id, err); }
   }
   if(drumSetOverlay.classList.contains('open')) dsRender();

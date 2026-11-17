@@ -421,6 +421,39 @@ async def main():
       for(const e of L.filter(e=>e.id===id||e.src===id)) await deleteSampleLibraryEntry(e.id);
       for(let i=0;i<4;i++) sePadClear(i); return r; })()""")
     ok('#11 Wieder öffnen: Schnitte zurück; neu schneiden ersetzt Stücke, Überzählige weg, deren Pads leer', rs['back']==4 and rs['kids']==2 and rs['pads']=='.s1,.s2,-,-', rs)
+    # #11 Stufe 2 (v118): Tonhöhe/Tempo – Rechnen (Plattenspieler, Töne, Beats) und Speichern/Laden
+    dsp=await pg.evaluate("""(()=>{ const sr=44100, L=sr*2, mk=fn=>{ const b=new AudioBuffer({length:L,numberOfChannels:1,sampleRate:sr}); const d=b.getChannelData(0); for(let i=0;i<L;i++) d[i]=fn(i/sr); return b; };
+      const zc=b=>{ const d=b.getChannelData(0); let c=0; for(let i=1;i<d.length;i++) if(d[i-1]<0 && d[i]>=0) c++; return c/b.duration; };
+      const sine=mk(t=>0.5*Math.sin(2*Math.PI*440*t));
+      const r12=ptRender(sine, ptOf({semi:12}));
+      const t50=ptRender(sine, ptOf({tempo:50, art:'tones'})), t150=ptRender(sine, ptOf({tempo:150, art:'tones', semi:-5}));
+      const hits=[0,0.5,1,1.5], clk=mk(t=>{ for(const h of hits) if(t>=h && t<h+0.15) return Math.sin(2*Math.PI*80*(t-h))*Math.exp(-(t-h)*30); return 0; });
+      const b50=ptRender(clk, ptOf({tempo:50, art:'beats'}), null), d=b50.getChannelData(0), pk=[];
+      for(let k=0;k<8;k++){ let m=0, at=0; const a=Math.max(0,Math.round((k*0.5-0.05)*sr)); for(let i=a;i<Math.min(d.length,a+sr*0.45);i++) if(Math.abs(d[i])>m){ m=Math.abs(d[i]); at=i; } pk.push([+(at/sr).toFixed(3), +m.toFixed(2)]); }
+      return {r12:[+r12.duration.toFixed(3), Math.round(zc(r12))], t50:[+t50.duration.toFixed(3), Math.round(zc(t50))], t150:[+t150.duration.toFixed(3), Math.round(zc(t150))],
+        b50:+b50.duration.toFixed(3), pk, off:ptIsOn(ptOf({tempo:150})), g:+ptG(ptOf({semi:12})).toFixed(3)}; })()""")
+    ok('#11 Plattenspieler +12 HT: halbe Länge, doppelte Frequenz', abs(dsp['r12'][0]-1)<0.01 and abs(dsp['r12'][1]-880)<5, dsp['r12'])
+    ok('#11 Töne 50 %: doppelte Länge, Tonhöhe bleibt; 150 % −5 HT: 2/3 Länge, 440·2^(−5/12)', abs(dsp['t50'][0]-4)<0.01 and abs(dsp['t50'][1]-440)<5 and abs(dsp['t150'][0]-1.333)<0.01 and abs(dsp['t150'][1]-329.6)<5, [dsp['t50'],dsp['t150']])
+    pk=dsp['pk']; hitpk=[pk[i] for i in (0,2,4,6)]; gappk=[pk[i] for i in (1,3,5,7)]
+    ok('#11 Beats 50 %: Anschläge an 0/1/2/3 s unverändert, dazwischen still (keine Verdopplung)', abs(dsp['b50']-4)<0.01 and all(abs(p[0]-(i+0.003))<0.004 and p[1]>0.8 for i,p in enumerate(hitpk)) and all(p[1]<0.01 for p in gappk), pk)
+    ok('#11 Plattenspieler ignoriert Tempo; Zeitfaktor +12 HT = 0,5', dsp['off']==False and dsp['g']==0.5, dsp)
+    await pg.evaluate("""(async()=>{ openSampleEditor({buffer:new AudioBuffer({length:44100,numberOfChannels:1,sampleRate:44100}),label:'PT'}); await new Promise(r=>setTimeout(r,150));
+      document.querySelector('#sePTArt [data-art=beats]').click(); document.querySelector('#sePT [data-pt=semi][data-d="1"]').click(); document.querySelector('#sePT [data-pt=tempo][data-d="-5"]').click();
+      document.getElementById('sePT').scrollIntoView({block:'center'}); })()""")
+    await pg.wait_for_timeout(150); await s('se_pt'); await pg.evaluate("closeSampleEditor()")
+    pt=await pg.evaluate("""(async()=>{ const sr=44100, b=new AudioBuffer({length:sr,numberOfChannels:1,sampleRate:sr}); const d=b.getChannelData(0); for(let i=0;i<sr;i++) d[i]=0.4*Math.sin(2*Math.PI*220*i/sr);
+      openSampleEditor({buffer:b,label:'PT-Test'}); await new Promise(r=>setTimeout(r,200));
+      for(let i=0;i<3;i++) document.querySelector('#sePT [data-pt=semi][data-d="1"]').click();
+      const dis=document.getElementById('sePTTempoRow').classList.contains('dis'), tv1=document.getElementById('sePTTempo').textContent;
+      document.querySelector('#sePTArt [data-art=tones]').click(); for(let i=0;i<4;i++) document.querySelector('#sePT [data-pt=tempo][data-d="5"]').click();
+      const tv2=document.getElementById('sePTTempo').textContent, reg=sePTRegion(false).duration;
+      seAssignPads=new Set([7]); seSaveBtn.click(); for(let i=0;i<100 && sampleEditorOverlay.classList.contains('open');i++) await new Promise(r=>setTimeout(r,50));
+      const id=padSampleId[7], e=await loadSampleLibraryEntry(id), padLen=padSamples[7].buffer.duration;
+      await openSampleEditor({sampleId:id}); await new Promise(r=>setTimeout(r,200)); const back=[sePT.semi,sePT.tempo,sePT.art].join(); closeSampleEditor();
+      await deleteSampleLibraryEntry(id); sePadClear(7);
+      return {dis, tv1, tv2, reg:+reg.toFixed(3), e:[e.semi,e.tempo,e.art].join(), padLen:+padLen.toFixed(3), back}; })()""")
+    ok('#11 Editor: Plattenspieler sperrt Tempo (zeigt 119 %), Töne 120 %, Vorhör-Ausschnitt 1/1,2 s', pt['dis'] and pt['tv1']=='119 %' and pt['tv2']=='120 %' and abs(pt['reg']-0.833)<0.01, pt)
+    ok('#11 Speichern: semi/tempo/art im Eintrag, Pad spielt gerechnet, beim Öffnen wieder da', pt['e']=='3,120,tones' and abs(pt['padLen']-0.833)<0.01 and pt['back']=='3,120,tones', pt)
     ok('Schrift überall ≥ 11 px (#19)', not fz.bad, fz.bad)
     ok('Keine Konsolenfehler', not errs, errs)
     await b.close()

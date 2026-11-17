@@ -44,7 +44,7 @@ const sePlayOnceBtn=document.getElementById('sePlayOnce'), sePlayHoldBtn=documen
 // dann gilt der Trim-Bereich. seLoopBuf bindet die Punkte an einen Puffer — neuer Puffer
 // (Aufnahme, Import, Werkzeug, Zurücksetzen) verwirft sie automatisch.) ----
 let seLoopStart=null, seLoopEnd=null, seLoopBuf=null, sePlayMode='oneshot', seOverlap=false, seEditMode='trim', seSnap=true;
-let seCursorRAF=null, seCursorT0=0;
+let seCursorRAF=null, seCursorT0=0, seCursorG=1; // seCursorG = Zeitfaktor beim Vorhören mit Tonhöhe/Tempo
 const SE_ICON_PLAY='<svg class="se-ico" viewBox="0 0 24 24" aria-hidden="true"><polygon points="6,4 20,12 6,20" fill="currentColor"/></svg>Vorhören', SE_ICON_STOP='<svg class="se-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="1" fill="currentColor"/></svg>Stopp';
 // ---- Undo/Redo (5 Schritte): Zustände sind nur Referenzen auf unveränderliche Puffer + Trim/Loop-Werte ----
 const SE_HIST_MAX=5;
@@ -142,7 +142,7 @@ seFieldL2.addEventListener('change', ()=>seWithHist(()=>seCommitLoopField(2)));
 function seCursorFrame(){
   if(!sePreviewSrc || !seWorkingBuffer) return;
   const dur=seWorkingBuffer.duration, [la,lb]=seLoopBounds();
-  let pos=seTrimStart+(audioCtx.currentTime-seCursorT0);
+  let pos=seTrimStart+(audioCtx.currentTime-seCursorT0)/seCursorG;
   if(sePlayMode==='loop' && pos>lb && lb>la) pos=la+((pos-la)%(lb-la));
   const w=seInnerWidth(), px=Math.min(w,pos/dur*w);
   seCursorEl.style.left=px+'px'; seCursorEl.style.display='block';
@@ -536,8 +536,11 @@ sePreviewBtn.addEventListener('click', ()=>{
   if(sePreviewSrc){ seStopPreview(); return; }
   if(!seWorkingBuffer || !audioCtx) return;
   const src=audioCtx.createBufferSource(); src.buffer=seWorkingBuffer; src.connect(master);
-  const [la,lb]=seLoopBounds(), t0=audioCtx.currentTime;
-  if(sePlayMode==='loop'){ src.buffer=seXfBuffer(); src.loop=true; src.loopStart=la; src.loopEnd=lb; src.start(t0, seTrimStart); }
+  const [la,lb]=seLoopBounds(), t0=audioCtx.currentTime; seCursorG=1;
+  if(ptIsOn(sePT)){ // #11: mit Tonhöhe/Tempo nur der Ausschnitt, gerechnet (zwischengespeichert)
+    const g=ptG(sePT), lp=sePlayMode==='loop'; src.buffer=sePTRegion(lp); seCursorG=g;
+    if(lp){ src.loop=true; src.loopStart=(la-seTrimStart)*g; src.loopEnd=(lb-seTrimStart)*g; src.start(t0, 0); } else src.start(t0, 0);
+  } else if(sePlayMode==='loop'){ src.buffer=seXfBuffer(); src.loop=true; src.loopStart=la; src.loopEnd=lb; src.start(t0, seTrimStart); }
   else src.start(t0, seTrimStart, Math.max(0.02, seTrimEnd-seTrimStart));
   seCursorT0=t0;
   src.onended=()=>{ if(sePreviewSrc===src) seStopPreview(); };
@@ -563,7 +566,7 @@ seSaveBtn.addEventListener('click', async ()=>{
   const [la,lb]=seLoopBounds();
   const entry={id:entryId, name:(old && old.name) || deriveSampleName(), root:old && old.root!=null ? old.root : undefined, blob, offsetStart:0, offsetEnd:null, savedAt:Date.now(),
     playMode:sePlayMode, overlap:seOverlap, loopStart:hasLoop ? la-seTrimStart : null, loopEnd:hasLoop ? lb-seTrimStart : null,
-    loopXf:hasLoop && seSnap ? +loopXfWant(la,lb).toFixed(4) : 0};
+    loopXf:hasLoop && seSnap ? +loopXfWant(la,lb).toFixed(4) : 0, ...sePTSave()};
   if(old && old.src){ entry.src=old.src; entry.slice=old.slice; } // Stück bleibt Stück seines Originals
   if(entry.root===undefined) delete entry.root;
   await saveSampleLibraryEntry(entry);
@@ -603,7 +606,7 @@ async function openSampleEditor({sampleId=null, forSampler=null, forPad=null, bu
       // Migrations-Altlast: alte Einträge tragen ihren Start-Offset noch separat statt
       // bereits "eingebrannt" — beim ersten erneuten Übernehmen wird das bereinigt.
       if(entry.offsetStart) seTrimStart=Math.min(entry.offsetStart, seTrimEnd-0.02);
-      seCutRestore(entry);
+      seCutRestore(entry); sePTSet(ptOf(entry));
       seStatus.textContent=(entry.name||'Sample')+' geladen — '+seOriginalBuffer.duration.toFixed(1)+'s';
       seStatus.classList.remove('err');
     }
@@ -625,7 +628,7 @@ async function openSampleEditor({sampleId=null, forSampler=null, forPad=null, bu
   if(forPad!=null) seAssignPads.add(forPad);
   renderSEAssignUI();
   sampleEditorOverlay.classList.add('open');
-  if(!sampleId) seCutRestore(null);
+  if(!sampleId){ seCutRestore(null); sePTSet(ptOf(null)); }
   seSetMode('trim'); seUpdatePlayModeUI(); seHistReset();
   syncBottomBarVisibility();
   seZoomFactor=1; seZoomEl.value=1; seZoomValEl.textContent='1.0×';
@@ -660,16 +663,7 @@ function seCutBounds(){
   const c = seCutBuf===seWorkingBuffer ? seCuts.filter(t=>t>seTrimStart+0.01 && t<seTrimEnd-0.01) : [];
   return [seTrimStart, ...c, seTrimEnd];
 }
-// Anschläge: Pegelsprung (dB) gegen die letzten ~23 ms über einer Pegel-Grenze (Empfindlichkeit), mind. 90 ms Abstand
-function seOnsets(buf, a, b, s){
-  const x=buf.getChannelData(0), sr=buf.sampleRate, H=256, i0=Math.floor(a*sr), i1=Math.floor(b*sr), D=[];
-  for(let i=i0;i+H<=i1;i+=H){ let e=0; for(let k=0;k<H;k++) e+=x[i+k]*x[i+k]; D.push(10*Math.log10(1e-12+e/H)); }
-  let top=-240; for(const v of D) if(v>top) top=v;
-  const floor=top-(6+s*34), gap=Math.round(0.09*sr/H), out=[]; let last=-gap;
-  for(let k=4;k<D.length;k++){ const pm=Math.max(D[k-1],D[k-2],D[k-3],D[k-4]);
-    if(D[k]>floor && D[k]-pm>4 && k-last>=gap){ const t=a+(k*H)/sr-0.006; if(t>a+0.03 && t<b-0.03) out.push(seSnapZero(t)); last=k; } }
-  return out;
-}
+function seOnsets(buf, a, b, s){ return smpOnsets(buf, a, b, s, seSnapZero); } // Logik in js/wav-export.js (auch für Tempo „Beats“)
 function seCutAutoRun(){
   if(!seWorkingBuffer) return;
   const a=seTrimStart, b=seTrimEnd;
@@ -776,14 +770,14 @@ async function seSaveSlices(){
   const hasLoop=seLoopBuf===seWorkingBuffer && seLoopStart!=null && seLoopEnd!=null, [la,lb]=seLoopBounds();
   const src={id:srcId, name, blob:audioBufferToWavBlob(bufferSlice(seWorkingBuffer, seTrimStart, seTrimEnd)), offsetStart:0, offsetEnd:null, savedAt:now,
     playMode:sePlayMode, overlap:seOverlap, loopStart:hasLoop ? la-a0 : null, loopEnd:hasLoop ? lb-a0 : null, loopXf:hasLoop && seSnap ? +loopXfWant(la,lb).toFixed(4) : 0,
-    cuts:B.slice(1,-1).map(t=>+(t-a0).toFixed(5)), cutSens:seCutSens};
+    cuts:B.slice(1,-1).map(t=>+(t-a0).toFixed(5)), cutSens:seCutSens, ...sePTSave()};
   if(old && old.root!=null) src.root=old.root;
   if(old && old.src){ src.src=old.src; src.slice=old.slice; }
   await saveSampleLibraryEntry(src);
   const prev=(await listSampleLibrary()).filter(e=>e.src===srcId), kids=[];
   for(let k=0;k<n;k++){
     const e={id:srcId+'.s'+(k+1), name:name+' '+(k+1), src:srcId, slice:k+1, blob:audioBufferToWavBlob(seCutPiece(seWorkingBuffer, B[k], B[k+1])),
-      offsetStart:0, offsetEnd:null, savedAt:now, playMode:'oneshot', overlap:false, loopStart:null, loopEnd:null, loopXf:0};
+      offsetStart:0, offsetEnd:null, savedAt:now, playMode:'oneshot', overlap:false, loopStart:null, loopEnd:null, loopXf:0, ...sePTSave()};
     await saveSampleLibraryEntry(e); kids.push(e);
   }
   const kidIds=new Set(kids.map(e=>e.id)), gone=prev.filter(e=>!kidIds.has(e.id));
@@ -803,3 +797,39 @@ async function seSaveSlices(){
   closeSampleEditor();
   hmToast(n+' Stücke von „'+name+'“ angelegt'+(m ? ' · Pad 1–'+m : ''), false);
 }
+
+// ---- Tonhöhe / Tempo (v118, #11 Stufe 2, Variante B): Werte im Eintrag, Original bleibt; Rechnen in js/wav-export.js (ptRender).
+// Plattenspieler: Tempo folgt der Tonhöhe (Zeile Tempo zeigt das Ergebnis); Beats/Töne: Tempo frei. ----
+let sePT=ptOf(null), sePTCache={k:'', b:null}, sePTBufN=0;
+const sePTBufId=new WeakMap();
+function sePTSet(pt){ sePT=pt; sePTSync(); }
+function sePTSave(){ return ptIsOn(sePT) ? {semi:sePT.semi, tempo:sePT.tempo, art:sePT.art} : {art:sePT.art}; }
+function sePTSync(){
+  const v=$id('sePTSemi'), t=$id('sePTTempo'), eff=sePT.art==='rate' ? Math.round(100*Math.pow(2,sePT.semi/12)) : sePT.tempo;
+  v.textContent=(sePT.semi>0?'+':'')+sePT.semi+' HT'; v.classList.toggle('def', !sePT.semi);
+  t.textContent=eff+' %'; t.classList.toggle('def', eff===100);
+  $id('sePTTempoRow').classList.toggle('dis', sePT.art==='rate');
+  $id('sePTArt').querySelectorAll('[data-art]').forEach(b=>b.classList.toggle('on', b.dataset.art===sePT.art));
+  $id('sePTNote').textContent = sePT.art==='rate' ? 'Wie Plattenspieler: höher = schneller. Sauberster Klang.'
+    : sePT.art==='beats' ? 'Anschläge bleiben unverändert, nur die Abstände ändern sich. Für Drums und Loops.'
+    : 'Zeitdehnung für Flächen und Gesang. Schneller klingt meist besser als langsamer.';
+}
+// Ausschnitt S–E mit Tonhöhe/Tempo (Schleife: mit Überblendung); Beats nimmt die Schnitte aus dem Schneiden, sonst Anschläge
+function sePTRegion(loop){
+  if(!sePTBufId.has(seWorkingBuffer)) sePTBufId.set(seWorkingBuffer, ++sePTBufN);
+  const cuts=seCutBuf===seWorkingBuffer ? seCuts.filter(t=>t>seTrimStart && t<seTrimEnd) : null;
+  const k=[sePTBufId.get(seWorkingBuffer), seTrimStart, seTrimEnd, sePT.semi, sePT.tempo, sePT.art, loop ? seLoopBounds().join()+seXfWant() : '', cuts ? cuts.join() : ''].join('|');
+  if(sePTCache.k!==k){
+    const src=bufferSlice(loop ? seXfBuffer() : seWorkingBuffer, seTrimStart, seTrimEnd);
+    sePTCache={k, b:ptRender(src, sePT, cuts && cuts.length ? cuts.map(t=>t-seTrimStart) : null)};
+  }
+  return sePTCache.b;
+}
+function sePTChanged(){ sePTSync(); if(sePreviewSrc){ seStopPreview(); sePreviewBtn.click(); } }
+document.querySelectorAll('#sePT [data-pt]').forEach(b=>b.addEventListener('click', ()=>{
+  const d=+b.dataset.d;
+  if(b.dataset.pt==='semi') sePT.semi=Math.max(-12, Math.min(12, sePT.semi+d)); else sePT.tempo=Math.max(50, Math.min(200, sePT.tempo+d));
+  sePTChanged();
+}));
+$id('sePTArt').querySelectorAll('[data-art]').forEach(b=>b.addEventListener('click', ()=>{ sePT.art=b.dataset.art; sePTChanged(); }));
+sePTSync();

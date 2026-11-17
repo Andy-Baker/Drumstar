@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>MRM-44 — Mobile Rhythm Machine</title>
 <link rel="stylesheet" href="./fonts.css">
-<link rel="stylesheet" href="./css/app.css?v=117">
+<link rel="stylesheet" href="./css/app.css?v=118">
 
 
 <!-- Drumstar PWA -->
@@ -223,6 +223,12 @@
         <div class="se-lb">4 · Wiedergabe</div>
         <div class="se-seg"><button id="sePlayOnce" class="on">Einmal</button><button id="sePlayHold">Halten</button><button id="sePlayLoop">Schleife</button></div>
         <div id="sePlayHint"></div>
+        <div id="sePT">
+          <div class="se-pt-row"><span class="lbl"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg>Tonhöhe</span><button class="se-cut-ib" data-pt="semi" data-d="-1" aria-label="Tiefer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button><span class="val" id="sePTSemi"></span><button class="se-cut-ib" data-pt="semi" data-d="1" aria-label="Höher"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div>
+          <div class="se-pt-row" id="sePTTempoRow"><span class="lbl"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21h8l-2-17h-4z"/><path d="M12 15l5-7"/></svg>Tempo</span><button class="se-cut-ib" data-pt="tempo" data-d="-5" aria-label="Langsamer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button><span class="val" id="sePTTempo"></span><button class="se-cut-ib" data-pt="tempo" data-d="5" aria-label="Schneller"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div>
+          <div class="se-seg" id="sePTArt"><button data-art="rate">Plattenspieler</button><button data-art="beats">Beats</button><button data-art="tones">Töne</button></div>
+          <div class="se-pt-note" id="sePTNote"></div>
+        </div>
         <div id="seOverlapBtn"><span>Treffer überlagern</span><span class="se-sw"><span></span></span></div>
 
         <div id="seAssignLabel">5 · Verwenden als</div>
@@ -536,31 +542,31 @@
       </div>
 </div>
 
-<script src="./js/base.js?v=117"></script>
-<script src="./js/audio.js?v=117"></script>
-<script src="./js/fx.js?v=117"></script>
-<script src="./js/voices.js?v=117"></script>
-<script src="./js/events.js?v=117"></script>
-<script src="./js/kits.js?v=117"></script>
-<script src="./js/tracks.js?v=117"></script>
-<script src="./js/controls.js?v=117"></script>
-<script src="./js/harmony.js?v=117"></script>
-<script src="./js/editor.js?v=117"></script>
-<script src="./js/sheets.js?v=117"></script>
-<script src="./js/sample-track.js?v=117"></script>
-<script src="./js/wav-export.js?v=117"></script>
-<script src="./js/sampler-werk.js?v=117"></script>
-<script src="./js/sampler.js?v=117"></script>
-<script src="./js/mixer.js?v=117"></script>
-<script src="./js/sample-editor.js?v=117"></script>
-<script src="./js/storage.js?v=117"></script>
-<script src="./js/beats.js?v=117"></script>
-<script src="./js/spuren.js?v=117"></script>
-<script src="./js/pianoroll.js?v=117"></script>
-<script src="./js/scheduler.js?v=117"></script>
-<script src="./js/transport-ui.js?v=117"></script>
-<script src="./js/tempo-detect.js?v=117"></script>
-<script src="./js/main.js?v=117"></script>
+<script src="./js/base.js?v=118"></script>
+<script src="./js/audio.js?v=118"></script>
+<script src="./js/fx.js?v=118"></script>
+<script src="./js/voices.js?v=118"></script>
+<script src="./js/events.js?v=118"></script>
+<script src="./js/kits.js?v=118"></script>
+<script src="./js/tracks.js?v=118"></script>
+<script src="./js/controls.js?v=118"></script>
+<script src="./js/harmony.js?v=118"></script>
+<script src="./js/editor.js?v=118"></script>
+<script src="./js/sheets.js?v=118"></script>
+<script src="./js/sample-track.js?v=118"></script>
+<script src="./js/wav-export.js?v=118"></script>
+<script src="./js/sampler-werk.js?v=118"></script>
+<script src="./js/sampler.js?v=118"></script>
+<script src="./js/mixer.js?v=118"></script>
+<script src="./js/sample-editor.js?v=118"></script>
+<script src="./js/storage.js?v=118"></script>
+<script src="./js/beats.js?v=118"></script>
+<script src="./js/spuren.js?v=118"></script>
+<script src="./js/pianoroll.js?v=118"></script>
+<script src="./js/scheduler.js?v=118"></script>
+<script src="./js/transport-ui.js?v=118"></script>
+<script src="./js/tempo-detect.js?v=118"></script>
+<script src="./js/main.js?v=118"></script>
 
 <script>
 // Drumstar PWA service worker

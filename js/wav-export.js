@@ -208,6 +208,79 @@ function loopXfBake(buf, a, b, want, from=0){
   }
   return out;
 }
+// ---- Tonhöhe / Tempo (v118, #11 Stufe 2, Variante B): nicht zerstörend, der Eintrag speichert nur `semi` (±12 HT),
+// `tempo` (50–200 %) und `art`: 'rate' = wie Plattenspieler (Tempo folgt der Tonhöhe, sauberster Klang),
+// 'beats' = Anschläge bleiben unverändert, nur die Lücken werden kürzer/länger (wie Ableton „Beats“; für Drums),
+// 'tones' = WSOLA-Zeitdehnung (für Flächen/Gesang). Gerechnet beim Laden bzw. Vorhören. Zeitfaktor g = neue/alte Länge.
+const PT_ARTS=['rate','beats','tones'];
+const ptOf=e=>({semi:Math.max(-12,Math.min(12,Math.round(+(e && e.semi)||0))), tempo:Math.max(50,Math.min(200,Math.round(+(e && e.tempo)||100))), art:PT_ARTS.includes(e && e.art) ? e.art : 'rate'});
+const ptIsOn=pt=>pt.semi!==0 || (pt.art!=='rate' && pt.tempo!==100);
+const ptG=pt=>pt.art==='rate' ? Math.pow(2,-pt.semi/12) : 100/pt.tempo;
+// Anschläge (gleiche Logik wie der Modus Schneiden): Pegelsprung > 4 dB gegen die letzten ~23 ms, über der Grenze
+// top − (6 + s·34) dB, mind. 90 ms Abstand, 6 ms vor dem Anschlag; snap = Funktion zum Einrasten (oder keine)
+function smpOnsets(buf, a, b, s, snap){
+  const x=buf.getChannelData(0), sr=buf.sampleRate, H=256, i0=Math.floor(a*sr), i1=Math.floor(b*sr), D=[];
+  for(let i=i0;i+H<=i1;i+=H){ let e=0; for(let k=0;k<H;k++) e+=x[i+k]*x[i+k]; D.push(10*Math.log10(1e-12+e/H)); }
+  let top=-240; for(const v of D) if(v>top) top=v;
+  const floor=top-(6+s*34), gap=Math.round(0.09*sr/H), out=[]; let last=-gap;
+  for(let k=4;k<D.length;k++){ const pm=Math.max(D[k-1],D[k-2],D[k-3],D[k-4]);
+    if(D[k]>floor && D[k]-pm>4 && k-last>=gap){ const t=a+(k*H)/sr-0.006; if(t>a+0.03 && t<b-0.03) out.push(snap ? snap(t) : t); last=k; } }
+  return out;
+}
+function ptResample(x, r){ const n=Math.max(1,Math.floor((x.length-1)/r)), y=new Float32Array(n);
+  for(let i=0;i<n;i++){ const t=i*r, j=t|0, f=t-j; y[i]=x[j]*(1-f)+(x[j+1]||0)*f; } return y; }
+// WSOLA: Fenster 4096 (~93 ms, gemessen am wenigsten „phasig“ bei Flächen; Transienten macht der Modus Beats), 50 % Überlappung, normierte Korrelation,
+// Suche grob (Schritt 8) dann fein (±8, Schritt 1); Ausgabe durch die aufsummierte Fensterkurve geteilt.
+function ptWsola(X, f){
+  const L=X[0].length, N=Math.min(4096, 1<<Math.floor(Math.log2(Math.max(64,L>>1)))), Hs=N>>1, Ha=Hs/f, T=N>>2, outL=Math.max(1,Math.round(L*f));
+  if(L<N*2) return X.map(x=>ptResample(x,1/f)); // zu kurz zum Dehnen: wie Plattenspieler
+  const Y=X.map(()=>new Float32Array(outL+N)), W=new Float32Array(outL+N), w=new Float32Array(N);
+  for(let i=0;i<N;i++) w[i]=0.5-0.5*Math.cos(2*Math.PI*i/N);
+  const x0=X.length>1 ? X[0].map((v,i)=>v+X[1][i]) : X[0], M=N>>1;
+  const corr=(p,ref,st)=>{ let c=0,e=1e-9; for(let i=0;i<M;i+=st){ const v=x0[p+i]; c+=v*x0[ref+i]; e+=v*v; } return c/Math.sqrt(e); };
+  let prev=0;
+  for(let k=0;k*Hs<outL;k++){
+    const nom=Math.round(k*Ha); let pos=Math.max(0,Math.min(L-N,nom));
+    if(k>0){ const ref=Math.min(L-N, prev+Hs), lo=Math.max(0,nom-T), hi=Math.min(L-N,nom+T); let best=pos, bc=-Infinity;
+      for(let p=lo;p<=hi;p+=8){ const c=corr(p,ref,4); if(c>bc){ bc=c; best=p; } }
+      const c0=best; for(let p=Math.max(lo,c0-8);p<=Math.min(hi,c0+8);p++){ const c=corr(p,ref,2); if(c>bc){ bc=c; best=p; } }
+      pos=best; }
+    prev=pos; const o=k*Hs;
+    for(let i=0;i<N;i++) W[o+i]+=w[i];
+    for(let c=0;c<X.length;c++){ const x=X[c], y=Y[c]; for(let i=0;i<N;i++) y[o+i]+=x[pos+i]*w[i]; }
+  }
+  return Y.map(y=>{ const r=y.subarray(0,outL); for(let i=0;i<outL;i++) r[i]/=Math.max(W[i],0.1); return r; });
+}
+// Beats: jedes Stück zwischen zwei Anschlägen beginnt an seiner neuen Stelle (·g), wird nur in der Tonhöhe
+// umgerechnet und am neuen Abstand abgeschnitten (4 ms Ausblenden) bzw. endet natürlich (Lücke bleibt still).
+function ptBeats(X, sr, p, g, onsets){
+  const L=X[0].length, outL=Math.max(1,Math.round(L*g)), B=[0, ...onsets.map(t=>Math.round(t*sr)).filter(i=>i>0 && i<L), L];
+  const Y=X.map(()=>new Float32Array(outL)), fi=Math.round(sr*0.0005), fo=Math.round(sr*0.004);
+  const P=Math.round(sr*0.006), at=k=>k===0 ? 0 : k>=B.length-1 ? outL : Math.round((B[k]+P)*g)-P; // Schnitt liegt 6 ms vor dem Anschlag: Anschlag landet genau bei ·g
+  for(let k=0;k<B.length-1;k++){
+    const o=at(k), room=at(k+1)-o; if(room<=0) continue;
+    X.forEach((x,c)=>{ let seg=x.subarray(B[k], B[k+1]); if(p!==1) seg=ptResample(seg,p);
+      const n=Math.min(seg.length, room), y=Y[c], cut=seg.length>room;
+      for(let i=0;i<n;i++){ let v=seg[i]; if(k>0 && i<fi) v*=i/fi; if(cut && i>n-fo) v*=Math.max(0,(n-i)/fo); y[o+i]+=v; } });
+  }
+  return Y;
+}
+// Rechnet einen Puffer mit Tonhöhe/Tempo des Eintrags (pt = ptOf(entry)); onsets nur für 'beats' (Sekunden).
+function ptRender(buf, pt, onsets){
+  if(!ptIsOn(pt)) return buf;
+  const sr=buf.sampleRate, p=Math.pow(2,pt.semi/12), g=ptG(pt), X=[...Array(buf.numberOfChannels)].map((_,c)=>buf.getChannelData(c));
+  let Y;
+  if(pt.art==='rate') Y=X.map(x=>ptResample(x,p));
+  else if(pt.art==='beats') Y=ptBeats(X, sr, p, g, onsets || smpOnsets(buf, 0, buf.duration, 0.15));
+  else { Y=Math.abs(p*g-1)>1e-6 ? ptWsola(X, p*g) : X; if(p!==1) Y=Y.map(y=>ptResample(y,p)); }
+  const out=new AudioBuffer({length:Y[0].length, numberOfChannels:Y.length, sampleRate:sr}); Y.forEach((y,c)=>out.getChannelData(c).set(y)); return out;
+}
+// Für Pads/Sampler/Drum-Sets: Puffer + Zeiten (Start, Loop) des Eintrags mit Tonhöhe/Tempo; Loop-Überblendung vorher.
+function ptEntry(buf, e, off, loop){
+  const pt=ptOf(e); if(!ptIsOn(pt)) return {buf, off, loop};
+  const g=ptG(pt), on=Array.isArray(e.cuts) && e.cuts.length ? e.cuts.map(t=>t+off) : null;
+  return {buf:ptRender(buf, pt, on), off:off*g, loop:loop ? [loop[0]*g, loop[1]*g] : null};
+}
 // Dekodiert einen Bibliothekseintrag und weist ihn einem Pad zu — aktualisiert genau die Variablen, die playPad() liest.
 async function applySampleToPad(i, entry){
   await Promise.resolve(initAudio());
@@ -218,6 +291,8 @@ async function applySampleToPad(i, entry){
   padSamples[i].loopStart=entry.loopStart!=null?entry.loopStart:null; padSamples[i].loopEnd=entry.loopEnd!=null?entry.loopEnd:null;
   if(padSamples[i].mode==='loop' && entry.loopXf>0 && padSamples[i].loopEnd>padSamples[i].loopStart)
     padSamples[i].buffer=loopXfBake(padSamples[i].buffer, padSamples[i].loopStart, padSamples[i].loopEnd, entry.loopXf, padSamples[i].offset);
+  { const P=padSamples[i], hasL=P.loopEnd!=null && P.loopStart!=null, r=ptEntry(P.buffer, entry, P.offset, hasL ? [P.loopStart, P.loopEnd] : null); // #11 Tonhöhe/Tempo
+    P.buffer=r.buf; P.offset=r.off; if(hasL){ P.loopStart=r.loop[0]; P.loopEnd=r.loop[1]; } }
   padSampleId[i]=entry.id;
   try{
     const ids=JSON.parse(localStorage.getItem('mrm44_padSampleIds')||'[]');
