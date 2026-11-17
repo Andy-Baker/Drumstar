@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sample-Editor: Schneiden, Tonhöhe, Tempo (#11)</title>
+<link rel="stylesheet" href="../../fonts.css">
+<style>
+/* Mockup zu Issue #11: Die echte App läuft im Rahmen, der Sample-Editor öffnet sich mit einem Demo-Beat.
+   Zur Laufzeit kommen dazu: Modus „Schneiden“ (Stücke → Pads), Tonhöhe und Tempo (A als Werkzeug, B als Wiedergabe).
+   Übernehmen ist im Mockup gesperrt (schreibt nichts in deine Bibliothek). */
+:root{color-scheme:dark;--bg:#050507;--blue:#3fa9ff;--blue-2:#8fd4ff;--white:#f4f5f7;--dim:#7d818c;--metal:#c7cbd4}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--white);font-family:'Rajdhani',system-ui,sans-serif}
+#mbar{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:calc(6px + env(safe-area-inset-top,0px)) 10px 6px;background:repeating-linear-gradient(135deg,#0b1622 0 8px,#0d1a28 8px 16px);border-bottom:1px dashed rgba(63,169,255,.45);font:700 11px 'JetBrains Mono',monospace;color:var(--blue-2)}
+#mbar .g{display:flex;align-items:center;gap:4px}
+#mbar button{height:30px;padding:0 7px;border-radius:6px;border:1px solid rgba(63,169,255,.45);background:rgba(63,169,255,.12);font:700 11px 'JetBrains Mono',monospace;color:var(--blue-2);cursor:pointer}
+#mbar button.on{background:var(--blue);color:#042c53}
+#mbar label{display:flex;align-items:center;gap:4px;cursor:pointer}
+#mbar .sp{flex:1}
+#stage{position:fixed;top:44px;left:0;right:0;bottom:0;display:flex;justify-content:center;align-items:flex-start;gap:28px;overflow:auto}
+.ph{display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;width:100%}
+iframe{border:0;width:100%;height:100%;background:#050507;display:block}
+#side{display:none;width:340px;font-size:14px;color:var(--metal);line-height:1.45;padding-top:20px}
+#side h3,#info h3{font:700 11px 'Rajdhani';letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin:16px 0 6px}
+#side p,#info p{margin:0 0 8px} #side b,#info b{color:var(--white)}
+#side ul,#info ul{margin:0 0 8px;padding-left:18px} #side li,#info li{margin:3px 0}
+#info{position:fixed;inset:44px 0 0 0;z-index:190;background:#07080bf2;overflow:auto;padding:8px 18px 40px;font-size:14.5px;color:var(--metal);line-height:1.45;display:none}
+#info.open{display:block}
+@media (min-width:900px) and (min-height:900px){
+  #stage{padding:14px 0}
+  .ph{width:auto;height:auto}
+  iframe{width:390px;height:844px;border-radius:30px;border:8px solid #1a1e26;box-shadow:0 30px 80px rgba(0,0,0,.75);box-sizing:content-box}
+  #side{display:block} #infoBtn{display:none}
+}
+</style>
+</head>
+<body>
+<div id="mbar">
+  <span>#11</span>
+  <div class="g"><button data-v="">Heute</button><button data-v="a" class="on">A Werkzeug</button><button data-v="b">B Wiedergabe</button></div>
+  <span class="sp"></span>
+  <label><input type="checkbox" id="mk"> Neu</label>
+  <button id="demoBtn">Demo</button>
+  <button id="infoBtn">ⓘ</button>
+</div>
+<div id="stage">
+  <div class="ph"><iframe id="fR" src="../../index.html" title="App mit Vorschlag"></iframe></div>
+  <div id="side"></div>
+</div>
+<div id="info"></div>
+<template id="notes">
+  <h3>Was das ist</h3>
+  <p>Die <b>echte App</b>, Sample-Editor mit einem Demo-Beat (2 Takte, 96 BPM, Bass + Akkord). Alles ist anhörbar. <b>Übernehmen ist gesperrt</b> – das Mockup schreibt nichts in deine Bibliothek. „Neu“ umrandet die neuen Teile gelb, „Demo“ setzt zurück.</p>
+  <h3>Schneiden (A und B gleich)</h3>
+  <ul>
+    <li>Dritter Modus <b>Schneiden</b> neben Zuschneiden/Loop (grün = Sampler-Farbe).</li>
+    <li>Schnitte automatisch <b>nach Anschlägen</b> (Empfindlichkeit) oder <b>gleichmäßig</b> 4/8/16. Schnitte an der Leiste unten ziehen, rasten knackfrei ein.</li>
+    <li>In die Welle tippen = Stück anhören und wählen. <b>+</b> setzt einen Schnitt an die getippte Stelle, <b>−</b> entfernt den Schnitt vor dem gewählten Stück.</li>
+    <li>Unter „Verwenden als“: <b>Stücke → Pads</b>. Die Pad-Kacheln zeigen, welches Stück wohin kommt, Antippen spielt es. Mehr als 9 Stücke: der Rest geht nicht auf Pads.</li>
+    <li>Übernehmen würde jedes Stück als eigenes Sample anlegen („Name 1“, „Name 2“ …) und auf die Pads legen.</li>
+  </ul>
+  <h3>Tonhöhe und Tempo</h3>
+  <ul>
+    <li>Tonhöhe in Halbtönen (±12), Tempo in Prozent (50–200 %).</li>
+    <li>Schalter <b>Länge behalten</b>: an = Tonhöhe ändert die Länge nicht (Zeitdehnung, rechnet, kann bei großen Sprüngen leicht „flattern“); aus = wie Plattenspieler schneller/langsamer (sauberster Klang, Tempo folgt der Tonhöhe).</li>
+    <li>Beides wird einmal gerechnet, <b>keine Last beim Spielen</b>, kein neuer Audio-Knoten.</li>
+  </ul>
+  <h3>A · Werkzeug</h3>
+  <p>Zwei neue Tasten in „3 · Bearbeiten“. Öffnen eine Zeile mit Anhören/Anwenden. Anwenden rechnet es fest ins Sample (Rückgängig geht).</p>
+  <h3>B · Wiedergabe</h3>
+  <p>Tonhöhe/Tempo stehen bei „4 · Wiedergabe“ und gelten sofort beim Vorhören. Das Original bleibt, gespeichert werden nur die Werte (wie die Loop-Überblendung), gerechnet beim Laden.</p>
+  <h3>Zur Entscheidung</h3>
+  <ul>
+    <li>A oder B für Tonhöhe/Tempo?</li>
+    <li>Klang der Zeitdehnung am Handy ok (z. B. +5 Halbtöne, 70 %)?</li>
+    <li>Stücke auch auf die Sampler-Spur (Stück 1 = C4, 2 = C#4 …)?</li>
+  </ul>
+</template>
+<script>
+// ===== Läuft im Rahmen der echten App (per eval im Fenster der App) =====
+function MK(){
+  let V='a';
+  const G='#8be86a';
+  const css=document.createElement('style');
+  css.textContent=`
+  #sampleEditorOverlay.mk-slice #seModeRow button.on{background:rgba(139,232,106,.18)!important;color:${G}!important}
+  #sampleEditorOverlay.mk-slice .se-tab.t,#sampleEditorOverlay.mk-slice .se-stem.t{display:none}
+  #sampleEditorOverlay.mk-slice .se-handle.start,#sampleEditorOverlay.mk-slice .se-handle.end{opacity:.3}
+  #sampleEditorOverlay.mk-slice #seTrimFields{display:none}
+  #sampleEditorOverlay.mk-slice #seAssignTrackChip{display:none!important}
+  .mk-band{position:absolute;top:0;bottom:var(--sgh,48px);pointer-events:none;display:none;border-left:2px solid ${G}}
+  .mk-band:nth-of-type(2n){background:rgba(139,232,106,.06)}
+  .mk-band.sel{background:rgba(139,232,106,.2)!important}
+  .mk-band b{position:absolute;left:3px;top:3px;font:700 11px 'JetBrains Mono',monospace;color:${G}}
+  .mk-band.first{border-left:0}
+  #sampleEditorOverlay.mk-slice .mk-band{display:block}
+  .mk-ctab{position:absolute;top:4px;width:34px;height:40px;margin-left:-17px;border-radius:8px;border:1.5px solid ${G};background:color-mix(in srgb,${G} 20%,#0d0f14);color:#f4f5f7;display:none;align-items:center;justify-content:center;font:700 12px 'JetBrains Mono',monospace;touch-action:none;cursor:ew-resize;user-select:none;-webkit-user-select:none}
+  .mk-ctab.on{background:${G};color:#0b1a05;box-shadow:0 0 12px ${G}}
+  #sampleEditorOverlay.mk-slice .mk-ctab{display:flex}
+  #mkSlice{display:none;flex-direction:column;gap:8px;flex-shrink:0}
+  #sampleEditorOverlay.mk-slice #mkSlice{display:flex}
+  #mkSlice .se-seg button.on{background:rgba(139,232,106,.18);color:${G}}
+  .mk-row{display:flex;align-items:center;gap:8px}
+  .mk-row .lbl{font-size:12px;color:#c7cbd4;flex-shrink:0;min-width:92px}
+  .mk-row input[type=range]{flex:1;accent-color:${G}}
+  .mk-ib{width:40px;height:40px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:var(--panel);color:#f4f5f7;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+  .mk-ib svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+  .mk-ib:active{transform:scale(.92)}
+  .mk-cnt{flex:1;font:700 12px 'JetBrains Mono',monospace;color:${G};text-align:center}
+  .mk-warn{font-size:12px;color:#ff9b6b;display:none} .mk-warn.on{display:block}
+  #mkUseRow{display:none;gap:8px;flex-wrap:wrap}
+  #sampleEditorOverlay.mk-slice #mkUseRow{display:flex}
+  #mkUseRow .se-assign-chip.on{border-color:${G};background:rgba(139,232,106,.14);color:${G};box-shadow:0 0 10px rgba(139,232,106,.25)}
+  #sampleEditorOverlay.mk-slice .se-pad-chip.mk-s{border-color:${G};background:rgba(139,232,106,.16);color:${G}}
+  #sampleEditorOverlay.mk-slice .se-pad-chip.mk-s.pl{background:${G};color:#0b1a05}
+  #sampleEditorOverlay.mk-slice .se-pad-chip.on:not(.mk-s){border-color:rgba(255,255,255,.1);background:var(--panel);color:var(--dim)}
+  /* Tonhöhe / Tempo */
+  #mkPT{display:none;flex-direction:column;gap:8px;background:var(--panel);border:1px solid rgba(63,169,255,.25);border-radius:8px;padding:9px 10px;flex-shrink:0}
+  #mkPT.open{display:flex}
+  html.mk-b #mkPT{display:flex;background:transparent;border:0;padding:0}
+  .mk-st{display:flex;align-items:center;gap:6px}
+  .mk-st .lbl{font-size:12px;color:#c7cbd4;flex:1;display:flex;align-items:center;gap:6px}
+  .mk-st .lbl svg{width:18px;height:18px;fill:none;stroke:#8fd4ff;stroke-width:2;stroke-linecap:round}
+  .mk-st .val{min-width:70px;text-align:center;font:700 13px 'JetBrains Mono',monospace;color:#f4f5f7}
+  .mk-st .val.def{color:#7d818c}
+  .mk-st.dis{opacity:.35;pointer-events:none}
+  #mkKeep{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#c7cbd4;cursor:pointer;padding:2px 0}
+  #mkKeep.on .se-sw{background:#3fa9ff} #mkKeep.on .se-sw span{left:19px;background:#04121e}
+  #mkPTAct{display:flex;gap:8px} #mkPTAct button{flex:1;min-height:40px;border-radius:8px;border:1px solid rgba(63,169,255,.35);background:rgba(63,169,255,.1);color:#8fd4ff;font:700 12px inherit;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer}
+  #mkPTAct button.go{background:#3fa9ff;color:#04121e;border-color:#3fa9ff}
+  html.mk-b #mkPTAct{display:none}
+  .mk-note{font-size:11.5px;color:#7d818c}
+  .se-tool-btn.mk-on{border-color:#3fa9ff;color:#8fd4ff}
+  html:not(.mk-a) .mk-onlyA{display:none!important}
+  html:not(.mk-a):not(.mk-b) #mkPT, html:not(.mk-a):not(.mk-b) #seModeSlice, html:not(.mk-a):not(.mk-b) #mkSlice{display:none!important}
+  html.mkmark .mk-new{outline:1.5px dashed #ffc247!important;outline-offset:1px}`;
+  document.head.appendChild(css);
+  const IC={
+    cut:'<svg class="se-ico" viewBox="0 0 24 24"><path d="M4 4v16M10 4v16M16 4v16M21 8v8"/></svg>',
+    pitch:'<svg class="se-ico" viewBox="0 0 24 24"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg>',
+    tempo:'<svg class="se-ico" viewBox="0 0 24 24"><path d="M8 21h8l-2-17h-4z"/><path d="M12 15l5-7"/></svg>',
+    plus:'<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>', minus:'<svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg>',
+    play:'<svg class="se-ico" viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20" fill="currentColor"/></svg>',
+    ok:'<svg class="se-ico" viewBox="0 0 24 24"><path d="M4 12l5 5L20 6"/></svg>'};
+  // ---------- Modus Schneiden ----------
+  const mb=document.createElement('button'); mb.id='seModeSlice'; mb.className='mk-new'; mb.innerHTML=IC.cut+'Schneiden';
+  $id('seModeRow').appendChild(mb);
+  let slice=false, cuts=[], sel=0, lastTap=null, auto='hit', sens=0.15;
+  const oSet=seSetMode;
+  seSetMode=function(m){ if(m==='slice'){ oSet('trim'); slice=true; } else { slice=false; oSet(m); }
+    sampleEditorOverlay.classList.toggle('mk-slice', slice); mb.classList.toggle('on', slice);
+    if(slice){ seModeTrimBtn.classList.remove('on'); seHintEl.textContent='Tippen = Stück anhören. Schnitte unten an der Leiste ziehen.'; seHintEl.style.color=G; if(!cuts.length) autoCut(); }
+    $id('seAssignLabel').textContent=slice?'5 · Stücke verwenden':'5 · Verwenden als';
+    draw(); };
+  mb.onclick=()=>seSetMode('slice');
+  const panel=document.createElement('div'); panel.id='mkSlice'; panel.className='mk-new';
+  panel.innerHTML=`<div class="se-seg" id="mkAuto"><button data-a="hit">Anschläge</button><button data-a="4">4</button><button data-a="8">8</button><button data-a="16">16</button></div>
+    <div class="mk-row" id="mkSensRow"><span class="lbl">Empfindlichkeit</span><input type="range" id="mkSens" min="0" max="1" step="0.01"></div>
+    <div class="mk-row"><button class="mk-ib" id="mkDel" title="Schnitt entfernen">${IC.minus}</button><span class="mk-cnt" id="mkCnt"></span><button class="mk-ib" id="mkAdd" title="Schnitt an getippter Stelle">${IC.plus}</button></div>
+    <div class="mk-warn" id="mkWarn"></div>`;
+  $id('seTrimFields').after(panel);
+  const sensEl=panel.querySelector('#mkSens'); sensEl.value=sens;
+  panel.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{ auto=b.dataset.a; autoCut(); });
+  sensEl.oninput=()=>{ sens=+sensEl.value; auto='hit'; autoCut(); };
+  panel.querySelector('#mkAdd').onclick=()=>{ if(lastTap==null) return; const t=seSnapZero(lastTap);
+    if(t<=seTrimStart+0.02||t>=seTrimEnd-0.02||cuts.some(c=>Math.abs(c-t)<0.02)) return; cuts.push(t); cuts.sort((a,b)=>a-b); sel=cuts.indexOf(t)+1; auto=''; draw(); };
+  panel.querySelector('#mkDel').onclick=()=>{ if(!cuts.length) return; const i=Math.max(0,sel-1); cuts.splice(i,1); sel=Math.max(0,i); auto=''; draw(); };
+  // Verwenden als
+  const use=document.createElement('div'); use.id='mkUseRow'; use.className='mk-new';
+  use.innerHTML='<div class="se-assign-chip on" data-u="pads"><svg class="uic" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Stücke → Pads</div><div class="se-assign-chip" data-u="keys"><svg class="uic" viewBox="0 0 24 24"><path d="M3 5h18v14H3zM8 5v9M13 5v9M18 5v9"/></svg>Stücke → Sampler-Tasten</div>';
+  $id('seAssignRow').after(use);
+  const useOn={pads:true, keys:false};
+  use.querySelectorAll('[data-u]').forEach(c=>c.onclick=()=>{ useOn[c.dataset.u]=!useOn[c.dataset.u]; c.classList.toggle('on',useOn[c.dataset.u]); draw(); });
+  // Bänder + Griffe
+  let bands=[], tabs=[];
+  function bounds(){ return [seTrimStart, ...cuts.filter(c=>c>seTrimStart&&c<seTrimEnd), seTrimEnd]; }
+  function draw(){
+    if(!seWorkingBuffer) return;
+    const B=bounds(), n=B.length-1, d=seWorkingBuffer.duration, w=seInnerWidth();
+    while(bands.length<n){ const e=document.createElement('div'); e.className='mk-band'; e.innerHTML='<b></b>'; seWaveInner.insertBefore(e, seCursorEl); bands.push(e); }
+    while(bands.length>n) bands.pop().remove();
+    bands.forEach((e,i)=>{ e.style.left=B[i]/d*w+'px'; e.style.width=(B[i+1]-B[i])/d*w+'px'; e.querySelector('b').textContent=i+1; e.classList.toggle('sel',i===sel); e.classList.toggle('first',i===0); });
+    while(tabs.length<n-1){ const t=document.createElement('div'); t.className='mk-ctab'; t.addEventListener('pointerdown', tabDown); seGripEl.appendChild(t); tabs.push(t); }
+    while(tabs.length>n-1) tabs.pop().remove();
+    const minSp=Math.min(...B.slice(1).map((v,k)=>(v-B[k])/d*w)), tw=Math.max(14,Math.min(34,minSp-3));
+    tabs.forEach((t,i)=>{ t.style.left=B[i+1]/d*w+'px'; t.style.width=tw+'px'; t.style.marginLeft=(-tw/2)+'px'; t.textContent=tw>=22?i+2:''; t.dataset.i=i; });
+    panel.querySelector('#mkCnt').textContent=n+' Stücke';
+    panel.querySelectorAll('[data-a]').forEach(b=>b.classList.toggle('on',b.dataset.a===auto));
+    panel.querySelector('#mkSensRow').style.opacity=auto==='hit'?1:.4;
+    const wEl=panel.querySelector('#mkWarn'); wEl.classList.toggle('on', useOn.pads && n>PAD_COUNT);
+    wEl.textContent='Nur 9 Pads: '+(n===10?'Stück 10 kommt':'Stück 10–'+n+' kommen')+' nicht auf Pads'+(useOn.keys?' (nur Tasten).':'.');
+    document.querySelectorAll('.se-pad-chip').forEach((c,i)=>{ const has=slice&&useOn.pads&&i<n; c.classList.toggle('mk-s',has); c.textContent=has?('S'+(i+1)):(i+1); });
+  }
+  let drag=null;
+  function tabDown(e){ e.preventDefault(); e.stopPropagation(); const i=+e.currentTarget.dataset.i; try{ e.currentTarget.setPointerCapture(e.pointerId); }catch(_){}
+    drag={i, el:e.currentTarget, lx:e.clientX, t:cuts[i]}; drag.el.classList.add('on'); }
+  addEventListener('pointermove', e=>{ if(!drag) return; e.preventDefault(); const d=seWorkingBuffer.duration, dx=e.clientX-drag.lx; drag.lx=e.clientX;
+    drag.t+=dx*seFineFactor(e.clientY)*d/seInnerWidth(); const lo=(drag.i? cuts[drag.i-1]:seTrimStart)+0.02, hi=(drag.i<cuts.length-1?cuts[drag.i+1]:seTrimEnd)-0.02;
+    cuts[drag.i]=Math.min(hi,Math.max(lo,seSnapZero(drag.t))); auto=''; draw(); }, {passive:false});
+  addEventListener('pointerup', ()=>{ if(drag){ drag.el.classList.remove('on'); sel=drag.i+1; drag=null; draw(); playSlice(sel); } });
+  // Antippen der Welle = Stück spielen
+  seWaveInner.addEventListener('pointerdown', e=>{ if(!slice||!seWorkingBuffer||e.target.closest('#seGrip')) return;
+    const r=seWaveInner.getBoundingClientRect(), t=(e.clientX-r.left)/r.width*seWorkingBuffer.duration; lastTap=t;
+    const B=bounds(); let i=B.findIndex((b,k)=>k<B.length-1 && t>=b && t<B[k+1]); if(i<0) return; sel=i; draw(); playSlice(i); });
+  // Pads spielen statt umschalten
+  sePadGrid.addEventListener('click', e=>{ const c=e.target.closest('.se-pad-chip'); if(!slice||!c) return; e.stopImmediatePropagation();
+    const i=[...sePadGrid.children].indexOf(c); if(i<bounds().length-1){ sel=i; draw(); playSlice(i); c.classList.add('pl'); setTimeout(()=>c.classList.remove('pl'),180); } }, true);
+  let src=null;
+  function stop(){ if(src){ try{src.stop();}catch(_){} src=null; } }
+  function playBuf(buf, off, dur){ if(!audioCtx) initAudio(); seStopPreview(); stop(); const s=audioCtx.createBufferSource(); s.buffer=buf; s.connect(master); s.start(audioCtx.currentTime+0.01, off, dur); src=s; }
+  function playSlice(i){ const B=bounds(); if(i>=B.length-1) return; playBuf(seWorkingBuffer, B[i], B[i+1]-B[i]); }
+  // automatische Schnitte
+  function autoCut(){
+    if(!seWorkingBuffer) return;
+    const a=seTrimStart, b=seTrimEnd;
+    if(auto==='hit') cuts=onsets(seWorkingBuffer, a, b, sens);
+    else if(auto){ const n=+auto; cuts=[]; for(let k=1;k<n;k++) cuts.push(seSnapZero(a+(b-a)*k/n)); }
+    sel=0; draw();
+  }
+  function onsets(buf, a, b, s){ // Pegel-Sprung (dB) gegen die letzten ~20 ms, nur Anschläge über einer Pegel-Grenze
+    const x=buf.getChannelData(0), sr=buf.sampleRate, H=256, i0=Math.floor(a*sr), i1=Math.floor(b*sr), D=[];
+    for(let i=i0;i+H<=i1;i+=H){ let e=0; for(let k=0;k<H;k++) e+=x[i+k]*x[i+k]; D.push(10*Math.log10(1e-12+e/H)); }
+    const top=Math.max(...D), floor=top-(6+s*34), gap=Math.round(0.09*sr/H), out=[]; let last=-gap;
+    for(let k=4;k<D.length;k++){ const pm=Math.max(D[k-1],D[k-2],D[k-3],D[k-4]);
+      if(D[k]>floor && D[k]-pm>4 && k-last>=gap){ const t=a+(k*H)/sr-0.006; if(t>a+0.03 && t<b-0.03) out.push(seSnapZero(t)); last=k; } }
+    return out;
+  }
+  // App-Funktionen erweitern
+  const oUpd=updateSETrimUI; updateSETrimUI=function(){ oUpd(); draw(); };
+  const oDraw=drawSEWave; drawSEWave=function(){ oDraw(); draw(); };
+  // ---------- Tonhöhe / Tempo ----------
+  let semi=0, tempo=100, keep=true, ptOpen=false;
+  const tb=$id('seToolsRow');
+  const bP=document.createElement('button'); bP.className='se-tool-btn mk-new mk-onlyA'; bP.innerHTML=IC.pitch+'<span>Tonhöhe</span>';
+  const bT=document.createElement('button'); bT.className='se-tool-btn mk-new mk-onlyA'; bT.innerHTML=IC.tempo+'<span>Tempo</span>';
+  tb.appendChild(bP); tb.appendChild(bT);
+  const pt=document.createElement('div'); pt.id='mkPT'; pt.className='mk-new';
+  pt.innerHTML=`<div class="mk-st" id="mkStP"><span class="lbl">${IC.pitch.replace('se-ico','')}Tonhöhe</span><button class="mk-ib" data-p="-1">${IC.minus}</button><span class="val" id="mkPV"></span><button class="mk-ib" data-p="1">${IC.plus}</button></div>
+    <div class="mk-st" id="mkStT"><span class="lbl">${IC.tempo.replace('se-ico','')}Tempo</span><button class="mk-ib" data-t="-5">${IC.minus}</button><span class="val" id="mkTV"></span><button class="mk-ib" data-t="5">${IC.plus}</button></div>
+    <div id="mkKeep" class="on"><span>Länge behalten <span class="mk-note">(aus = wie Plattenspieler)</span></span><span class="se-sw"><span></span></span></div>
+    <div id="mkPTAct"><button id="mkPTPlay">${IC.play}Anhören</button><button id="mkPTGo" class="go">${IC.ok}Anwenden</button></div>
+    <div class="mk-note" id="mkPTNote"></div>`;
+  function placePT(){ if(V==='b') sePlayHintEl.after(pt); else $id('seResetBtn').before(pt); syncPT(); }
+  function syncPT(){
+    const pv=pt.querySelector('#mkPV'), tv=pt.querySelector('#mkTV');
+    pv.textContent=(semi>0?'+':'')+semi+' HT'; pv.classList.toggle('def',!semi);
+    const eff=keep?tempo:Math.round(100*Math.pow(2,semi/12));
+    tv.textContent=eff+' %'; tv.classList.toggle('def',eff===100);
+    pt.querySelector('#mkStT').classList.toggle('dis',!keep);
+    pt.querySelector('#mkKeep').classList.toggle('on',keep);
+    pt.classList.toggle('open', V==='b' || ptOpen);
+    bP.classList.toggle('mk-on',ptOpen); bT.classList.toggle('mk-on',ptOpen);
+    pt.querySelector('#mkPTNote').textContent = V==='b' ? 'Gilt beim Vorhören und Spielen. Original bleibt, nur die Werte werden gespeichert.' : 'Anwenden rechnet es fest ins Sample (Rückgängig oben).';
+  }
+  bP.onclick=bT.onclick=()=>{ ptOpen=!ptOpen; syncPT(); };
+  pt.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{ semi=Math.max(-12,Math.min(12,semi+(+b.dataset.p))); syncPT(); restartB(); });
+  pt.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{ tempo=Math.max(50,Math.min(200,tempo+(+b.dataset.t))); syncPT(); restartB(); });
+  pt.querySelector('#mkKeep').onclick=()=>{ keep=!keep; syncPT(); restartB(); };
+  pt.querySelector('#mkPTPlay').onclick=()=>{ const r=proc(seTrimStart, seTrimEnd); playBuf(r,0,r.duration); };
+  pt.querySelector('#mkPTGo').onclick=()=>{ if(!semi && tempo===100) return; const a=seTrimStart, b=seTrimEnd;
+    seApplyTransform(B=>render(B,0,B.duration)); semi=0; tempo=100; cuts=[]; syncPT(); if(slice) autoCut(); };
+  // B: Vorhören mit Werten
+  sePreviewBtn.addEventListener('click', e=>{ if(V!=='b' || (!semi && tempo===100) || !seWorkingBuffer) return;
+    e.stopImmediatePropagation(); if(src){ stop(); return; } const r=proc(seTrimStart, seTrimEnd); playBuf(r,0,r.duration); }, true);
+  function restartB(){ if(V==='b' && src){ const r=proc(seTrimStart, seTrimEnd); playBuf(r,0,r.duration); } }
+  // ---- Rechnen: WSOLA-Zeitdehnung + Umrechnen (ein Durchgang, offline) ----
+  let cache={k:'',b:null};
+  function proc(a,b){ const k=[seWorkingBuffer.length,a,b,semi,tempo,keep].join(); if(cache.k!==k) cache={k, b:render(seWorkingBuffer,a,b)}; return cache.b; }
+  function render(B,a,b){
+    const sr=B.sampleRate, i0=Math.floor(a*sr), i1=Math.floor(b*sr), p=Math.pow(2,semi/12), tf=keep?tempo/100:1;
+    const ch=[...Array(B.numberOfChannels)].map((_,c)=>B.getChannelData(c).subarray(i0,i1));
+    let Y=ch;
+    if(keep && (p/tf)!==1) Y=wsola(ch, p/tf);
+    if(p!==1) Y=Y.map(y=>resample(y,p));
+    const out=new AudioBuffer({length:Math.max(1,Y[0].length),numberOfChannels:Y.length,sampleRate:sr}); Y.forEach((y,c)=>out.getChannelData(c).set(y)); return out;
+  }
+  function resample(x,r){ const n=Math.floor((x.length-1)/r), y=new Float32Array(n); for(let i=0;i<n;i++){ const t=i*r, j=t|0, f=t-j; y[i]=x[j]*(1-f)+x[j+1]*f; } return y; }
+  function wsola(X,f){
+    const N=1536, Hs=N/2, Ha=Hs/f, T=384, L=X[0].length, outL=Math.ceil(L*f), Y=X.map(()=>new Float32Array(outL+N));
+    const w=new Float32Array(N); for(let i=0;i<N;i++) w[i]=0.5-0.5*Math.cos(2*Math.PI*i/N);
+    const x0=X[0]; let prev=0;
+    for(let k=0;k*Hs<outL;k++){
+      const nom=Math.round(k*Ha); let best=0;
+      if(k>0){ const ref=prev+Hs; let bc=-Infinity;
+        for(let d=-T; d<=T; d+=2){ const p=nom+d; if(p<0||p+N>L) continue; let c=0; for(let i=0;i<Hs;i+=4) c+=x0[p+i]*(x0[ref+i]||0); if(c>bc){ bc=c; best=d; } } }
+      let pos=Math.max(0,Math.min(L-N,nom+best)); if(L<N) pos=0; prev=pos;
+      for(let c=0;c<X.length;c++){ const x=X[c], y=Y[c], o=k*Hs; for(let i=0;i<N && pos+i<L;i++) y[o+i]+=x[pos+i]*w[i]; }
+    }
+    return Y.map(y=>y.subarray(0,outL));
+  }
+  // Übernehmen im Mockup sperren
+  seSaveBtn.addEventListener('click', e=>{ e.stopImmediatePropagation(); const n=bounds().length-1;
+    seStatus.classList.remove('err');
+    seStatus.textContent= slice ? `Mockup: würde ${n} Stücke als „Beat 1…${n}“ anlegen${useOn.pads?' und auf Pads 1–'+Math.min(n,PAD_COUNT)+' legen':''}${useOn.keys?', Sampler-Tasten ab C4':''}.` : 'Mockup: Übernehmen ist hier gesperrt.'; }, true);
+  // ---------- Demo-Beat ----------
+  function demo(){
+    stop(); if(sePreviewSrc) seStopPreview();
+    const sr=44100, bpm=96, st=60/bpm/4, n=Math.round(sr*st*32), buf=new AudioBuffer({length:n,numberOfChannels:1,sampleRate:sr}), d=buf.getChannelData(0);
+    let seed=7; const rnd=()=>((seed=(seed*16807)%2147483647)/2147483647)*2-1;
+    const add=(t0,fn,len)=>{ const s=Math.round(t0*sr); for(let i=0;i<len*sr && s+i<n;i++) d[s+i]+=fn(i/sr); };
+    const kick=t=>Math.sin(2*Math.PI*(50*t+90*(1-Math.exp(-t*30))/30))*Math.exp(-t*9)*0.9;
+    const snare=t=>(rnd()*0.55*Math.exp(-t*18)+Math.sin(2*Math.PI*190*t)*0.35*Math.exp(-t*25));
+    let hp=0; const hat=t=>{ const r=rnd(); const v=r-hp; hp=r; return v*0.18*Math.exp(-t*60); };
+    const K=[0,6,10,16,22,26], S=[4,12,20,28];
+    for(let s=0;s<32;s++){ add(s*st, hat, 0.08); if(K.includes(s)) add(s*st,kick,0.5); if(S.includes(s)) add(s*st,snare,0.3); }
+    const bass=(f)=>t=>Math.sin(2*Math.PI*f*t)*0.28*Math.exp(-t*2.2)*Math.min(1,t*200);
+    [[0,55],[6,55],[10,65.4],[16,49],[22,49],[26,58.3]].forEach(([s,f])=>add(s*st,bass(f),st*4));
+    const chord=fs=>t=>fs.reduce((a,f)=>a+Math.sin(2*Math.PI*f*t)+0.3*Math.sin(4*Math.PI*f*t),0)*0.05*Math.exp(-t*3)*Math.min(1,t*300);
+    add(0,chord([220,261.6,329.6]),st*6); add(16*st,chord([196,246.9,293.7]),st*6);
+    let pk=0; for(let i=0;i<n;i++) pk=Math.max(pk,Math.abs(d[i])); for(let i=0;i<n;i++) d[i]*=0.9/pk;
+    openSampleEditor({buffer:buf,label:'Demo-Beat'});
+    setTimeout(()=>{ cuts=[]; semi=0; tempo=100; ptOpen=false; auto='hit'; placePT(); seSetMode(V?'slice':'trim'); },80);
+  }
+  function setV(v){ V=v; document.documentElement.classList.toggle('mk-a',v==='a'); document.documentElement.classList.toggle('mk-b',v==='b');
+    if(!v && slice) seSetMode('trim'); stop(); placePT(); draw(); }
+  function setMark(on){ document.documentElement.classList.toggle('mkmark',on); }
+  window.__mk={setV,demo,setMark};
+}
+
+// ===== Rahmen-Steuerung =====
+const fR=document.getElementById('fR');
+let V='a';
+function hook(){ const w=fR.contentWindow; try{ if(!w||w.eval('typeof openSampleEditor')!=='function') return null; if(!w.__mk) w.eval('('+MK.toString()+')()'); }catch(e){ console.error(e); return null; } return w.__mk; }
+function apply(){ const m=hook(); if(m) m.setV(V); document.querySelectorAll('[data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v===V)); }
+fR.addEventListener('load',()=>setTimeout(()=>{ const m=hook(); if(!m) return; m.setV(V); m.demo(); },800));
+document.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{ V=b.dataset.v; apply(); });
+document.getElementById('demoBtn').onclick=()=>{ const m=hook(); if(m){ m.setV(V); m.demo(); } };
+document.getElementById('mk').onchange=e=>{ const m=hook(); if(m) m.setMark(e.target.checked); };
+const notes=document.getElementById('notes').innerHTML; document.getElementById('side').innerHTML=notes; const info=document.getElementById('info'); info.innerHTML=notes;
+document.getElementById('infoBtn').onclick=()=>info.classList.toggle('open');
+const fitTop=()=>{ const h=document.getElementById('mbar').offsetHeight; document.getElementById('stage').style.top=h+'px'; info.style.top=h+'px'; }; addEventListener('resize',fitTop); fitTop();
+</script>
+</body>
+</html>
