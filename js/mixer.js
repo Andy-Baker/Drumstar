@@ -94,7 +94,7 @@ function mxStrip(o){ // o: {cls,color,name,sub,head,vol,label,onVol,mute,solo,ch
 }
 function buildMixerChannels(){
   const ch=mixerChannels, ms=document.getElementById('mixerMaster'); ch.innerHTML=''; ms.innerHTML='';
-  TRACKS.forEach(tr=>{ const u=trUi(tr); u.mixFaderEl=null; u.mixMeter=null; u.mixMuteBtn=null; u.mixSoloBtn=null; u.mixPanKnob=null; u.mixEqKnobs=null; });
+  TRACKS.forEach(tr=>{ const u=trUi(tr); u.mixFaderEl=null; u.mixMeter=null; u.mixMuteBtn=null; u.mixSoloBtn=null; });
   mxGrpMeters={}; mxGrpSolo={}; const done={};
   const grpStrip=k=>{ const G=grps[k], D=GRP_DEF[k], op=mxGrpOpen[k];
     const g=mxStrip({key:'grp:'+k,cls:'grp-strip grp-'+k+(op?' open':''),color:D.color,label:'Gruppe '+D.n,vol:G.vol,parent:ch,

@@ -245,7 +245,6 @@ xyGlideBtn.addEventListener('click', ()=>{ xyGlide=!xyGlide; xyGlideBtn.classLis
 xyReso.addEventListener('input', ()=>{
   const tr=xyTrack(); tr.resonance=xyReso.value/100; xyResoVal.textContent=xyReso.value+'%';
   if(tr._live) tr._live.f.Q.value=1+tr.resonance*20;
-  renderArpControls(tr);
 });
 function openXY(){ xyBuild(); xyShow(); xyOverlay.classList.add('open'); syncBottomBarVisibility(); }
 function closeXY(){ xyClear(); xyOverlay.classList.remove('open'); syncBottomBarVisibility(); }

@@ -1,48 +1,10 @@
 "use strict";
 // Oberflächen-Elemente je Spur (Übersicht, Mixer) liegen nicht an der Spur selbst,
 // damit TRACKS ohne Oberfläche nutzbar bleibt (Vorbereitung freie Spuren, #13).
-// Spur-ID → {ovRow, ovCells, ovLab, mixFaderEl, mixMeter, mixMuteBtn, mixSoloBtn, mixPanKnob, mixEqKnobs}.
+// Spur-ID → {ovRow, ovCells, ovLab, mixFaderEl, mixMeter, mixMuteBtn, mixSoloBtn}.
 // Audio-Knoten (bus, _fxN, _arpAmp …) bleiben an der Spur.
 const TR_UI=new Map();
 function trUi(tr){ let u=TR_UI.get(tr.id); if(!u){ u={}; TR_UI.set(tr.id,u); } return u; }
-
-// =========================================================================
-// KNOB-KOMPONENTE
-// =========================================================================
-function makeKnob({label, min, max, value, size, fmt, onChange}){
-  const wrap=document.createElement('div'); wrap.className='knob';
-  const dial=document.createElement('div'); dial.className='knob-dial';
-  if(size) dial.style.setProperty('--ks', size);
-  const ind=document.createElement('div'); ind.className='ind';
-  dial.appendChild(ind); wrap.appendChild(dial);
-  if(label){ const l=document.createElement('div'); l.className='knob-label'; l.textContent=label; wrap.appendChild(l); }
-  const valEl=document.createElement('div'); valEl.className='knob-val'; wrap.appendChild(valEl);
-
-  let val=value;
-  function render(){
-    const t=(val-min)/(max-min);
-    ind.style.transform=`rotate(${-135+t*270}deg)`;
-    valEl.textContent = fmt ? fmt(val) : val.toFixed(2);
-  }
-  render();
-  let dragging=false, startY=0, startVal=0;
-  function onDown(e){ dragging=true; startY=(e.touches?e.touches[0].clientY:e.clientY); startVal=val; e.preventDefault(); }
-  function onMove(e){
-    if(!dragging) return;
-    const y=(e.touches?e.touches[0].clientY:e.clientY);
-    val=Math.min(max,Math.max(min, startVal+((startY-y)/130)*(max-min)));
-    render(); onChange && onChange(val);
-    e.preventDefault && e.preventDefault();
-  }
-  function onUp(){ dragging=false; }
-  dial.addEventListener('pointerdown', onDown);
-  window.addEventListener('pointermove', onMove);
-  window.addEventListener('pointerup', onUp);
-  dial.addEventListener('touchstart', onDown, {passive:false});
-  window.addEventListener('touchmove', onMove, {passive:false});
-  window.addEventListener('touchend', onUp);
-  return { el:wrap, setValue(v){ val=v; render(); } };
-}
 
 // Globale Regler
 let bpm=128, swing=0, masterVol=0.85, humanize=0;
@@ -390,7 +352,7 @@ taUndoBtn.addEventListener('click', ()=>{
   PATTERN_LENGTH=u.len; currentPage=Math.min(currentPage,totalPages()-1);
   TRACKS.forEach((tr,i)=>{ const d=u.tracks[i]; tr.steps=d.steps; if(d.events){ tr.events=d.events; delete tr.notes; delete tr.slides; tr._idx=null; } else { tr.notes=d.notes; tr.slides=d.slides; }
     if(tr.type==='arp'){ tr.harm=d.harm; if(d.harmOwn) tr.harmOwn=d.harmOwn; else delete tr.harmOwn; }
-    if(tr.type==='arp' && d.cutoff!=null){ tr.cutoff=d.cutoff; tr.resonance=d.resonance; tr.envMod=d.envMod; tr.decay=d.decay; Object.assign(tr,d.inst); renderArpControls(tr); } });
+    if(tr.type==='arp' && d.cutoff!=null){ tr.cutoff=d.cutoff; tr.resonance=d.resonance; tr.envMod=d.envMod; tr.decay=d.decay; Object.assign(tr,d.inst); } });
   if(u.harmony){ harmony=u.harmony; hmTpl=u.hmTpl||0; }
   renderLengthChips(); renderPageNav(); renderAllForPage(); if(prIsOpen()) prRender();
 });
@@ -399,5 +361,4 @@ taScopeEl.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>
   taScopeEl.querySelectorAll('button').forEach(x=>x.classList.toggle('on', x===b));
 }));
 
-const arpControls=document.getElementById('arpControls');
 const NOTE_NAMES=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];

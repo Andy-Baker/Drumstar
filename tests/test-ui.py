@@ -366,6 +366,8 @@ async def main():
       return {bad, ui:TRACKS.every(t=>trUi(t).ovRow instanceof Element && trUi(t).ovCells.length===16)}; })()""")
     ok('Spuren ohne DOM-Referenzen, Elemente in trUi (#66)', not r['bad'] and r['ui'], r)
     ok('Schrift überall ≥ 11 px (#19)', not fz.bad, fz.bad)
+    r=await pg.evaluate("({dial:!!document.querySelector('.knob-dial'), mk:typeof makeKnob, rac:typeof renderArpControls})")
+    ok('Keine Drehregler mehr, Klangregler nur als Slider (#18)', not r['dial'] and r['mk']=='undefined' and r['rac']=='undefined', r)
     ok('Keine Fehler', not errs, errs)
     await b.close()
   print(sum(r.startswith('PASS') for r in res),'/',len(res))
