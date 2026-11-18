@@ -292,47 +292,12 @@ function renderTrackBar(){
   tbDot.style.background=tr.color; tbDot.style.boxShadow='0 0 6px '+tr.color;
   syncTbMS();
 
-  arpControls.style.display='none';
   arpModPanel.style.display='none';
   tbPreview.style.display='';
   if(tr.type==='arp'){
-    arpControls.style.display='none'; // Filter-Regler liegen jetzt im Synth-Sheet
     arpModPanel.style.display=isPoly(tr)?'none':'flex';
     const xyBtn=document.getElementById('arpXyBtn');
     if(xyBtn) xyBtn.style.display=isPoly(tr)?'none':'';
-    renderArpControls(tr);
-  }
-}
-// Cutoff/Resonance-Knobs + "Bassline randomisieren"-Button für den Acid-Bass-Track
-const arpCutoffEl=document.getElementById('arpCutoffKnob');
-const arpResEl=document.getElementById('arpResKnob');
-const arpEnvEl=document.getElementById('arpEnvKnob');
-const arpDecayEl=document.getElementById('arpDecayKnob');
-const arpCosmicControlsEl=document.getElementById('arpCosmicControls');
-function renderArpControls(tr){
-  arpCutoffEl.innerHTML=''; arpResEl.innerHTML='';
-  const cutoffKnob=makeKnob({label:'CUTOFF', size:'26px', min:0, max:1, value:tr.cutoff, fmt:v=>Math.round(v*100)+'%',
-    onChange:v=>tr.cutoff=v});
-  const resKnob=makeKnob({label:'RESO', size:'26px', min:0, max:1, value:tr.resonance, fmt:v=>Math.round(v*100)+'%',
-    onChange:v=>tr.resonance=v});
-  arpCutoffEl.appendChild(cutoffKnob.el);
-  arpResEl.appendChild(resKnob.el);
-  arpEnvEl.innerHTML=''; arpDecayEl.innerHTML='';
-  const envKnob=makeKnob({label:'ENV MOD', size:'26px', min:0, max:1, value:tr.envMod!=null?tr.envMod:0.5, fmt:v=>Math.round(v*100)+'%',
-    onChange:v=>tr.envMod=v});
-  const decayKnob=makeKnob({label:'DECAY', size:'26px', min:0, max:1, value:tr.decay!=null?tr.decay:0.26,
-    fmt:v=>{ const sec=arpDecaySeconds(v); return sec<1 ? Math.round(sec*1000)+'ms' : sec.toFixed(1)+'s'; },
-    onChange:v=>tr.decay=v});
-  arpEnvEl.appendChild(envKnob.el);
-  arpDecayEl.appendChild(decayKnob.el);
-  if(arpCosmicControlsEl){
-    const knobs=(trInst(tr)||{}).knobs; // Zusatzregler des Instruments (Cosmic: Width/Motion/Warmth/Air)
-    arpCosmicControlsEl.style.display=knobs?'flex':'none';
-    if(knobs) knobs.forEach(([label,key])=>{
-      const el=document.getElementById('arpCosmic'+label); if(!el) return; el.innerHTML='';
-      const k=makeKnob({label:label.toUpperCase(),size:'26px',min:0,max:1,value:tr[key]!=null?tr[key]:0.5,fmt:v=>Math.round(v*100)+'%',onChange:v=>tr[key]=v});
-      el.appendChild(k.el);
-    });
   }
 }
 // Würfelt die vier Filterwerte (Cutoff/Reso/Env Mod/Decay) — in musikalischen Grenzen, voller Bereich würde pfeifen/übersteuern
@@ -344,7 +309,6 @@ arpFilterRandBtn.addEventListener('click', ()=>{
   tr.resonance=0.1+Math.random()*0.6;
   tr.envMod=0.2+Math.random()*0.7;
   tr.decay=0.1+Math.random()*0.6;
-  renderArpControls(tr);
 });
 tbPreview.addEventListener('click', ()=>{
   Promise.resolve(initAudio()).then(()=>{

@@ -103,11 +103,6 @@ function trLoadSaved(tr, saved, accentSteps){
   tr.eqLowGain=saved.eqLowGain||0; tr.eqMidGain=saved.eqMidGain||0; tr.eqHighGain=saved.eqHighGain||0;
   fxLoadTrack(tr,saved);
   const u=trUi(tr);
-  if(u.mixEqKnobs){
-    if(u.mixEqKnobs.eqLowGain) u.mixEqKnobs.eqLowGain.setValue(tr.eqLowGain);
-    if(u.mixEqKnobs.eqMidGain) u.mixEqKnobs.eqMidGain.setValue(tr.eqMidGain);
-    if(u.mixEqKnobs.eqHighGain) u.mixEqKnobs.eqHighGain.setValue(tr.eqHighGain);
-  }
   tr.muted=!!saved.muted; tr.solo=!!saved.solo; // ältere Patterns ohne diese Felder -> beides aus
   if(u.ovRow) u.ovRow.classList.toggle('muted', tr.muted);
   if(u.mixMuteBtn) u.mixMuteBtn.classList.toggle('on', tr.muted);
@@ -118,7 +113,6 @@ function trLoadSaved(tr, saved, accentSteps){
   if(tr.sendGain) tr.sendGain.gain.value=tr.reverbAmount;
   if(tr.panner) tr.panner.pan.value=tr.pan;
   if(u.mixFaderEl){ u.mixFaderEl.value=tr.vol; if(u.mixMeter) u.mixMeter.dbReadout.textContent=dbLabel(tr.vol)+'dB'; }
-  if(u.mixPanKnob) u.mixPanKnob.setValue(tr.pan);
   if(tr.type==='arp'){
     // ältere Patterns ohne Arp-Track: sinnvolle Defaults statt undefined
     tr.events=evLoad(saved,tr); delete tr.notes; delete tr.slides; evTouch(tr);

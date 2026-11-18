@@ -233,12 +233,6 @@
   .ko-reset{ align-self:flex-start; height:34px; padding:0 12px; border-radius:8px; border:1px solid rgba(255,255,255,.12); background:var(--panel); color:var(--metal); font:700 12px 'Rajdhani',sans-serif; cursor:pointer; margin-top:2px; }
 
   .knob{display:flex; flex-direction:column; align-items:center; gap:2px; touch-action:none;}
-  .knob-dial{ width:var(--ks,36px); height:var(--ks,36px); border-radius:50%;
-    background:radial-gradient(circle at 35% 30%, #2a2d34, #0c0d10); border:1px solid rgba(255,255,255,.08);
-    box-shadow:0 2px 0 rgba(0,0,0,.6), inset 0 1px 1px rgba(255,255,255,.08), inset 0 0 0 1px rgba(63,169,255,.12);
-    position:relative; cursor:grab; }
-  .knob-dial .ind{ position:absolute; left:50%; bottom:50%; margin-left:-1px; width:2px; height:38%; background:var(--blue);
-    border-radius:2px; box-shadow:0 0 6px var(--blue), 0 0 12px rgba(63,169,255,.5); transform-origin:50% 100%; }
   .knob-label{font-size:11px; letter-spacing:.1em; color:var(--dim); text-transform:uppercase;}
   .knob-val{font-size:11px; color:var(--white); font-family:'JetBrains Mono',monospace;}
 
@@ -249,7 +243,6 @@
   .ov-row.active{ background:rgba(63,169,255,.10); }
   .ov-row .ov-label{ font-size:11px; font-weight:700; letter-spacing:.03em; color:var(--dim); cursor:pointer; }
   .ov-row.active .ov-label{ color:var(--blue-2); }
-  .ov-row .knob-dial{ --ks:18px; cursor:grab; }
   .ov-row.muted .ov-cell{ opacity:.3; }
   .ov-row.solo-dim .ov-cell{ opacity:.25; } /* andere Spuren, während woanders Solo aktiv ist */
   .ov-cell{ height:7px; border-radius:2px; background:#0c0d10; cursor:pointer; }
@@ -269,7 +262,6 @@
     border:1px solid rgba(63,169,255,.4); background:rgba(63,169,255,.12); }
   #trackBar .preview:active{ transform:scale(.92); background:rgba(63,169,255,.25); }
   #trackBar .mini-knobs{ display:flex; gap:8px; }
-  #trackBar .knob-dial{ --ks:26px; }
 
   /* ---------- ACID BASS (303-artiger Track): Cutoff/Reso + Random-Button ---------- */
   #arpControls{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; background:var(--panel); border-radius:8px; padding:6px 12px; }
@@ -587,18 +579,10 @@
 
   .mix-strip{ display:flex; flex-direction:column; align-items:center; flex-shrink:0; width:78px;
     background:#101015; border-radius:8px; border:1px solid rgba(255,255,255,.07); overflow:hidden; padding-bottom:8px; }
-  .mix-eq-row{ display:flex; gap:4px; margin:2px 0; }
-  .mix-eq-row .knob-dial{ width:22px; height:22px; }
-  .mix-eq-row .knob-label{ font-size:11px; }
-  .mix-eq-row .knob-val{ font-size:11px; }
   .mix-strip-tag{ width:100%; height:4px; flex-shrink:0; }
   .mix-strip .mix-name{ font-size:11px; font-weight:700; letter-spacing:.02em; color:var(--white);
     white-space:nowrap; padding:5px 0 2px; }
 
-  .mix-pan-wrap{ margin:2px 0; }
-  .mix-pan-wrap .knob-dial{ width:30px; height:30px; }
-  .mix-pan-wrap .knob-label{ display:none; }
-  .mix-pan-wrap .knob-val{ font-size:11px; margin-top:1px; }
 
   .mix-fader-row{ display:flex; gap:3px; align-items:stretch; margin:4px 0 4px; }
   /* Pegel (v93, #50, Mockup issue-50 B „Pro Tools“): Skala −48…0 dBFS, LED-Segmente, grün < −12 (75 %), gelb −12…−3 (93,75 %), rot darüber */
@@ -1275,8 +1259,6 @@ html,body{min-height:100%;height:100%;}
 .mix-meter,.mix-fader-wrap{height:var(--fh,220px)}
 .mix-fader{width:var(--fh,220px)}
 .mix-strip .mix-name{font-size:12px;letter-spacing:.06em;padding:7px 0 3px}
-.mix-pan-wrap .knob-val{font-size:11px}
-.mix-eq-row .knob-label,.mix-eq-row .knob-val{font-size:11px}
 .mix-db-readout{font-size:11px}
 .mix-mute,.mix-solo{width:28px;height:26px;border-radius:6px;font-size:11px}
 /* Song */

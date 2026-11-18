@@ -42,8 +42,6 @@ function applyTrackSound(tr, sv){
   if(tr.sendGain) tr.sendGain.gain.value=tr.reverbAmount; if(tr.delaySendGain) tr.delaySendGain.gain.value=tr.delaySend; if(tr.panner) tr.panner.pan.value=tr.pan;
   const u=trUi(tr);
   if(u.mixFaderEl){ u.mixFaderEl.value=tr.vol; if(u.mixMeter) u.mixMeter.dbReadout.textContent=dbLabel(tr.vol)+'dB'; }
-  if(u.mixPanKnob) u.mixPanKnob.setValue(tr.pan);
-  if(u.mixEqKnobs){ ['eqLowGain','eqMidGain','eqHighGain'].forEach(k=>{ if(u.mixEqKnobs[k]) u.mixEqKnobs[k].setValue(tr[k]); }); }
   if(tr.type==='arp'){
     tr.rootNote=sv.rootNote!=null?sv.rootNote:0; tr.cutoff=sv.cutoff!=null?sv.cutoff:0.5; tr.resonance=sv.resonance!=null?sv.resonance:0.35;
     tr.envMod=sv.envMod!=null?sv.envMod:0.5; tr.decay=sv.decay!=null?sv.decay:0.26; tr.scale=SCALES[sv.scale]?sv.scale:'minor'; tr.accentAmt=sv.accentAmt!=null?sv.accentAmt:0.5;
