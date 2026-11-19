@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sampler: mehr Werk-Instrumente (#71)</title>
+<link rel="stylesheet" href="../../fonts.css">
+<style>
+/* Mockup zu Issue #71: Auswahl der Werk-Instrumente im Klang-Sheet des Samplers. Die echte App läuft im Rahmen;
+   nur die Chip-Liste „Sample“ wird zur Laufzeit ersetzt. Neue Instrumente sind Platzhalter (noch keine Aufnahmen). */
+:root{color-scheme:dark;--bg:#050507;--blue:#3fa9ff;--blue-2:#8fd4ff;--white:#f4f5f7;--dim:#7d818c;--metal:#c7cbd4}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--white);font-family:'Rajdhani',system-ui,sans-serif}
+#mbar{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:calc(6px + env(safe-area-inset-top,0px)) 10px 6px;background:repeating-linear-gradient(135deg,#0b1622 0 8px,#0d1a28 8px 16px);border-bottom:1px dashed rgba(63,169,255,.45);font:700 11px 'JetBrains Mono',monospace;color:var(--blue-2)}
+#mbar .g{display:flex;align-items:center;gap:4px}
+#mbar button{height:30px;padding:0 7px;border-radius:6px;border:1px solid rgba(63,169,255,.45);background:rgba(63,169,255,.12);font:700 11px 'JetBrains Mono',monospace;color:var(--blue-2);cursor:pointer}
+#mbar button.on{background:var(--blue);color:#042c53}
+#mbar .sp{flex:1}
+#stage{position:fixed;top:44px;left:0;right:0;bottom:0;display:flex;justify-content:center;align-items:flex-start;gap:28px;overflow:auto}
+.ph{display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;width:100%}
+iframe{border:0;width:100%;height:100%;background:#050507;display:block}
+#side{display:none;width:340px;font-size:14px;color:var(--metal);line-height:1.45;padding-top:20px}
+#side h3,#info h3{font:700 11px 'Rajdhani';letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin:16px 0 6px}
+#side p,#info p{margin:0 0 8px} #side b,#info b{color:var(--white)}
+#side ul,#info ul{margin:0 0 8px;padding-left:18px} #side li,#info li{margin:3px 0}
+#info{position:fixed;inset:44px 0 0 0;z-index:190;background:#07080bf2;overflow:auto;padding:8px 18px 40px;font-size:14.5px;color:var(--metal);line-height:1.45;display:none}
+#info.open{display:block}
+@media (min-width:900px) and (min-height:900px){
+  #stage{padding:14px 0}
+  .ph{width:auto;height:auto}
+  iframe{width:390px;height:844px;border-radius:30px;border:8px solid #1a1e26;box-shadow:0 30px 80px rgba(0,0,0,.75);box-sizing:content-box}
+  #side{display:block} #infoBtn{display:none}
+}
+</style>
+</head>
+<body>
+<div id="mbar">
+  <span>#71</span>
+  <div class="g"><button data-v="a" class="on">A Liste</button><button data-v="b">B Gruppen</button></div>
+  <span class="sp"></span>
+  <button id="exBtn">Öffnen</button>
+  <button id="infoBtn">ⓘ</button>
+</div>
+<div id="stage">
+  <div class="ph"><iframe id="fR" src="../../index.html" title="App mit Vorschlag"></iframe></div>
+  <div id="side"></div>
+</div>
+<div id="info"></div>
+<template id="notes">
+  <h3>Was das ist</h3>
+  <p>Die <b>echte App</b>. <b>Öffnen</b> legt eine Sampler-Spur an (falls keine da ist) und öffnet Klang · Sound. Nur die Liste <b>Sample</b> ist ersetzt.</p>
+  <p>Chips mit Punkt = <b>neu vorgeschlagen</b> (noch keine Aufnahme, Antippen zeigt nur Quelle). STREICHER, PIZZICATO, KONTRABASS, BASS ARCO und eigene Samples klingen wie in der App.</p>
+  <h3>Vorschlag (alle CC0, wie #61 gebaut)</h3>
+  <ul>
+    <li><b>E-PIANO</b> – FM-E-Piano (Yamaha TX81Z, 80er), VCSL</li>
+    <li><b>VIBRAPHON</b> – weiche Schlägel, VCSL</li>
+    <li><b>MARIMBA</b> – VCSL bzw. VSCO 2 CE</li>
+    <li><b>GLOCKENSPIEL</b> – VSCO 2 CE (ersetzt GLAS)</li>
+    <li><b>HARFE</b> – Konzertharfe, VCSL</li>
+    <li><b>KALIMBA</b> – VCSL</li>
+  </ul>
+  <p>Je Instrument eine MP3 von ca. 0,5–1 MB, geladen erst bei Wahl (wie heute).</p>
+  <h3>Varianten</h3>
+  <ul>
+    <li><b>A · Liste</b>: alle Chips in einer Reihe wie heute; VOX/GLAS/SYNTH-BASS fallen weg (alte Beats → Ersatz, siehe Frage im Issue).</li>
+    <li><b>B · Gruppen</b>: kleine Überschriften <b>Orchester</b> · <b>Tasten &amp; Mallets</b> · <b>Synth</b> (VOX/SYNTH-BASS bleiben) · <b>Eigene</b>. Mehr Höhe, aber bei 10+ Instrumenten leichter zu finden.</li>
+  </ul>
+  <h3>Offen: Chor und echtes E-Piano (Rhodes)</h3>
+  <p>In VSCO 2 CE und VCSL gibt es <b>keinen Chor</b> und kein Rhodes. Optionen: VOX (Synth) behalten, oder andere freie Quelle suchen (dann evtl. CC-BY mit Nennung).</p>
+</template>
+<script>
+// ===== Läuft im globalen Scope der App (per eval im Rahmen) =====
+function MK(){
+  if(window.__mk) return;
+  let V='a';
+  const NEW={ep:['E-PIANO','FM, 80er','VCSL · Yamaha TX81Z FM Piano'], vib:['VIBRAPHON','weiche Schlägel','VCSL · Vibraphone, Soft Mallets'],
+    mar:['MARIMBA','Holz','VCSL / VSCO 2 CE · Marimba'], glo:['GLOCKENSPIEL','hell','VSCO 2 CE · Glock'],
+    hrp:['HARFE','Konzertharfe','VCSL · Concert Harp'], kal:['KALIMBA','Daumenklavier','VCSL · Kalimba, Kenya']};
+  let fake=null; // gewählter Platzhalter (nur Anzeige)
+  const oKl=samplerKlang;
+  samplerKlang=function(tr, box, grp){
+    oKl(tr, box, grp);
+    const ch=box.querySelector('.smp-chips'); if(!ch) return;
+    const old=[...ch.children], lib=old.slice(Object.keys(SMP_INSTR).length+Object.keys(SMP_WERK).length); // Bibliothek + „Aufnehmen“ bleiben
+    ch.innerHTML='';
+    const chip=(key,label,sub,isNew)=>{ const b=document.createElement('button');
+      const on=isNew ? fake===key : (!fake && tr.smp===key);
+      b.className='smp-chip'+(on?' on':''); b.innerHTML=(isNew?'<i class="mk-dot"></i>':'')+'<b></b>'+(sub?'<small></small>':'');
+      b.querySelector('b').textContent=label; if(sub) b.querySelector('small').textContent=sub;
+      b.onclick=()=>{ if(isNew){ fake=key; renderKlang(); hmToast('Vorschlag – Aufnahme folgt',false); } else { fake=null; samplerPick(tr,key); } };
+      return b; };
+    const I=k=>chip(k,SMP_INSTR[k].name,SMP_INSTR[k].desc,false), N=k=>chip(k,NEW[k][0],NEW[k][1],true), W=k=>chip(k,SMP_WERK[k].name,SMP_WERK[k].desc,false);
+    const head=t=>{ const h=document.createElement('div'); h.className='mk-sub'; h.textContent=t; return h; };
+    if(V==='a'){
+      ['str','piz','kb','kba'].forEach(k=>ch.appendChild(I(k)));
+      ['ep','vib','mar','glo','hrp','kal'].forEach(k=>ch.appendChild(N(k)));
+      lib.forEach(b=>ch.appendChild(b));
+    } else {
+      ch.appendChild(head('Orchester')); ['str','piz','kb','kba'].forEach(k=>ch.appendChild(I(k))); ch.appendChild(N('hrp'));
+      ch.appendChild(head('Tasten & Mallets')); ['ep','vib','mar','glo','kal'].forEach(k=>ch.appendChild(N(k)));
+      ch.appendChild(head('Synth')); ['vox','bass'].forEach(k=>ch.appendChild(W(k)));
+      ch.appendChild(head('Eigene')); lib.forEach(b=>ch.appendChild(b));
+    }
+    if(fake){ let n=ch.nextSibling; while(n){ const x=n.nextSibling; if(n.classList && n.classList.contains('grp')) break; n.remove(); n=x; } // Hinweise zum echten Sample weg
+      const h=document.createElement('div'); h.className='kl-note';
+      h.textContent='Vorschlag: '+NEW[fake][2]+' (CC0). Mehrere Töne × Lautstärken, Laden bei Wahl.'; ch.after(h); }
+  };
+  const st=document.createElement('style');
+  st.textContent='.mk-dot{width:7px;height:7px;border-radius:50%;background:#3fa9ff;box-shadow:0 0 6px rgba(63,169,255,.8);flex:none}'
+    +'.mk-sub{flex-basis:100%;font:700 11px Rajdhani,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin:6px 0 0}'
+    +'.mk-sub:first-child{margin-top:0}';
+  document.head.appendChild(st);
+  function setV(v){ V=v; if($id('klSheet').classList.contains('open')) renderKlang(); }
+  function open(){
+    if(isPlaying) stop(); closeSheets(); if(prIsOpen()) prClose();
+    let tr=TRACKS.find(t=>trInstKey(t)==='sampler');
+    if(!tr){ if(melCount()>=MEL_MAX){ hmToast('Höchstens '+MEL_MAX+' Melodiespuren',false); return; } tr=trAddNew({k:'sampler', label:melSuggest('SAMPLER')}); }
+    setTimeout(()=>openKlang(tr,'sound'),80);
+  }
+  window.__mk={setV,open};
+}
+
+// ===== Rahmen-Steuerung =====
+const fR=document.getElementById('fR');
+let V='a';
+function hook(){ const w=fR.contentWindow; try{ if(!w||w.eval('typeof TRACKS')!=='object') return null; if(!w.__mk) w.eval('('+MK.toString()+')()'); }catch(e){ console.error(e); return null; } return w.__mk; }
+function apply(){ const m=hook(); if(m) m.setV(V); document.querySelectorAll('[data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v===V)); }
+fR.addEventListener('load',()=>setTimeout(()=>{ apply(); const m=hook(); if(m) m.open(); },900));
+document.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{ V=b.dataset.v; apply(); });
+document.getElementById('exBtn').onclick=()=>{ const m=hook(); if(m) m.open(); };
+const notes=document.getElementById('notes').innerHTML; document.getElementById('side').innerHTML=notes; const info=document.getElementById('info'); info.innerHTML=notes;
+document.getElementById('infoBtn').onclick=()=>info.classList.toggle('open');
+const fitTop=()=>{ const h=document.getElementById('mbar').offsetHeight; document.getElementById('stage').style.top=h+'px'; info.style.top=h+'px'; }; addEventListener('resize',fitTop); fitTop();
+</script>
+</body>
+</html>
