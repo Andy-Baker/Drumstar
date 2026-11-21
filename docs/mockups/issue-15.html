@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Acid: Filter-Bewegungen aufnehmen (#15)</title>
+<link rel="stylesheet" href="../../fonts.css">
+<style>
+/* Mockup zu Issue #15: Filter-Bewegungen des XY-Pads aufnehmen und abspielen (Filter-Spur je Step).
+   Die echte App läuft im Rahmen; REC im XY-Pad, die Spur-Anzeige und die Wiedergabe sind zur Laufzeit ergänzt. */
+:root{color-scheme:dark;--bg:#050507;--blue:#3fa9ff;--blue-2:#8fd4ff;--white:#f4f5f7;--dim:#7d818c;--metal:#c7cbd4}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--white);font-family:'Rajdhani',system-ui,sans-serif}
+#mbar{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:calc(6px + env(safe-area-inset-top,0px)) 10px 6px;background:repeating-linear-gradient(135deg,#0b1622 0 8px,#0d1a28 8px 16px);border-bottom:1px dashed rgba(63,169,255,.45);font:700 11px 'JetBrains Mono',monospace;color:var(--blue-2)}
+#mbar .g{display:flex;align-items:center;gap:4px}
+#mbar button{height:30px;padding:0 7px;border-radius:6px;border:1px solid rgba(63,169,255,.45);background:rgba(63,169,255,.12);font:700 11px 'JetBrains Mono',monospace;color:var(--blue-2);cursor:pointer}
+#mbar button.on{background:var(--blue);color:#042c53}
+#mbar .sp{flex:1}
+#stage{position:fixed;top:44px;left:0;right:0;bottom:0;display:flex;justify-content:center;align-items:flex-start;gap:28px;overflow:auto}
+.ph{display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;width:100%}
+iframe{border:0;width:100%;height:100%;background:#050507;display:block}
+#side{display:none;width:340px;font-size:14px;color:var(--metal);line-height:1.45;padding-top:20px}
+#side h3,#info h3{font:700 11px 'Rajdhani';letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin:16px 0 6px}
+#side p,#info p{margin:0 0 8px} #side b,#info b{color:var(--white)}
+#side ul,#info ul{margin:0 0 8px;padding-left:18px} #side li,#info li{margin:3px 0}
+#info{position:fixed;inset:44px 0 0 0;z-index:190;background:#07080bf2;overflow:auto;padding:8px 18px 40px;font-size:14.5px;color:var(--metal);line-height:1.45;display:none}
+#info.open{display:block}
+@media (min-width:900px) and (min-height:900px){
+  #stage{padding:14px 0}
+  .ph{width:auto;height:auto}
+  iframe{width:390px;height:844px;border-radius:30px;border:8px solid #1a1e26;box-shadow:0 30px 80px rgba(0,0,0,.75);box-sizing:content-box}
+  #side{display:block} #infoBtn{display:none}
+}
+</style>
+</head>
+<body>
+<div id="mbar">
+  <span>#15</span>
+  <div class="g"><button data-v="a" class="on">A Aufnehmen</button><button data-v="b">B + Zeichnen</button></div>
+  <span class="sp"></span>
+  <button id="xyBtn">XY-Pad</button>
+  <button id="pgBtn">Pattern</button>
+  <button id="infoBtn">ⓘ</button>
+</div>
+<div id="stage">
+  <div class="ph"><iframe id="fR" src="../../index.html" title="App mit Vorschlag"></iframe></div>
+  <div id="side"></div>
+</div>
+<div id="info"></div>
+<template id="notes">
+  <h3>Was das ist</h3>
+  <p>Die <b>echte App</b> mit der ACID-Spur. <b>XY-Pad</b> öffnet die Spielfläche, <b>Pattern</b> zeigt die Karte „Auto“. Aufnahme und Wiedergabe <b>klingen</b> schon (nur im Mockup, nicht gespeichert).</p>
+  <h3>So geht's</h3>
+  <ul>
+    <li>Im XY-Pad <b>REC</b> (roter Punkt) tippen → Pattern läuft los, die Fläche steuert jetzt <b>nur den Filter</b> der laufenden Bassline (keine eigenen Töne).</li>
+    <li>Finger hoch/runter = Cutoff. Jeder Step, über den der Finger liegt, wird in die <b>Filter-Spur</b> unter der Fläche geschrieben. Finger weg = Spur bleibt, nächste Runde ergänzt (Overdub).</li>
+    <li>Nochmal REC = Aufnahme aus, Spur spielt weiter. <b>Papierkorb</b> = Spur löschen.</li>
+    <li>Auf der Pattern-Seite zeigt die Karte <b>Auto</b> dieselbe Spur (unter der LFO-Kurve).</li>
+  </ul>
+  <h3>Varianten</h3>
+  <ul>
+    <li><b>A · Aufnehmen</b>: Spur nur per XY-Pad füllen, auf der Pattern-Seite nur Anzeige + Löschen.</li>
+    <li><b>B · + Zeichnen</b>: zusätzlich in der Karte „Auto“ mit dem Finger über die Spur fahren = Werte zeichnen (ohne XY-Pad, genauer am Step).</li>
+  </ul>
+  <h3>Wiedergabe</h3>
+  <p>Ein Wert je Step (wie Noten), zwischen zwei Steps gleitend. Leerer Step = Filter wie eingestellt. Auto-LFO kommt obendrauf. Gilt auch im Song und im WAV-Export.</p>
+</template>
+<script>
+// ===== Läuft im globalen Scope der App (per eval im Rahmen) =====
+function MK(){
+  if(window.__mk) return;
+  let V='a', rec=false, lane=[], ph=-1;
+  const tr0=()=>xyTrack();
+  const L=s=>{ if(lane.length!==PATTERN_LENGTH){ const o=lane; lane=new Array(PATTERN_LENGTH).fill(null); o.forEach((v,i)=>{ if(i<PATTERN_LENGTH) lane[i]=v; }); } return lane[s]; };
+  const cents=(tr,y)=>1200*Math.log2((300+y*4000)/(300+(tr.cutoff!=null?tr.cutoff:0.5)*4000));
+  // Wiedergabe: nach der normalen Acid-Note den Filter-Versatz aus der Spur setzen (Auto-LFO obendrauf)
+  const oTrig=triggerArpStep;
+  triggerArpStep=function(time,tr,n,vel,slide,hold,modPos,acc,len,ch){
+    oTrig.apply(this,arguments);
+    if(modPos==null || tr!==tr0() || !tr._arpFilter) return;
+    const s=((modPos%PATTERN_LENGTH)+PATTERN_LENGTH)%PATTERN_LENGTH, a=L(s); if(a==null) return;
+    const b=L((s+1)%PATTERN_LENGTH), dur=stepDuration()*Math.max(1,len||1);
+    const lfo=x=>autoLfo(x)*autoDepth*AUTO_CENTS;
+    const c0=cents(tr,a)+lfo(modPos), c1=cents(tr,b!=null?b:a)+lfo(modPos+1);
+    tr._arpFilter.detune.cancelScheduledValues(time);
+    tr._arpFilter.detune.setValueAtTime(c0,time);
+    tr._arpFilter.detune.linearRampToValueAtTime(c1,time+dur);
+  };
+  // Aufnahme: XY spielt währenddessen keine eigenen Töne
+  const oOn=xyNoteOn; xyNoteOn=function(){ if(rec) return; return oOn.apply(this,arguments); };
+  transportOn('step', ev=>{
+    if(rec && xyDown){ L(0); lane[ev.step]=Math.round(xyLast.y*100)/100; }
+    const d=Math.max(0,(ev.time-audioCtx.currentTime)*1000);
+    setTimeout(()=>{ ph=ev.step; draw(); },d);
+  });
+  transportOn('stop', ()=>{ ph=-1; draw(); });
+  // ---- UI ----
+  const st=document.createElement('style');
+  st.textContent=
+    '.mk-lane{position:relative;display:flex;gap:2px;height:46px;padding:4px;border-radius:8px;background:var(--panel-inset);box-shadow:inset 0 2px 6px rgba(0,0,0,.6);flex-shrink:0;touch-action:none}'
+   +'.mk-lane i{flex:1;position:relative;border-radius:2px;background:rgba(255,255,255,.03)}'
+   +'.mk-lane i.bt{background:rgba(255,255,255,.06)}'
+   +'.mk-lane i b{position:absolute;left:0;right:0;bottom:0;border-radius:2px;background:linear-gradient(180deg,#8fd4ff,#3fa9ff);opacity:.85}'
+   +'.mk-lane i.ph{box-shadow:0 0 0 1px #fff inset}'
+   +'.mk-lane i.ph b{opacity:1;box-shadow:0 0 8px rgba(63,169,255,.9)}'
+   +'.mk-lane.rec{box-shadow:inset 0 2px 6px rgba(0,0,0,.6),0 0 0 1px rgba(255,80,80,.6)}'
+   +'.mk-lane .e{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:12px "JetBrains Mono",monospace;color:var(--dim);pointer-events:none}'
+   +'.mk-lrow{display:flex;gap:8px;align-items:center;flex-shrink:0}.mk-lrow .mk-lane{flex:1}'
+   +'.mk-tr{width:46px;height:46px;flex:none;border-radius:9px;border:1px solid rgba(255,255,255,.12);background:var(--panel);color:var(--dim);display:flex;align-items:center;justify-content:center;cursor:pointer}'
+   +'.mk-tr svg,.mk-rec svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}'
+   +'#xyBtns .mk-rec{flex:0 0 64px;display:flex;align-items:center;justify-content:center;gap:6px}'
+   +'#xyBtns .mk-rec .dot{width:14px;height:14px;border-radius:50%;background:#ff5050;box-shadow:0 0 6px rgba(255,80,80,.6)}'
+   +'#xyBtns .mk-rec.on{background:#ff5050;border-color:#ff5050;color:#200}#xyBtns .mk-rec.on .dot{background:#fff;animation:mkb 1s steps(2) infinite}'
+   +'@keyframes mkb{50%{opacity:.2}}'
+   +'#xyPad.mk-r .xy-col span{opacity:.25}#xyPad.mk-r::after{content:"REC · nur Filter";position:absolute;right:10px;bottom:22px;font:700 12px "JetBrains Mono",monospace;color:#ff7070;letter-spacing:.08em}'
+   +'.mk-lab{display:flex;justify-content:space-between;align-items:center;margin:8px 0 4px;font:700 11px Rajdhani,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}'
+   +'.mk-lab small{letter-spacing:.04em;text-transform:none;font:11px "JetBrains Mono",monospace}';
+  document.head.appendChild(st);
+  const TRASH='<svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>';
+  function mkLane(){ const d=document.createElement('div'); d.className='mk-lane'; return d; }
+  // XY-Overlay: Spur + REC
+  const xl=mkLane(), xrow=document.createElement('div'); xrow.className='mk-lrow';
+  const xt=document.createElement('button'); xt.className='mk-tr'; xt.innerHTML=TRASH; xt.title='Filter-Spur löschen';
+  xrow.append(xl,xt); $id('xyBtns').before(xrow);
+  const rb=document.createElement('button'); rb.className='mk-rec'; rb.innerHTML='<span class="dot"></span>'; rb.title='Filter aufnehmen';
+  $id('xyBtns').prepend(rb);
+  rb.onclick=()=>{ rec=!rec; if(rec && !isPlaying) playBtn.click(); draw(); };
+  // Pattern-Seite: Karte „Auto“
+  const cb=$id('autoBody'), lab=document.createElement('div'); lab.className='mk-lab';
+  lab.innerHTML='<span>Filter-Spur</span><small id="mkSum"></small>';
+  const cl=mkLane(), crow=document.createElement('div'); crow.className='mk-lrow';
+  const ct=document.createElement('button'); ct.className='mk-tr'; ct.innerHTML=TRASH; ct.title='Filter-Spur löschen';
+  crow.append(cl,ct); cb.append(lab,crow);
+  const clear=()=>{ lane=lane.map(()=>null); draw(); hmToast('Filter-Spur gelöscht',false); };
+  xt.onclick=clear; ct.onclick=clear;
+  // Variante B: in der Karte zeichnen
+  let drawing=false;
+  const paint=e=>{ const r=cl.getBoundingClientRect(); const s=Math.max(0,Math.min(PATTERN_LENGTH-1,Math.floor((e.clientX-r.left)/r.width*PATTERN_LENGTH)));
+    L(0); lane[s]=Math.round(Math.max(0,Math.min(1,1-(e.clientY-r.top)/r.height))*100)/100; draw(); };
+  cl.addEventListener('pointerdown',e=>{ if(V!=='b') return; drawing=true; try{cl.setPointerCapture(e.pointerId);}catch(x){} paint(e); });
+  cl.addEventListener('pointermove',e=>{ if(drawing) paint(e); });
+  cl.addEventListener('pointerup',()=>drawing=false); cl.addEventListener('pointercancel',()=>drawing=false);
+  function fill(el){
+    L(0); let h='';
+    for(let s=0;s<PATTERN_LENGTH;s++){ const v=lane[s];
+      h+='<i class="'+(s%4===0?'bt':'')+(s===ph?' ph':'')+'">'+(v==null?'':'<b style="height:'+Math.max(4,v*100)+'%"></b>')+'</i>'; }
+    const n=lane.filter(v=>v!=null).length;
+    if(!n) h+='<span class="e">'+(el===cl&&V==='b'?'Leer – mit dem Finger zeichnen':'Leer – im XY-Pad REC')+'</span>';
+    el.innerHTML=h; return n;
+  }
+  function draw(){
+    const n=fill(xl); fill(cl);
+    xl.classList.toggle('rec',rec); cl.classList.toggle('rec',rec);
+    rb.classList.toggle('on',rec); xyPad.classList.toggle('mk-r',rec);
+    $id('mkSum').textContent=n?n+'/'+PATTERN_LENGTH+' Steps':'leer';
+    xt.style.visibility=ct.style.visibility=n?'':'hidden';
+    if(autoShape==='off') autoSummary.textContent=n?'Filter-Spur':'Aus';
+  }
+  $id('xyCloseBtn').addEventListener('click',()=>{ rec=false; draw(); });
+  // Ein Beispiel-Verlauf (und eine Bassline, falls die Acid-Spur leer ist), damit man es sofort hört
+  { const t=tr0(); if(t && !(t.events&&t.events.length)){ generateAcidBassline(t); if(typeof renderEditorArea==='function') renderEditorArea(TRACKS[activeTrackIdx]); } }
+  L(0); for(let s=0;s<PATTERN_LENGTH;s++) lane[s]=Math.round((0.25+0.55*Math.pow(((s%16)/15),1.6))*100)/100;
+  function selAcid(){ const tr=tr0(); if(!tr) return; if(prIsOpen()) prClose(); closeSheets(); const i=TRACKS.indexOf(tr); if(TRACKS[activeTrackIdx]!==tr) selectTrack(i); }
+  function openXYv(){ selAcid(); setTimeout(()=>{ openXY(); draw(); },60); }
+  function openPg(){ if(xyOverlay.classList.contains('open')){ rec=false; closeXY(); } selAcid(); setTimeout(()=>{ autoBody.classList.add('open'); autoToggle.setAttribute('aria-expanded','true'); drawAutoCurve(); draw(); $id('arpModPanel').scrollIntoView({block:'center'}); },80); }
+  function setV(v){ V=v; draw(); }
+  draw();
+  window.__mk={setV,openXY:openXYv,openPg};
+}
+
+// ===== Rahmen-Steuerung =====
+const fR=document.getElementById('fR');
+let V='a';
+function hook(){ const w=fR.contentWindow; try{ if(!w||w.eval('typeof TRACKS')!=='object') return null; if(!w.__mk) w.eval('('+MK.toString()+')()'); }catch(e){ console.error(e); return null; } return w.__mk; }
+function apply(){ const m=hook(); if(m) m.setV(V); document.querySelectorAll('[data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v===V)); }
+fR.addEventListener('load',()=>setTimeout(()=>{ apply(); const m=hook(); if(m) m.openXY(); },900));
+document.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{ V=b.dataset.v; apply(); const m=hook(); if(m) (V==='b'?m.openPg():m.openXY()); });
+document.getElementById('xyBtn').onclick=()=>{ const m=hook(); if(m) m.openXY(); };
+document.getElementById('pgBtn').onclick=()=>{ const m=hook(); if(m) m.openPg(); };
+const notes=document.getElementById('notes').innerHTML; document.getElementById('side').innerHTML=notes; const info=document.getElementById('info'); info.innerHTML=notes;
+document.getElementById('infoBtn').onclick=()=>info.classList.toggle('open');
+const fitTop=()=>{ const h=document.getElementById('mbar').offsetHeight; document.getElementById('stage').style.top=h+'px'; info.style.top=h+'px'; }; addEventListener('resize',fitTop); fitTop();
+</script>
+</body>
+</html>
