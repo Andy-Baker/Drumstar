@@ -10,7 +10,7 @@ async function beatDelete(id){ const db=await idbOpen(); db.transaction(IDB_BEAT
 async function beatAll(){
   const db=await idbOpen(), out=[];
   await new Promise((res,rej)=>{ const q=db.transaction(IDB_BEATS,'readonly').objectStore(IDB_BEATS).openCursor(); q.onsuccess=e=>{ const c=e.target.result; if(c){ out.push(c.value); c.continue(); } else res(); }; q.onerror=()=>rej(q.error); });
-  return out.map(mcBeat).sort((a,b)=>b.savedAt-a.savedAt); // #8: Beats aus dem alten Reiter „Sample“ → Sampler
+  return out.filter(b=>b.kind!=='rh').map(mcBeat).sort((a,b)=>b.savedAt-a.savedAt); // #8: Beats aus dem alten Reiter „Sample“ → Sampler
 }
 function beatTrackData(tr){
   return { id:tr.id, steps:tr.steps.slice(), events:tr.events?JSON.parse(JSON.stringify(tr.events)):undefined, notes:tr.notes?tr.notes.slice():undefined, slides:tr.slides?tr.slides.slice():undefined,

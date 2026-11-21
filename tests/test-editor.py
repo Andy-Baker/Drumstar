@@ -454,6 +454,37 @@ async def main():
       return {dis, tv1, tv2, reg:+reg.toFixed(3), e:[e.semi,e.tempo,e.art].join(), padLen:+padLen.toFixed(3), back}; })()""")
     ok('#11 Editor: Plattenspieler sperrt Tempo (zeigt 119 %), Töne 120 %, Vorhör-Ausschnitt 1/1,2 s', pt['dis'] and pt['tv1']=='119 %' and pt['tv2']=='120 %' and abs(pt['reg']-0.833)<0.01, pt)
     ok('#11 Speichern: semi/tempo/art im Eintrag, Pad spielt gerechnet, beim Öffnen wieder da', pt['e']=='3,120,tones' and abs(pt['padLen']-0.833)<0.01 and pt['back']=='3,120,tones', pt)
+    # #14 Rhythmen pro Spur: Würfel fragt bei Drums/Perc, Vorlagen, Speichern, Zufall, Löschen; Melodiespuren würfeln direkt
+    await pg.evaluate("closeSheets(); selectTrack(TRACKS.findIndex(t=>t.id==='ch')); taScope='page'")
+    await pg.click('#taRandBtn'); await pg.wait_for_timeout(150); await s('rh_dice_menu')
+    rh0=await pg.evaluate("[...document.querySelectorAll('#rhPop button')].map(b=>b.dataset.rh)")
+    ok('#14 Würfel bei Hi-Hat: Menü Neu · Bibliothek · Sheet', rh0==['new','lib','open'], rh0)
+    await pg.click('#rhPop [data-rh=open]'); await pg.wait_for_timeout(300); await s('rh_sheet')
+    rh1=await pg.evaluate("""(()=>{ const n=[...document.querySelectorAll('#rhList .rh-row .nm')].map(e=>e.firstChild.textContent);
+      return {open:document.getElementById('rhSheet').classList.contains('open'), n, pop:!!document.getElementById('rhPop')}; })()""")
+    ok('#14 Sheet offen mit Hi-Hat-Vorlagen, Menü zu', rh1['open'] and 'Achtel' in rh1['n'] and not rh1['pop'], rh1)
+    rh2=await pg.evaluate("""(()=>{ const row=[...document.querySelectorAll('#rhList .rh-row')].find(r=>r.querySelector('.nm').firstChild.textContent==='Disco (locker auf und)');
+      row.click(); const t=__T.find(t=>t.id==='ch'), [a,b]=taRange();
+      return {st:t.steps.slice(a,b).map(v=>v>0?1:0).join(''), ar:t.notes?t.notes.slice(a,a+4).join(''):'', open:document.getElementById('rhSheet').classList.contains('open'), undo:!taUndoBtn.disabled}; })()""")
+    ok('#14 Vorlage eingesetzt (Achtel + locker auf und), Sheet zu, Rückgängig da', rh2['st']=='1010101010101010' and rh2['ar']=='0010' and not rh2['open'] and rh2['undo'], rh2)
+    rh3=await pg.evaluate("""(async()=>{ const t=__T.find(t=>t.id==='ch'), [a,b]=taRange();
+      for(let s=a;s<b;s++) t.steps[s]=(s-a)%3===0?VEL_ACCENT:VEL_OFF; refreshTrackStepVisuals(t);
+      await rhSave(); await new Promise(r=>setTimeout(r,120)); document.getElementById('rhName').value='TEST RH';
+      document.getElementById('rhName').dispatchEvent(new Event('input')); document.getElementById('rhGo').click();
+      await new Promise(r=>setTimeout(r,300)); const mine=await rhOwnOf(t), beats=await beatAll();
+      taClearBtn.click(); const r=mine.find(x=>x.name==='TEST RH'); rhPut2Track(t, r);
+      const back=t.steps.slice(a,b).map(v=>v>0?1:0).join('');
+      return {n:mine.length, v:r&&r.voice, len:r&&r.v.length, inBeats:beats.some(x=>x.kind==='rh'), back}; })()""")
+    ok('#14 Speichern: eigener Rhythmus unter Zeile ch, nicht in Beats, lädt wieder', rh3['n']>=1 and rh3['v']=='ch' and rh3['len']==16 and not rh3['inBeats'] and rh3['back']=='1001001001001001', rh3)
+    rh4=await pg.evaluate("""(async()=>{ const t=__T.find(t=>t.id==='ch'); taClearBtn.click(); await rhRandomLoad(); await new Promise(r=>setTimeout(r,50));
+      const any=t.steps.some(v=>v>0); openSheet('rhSheet'); await rhRender();
+      const own=[...document.querySelectorAll('#rhList .rh-row')].filter(r=>r.querySelector('.mo')).length;
+      const r=(await rhOwnOf(t)).find(x=>x.name==='TEST RH'); await rhDel(r.id); const left=(await rhOwnOf(t)).some(x=>x.name==='TEST RH'); closeSheets();
+      return {any, own, left}; })()""")
+    ok('#14 Aus Bibliothek setzt etwas ein; eigene Zeile mit ⋯; Löschen entfernt', rh4['any'] and rh4['own']>=1 and not rh4['left'], rh4)
+    await grp('ACID')
+    rh5=await pg.evaluate("""(()=>{ document.getElementById('taRandBtn').click(); return {pop:!!document.getElementById('rhPop'), undo:!taUndoBtn.disabled}; })()""")
+    ok('#14 Acid: Würfel ohne Menü, würfelt direkt', not rh5['pop'] and rh5['undo'], rh5)
     ok('Schrift überall ≥ 11 px (#19)', not fz.bad, fz.bad)
     ok('Keine Konsolenfehler', not errs, errs)
     await b.close()

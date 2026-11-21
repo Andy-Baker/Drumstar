@@ -330,13 +330,15 @@ function taSnapshot(){
 function taRange(){
   return taScope==='all' || totalPages()===1 ? [0, PATTERN_LENGTH] : [currentPage*16, currentPage*16+16];
 }
-taRandBtn.addEventListener('click', ()=>{
+// #14: bei Drum-/Perc-Spuren fragt der Würfel (Neu erzeugen · Aus Bibliothek · Bibliothek …, js/rhythmen.js)
+taRandBtn.addEventListener('click', ()=>{ const tr=TRACKS[activeTrackIdx]; if(typeof rhFor==='function' && rhFor(tr)) rhDiceMenu(); else taDiceNew(); });
+function taDiceNew(){
   const tr=TRACKS[activeTrackIdx], [from,to]=taRange();
   if(hmOn(tr)){ taSnapshot(); tr.harm.seed=1+Math.floor(Math.random()*1e6); hmRegen(tr); refreshTrackStepVisuals(tr); hmAfterChange(); hmToast('Harmonie aktiv · Variation gewürfelt',true); return; }
   taSnapshot(tr);
   randomizeTrackPattern(tr, from, to);
   refreshTrackStepVisuals(tr);
-});
+}
 taClearBtn.addEventListener('click', ()=>{
   const tr=TRACKS[activeTrackIdx], [from,to]=taRange();
   if(hmOn(tr)){ hmAskClear(tr); return; }
