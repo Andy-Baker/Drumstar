@@ -36,7 +36,7 @@ iframe{border:0;width:100%;height:100%;background:#050507;display:block}
 <div id="mbar">
   <span>#76</span>
   <span class="sp"></span>
-  <button data-go="editor">1 Schneiden</button><button data-go="roll">2 Piano Roll</button><button data-go="klang">3 Klang</button>
+  <button data-go="editor">Schneiden</button><button data-go="roll">Roll</button><button data-go="kbd">Tasten</button><button data-go="klang">Klang</button>
   <button id="infoBtn">ⓘ</button>
 </div>
 <div id="stage">
@@ -46,27 +46,28 @@ iframe{border:0;width:100%;height:100%;background:#050507;display:block}
 <div id="info"></div>
 <template id="notes">
   <h3>Die Idee</h3>
-  <p>Die <b>Sampler-Spur</b> bekommt eine zweite Art: <b>Jede Taste eigenes Sample</b>. Bisher liegt ein Sample gestimmt über alle Tasten. Neue Fenster gibt es nicht: Sample-Editor, Sound-Auswahl, Klang-Sheet und Piano Roll bleiben, wie sie sind, und bekommen nur Zusätze.</p>
-  <h3>1 · Wie die Samples auf die Tasten kommen</h3>
+  <p>Die <b>Sampler-Spur</b> kann statt eines gestimmten Samples eine <b>Tastenbelegung</b> haben: jede Taste ihr eigenes Sample. Bearbeitet wird <b>auf der Klaviatur</b>, die es schon gibt. Neue Fenster gibt es nicht.</p>
+  <h3>Auf der Klaviatur (Leiste: „Tasten“ oder „Roll“)</h3>
   <ul>
-    <li><b>Beim Schneiden</b> (Leiste: „1 Schneiden“): Im Sample-Editor steht neben „Stücke → Pads“ der Chip <b>„Stücke → Tasten“</b>. Übernehmen legt Stück 1 auf C3, Stück 2 auf C♯3 und so weiter. Ohne gewählte Sampler-Spur entsteht eine neue, danach öffnet sich die Piano Roll.</li>
-    <li><b>Im Klang-Sheet</b>: „+ Stücke eines Samples“ (auf die nächsten freien Tasten) oder „+ Einzelnes Sample“.</li>
-    <li><b>In der Piano Roll</b>: leere Taste halten, dann ein Sample wählen.</li>
+    <li><b>Tippen</b> = anhören (wie bisher).</li>
+    <li><b>Halten</b> = Taste ändern: Welle, Anderes Sample, Bearbeiten, Taste leeren.</li>
+    <li><b>Halten und ziehen</b> = Sample auf eine andere Taste verschieben, die <b>Noten wandern mit</b>. Ist die Zieltaste belegt, tauschen beide. Rückgängig im Hinweis.</li>
+    <li><b>Leere Taste halten</b> = Sample wählen, auch „Alle Stücke ab hier“.</li>
+    <li>Das geht im <b>Spielmodus</b> (große Tasten, dafür am besten) und an der <b>Klaviatur links</b> im Zeichenmodus (ziehen = hoch/runter, die Zielzeile ist markiert).</li>
+    <li>Belegte Tasten tragen ein grünes Schild, unbelegte Zeilen sind dunkel. „Nur Skalentöne“ zeigt nur die belegten.</li>
   </ul>
-  <h3>2 · Die Piano Roll</h3>
+  <h3>Wie die Samples hinkommen</h3>
   <ul>
-    <li>Die <b>Klaviatur links bleibt</b>. Belegte Tasten tragen ein grünes Schild mit der Nummer, unbelegte Zeilen sind dunkel (wie Fremdtöne).</li>
-    <li>Optionen → „Nur Skalentöne“ zeigt dann nur die belegten Tasten.</li>
-    <li>Im Spielmodus (Klaviatur-Knopf) haben die Tasten dieselben Schilder, zum Live-Anspielen.</li>
-    <li>Taste <b>antippen</b> = anhören, <b>halten</b> = Taste bearbeiten.</li>
+    <li><b>Schneiden</b> im Sample-Editor, Chip <b>„Stücke → Tasten“</b>: ab C3 bzw. hinter die belegten Tasten der Spur, danach geht die Piano Roll auf.</li>
+    <li><b>Leere Taste halten</b> (siehe oben).</li>
   </ul>
-  <h3>3 · Belegung ansehen und ändern</h3>
+  <h3>Klang → Sound (abgespeckt)</h3>
   <ul>
-    <li><b>Klang → Sound</b> (Leiste: „3 Klang“): Art umschalten und die Liste aller belegten Tasten. Antippen öffnet die Taste.</li>
-    <li><b>Taste-Sheet</b>: Welle (antippen = hören), <b>Auf Taste −/+</b> (verschiebt das Sample samt Noten, tauscht mit dem Nachbarn), <b>Anderes Sample</b> (das bekannte Auswahlfenster), <b>Bearbeiten</b> (Sample-Editor), <b>Taste leeren</b> (mit Rückgängig).</li>
+    <li>Das bekannte LCD-Feld zeigt „Tastenbelegung · 12 Samples · C3–B3“. Umschalten geht über die Sound-Auswahl: oben „Jede Taste eigenes Sample“, darunter wie bisher ein einzelnes Sample. Die Belegung bleibt dabei gespeichert.</li>
+    <li>Darunter nur eine Mini-Klaviatur als Überblick und „Auf der Klaviatur bearbeiten“. Keine Liste, kein zweiter Bearbeitungsort.</li>
   </ul>
   <h3>Bewusst nicht drin</h3>
-  <ul><li>Pads aufnehmen (#77), Stimmung/Lautstärke je Taste, mehrere Samples pro Taste.</li><li>Mockup: der Break ist erzeugt, nichts wird in der Bibliothek gespeichert.</li></ul>
+  <ul><li>Pads aufnehmen (#77), Stimmung/Lautstärke je Taste, mehrere Samples pro Taste.</li><li>Am Rand mitscrollen beim Ziehen (kommt beim Bau).</li><li>Mockup: der Break ist erzeugt, nichts wird in der Bibliothek gespeichert.</li></ul>
 </template>
 <script>
 // ===== Läuft im globalen Scope der App (per eval im Rahmen) =====
@@ -87,13 +88,18 @@ function MK(){
   }
   const BRK=brk(), BCUT=HITS.map(([s])=>s*0.125);
   const BREAK_SL=BCUT.map((t,i)=>({name:'Break '+(i+1), tag:String(i+1), buf:seCutPiece(BRK,t,i<BCUT.length-1?BCUT[i+1]:BRK.duration)}));
-  // ---- Datenmodell: Sampler-Spur, Art „Tasten“ = jede Taste ihr eigenes Sample (tr.smpKeys[n]) ----
+  // ---- Datenmodell: Sampler-Spur, Art „Tasten“ = jede Taste ihr eigenes Sample (tr.smpKeys[n]); tr.smp bleibt für „Ein Sample“ ----
   const isKeys=tr=>!!(tr && trInstKey(tr)==='sampler' && tr.smpArt==='keys');
   const K=tr=>tr.smpKeys||(tr.smpKeys={});
   const keyList=tr=>Object.keys(K(tr)).map(Number).sort((x,y)=>x-y);
   const noteName=(tr,n)=>pitchNoteName(tr,n).replace('#','♯');
-  function firstFree(tr,from){ let n=from!=null?from:0; while(K(tr)[n]) n++; return n; }
-  function putSlices(tr,list,from){ let n=firstFree(tr,from); const a=n; list.forEach(e=>{ K(tr)[n]={...e}; n++; }); return [a,n-1]; }
+  const range=tr=>{ const l=keyList(tr); return l.length ? noteName(tr,l[0])+'–'+noteName(tr,l[l.length-1]) : ''; };
+  function setKeys(tr){ tr.smpArt='keys'; tr.rootNote=ROOT; }
+  function putList(tr,list,from){ let n=from; const a=n; list.forEach(e=>{ K(tr)[n]={...e}; n++; }); return [a,n-1]; }
+  // Verschieben: Sample samt Noten auf Taste b; belegt b schon etwas, tauschen beide
+  function moveKey(tr,a,b){ if(a===b) return; const ea=K(tr)[a], eb=K(tr)[b];
+    if(eb) K(tr)[a]=eb; else delete K(tr)[a]; K(tr)[b]=ea;
+    tr.events.forEach(x=>{ if(x.n===a) x.n=b; else if(eb && x.n===b) x.n=a; }); evTouch(tr); }
   // Stimme
   const oVoice=samplerVoice;
   samplerVoice=function(tr,time,n,vel,hold){ if(!isKeys(tr)) return oVoice(tr,time,n,vel,hold);
@@ -103,110 +109,135 @@ function MK(){
     src.connect(g).connect(tr.bus); src.start(time,0,L); src.onended=()=>{ try{ g.disconnect(); }catch(er){} }; return {rel(){}}; };
   const hear=(tr,n)=>Promise.resolve(initAudio()).then(()=>{ if(audioCtx.state!=='running') audioCtx.resume(); samplerVoice(tr,audioCtx.currentTime+0.006,n,0.9); });
   const oSub=samplerSub; samplerSub=tr=>isKeys(tr) ? 'Tasten · '+keyList(tr).length+' belegt' : oSub(tr);
-  // Belegte Tasten = „in der Tonart“: unbelegte Zeilen werden dunkel, „Nur Skalentöne“ zeigt nur belegte
   const oIn=pitchInScale; pitchInScale=(v,tr)=>isKeys(tr) ? !!K(tr)[v] : oIn(v,tr);
-  // Wellenbild
-  function wave(cv,buf,col){ const x=cv.getContext('2d'), d=buf.getChannelData(0), W=cv.width, H=cv.height, L=d.length; x.clearRect(0,0,W,H); x.fillStyle=col||G;
+  function wave(cv,buf){ const x=cv.getContext('2d'), d=buf.getChannelData(0), W=cv.width, H=cv.height, L=d.length; x.clearRect(0,0,W,H); x.fillStyle=G;
     for(let i=0;i<W;i++){ let m=0; const s=Math.floor(i*L/W), e=Math.floor((i+1)*L/W); for(let j=s;j<e;j+=2) m=Math.max(m,Math.abs(d[j])); const h=Math.max(1,m*H*0.95); x.fillRect(i,(H-h)/2,1,h); } }
+  function refresh(tr){ samplerChanged&&samplerChanged(); if(prIsOpen()){ prRender(); prRenderChrome(); } if(klTr===tr) renderKlang(); try{ prDrawPreview(tr); ovRender(); }catch(er){} }
   // ---- Piano Roll: Klaviatur bleibt, belegte Tasten tragen ein grünes Schild ----
   const oKeys=prKeysHtml;
   prKeysHtml=(tr,v)=>{ let h=oKeys(tr,v); if(!isKeys(tr)) return h;
-    prR.forEach((n,i)=>{ const e=K(tr)[n]; if(e) h+='<div class="mk-bd" style="top:'+(i*v.rh+Math.max(1,(v.rh-18)/2))+'px">'+e.tag+'</div>'; });
-    return h; };
+    prR.forEach((n,i)=>{ const e=K(tr)[n]; if(e) h+='<div class="mk-bd" data-bn="'+n+'" style="top:'+(i*v.rh+Math.max(1,(v.rh-18)/2))+'px">'+e.tag+'</div>'; });
+    return h+'<div id="mkDropRow"></div>'; };
   const oKb=prBuildKb; prBuildKb=function(){ oKb(); const tr=prTr; if(!isKeys(tr)) return;
-    $id('prKb').querySelectorAll('[data-n]').forEach(k=>{ const e=K(tr)[+k.dataset.n]; if(e){ const b=document.createElement('i'); b.className='mk-kb'; b.textContent=e.tag; k.appendChild(b); } }); };
-  // Einpassen: belegte Tasten zählen wie Noten (Ansicht und Spielmodus öffnen auf der Belegung)
+    $id('prKb').querySelectorAll('[data-n]').forEach(k=>{ const e=K(tr)[+k.dataset.n]; if(e){ const b=document.createElement('i'); b.className='mk-kb'; b.dataset.bn=k.dataset.n; b.textContent=e.tag; k.appendChild(b); } }); };
   [['prFitView'],['prFitKb']].forEach(([f])=>{ const o=window[f]; window[f]=function(){ const tr=prTr||arguments[0]; if(!isKeys(tr)) return o.apply(this,arguments);
     const ev=tr.events; tr.events=ev.concat(keyList(tr).map(n=>({s:0,n,l:1,v:0}))); try{ return o.apply(this,arguments); } finally{ tr.events=ev; } }; });
-  // Halten auf einer Taste (linke Klaviatur oder Spielmodus) = Taste bearbeiten
-  let lp=null;
-  function lpStart(e,n){ lpEnd(); const x=e.clientX, y=e.clientY; lp={x,y,t:setTimeout(()=>{ lp=null; if(navigator.vibrate) try{ navigator.vibrate(15); }catch(er){} keyOpen(prTr,n); },480)}; }
-  function lpEnd(){ if(lp){ clearTimeout(lp.t); lp=null; } }
-  const rowN=e=>{ const k=e.target.closest('[data-n]'); if(k) return +k.dataset.n; const i=Math.floor((e.clientY-$id('prLbl').getBoundingClientRect().top)/prV(prTr).rh); return prR[i]; };
-  $id('prLblCol').addEventListener('pointerdown',e=>{ if(isKeys(prTr)){ const n=rowN(e); if(n!=null) lpStart(e,n); } });
-  $id('prKb').addEventListener('pointerdown',e=>{ if(isKeys(prTr)){ const k=e.target.closest('[data-n]'); if(k) lpStart(e,+k.dataset.n); } });
-  ['pointerup','pointercancel','pointerleave'].forEach(t=>{ $id('prLblCol').addEventListener(t,lpEnd); $id('prKb').addEventListener(t,lpEnd); });
-  document.addEventListener('pointermove',e=>{ if(lp && Math.hypot(e.clientX-lp.x,e.clientY-lp.y)>10) lpEnd(); });
+  // ---- Geste auf den Tasten (Klaviatur links und Spielmodus) ----
+  //   tippen = anhören (wie bisher) · halten = Taste-Sheet (leer: Sample wählen) · halten und ziehen = verschieben
+  let gs=null;
+  const keyAt=(src,x,y)=>{ if(src==='kb'){ const e=document.elementFromPoint(x,y), k=e && e.closest('#prKb [data-n]'); return k ? +k.dataset.n : null; }
+    const r=$id('prLbl').getBoundingClientRect(); if(x<r.left-30 || x>r.right+400) return null; const i=Math.floor((y-r.top)/prV(prTr).rh); return i>=0 && i<prR.length ? prR[i] : null; };
+  function gsDown(e,src){ if(!isKeys(prTr)) return; const n=keyAt(src,e.clientX,e.clientY); if(n==null) return;
+    gsEnd(); gs={src, pid:e.pointerId, n, x:e.clientX, y:e.clientY, ph:'wait', t:setTimeout(gsHold,450)}; }
+  function gsHold(){ if(!gs) return; gs.ph='held'; if(navigator.vibrate) try{ navigator.vibrate(12); }catch(er){}
+    if(gs.src==='kb'){ prRelease(gs.pid); }
+    mark(gs.n,'mk-lift'); }
+  function mark(n,cls){ document.querySelectorAll('.'+cls).forEach(x=>x.classList.remove(cls)); if(n==null) return;
+    const k=gs && gs.src==='kb' ? $id('prKb').querySelector('[data-n="'+n+'"]') : $id('prLbl').querySelector('.pkl[data-n="'+n+'"]'); if(k) k.classList.add(cls);
+    const b=document.querySelector('[data-bn="'+n+'"]'); if(b && cls==='mk-lift') b.classList.add(cls); }
+  function dropRow(n){ const d=$id('mkDropRow'); if(!d) return; const i=n==null?-1:prR.indexOf(n); if(i<0){ d.style.display='none'; return; }
+    const rh=prV(prTr).rh; d.style.display='block'; d.style.top=(i*rh)+'px'; d.style.height=rh+'px'; }
+  function gsMove(e){ if(!gs || e.pointerId!==gs.pid) return; const dx=e.clientX-gs.x, dy=e.clientY-gs.y, far=Math.hypot(dx,dy)>9;
+    if(gs.ph==='wait'){ if(far) gsEnd(); return; }
+    e.stopPropagation(); e.preventDefault();
+    if(gs.ph==='held' && far && K(prTr)[gs.n]){ gs.ph='drag'; const g=document.createElement('div'); g.id='mkGhost'; g.textContent=K(prTr)[gs.n].tag; document.body.appendChild(g); gs.g=g; }
+    if(gs.ph==='drag'){ gs.g.style.left=e.clientX+'px'; gs.g.style.top=e.clientY+'px';
+      const t=keyAt(gs.src,e.clientX,e.clientY); if(t!==gs.to){ gs.to=t; if(gs.src==='kb') mark(t,'mk-tgt'); else dropRow(t);
+        if(t!=null && t!==gs.n){ gs.g.dataset.to=noteName(prTr,t)+(K(prTr)[t]?' ⇄':''); } else gs.g.dataset.to=''; } } }
+  function gsUp(e){ if(!gs || e.pointerId!==gs.pid) return; const g=gs; gsEnd();
+    if(g.ph==='wait') return;
+    e.stopPropagation(); const tr=prTr;
+    if(g.ph==='held'){ keyOpen(tr,g.n); return; }
+    if(g.to==null || g.to===g.n) return;
+    const a=g.n, b=g.to, sw=!!K(tr)[b], nm=K(tr)[a].name; moveKey(tr,a,b); refresh(tr); hear(tr,b);
+    hmToast(nm+' → '+noteName(tr,b)+(sw?' (getauscht)':''),true,()=>{ moveKey(tr,b,a); refresh(tr); }); }
+  function gsEnd(){ if(!gs) return; clearTimeout(gs.t); if(gs.g) gs.g.remove(); gs=null; mark(null,'mk-lift'); mark(null,'mk-tgt'); dropRow(null); }
+  $id('prKb').addEventListener('pointerdown',e=>gsDown(e,'kb'));
+  $id('prLblCol').addEventListener('pointerdown',e=>gsDown(e,'lbl'));
+  window.addEventListener('pointermove',gsMove,true);
+  window.addEventListener('pointerup',gsUp,true);
+  window.addEventListener('pointercancel',()=>gsEnd(),true);
+  $id('prKb').addEventListener('contextmenu',e=>e.preventDefault()); $id('prLblCol').addEventListener('contextmenu',e=>e.preventDefault());
   // ---- Taste-Sheet ----
   const sh=document.createElement('div'); sh.className='sheet'; sh.id='mkKeySh';
   sh.innerHTML='<div class="sh"><span id="mkKeyT"></span><button class="shx" id="mkKeyX" aria-label="Schließen">✕</button></div><div id="mkKeyB"></div>';
   document.body.appendChild(sh);
   const oClose=closeSheets; closeSheets=function(){ oClose(); sh.classList.remove('open'); };
   $id('mkKeyX').onclick=closeSheets;
-  let keyTr=null, keyN=null;
-  function keyOpen(tr,n){ keyTr=tr; keyN=n; const e=K(tr)[n];
-    if(!e){ pickFor(tr,'one',n); return; }
+  function keyOpen(tr,n){ const e=K(tr)[n];
+    if(!e){ pickFor(tr,n); return; }
     $id('mkKeyT').textContent='Taste '+noteName(tr,n);
     const B=$id('mkKeyB'); B.innerHTML='';
     const w=document.createElement('button'); w.className='mk-wv'; w.innerHTML='<b class="mk-tg">'+e.tag+'</b><span><b></b><small>Antippen = anhören</small></span><canvas width="300" height="56"></canvas>';
     w.querySelector('span b').textContent=e.name; wave(w.querySelector('canvas'),e.buf); w.onclick=()=>hear(tr,n); B.appendChild(w);
-    const mv=document.createElement('div'); mv.className='mk-mv';
-    mv.innerHTML='<span>Auf Taste</span><button data-d="-1" aria-label="Eine Taste tiefer">−</button><b>'+noteName(tr,n)+'</b><button data-d="1" aria-label="Eine Taste höher">+</button>';
-    mv.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{ const t=n+(+b.dataset.d), o=K(tr)[t]; K(tr)[t]=e; if(o) K(tr)[n]=o; else delete K(tr)[n];
-      tr.events.forEach(x=>{ if(x.n===n) x.n=t; else if(o && x.n===t) x.n=n; }); evTouch(tr); refresh(tr); keyOpen(tr,t); hear(tr,t); });
-    B.appendChild(mv);
     const a=document.createElement('div'); a.className='acts';
-    a.innerHTML='<button class="act" data-x="pick">'+'<svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h13l-3-3M20 16H7l3 3"/></svg>'+'Anderes Sample</button><button class="act" data-x="edit">'+UI_IC.trim+'Bearbeiten</button>';
+    a.innerHTML='<button class="act" data-x="pick"><svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h13l-3-3M20 16H7l3 3"/></svg>Anderes Sample</button><button class="act" data-x="edit">'+UI_IC.trim+'Bearbeiten</button>';
     B.appendChild(a);
-    const c=document.createElement('div'); c.className='acts'; c.innerHTML='<button class="act mk-del" data-x="clr">Taste leeren</button>'; B.appendChild(c);
-    a.querySelector('[data-x=pick]').onclick=()=>pickFor(tr,'one',n);
+    const c=document.createElement('div'); c.className='acts'; c.innerHTML='<button class="act mk-del" data-x="clr">'+UI_IC.del+'Taste leeren</button>'; B.appendChild(c);
+    const h=document.createElement('div'); h.className='kl-note'; h.textContent='Verschieben: auf der Klaviatur halten und auf eine andere Taste ziehen.'; B.appendChild(h);
+    a.querySelector('[data-x=pick]').onclick=()=>pickFor(tr,n);
     a.querySelector('[data-x=edit]').onclick=()=>hmToast('Öffnet „'+e.name+'“ im Sample-Editor (Trimmen, Tonhöhe …)',false);
     c.querySelector('[data-x=clr]').onclick=()=>{ delete K(tr)[n]; refresh(tr); closeSheets(); hmToast('Taste '+noteName(tr,n)+' geleert',true,()=>{ K(tr)[n]=e; refresh(tr); }); };
     if(!sh.classList.contains('open')) openSheet('mkKeySh');
   }
-  function refresh(tr){ samplerChanged&&samplerChanged(); if(prIsOpen()){ prRender(); prRenderChrome(); } if(klTr===tr) renderKlang(); try{ prDrawPreview(tr); ovRender(); }catch(er){} }
-  // ---- Sound-Auswahl (vorhandenes Fenster) als Quelle für eine Taste bzw. für „Stücke eines Samples“ ----
-  let pick=null; // {tr, mode:'one'|'slices', n}
-  function pickFor(tr,mode,n){ pick={tr,mode,n}; smpPickOpen(tr); $id('smpPick').querySelector('.sh span, .sh b, .ovt span')&&0; }
+  // ---- Sound-Auswahl (vorhandenes Fenster) ----
+  //   normal: oben neuer Eintrag „Jede Taste eigenes Sample“ · für eine Taste: einzelne Samples und „Alle Stücke ab hier“
+  let pick=null; // {tr, n}
+  function pickFor(tr,n){ closeSheets(); pick={tr,n}; smpPickOpen(tr); }
   const oItems=smpPickItems;
   smpPickItems=function(tr){
-    if(!pick){ const L=oItems(tr); return L; }
-    if(pick.mode==='slices') return [{h:'Geschnittene Samples'},{k:'mk:brk', name:'Break', sub:BREAK_SL.length+' Stücke'},{r:1, name:'Neu laden und schneiden'}];
-    const L=[{h:'Synth'}]; Object.keys(SMP_WERK).forEach(k=>L.push({k:'mk:w:'+k, name:SMP_WERK[k].name, sub:SMP_WERK[k].desc}));
-    L.push({h:'Eigene'},{k:'mk:brk:all', name:'Break', sub:'ganzer Loop'},{t:'mkb', open:true, name:'▾ '+BREAK_SL.length+' Stücke'});
+    if(!pick){ const L=oItems(tr), on=isKeys(tr);
+      return [{h:'Belegung'},{k:on?tr.smp+'#':'mk:keys', name:'Jede Taste eigenes Sample', sub:on?'aktiv · '+keyList(tr).length+' belegt':'z. B. Stücke eines Loops'}].concat(L); }
+    const nn=noteName(tr,pick.n), L=[{h:'Synth'}];
+    Object.keys(SMP_WERK).forEach(k=>L.push({k:'mk:w:'+k, name:SMP_WERK[k].name, sub:SMP_WERK[k].desc}));
+    L.push({h:'Eigene'},{k:'mk:brk:all', name:'Break', sub:'ganzer Loop'},{t:'mkb', open:true, name:'▾ '+BREAK_SL.length+' Stücke'},
+      {k:'mk:brk:sl', name:'Alle '+BREAK_SL.length+' Stücke', sub:'ab '+nn, ind:1});
     BREAK_SL.forEach((e,i)=>L.push({k:'mk:s:'+i, name:e.name, ind:1}));
     L.push({r:1, name:'Aufnehmen / Laden'}); return L;
   };
+  const oRender=smpPickRender; smpPickRender=function(){ oRender(); const t=$id('smpPick').querySelector('.ovt span, .sh span, h2, .ovt b');
+    if(t){ if(!t.dataset.o) t.dataset.o=t.textContent; t.textContent=pick ? 'Sample für Taste '+noteName(pick.tr,pick.n) : t.dataset.o; }
+    if(!pick && isKeys(smpPickTr)){ const c=$id('smpPickList').querySelector('[data-k$="#"]'); if(c) c.classList.add('cur'); $id('smpPickList').querySelectorAll('.cur').forEach(x=>{ if(!x.dataset.k.endsWith('#')) x.classList.remove('cur'); }); } };
   const oPClose=smpPickClose; smpPickClose=function(){ oPClose(); setTimeout(()=>{ if(!$id('smpPick').classList.contains('open')) pick=null; },0); };
   const oPick=samplerPick;
   samplerPick=async function(tr,key,q){
     const P=pick; pick=null;
-    if(!P || !String(key).startsWith('mk:')){ if(P && P.mode) return; return oPick(tr,key,q); }
-    if(P.mode==='slices'){ const [a,b]=putSlices(tr,BREAK_SL.map(e=>({...e})),ROOT_FROM(tr)); refresh(tr);
-      hmToast(BREAK_SL.length+' Stücke auf '+noteName(tr,a)+'–'+noteName(tr,b),false); hear(tr,a); return; }
+    if(String(key).endsWith('#')) return; // schon aktiv
+    if(key==='mk:keys'){ setKeys(tr); refresh(tr); closeSheets();
+      if(!keyList(tr).length){ prOpen(tr); setTimeout(()=>{ prSetMode('play'); prRender(); },60); hmToast('Leere Taste halten = Sample wählen',false); } return; }
+    if(!P){ if(isKeys(tr)){ tr.smpArt=null; hmToast('Tastenbelegung bleibt gespeichert',false); } return oPick(tr,key,q); }
+    if(key==='mk:brk:sl'){ const [a,b]=putList(tr,BREAK_SL,P.n); refresh(tr); hmToast(BREAK_SL.length+' Stücke auf '+noteName(tr,a)+'–'+noteName(tr,b),false); hear(tr,a); return; }
     let e; if(key.startsWith('mk:s:')) e={...BREAK_SL[+key.slice(5)]};
     else if(key==='mk:brk:all') e={name:'Break', tag:'B', buf:BRK};
     else { const w=key.slice(5); e={name:SMP_WERK[w].name, tag:SMP_WERK[w].name[0], buf:smpWerkBuf(w)}; }
-    K(tr)[P.n]=e; refresh(tr); hear(tr,P.n); if(sh.classList.contains('open')) keyOpen(tr,P.n);
+    K(tr)[P.n]=e; refresh(tr); hear(tr,P.n);
   };
-  const ROOT_FROM=tr=>{ const l=keyList(tr); return l.length ? l[l.length-1]+1 : 0; };
-  // „Aufnehmen / Laden“ im Auswahlfenster: hier gleich den Break in den Sample-Editor
   const oSE=openSampleEditor;
-  openSampleEditor=async function(o){ o=o||{}; if(o.forSampler && isKeys(o.forSampler) && !o.buffer && !o.sampleId){ seTarget=o.forSampler; return mkEditor(o.forSampler); } return oSE(o); };
-  // ---- Klang → Sound: Art „Ein Sample | Tasten“, bei Tasten die Belegung als Liste ----
+  openSampleEditor=async function(o){ o=o||{}; if(o.forSampler && isKeys(o.forSampler) && !o.buffer && !o.sampleId) return mkEditor(o.forSampler); return oSE(o); };
+  // ---- Klang → Sound: nur Überblick; bearbeitet wird auf der Klaviatur ----
   const IS=INSTR.sampler, oKl=IS.klang;
   IS.klang=(tr,box,grp)=>{
-    grp('Art');
-    const seg=document.createElement('div'); seg.className='am-seg'; seg.innerHTML='<button data-a="one">EIN SAMPLE</button><button data-a="keys">JEDE TASTE EIGENES</button>';
-    seg.querySelectorAll('button').forEach(b=>{ b.classList.toggle('on',(b.dataset.a==='keys')===isKeys(tr)); b.onclick=()=>{ tr.smpArt=b.dataset.a==='keys'?'keys':null; if(isKeys(tr)) tr.rootNote=ROOT; refresh(tr); renderKlang(); }; });
-    box.appendChild(seg);
-    if(!isKeys(tr)){ const h=document.createElement('div'); h.className='kl-note'; h.textContent='Ein Sample, über die Tasten gestimmt (wie bisher).'; box.appendChild(h); oKl(tr,box,grp); return; }
+    if(!isKeys(tr)){ oKl(tr,box,grp); return; }
+    grp('Sample');
+    const fld=document.createElement('button'); fld.className='smp-fld'; fld.setAttribute('aria-label','Sound wählen');
+    fld.innerHTML='<span class="x"><span class="nm">Tastenbelegung</span><span class="sb"></span></span>'+FXI.dn;
+    fld.querySelector('.sb').textContent=keyList(tr).length ? keyList(tr).length+' Samples · '+range(tr) : 'noch leer';
+    fld.onclick=()=>smpPickOpen(tr); box.appendChild(fld);
     const l=keyList(tr);
-    grp('Tasten · '+l.length+' belegt');
-    if(!l.length){ const h=document.createElement('div'); h.className='kl-note'; h.textContent='Noch nichts belegt. Stücke eines geschnittenen Samples legen sich ab C3 nebeneinander.'; box.appendChild(h); }
-    const ls=document.createElement('div'); ls.className='mk-ls';
-    l.forEach(n=>{ const e=K(tr)[n], r=document.createElement('button'); r.className='mk-lr';
-      r.innerHTML='<span class="mk-nt">'+noteName(tr,n)+'</span><b class="mk-tg">'+e.tag+'</b><span class="mk-nm"></span><canvas width="90" height="26"></canvas>';
-      r.querySelector('.mk-nm').textContent=e.name; wave(r.querySelector('canvas'),e.buf);
-      r.onclick=()=>{ hear(tr,n); keyOpen(tr,n); }; ls.appendChild(r); });
-    box.appendChild(ls);
+    if(l.length){ const lo=Math.floor((l[0]+ROOT)/12)*12-ROOT, hi=Math.ceil((l[l.length-1]+ROOT+1)/12)*12-ROOT-1;
+      const kb=document.createElement('button'); kb.className='mk-ov'; kb.setAttribute('aria-label','Auf der Klaviatur bearbeiten');
+      const whites=[]; for(let n=lo;n<=hi;n++) if(![1,3,6,8,10].includes(((n+ROOT)%12+12)%12)) whites.push(n);
+      const W=100/whites.length; let h='';
+      whites.forEach((n,i)=>{ const e=K(tr)[n]; h+='<i class="w" style="left:'+(i*W)+'%;width:'+W+'%">'+(e?'<b>'+e.tag+'</b>':'')+'</i>'; });
+      for(let n=lo;n<=hi;n++){ if(![1,3,6,8,10].includes(((n+ROOT)%12+12)%12)) continue; const i=whites.indexOf(n-1), e=K(tr)[n];
+        h+='<i class="k" style="left:'+((i+1)*W-W*0.32)+'%;width:'+(W*0.64)+'%">'+(e?'<b>'+e.tag+'</b>':'')+'</i>'; }
+      kb.innerHTML=h; kb.onclick=()=>openKb(tr); box.appendChild(kb); }
     const a=document.createElement('div'); a.className='acts';
-    a.innerHTML='<button class="act" data-x="sl">'+TR_IC.plus+'Stücke eines Samples</button><button class="act" data-x="one">'+TR_IC.plus+'Einzelnes Sample</button>';
-    a.querySelector('[data-x=sl]').onclick=()=>pickFor(tr,'slices');
-    a.querySelector('[data-x=one]').onclick=()=>pickFor(tr,'one',ROOT_FROM(tr));
-    box.appendChild(a);
-    const h=document.createElement('div'); h.className='kl-note'; h.textContent='Zeile antippen = Taste bearbeiten. In der Piano Roll: Taste halten.'; box.appendChild(h);
+    a.innerHTML='<button class="act"><svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 5v8M12 5v8M16 5v8"/></svg>Auf der Klaviatur bearbeiten</button>';
+    a.querySelector('button').onclick=()=>openKb(tr); box.appendChild(a);
+    const n=document.createElement('div'); n.className='kl-note'; n.textContent='Dort: Taste halten = ändern, halten und ziehen = verschieben, leere Taste halten = Sample wählen.'; box.appendChild(n);
   };
+  function openKb(tr){ closeSheets(); if(!prIsOpen()) prOpen(tr); setTimeout(()=>{ prSetMode('play'); prK(tr).w=0; prFitKb(tr); prRender(); },60); }
   // ---- Sample-Editor · Schneiden: neuer Chip „Stücke → Tasten“ ----
   let seTarget=null;
   const chip=document.createElement('div'); chip.className='se-assign-chip on'; chip.id='mkTastChip';
@@ -216,7 +247,6 @@ function MK(){
   const oDraw=seCutDraw; seCutDraw=function(){ oDraw.apply(this,arguments); const t=$id('mkTastTo'); if(t) t.textContent=seTarget ? trTitle(seTarget) : 'neue Spur'; };
   async function mkEditor(tr){ seTarget=tr||null; await oSE({buffer:BRK, label:'Break'}); seSetMode('slice'); seCuts=BCUT.slice(1).map(t=>seSnapZero(t)); seCutBuf=seWorkingBuffer; seCutSel=0;
     seCutToPads=false; $id('seSlicePadsChip').classList.remove('on'); chip.classList.add('on'); seCutDraw(); }
-  const oSave=seSaveSlices;
   seSaveSlices=async function(){
     const B=seCutBounds(), list=[]; for(let k=0;k<B.length-1;k++) list.push({name:'Break '+(k+1), tag:String(k+1), buf:seCutPiece(seWorkingBuffer,B[k],B[k+1])});
     closeSampleEditor();
@@ -224,30 +254,35 @@ function MK(){
     let tr=seTarget && TRACKS.includes(seTarget) ? seTarget : null;
     if(!tr){ if(melCount()>=MEL_MAX){ hmToast('Höchstens '+MEL_MAX+' Melodiespuren',false); return; }
       tr=trCreate('sampler',{label:melSuggest('BREAK')}); tr.harm=hmDefaultTrack(tr); tr.harmOwn=null; trAttach(tr,null); }
-    tr.smpArt='keys'; tr.rootNote=ROOT; const [a,b]=putSlices(tr,list,ROOT_FROM(tr));
+    setKeys(tr); const l=keyList(tr), from=l.length ? l[l.length-1]+1 : 0; const [a,b]=putList(tr,list,from);
     melChanged(tr); refresh(tr); seTarget=null;
     hmToast(list.length+' Stücke auf '+noteName(tr,a)+'–'+noteName(tr,b)+' · '+trTitle(tr),false);
     setTimeout(()=>prOpen(tr),350);
   };
   const st=document.createElement('style');
-  st.textContent='#prLbl .mk-bd{position:absolute;left:3px;z-index:3;min-width:18px;height:18px;padding:0 3px;border-radius:5px;background:'+G+';color:#0b1a07;font:700 10px "JetBrains Mono",monospace;display:flex;align-items:center;justify-content:center;pointer-events:none}'
-   +'.mk-kb{position:absolute;top:6px;left:50%;transform:translateX(-50%);min-width:18px;height:18px;padding:0 3px;border-radius:5px;background:'+G+';color:#0b1a07;font:700 10px "JetBrains Mono",monospace;font-style:normal;display:flex;align-items:center;justify-content:center;pointer-events:none}'
-   +'.pkw .mk-kb{top:auto;bottom:38px}.pkb .mk-kb{top:auto;bottom:10px}.pkw.pkbar .mk-kb{position:static;transform:none;margin-left:6px}'
-   +'.mk-ls{display:flex;flex-direction:column;gap:4px;max-height:42vh;overflow:auto}'
-   +'.mk-lr{display:flex;align-items:center;gap:10px;min-height:44px;padding:4px 10px;border-radius:9px;border:1px solid rgba(255,255,255,.08);background:var(--panel-inset);color:var(--white);cursor:pointer;text-align:left}'
-   +'.mk-nt{width:34px;font:700 12px "JetBrains Mono",monospace;color:var(--dim)}.mk-tg{min-width:20px;height:20px;border-radius:5px;background:'+G+';color:#0b1a07;font:700 11px "JetBrains Mono",monospace;display:inline-flex;align-items:center;justify-content:center;padding:0 3px}'
-   +'.mk-nm{flex:1;font:600 15px Rajdhani,sans-serif}.mk-lr canvas{width:90px;height:26px;opacity:.8}'
+  st.textContent='#prLbl .mk-bd{position:absolute;left:3px;z-index:3;min-width:18px;height:18px;padding:0 3px;border-radius:5px;background:'+G+';color:#0b1a07;font:700 10px "JetBrains Mono",monospace;display:flex;align-items:center;justify-content:center;pointer-events:none;transition:transform .12s}'
+   +'.mk-kb{position:absolute;left:50%;transform:translateX(-50%);min-width:18px;height:18px;padding:0 3px;border-radius:5px;background:'+G+';color:#0b1a07;font:700 10px "JetBrains Mono",monospace;font-style:normal;display:flex;align-items:center;justify-content:center;pointer-events:none;transition:transform .12s}'
+   +'.pkw .mk-kb{bottom:38px}.pkb .mk-kb{bottom:10px}'
+   +'.mk-bd.mk-lift{transform:scale(1.35);box-shadow:0 0 0 3px #0b1a07,0 0 12px '+G+'}.mk-kb.mk-lift{transform:translateX(-50%) scale(1.35);box-shadow:0 0 12px '+G+'}'
+   +'.pkl.mk-lift,.pkw.mk-lift,.pkb.mk-lift{outline:2px solid '+G+';outline-offset:-2px}.pkw.mk-tgt,.pkb.mk-tgt{outline:3px dashed '+G+';outline-offset:-3px}'
+   +'#mkDropRow{display:none;position:absolute;left:0;right:-2000px;z-index:4;border:2px dashed '+G+';border-radius:4px;background:rgba(139,232,106,.12);pointer-events:none}'
+   +'#mkGhost{position:fixed;z-index:9999;transform:translate(-50%,-140%);min-width:34px;height:34px;padding:0 8px;border-radius:9px;background:'+G+';color:#0b1a07;font:700 16px "JetBrains Mono",monospace;display:flex;align-items:center;justify-content:center;pointer-events:none;box-shadow:0 8px 22px #000c}'
+   +'#mkGhost[data-to]:not([data-to=""])::after{content:attr(data-to);position:absolute;top:100%;margin-top:4px;padding:2px 6px;border-radius:5px;background:#0b0d10;color:'+G+';font:700 12px "JetBrains Mono",monospace;white-space:nowrap}'
+   +'.mk-tg{min-width:20px;height:20px;border-radius:5px;background:'+G+';color:#0b1a07;font:700 11px "JetBrains Mono",monospace;display:inline-flex;align-items:center;justify-content:center;padding:0 3px}'
+   +'.mk-ov{position:relative;display:block;width:100%;height:64px;margin:8px 0 4px;padding:0;border:1px solid rgba(255,255,255,.1);border-radius:8px;overflow:hidden;background:#e8e9ee;cursor:pointer}'
+   +'.mk-ov i{position:absolute;top:0;bottom:0;border-right:1px solid #0003;display:flex;align-items:flex-end;justify-content:center;padding-bottom:5px}.mk-ov i.k{bottom:40%;background:#15161a;border-radius:0 0 3px 3px;z-index:2;padding-bottom:3px}'
+   +'.mk-ov b{min-width:15px;height:15px;padding:0 2px;border-radius:4px;background:'+G+';color:#0b1a07;font:700 9px "JetBrains Mono",monospace;display:flex;align-items:center;justify-content:center}'
    +'.mk-wv{display:flex;flex-direction:column;gap:6px;align-items:stretch;padding:10px;border-radius:10px;border:1px solid rgba(139,232,106,.3);background:linear-gradient(180deg,#14261d,#0e1813);color:var(--white);cursor:pointer;text-align:left;position:relative}'
    +'.mk-wv>span{display:flex;flex-direction:column;padding-left:30px}.mk-wv>span b{font:700 17px Rajdhani,sans-serif}.mk-wv small{color:var(--dim);font:500 12px Rajdhani,sans-serif}.mk-wv .mk-tg{position:absolute;left:10px;top:12px}.mk-wv canvas{width:100%;height:56px}'
-   +'.mk-mv{display:flex;align-items:center;gap:8px;margin:4px 0}.mk-mv span{flex:1;color:var(--metal);font:600 15px Rajdhani,sans-serif}.mk-mv button{width:44px;height:44px;border-radius:9px;border:1px solid rgba(255,255,255,.12);background:var(--panel);color:var(--blue-2);font-size:20px;cursor:pointer}.mk-mv b{min-width:52px;text-align:center;font:700 15px "JetBrains Mono",monospace;color:var(--white)}'
    +'.sheet .act.mk-del{border-color:rgba(255,107,107,.4);background:rgba(255,107,107,.08);color:#ff8b8b}'
    +'#mkTastChip{display:none!important}#sampleEditorOverlay.mode-slice #mkTastChip{display:inline-flex!important}#mkTastChip.on{border-color:'+G+';background:rgba(139,232,106,.14);color:'+G+'}#mkTastChip small{opacity:.75;font-size:11px;white-space:nowrap}#mkTastChip span{white-space:nowrap}';
   document.head.appendChild(st);
   // ---- Einstiege für die Leiste oben ----
   function editor(){ if(isPlaying) stop(); closeSheets(); if(prIsOpen()) prClose(); mkEditor(null); }
   function roll(){ closeSheets(); let tr=TRACKS.find(isKeys); if(!tr){ editor(); return; } if(!prIsOpen()) prOpen(tr); }
-  function klang(){ let tr=TRACKS.find(isKeys); if(!tr){ editor(); return; } openKlang(tr); }
-  window.__mk={editor,roll,klang};
+  function kbd(){ let tr=TRACKS.find(isKeys); if(!tr){ editor(); return; } openKb(tr); }
+  function klang(){ let tr=TRACKS.find(isKeys); if(!tr){ editor(); return; } if(prIsOpen()) prClose(); openKlang(tr); }
+  window.__mk={editor,roll,kbd,klang};
 }
 
 // ===== Rahmen-Steuerung =====
