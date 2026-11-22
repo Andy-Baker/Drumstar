@@ -21,7 +21,7 @@ $id('tbM').addEventListener('click', ()=>toggleTrackMute(TRACKS[activeTrackIdx])
 $id('tbS').addEventListener('click', ()=>toggleTrackSolo(TRACKS[activeTrackIdx]));
 $id('tbSound').addEventListener('click', ()=>openKlang(TRACKS[activeTrackIdx]));
 
-function closeSheets(){ if(typeof rhPopClose==='function') rhPopClose(); if(typeof eqStop==='function') eqStop(); $id('sheetVeil').style.display='none'; ['setSheet','klSheet','fillSheet','prSheet','hmChordSheet','hmTplSheet','hmConfSheet','newBeatSheet','trSheet','rhSheet'].forEach(i=>$id(i).classList.remove('open')); }
+function closeSheets(){ if(typeof rhPopClose==='function') rhPopClose(); if(typeof smpPickClose==='function') smpPickClose(); if(typeof eqStop==='function') eqStop(); $id('sheetVeil').style.display='none'; ['setSheet','klSheet','fillSheet','prSheet','hmChordSheet','hmTplSheet','hmConfSheet','newBeatSheet','trSheet','rhSheet'].forEach(i=>$id(i).classList.remove('open')); }
 function openSheet(id){ closeMenus(); $id('sheetVeil').style.display='block'; $id(id).classList.add('open'); }
 $id('sheetVeil').addEventListener('click', closeSheets); $id('setX').addEventListener('click', closeSheets); $id('fillX').addEventListener('click', closeSheets);
 // Zurücksetzen (v78, Mockup zuruecksetzen-mockup.html B, ersetzt den versteckten Doppeltipp): Regler mit data-def zeigen

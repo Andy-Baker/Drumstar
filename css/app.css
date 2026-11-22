@@ -972,8 +972,8 @@ html,body{min-height:100%;height:100%;}
 #sheetVeil{position:fixed;inset:0;background:#0008;z-index:71;display:none}
 .sheet{position:fixed;left:0;right:0;bottom:0;margin:0 auto;max-width:520px;z-index:72;background:#0f1015;border-top:1px solid rgba(63,169,255,.4);border-radius:16px 16px 0 0;padding:14px 16px calc(24px + env(safe-area-inset-bottom));transform:translateY(105%);transition:transform .22s;display:flex;flex-direction:column;gap:6px;visibility:hidden}
 .sheet.open{transform:none;visibility:visible}
-.sheet .sh{display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:17px;margin-bottom:4px}
-.sheet .shx{width:44px;height:44px;border-radius:9px;border:1px solid rgba(255,255,255,.12);background:var(--panel);color:var(--blue-2);cursor:pointer}
+.sheet .sh,#smpPick .sh{display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:17px;margin-bottom:4px}
+.sheet .shx,#smpPick .shx{width:44px;height:44px;border-radius:9px;border:1px solid rgba(255,255,255,.12);background:var(--panel);color:var(--blue-2);cursor:pointer}
 .srow{display:grid;grid-template-columns:64px 1fr 56px;align-items:center;gap:8px;min-height:44px}
 .srow label{font-size:14px;color:var(--dim)} .srow input{accent-color:var(--blue);height:36px;width:100%}
 .srow b{font-family:'VT323',monospace;font-size:20px;color:var(--lcd-fg);text-align:right;font-weight:400}
@@ -1139,13 +1139,28 @@ html,body{min-height:100%;height:100%;}
 #klSheet.pno input[type=range]{accent-color:#ffd166}
 /* Sampler (#8): Sample-Auswahl, Grundton am Sample */
 #klSheet.smp input[type=range]{accent-color:#8be86a}
-.smp-chips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 2px}
-.smp-chip{display:inline-flex;align-items:center;gap:6px;min-height:42px;max-width:100%;padding:0 12px;border-radius:21px;border:1px solid rgba(255,255,255,.12);background:var(--panel-inset);color:var(--metal);cursor:pointer;font-family:inherit}
-.smp-chip b{font:700 14px 'Rajdhani',sans-serif;letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
-.smp-chip small{font:500 11px 'Rajdhani',sans-serif;color:var(--dim);white-space:nowrap}
-.smp-chip.on{border-color:#8be86a;color:var(--white);background:rgba(139,232,106,.16)}
-.smp-chip.smp-add{border-style:dashed;color:var(--blue-2)}
-.smp-chip .uic{width:16px;height:16px}
+/* Sound-Auswahl (#71, Mockup H): LCD-Feld im Reiter, Liste im eigenen Fenster */
+.smp-fld{width:100%;min-height:58px;display:flex;align-items:center;gap:12px;margin:4px 0 2px;padding:6px 14px;background:var(--lcd-bg);border:1px solid rgba(63,169,255,.3);border-radius:10px;color:var(--lcd-fg);cursor:pointer;text-align:left;box-shadow:inset 0 0 18px rgba(63,169,255,.06)}
+.smp-fld .x{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.smp-fld .nm{font:24px 'VT323',monospace;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 0 6px rgba(95,194,255,.4)}
+.smp-fld .sb{font:15px 'VT323',monospace;color:#5b8db5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.smp-fld .sb:empty{display:none}
+.smp-fld svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;flex:none;opacity:.7}
+#smpPick{display:none;position:fixed;inset:0;z-index:80}
+#smpPick.open{display:block}
+#smpPick .sp-bd{position:absolute;inset:0;background:#000a}
+#smpPick .sp-sh{position:absolute;left:0;right:0;bottom:0;margin:0 auto;max-width:520px;max-height:78vh;display:flex;flex-direction:column;gap:10px;padding:14px 16px calc(16px + env(safe-area-inset-bottom));background:#0f1015;border-top:1px solid rgba(63,169,255,.4);border-radius:16px 16px 0 0}
+.sp-lcd{min-height:0;overflow-y:auto;overscroll-behavior:contain;background:var(--lcd-bg);border:1px solid rgba(63,169,255,.3);border-radius:10px}
+.sp-h{font:700 11px 'Rajdhani',sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#5b8db5;padding:10px 14px 4px;border-bottom:1px solid rgba(63,169,255,.12)}
+.sp-lcd button{width:100%;min-height:48px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:4px 14px;background:none;border:0;border-bottom:1px solid rgba(63,169,255,.08);color:var(--lcd-fg);font:21px 'VT323',monospace;text-align:left;cursor:pointer}
+.sp-lcd button span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.sp-lcd button small{font:15px 'VT323',monospace;color:#5b8db5;white-space:nowrap}
+.sp-lcd button.cur{background:var(--lcd-fg);color:#04070a}
+.sp-lcd button.cur small{color:#04070a}
+.sp-lcd .sp-ind{padding-left:32px}
+.sp-lcd .sp-t{min-height:38px;font-size:17px;color:#5b8db5}
+.sp-lcd .sp-r{justify-content:flex-start;color:var(--blue-2);font:700 15px 'Rajdhani',sans-serif;letter-spacing:.04em;border-bottom:0;border-top:1px dashed rgba(63,169,255,.3)}
+.sp-lcd .sp-r svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;flex:none}
 .smp-root{display:flex;align-items:center;gap:6px;margin:4px 0 2px}
 .smp-root button{min-width:44px;height:42px;border-radius:8px;border:1px solid rgba(63,169,255,.35);background:rgba(63,169,255,.08);color:var(--white);font:700 18px 'Rajdhani',sans-serif;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:5px}
 .smp-root button:disabled{opacity:.35;pointer-events:none}
@@ -1534,8 +1549,6 @@ html,body{min-height:100%;height:100%;}
 /* Bibliothek: Stücke unter ihrem Original, einklappbar */
 .ds-it.sub{padding-left:28px;font-size:13px}
 .ds-it.subt{font-size:12px;color:#8be86a;padding-top:6px;padding-bottom:6px}
-.smp-chip.subt{border-color:rgba(139,232,106,.4);color:#8be86a}
-.smp-chip.sub{border-style:dashed}
 /* ---- Sample-Editor · Tonhöhe/Tempo (v118, #11 Stufe 2, Mockup issue-11.html B) ---- */
 #sePT{display:flex;flex-direction:column;gap:8px;flex-shrink:0}
 .se-pt-row{display:flex;align-items:center;gap:6px}

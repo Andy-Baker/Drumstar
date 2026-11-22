@@ -172,23 +172,51 @@ function trMenuRefresh(){ if(typeof grpSelRender==='function') try{ grpSelRender
 // ---- Klang-Sheet · Reiter Sound ----
 let SMP_LIB=[]; // Bibliothek (id, name) für die Auswahl; neu gelesen beim Öffnen
 async function samplerLibRefresh(){ try{ SMP_LIB=(await listSampleLibrary()).map(e=>({id:e.id, name:e.name||'Sample', src:e.src, slice:e.slice})); }catch(e){ SMP_LIB=[]; } }
+// Einträge der Sound-Auswahl: h = Gruppe, k = Sample, t = Stücke auf-/zuklappen, r = Aufnehmen / Laden
+function smpPickItems(tr){
+  const L=[], grps=new Map();
+  if(typeof SMP_INSTR!=='undefined') Object.keys(SMP_INSTR).forEach(k=>{ const g=SMP_INSTR[k].grp||'Orchester'; if(!grps.has(g)) grps.set(g,[]); grps.get(g).push({k, name:SMP_INSTR[k].name, sub:SMP_INSTR[k].desc}); });
+  grps.forEach((v,g)=>{ L.push({h:g}); L.push(...v); });
+  L.push({h:'Synth'}); Object.keys(SMP_WERK).forEach(k=>L.push({k, name:SMP_WERK[k].name, sub:SMP_WERK[k].desc}));
+  L.push({h:'Eigene'});
+  smpLibGroup(SMP_LIB).forEach(({e,kids})=>{ L.push({k:'lib:'+e.id, name:e.name}); if(!kids.length) return; // Stücke (#11) eingeklappt unter dem Original
+    const open=SMP_LIB_OPEN.has(e.id) || kids.some(k=>tr.smp==='lib:'+k.id);
+    L.push({t:e.id, open, name:(open?'▾ ':'▸ ')+kids.length+' Stücke'});
+    if(open) kids.forEach(k=>L.push({k:'lib:'+k.id, name:k.name, ind:1})); });
+  if(tr.smp.startsWith('lib:') && !SMP_LIB.some(e=>'lib:'+e.id===tr.smp)) L.push({k:tr.smp, name:samplerGet(tr.smp).name}); // fehlt in der Bibliothek
+  L.push({r:1, name:'Aufnehmen / Laden'});
+  return L;
+}
+let smpPickTr=null;
+function smpPickOpen(tr){ smpPickTr=tr; smpPickRender(); $id('smpPick').classList.add('open');
+  const ls=$id('smpPickList'), c=ls.querySelector('.cur'); if(c) ls.scrollTop=c.offsetTop-ls.clientHeight/2+c.offsetHeight/2; }
+function smpPickClose(){ const o=$id('smpPick'); if(o) o.classList.remove('open'); smpPickTr=null; }
+function smpPickRender(){
+  const tr=smpPickTr, ls=$id('smpPickList'); if(!tr) return; ls.innerHTML='';
+  smpPickItems(tr).forEach(it=>{
+    if(it.h){ const h=document.createElement('div'); h.className='sp-h'; h.textContent=it.h; ls.appendChild(h); return; }
+    const b=document.createElement('button'); b.setAttribute('role','option');
+    b.className=(it.t?'sp-t':it.r?'sp-r':'')+(it.ind?' sp-ind':'')+(it.k&&it.k===tr.smp?' cur':'');
+    if(it.k) b.setAttribute('aria-selected', it.k===tr.smp ? 'true':'false');
+    b.innerHTML=(it.r?TR_IC.plus:'')+'<span></span>'+(it.sub?'<small></small>':''); b.querySelector('span').textContent=it.name; if(it.sub) b.querySelector('small').textContent=it.sub;
+    if(it.k) b.dataset.k=it.k;
+    b.onclick=()=>{ if(it.t){ if(it.open) SMP_LIB_OPEN.delete(it.t); else SMP_LIB_OPEN.add(it.t); smpPickRender(); return; }
+      if(it.r){ smpPickClose(); closeSheets(); openSampleEditor({forSampler:tr}); return; }
+      smpPickClose(); samplerPick(tr, it.k); };
+    ls.appendChild(b); });
+}
+$id('smpPick').querySelector('.sp-bd').addEventListener('click', smpPickClose);
+$id('smpPickX').addEventListener('click', smpPickClose);
 function samplerKlang(tr, box, grp){
   const S=samplerGet(tr.smp);
   grp('Sample');
-  const ch=document.createElement('div'); ch.className='smp-chips';
-  const chip=(key, label, sub)=>{ const b=document.createElement('button'); b.className='smp-chip'+(tr.smp===key?' on':''); b.innerHTML='<b></b>'+(sub?'<small></small>':'');
-    b.querySelector('b').textContent=label; if(sub) b.querySelector('small').textContent=sub; b.onclick=()=>samplerPick(tr, key); ch.appendChild(b); };
-  if(typeof SMP_INSTR!=='undefined') Object.keys(SMP_INSTR).forEach(k=>chip(k, SMP_INSTR[k].name, SMP_INSTR[k].desc));
-  Object.keys(SMP_WERK).forEach(k=>chip(k, SMP_WERK[k].name, SMP_WERK[k].desc));
-  smpLibGroup(SMP_LIB).forEach(({e,kids})=>{ chip('lib:'+e.id, e.name, ''); if(!kids.length) return; // Stücke (#11) eingeklappt unter dem Original
-    const open=SMP_LIB_OPEN.has(e.id) || kids.some(k=>tr.smp==='lib:'+k.id), t=document.createElement('button'); t.className='smp-chip subt';
-    t.innerHTML='<b></b>'; t.querySelector('b').textContent=(open?'▾ ':'▸ ')+kids.length+' Stücke';
-    t.onclick=()=>{ if(open) SMP_LIB_OPEN.delete(e.id); else SMP_LIB_OPEN.add(e.id); renderKlang(); }; ch.appendChild(t);
-    if(open) kids.forEach(k=>{ chip('lib:'+k.id, k.name, ''); ch.lastChild.classList.add('sub'); }); });
-  if(tr.smp.startsWith('lib:') && !SMP_LIB.some(e=>'lib:'+e.id===tr.smp)) chip(tr.smp, S.name, ''); // fehlt in der Bibliothek
-  const rec=document.createElement('button'); rec.className='smp-chip smp-add'; rec.innerHTML=TR_IC.plus+'<b>Aufnehmen / Laden</b>';
-  rec.onclick=()=>{ closeSheets(); openSampleEditor({forSampler:tr}); }; ch.appendChild(rec);
-  box.appendChild(ch);
+  // Auswahl (#71, Mockup issue-71.html H): ruhiges LCD-Feld, Liste im eigenen Fenster #smpPick
+  const fld=document.createElement('button'); fld.className='smp-fld'; fld.setAttribute('aria-haspopup','dialog'); fld.setAttribute('aria-label','Sound wählen');
+  const cur=smpPickItems(tr).find(x=>x.k===tr.smp);
+  fld.innerHTML='<span class="x"><span class="nm"></span><span class="sb"></span></span>'+FXI.dn;
+  fld.querySelector('.nm').textContent=cur ? cur.name : S.name; fld.querySelector('.sb').textContent=cur && cur.sub || '';
+  fld.onclick=()=>smpPickOpen(tr);
+  box.appendChild(fld);
   const hint=t=>{ const h=document.createElement('div'); h.className='kl-note'; h.textContent=t; box.appendChild(h); };
   if(S.multi){
     const Z=S.I.z, nl=Math.max(...Z.map(z=>z[1].length)), nr=Math.max(...Z.map(z=>Math.max(...z[1].map(l=>l.length))));
