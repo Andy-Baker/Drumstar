@@ -11,6 +11,7 @@ Alle Aufnahmen sind frei nutzbar (Public Domain bzw. CC0, keine Namensnennung n�
 
 | Sampler-Instrumente (`instr`, #61) – STREICHER, PIZZICATO (Celli/Bratschen/Violinen) | **VSCO 2 Community Edition**, Versilian Studios – github.com/sgossner/VSCO-2-CE | CC0 1.0 |
 | Sampler-Instrumente (`instr`, #61) – KONTRABASS, BASS ARCO | **Meatbass**, Karoryfer Samples (Otto Rubner 1958) – github.com/sfzinstruments/karoryfer.meatbass | CC0 1.0 |
+| Sampler-Instrumente (`instr`, #71) – HARFE, E-PIANO (Yamaha TX81Z FM Piano), VIBRAPHON (weiche Schlägel), MARIMBA, GLOCKENSPIEL, KALIMBA (Tansania) | **VCSL**, Versilian Studios – github.com/sgossner/VCSL | CC0 1.0 |
 
 ## Format
 `<kit>/<stimme>.mp3`, mono 44,1 kHz, LAME VBR q4: Sync-Klick bei 0 s, ab 0,1 s zwölf Slots
@@ -40,4 +41,6 @@ Eine MP3 je Instrument (`<id>-<hash>.mp3`, Hash = neuer Dateiname bei Neubau, we
 STREICHER: Ensemble gestrichen (susvib), Celli bis F3, Bratschen bis F4, Violinen darüber, 16 Töne C2–D6, 2 Lautstärken, Schleife eingebacken.
 PIZZICATO: dieselben Töne gezupft, 2 Lautstärken × 2 Varianten. KONTRABASS: Meatbass pizz, 12 Töne C1–A3 (kleine Terzen), 4 Lautstärken × 2 Varianten.
 BASS ARCO: Meatbass arco (Abstrich), 12 Töne, 3 Lautstärken, Schleife eingebacken. Je Ton gleiche Lautheit der lautesten Stufe, Stimmung je Aufnahme gemessen (Cent in der Karte).
-Neu bauen: `VSCO=… MB=… python3 tools/build-instr.py [id,…]` (blobless Klone).
+HARFE: 15 Töne D2–D6, mf/f. E-PIANO: 16 Töne C1–C6 (große Terzen), 3 Lautstärken, endet mit der Note. VIBRAPHON: 11 Töne F3–E6, 2 Lautstärken, endet mit der Note.
+MARIMBA: 10 Töne F2–C7, 3 Lautstärken. GLOCKENSPIEL: 6 Töne G5–C8, 3 Lautstärken (G7 laut = mittel). KALIMBA: 19 Zungen G2–C#7, Stimmung je Zunge bis ±63 Cent ausgeglichen.
+Neu bauen: `VSCO=… MB=… VCSL=… python3 tools/build-instr.py [id,…]` (blobless Klone).

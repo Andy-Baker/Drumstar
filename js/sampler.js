@@ -223,7 +223,7 @@ function samplerKlang(tr, box, grp){
     const info='Echte Aufnahme: '+Z.length+' Töne ('+midiName(Z[0][0])+'–'+midiName(Z[Z.length-1][0])+') × '+nl+' Lautstärken'+(nr>1?' × '+nr+' Varianten':'')+'. ';
     if(S.state==='load') hint(info+'Wird geladen …');
     else if(S.state==='err') hint(S.offline ? 'Offline: Instrument noch nicht auf dem Gerät. Mit Internet einmal antippen, danach geht es offline.' : 'Laden fehlgeschlagen. Zum erneuten Versuch antippen.');
-    else { hint(info+(S.mode==='loop' ? 'Klingt so lang wie die Note.' : 'Klingt aus, Notenlänge egal.'));
+    else { hint(info+(S.mode==='loop' ? 'Klingt so lang wie die Note.' : S.mode==='hold' ? 'Klingt aus, endet mit der Note.' : 'Klingt aus, Notenlänge egal.'));
       const a=document.createElement('div'); a.className='acts'; a.innerHTML='<button class="act">'+'<svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><polygon points="7,5 19,12 7,19" fill="currentColor"/></svg>Anhören (C4)</button>';
       a.querySelector('button').onclick=()=>samplerPreview(tr); box.appendChild(a); }
   }

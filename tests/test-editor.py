@@ -278,6 +278,10 @@ async def main():
       const rows=document.querySelectorAll('#smpPickList [data-k]').length, grpH=[...document.querySelectorAll('#smpPickList .sp-h')].map(h=>h.textContent).join(','), curK=(document.querySelector('#smpPickList .cur')||{}).dataset?.k;
       const sheet=[$id('klSheet').classList.contains('smp'), rows, [...document.querySelectorAll('#klRows label')].map(l=>l.textContent).join(','), !!document.querySelector('#klRows .smp-root'), fld.querySelector('.nm').textContent, pick, grpH, curK];
       document.querySelector('#smpPickList [data-k="piz"]').click(); sheet.push($id('smpPick').classList.contains('open'), S.smp, document.querySelector('#klRows .smp-fld .nm').textContent); await samplerGet('piz').p;
+      // #71: neue Werk-Instrumente laden, Gruppe, Art, Slot-Wahl
+      const NEW=['hrp','ep','vib','mar','glo','kal']; const nw=[];
+      for(const k of NEW){ const X=samplerGet(k); await X.p; nw.push(k+':'+X.state+':'+(SMP_INSTR[k].grp||'Orchester')+':'+X.mode+':'+(X.buf?Math.round(X.buf.duration):0)); delete SMPL[k]; }
+      sheet.push(nw.join('|'));
       S.smp='glas'; S.smpRel=.5; const d=JSON.parse(JSON.stringify(collectPatternData('s','s'))); const sv=d.tracks.find(t=>t.id===S.id);
       const saved=[d.mel.map(e=>e.inst).join(','), sv.smp, sv.smpRel, sv.events.length, 'sound' in sv];
       applyPatternData(base); const gone=L(); applyPatternData(d); const T=TRACKS.find(t=>t.id==='sampler');
@@ -301,10 +305,11 @@ async def main():
       return {def,add,werk,freed,sheet,saved,gone,back,fix,det,mig,nomig,beat}; })()""")
     ok('#8 Sampler nicht ab Werk, keine SAMPLE-Spur mehr, Kachel in „Spur hinzufügen“', r['def']==['arp:ACID cosmic:COSMIC piano:KEYS',False,False,True], r['def'])
     ok('#8 Sampler-Spur: mehrstimmig, Standard STREICHER, eigene Gruppe, grün', r['add']==['arp:ACID cosmic:COSMIC piano:KEYS sampler:SAMPLER',True,'str','STREICHER','sampler','#8be86a'], r['add'])
-    ok('#61 Werk-Instrumente geladen, Stufe nach Velocity, nächste Zone', r['werk']==['ok','str,piz,kb,kba',0,1,62,0,'ok'], r['werk'])
+    ok('#61 Werk-Instrumente geladen, Stufe nach Velocity, nächste Zone', r['werk']==['ok','str,piz,kb,kba,hrp,ep,vib,mar,glo,kal',0,1,62,0,'ok'], r['werk'])
     ok('#61 Instrument ohne Spur wird freigegeben', r['freed']==[False,True], r['freed'])
     ok('#8 Klang-Sheet: Attack/Release, kein Grundton bei Werk-Instrument', r['sheet'][0] and r['sheet'][2]=='Attack,Release' and not r['sheet'][3], r['sheet'])
-    ok('#71 Sound-Auswahl: LCD-Feld → Fenster mit Gruppen, aktuelles markiert, Wahl schließt', r['sheet'][4]=='STREICHER' and r['sheet'][5] and r['sheet'][1]>=7 and r['sheet'][6].startswith('Orchester,Synth,Eigene') and r['sheet'][7]=='str' and r['sheet'][8] is False and r['sheet'][9]=='piz' and r['sheet'][10]=='PIZZICATO', r['sheet'])
+    ok('#71 neue Instrumente laden (Harfe, E-Piano, Vibraphon, Marimba, Glockenspiel, Kalimba)', all(':ok:' in x for x in r['sheet'][11].split('|')) and ':hold:' in r['sheet'][11].split('|')[1] and 'Tasten & Mallets:oneshot' in r['sheet'][11].split('|')[3] and r['sheet'][11].split('|')[0].split(':')[2]=='Orchester', r['sheet'][11])
+    ok('#71 Sound-Auswahl: LCD-Feld → Fenster mit Gruppen, aktuelles markiert, Wahl schließt', r['sheet'][4]=='STREICHER' and r['sheet'][5] and r['sheet'][1]>=13 and r['sheet'][6].startswith('Orchester,Tasten & Mallets,Synth,Eigene') and r['sheet'][7]=='str' and r['sheet'][8] is False and r['sheet'][9]=='piz' and r['sheet'][10]=='PIZZICATO', r['sheet'])
     ok('#8 Speichern: mel + eigene Felder, kein Keys-Klang', r['saved']==['arp,cosmic,piano,sampler','glas',.5,4,False], r['saved'])
     ok('#8 Laden: Standard ohne Sampler, Beat mit Sampler stellt ihn her', r['gone']=='arp:ACID cosmic:COSMIC piano:KEYS' and r['back']==['arp:ACID cosmic:COSMIC piano:KEYS sampler:SAMPLER','glas',.5,4], [r['gone'],r['back']])
     ok('#8 ungültiges Sample → Standard STREICHER', r['fix']=='str', r['fix'])

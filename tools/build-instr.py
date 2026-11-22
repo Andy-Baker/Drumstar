@@ -2,26 +2,43 @@
 # Ergebnis: samples/instr/<id>-<hash>.mp3 (mono 44,1 kHz, LAME VBR) + js/sampler-werk.js (Karte der Slots).
 # Datei: Sync-Klick bei 0 s, ab 0,1 s die Slots hintereinander (je 0,05 s Pause). Slot = [Start (s ab Klick+0,1), Länge, Verstimmung in Cent].
 # Quellen (CC0): VSCO 2 Community Edition (sgossner/VSCO-2-CE; Dateinamen eine Oktave tiefer benannt: C1 = MIDI 36),
-#               Karoryfer Meatbass (sfzinstruments/karoryfer.meatbass, Kontrabass Otto Rubner 1958; Namen = MIDI, a0 = 21).
-# Aufruf: VSCO=/pfad/VSCO-2-CE MB=/pfad/karoryfer.meatbass python3 tools/build-instr.py [id,…]
+#               Karoryfer Meatbass (sfzinstruments/karoryfer.meatbass, Kontrabass Otto Rubner 1958; Namen = MIDI, a0 = 21),
+#               VCSL (sgossner/VCSL, #71): TX81Z FM Piano und Harfe richtig benannt, Mallets/Kalimba eine Oktave tiefer (+12).
+# Aufruf: VSCO=/pfad/VSCO-2-CE MB=/pfad/karoryfer.meatbass VCSL=/pfad/VCSL python3 tools/build-instr.py [id,…]
 #   Beide als blobless Klon (git clone --filter=blob:none --no-checkout); Dateien kommen per `git show HEAD:<pfad>`.
 # Aufbereitung:
 #   - Anfang: ab Anschlag (2 % der Spitze) − 8 ms. Gezupft: Länge LEN, letzte 30 % ausgeblendet.
 #   - Gestrichen: Schleife [LOOP_A, LEN] mit Überblendung (gleiche Leistung, XF s) eingebacken → Loop springt nahtlos zurück.
-#   - g = Pegel des Instruments relativ zu den anderen (Wiedergabe × g).
+#   - g = Pegel des Instruments relativ zu den anderen (Wiedergabe × g). grp = Gruppe in der Sound-Auswahl (fehlt = Orchester).
+#   - tune 'spec': Stimmung aus dem Spektrum (cents_spec, bis 75 Cent) statt Autokorrelation.
+#   - mode 'hold' (ohne Schleife): klingt aus, endet aber mit der Note (+ Release) — E-Piano, Vibraphon. Sonst gezupft = 'oneshot'.
 #   - Lautstärke: je Ton auf gleiche Lautheit der lautesten Stufe (RMS ab Anschlag, gezupft 0,3 s, gestrichen 0,5–1,5 s),
 #     leisere Stufen desselben Tons bekommen dieselbe Verstärkung (Dynamik bleibt). Danach Instrument auf −1 dBFS Spitze.
 #   - Stimmung: gemessene Tonhöhe (Autokorrelation) → Abweichung in Cent im Slot, die Wiedergabe gleicht aus (nur wenn < 60 Cent;
 #     weicht ein Slot > 15 Cent vom Median des Tons ab, gilt der Median).
 import os, sys, re, json, hashlib, subprocess, numpy as np
 ROOT=os.path.dirname(os.path.dirname(os.path.abspath(__file__))); OUT=ROOT+'/samples/instr'; SR=44100
-VS=os.environ.get('VSCO',''); MB=os.environ.get('MB','')
+VS=os.environ.get('VSCO',''); MB=os.environ.get('MB',''); VC=os.environ.get('VCSL','')
 NN={'c':0,'c#':1,'db':1,'d':2,'d#':3,'eb':3,'e':4,'f':5,'f#':6,'gb':6,'g':7,'g#':8,'ab':8,'a':9,'a#':10,'bb':10,'b':11}
 def midi(name, shift=0):
     m=re.match(r'([a-gA-G][#b]?)(-?\d)$',name); return NN[m.group(1).lower()]+12*(int(m.group(2))+1)+shift
 CE='Strings/Cello Section/'; VA='Strings/Viola Section/'; VN='Strings/Violin Section/'
 def vs(path): return (VS,path)
 def mb(path): return (MB,path)
+def vc(path): return (VC,path)
+NAMES=lambda a,b,step: [n for m in range(a,b+1,step) for n in [['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'][m%12]+str(m//12-1)]]
+EP='Electrophones/TX81Z/FM Piano/'; VB='Idiophones/Struck Idiophones/Vibraphone/Soft Mallets/'; MA='Idiophones/Struck Idiophones/Marimba/'
+GL='Idiophones/Struck Idiophones/Glockenspiel/'; HP='Chordophones/Composite Chordophones/Concert Harp/'; KA='Idiophones/Plucked Idiophones/Kalimba, Tanzania/'
+EP_N=NAMES(24,84,4)                                                                            # C1 … C6 in großen Terzen
+VIB_N=['F2','A2','C3','E3','G3','B3','D4','F4','A4','C5','E5']                                  # VCSL-Namen (+12 = MIDI)
+VIB_RR={'C3':2,'E3':2}                                                                           # leise Stufe nur als rr2
+MAR_N=['F1','C2','G2','B2','F3','C4','G4','B4','F5','C6']
+GLO_N=['G4','C5','G5','C6','G6','C7']; GLO_SOFT={'C5':'02','C7':'03'}
+HRP_N=['D2','F2','A2','C3','E3','G3','B3','D4','F4','A4','C5','E5','G5','B5','D6']; HRP_V={'C3':('mf3','f2')}
+KAL_N=['G1_k12','B1_k13','D#2_k14','F2_k9alt','G2_k15','A#2_k8','C#3_k16','F3_k17','G3_k6','A#3_k18','C#4_k5','D#4_k20','F4_k21','G4_k22','A#4_k2','C#5_k24','E5_k25','G#5_k26','C#6_k27']
+def glo_layers(n):
+    so=vc(f'{GL}glock_soft_{n}_{GLO_SOFT.get(n,"01")}.wav'); me=vc(f'{GL}glock_medium_{n}_01.wav')
+    return [[so],[me],[me if n=='G6' else vc(f'{GL}glock_loud_{n}_01.wav')]]                    # laut G6 fehlt (nur G#6)
 # Zonen: (Name, Quelle je Stufe leise→laut, je Stufe Liste der Round Robins)
 def str_zone(n):
     if midi(n,12)<=53: return [[vs(f'{CE}susvib/susvib_{n}_v{v}_1.wav')] for v in (1,3)]
@@ -42,6 +59,18 @@ INSTR={
             zones=[(midi(n), [[mb(f'Samples/pizz/{n}_vl{v}_rr{r}.wav') for r in (1,3)] for v in (1,2,3,4)]) for n in BASS_N]),
  'kba':dict(name='BASS ARCO', desc='Kontrabass, gestrichen', sustain=True, g=0.7, LEN=2.6, LOOP_A=1.2, XF=0.4, rel=0.3, atk=0.005,
             zones=[(midi(n), [[mb(f'Samples/arco_looped/{n}_vl{v}_down.wav')] for v in (1,2,3)]) for n in BASS_N]),
+ 'hrp':dict(g=1.2, tune='spec', name='HARFE', desc='Konzertharfe', sustain=False, LEN=2.5, rel=0.3, atk=0.002,
+            zones=[(midi(n), [[vc(f'{HP}KSHarp_{n}_{v}.wav')] for v in HRP_V.get(n,('mf1','f1'))]) for n in HRP_N]),
+ 'ep': dict(g=0.6, tune='spec', name='E-PIANO', desc='FM, 80er', grp='Tasten & Mallets', sustain=False, mode='hold', LEN=2.5, rel=0.35, atk=0.002,
+            zones=[(midi(n), [[vc(f'{EP}FMPiano_{n}_vl{v}.wav')] for v in (1,2,3)]) for n in EP_N]),
+ 'vib':dict(g=0.55, tune='spec', name='VIBRAPHON', desc='weiche Schlägel', grp='Tasten & Mallets', sustain=False, mode='hold', LEN=3.0, rel=0.5, atk=0.002,
+            zones=[(midi(n,12), [[vc(f'{VB}Vibes_soft_{n}_v1_rr{VIB_RR.get(n,1)}_Main.wav')],[vc(f'{VB}Vibes_soft_{n}_v2_rr1_Main.wav')]]) for n in VIB_N]),
+ 'mar':dict(g=1.6, tune='spec', name='MARIMBA', desc='Holz', grp='Tasten & Mallets', sustain=False, LEN=1.6, rel=0.25, atk=0.002,
+            zones=[(midi(n,12), [[vc(f'{MA}Marimba_hit_Outrigger_{n}_{v}_01.wav')] for v in ('soft','med','loud')]) for n in MAR_N]),
+ 'glo':dict(tune='spec', name='GLOCKENSPIEL', desc='hell', grp='Tasten & Mallets', sustain=False, LEN=2.0, rel=0.3, atk=0.002,
+            zones=[(midi(n,12), glo_layers(n)) for n in GLO_N]),
+ 'kal':dict(g=1.6, tune='spec', name='KALIMBA', desc='Daumenklavier', grp='Tasten & Mallets', sustain=False, LEN=1.8, rel=0.25, atk=0.002,
+            zones=[(midi(k.split('_')[0],12), [[vc(f'{KA}MBira3_pluck_Main_{k}_50_100_rr2.wav')]]) for k in KAL_N]),
 }
 def run(cmd,**k): return subprocess.run(cmd,capture_output=True,**k)
 def load(src):
@@ -61,6 +90,12 @@ def cents(x,root,sus):
     ds=[(m-root)-12*round((m-root)/12) for m in ms if m is not None]
     if not ds: return 0
     d=float(np.median(ds)); return round(d*100) if abs(d)<0.6 else 0
+def cents_spec(x,root):  # #71: Spitze im Spektrum nahe dem erwarteten Grundton (±7 HT) — für Mallets/Kalimba/hohe Töne, wo die Autokorrelation versagt
+    a=int(0.05*SR); seg=x[a:a+16384]; N=len(seg)
+    if N<4096: return 0
+    S=np.abs(np.fft.rfft(seg*np.hanning(N),4*N)); f=np.fft.rfftfreq(4*N,1/SR); f0=440*2**((root-69)/12)
+    m=(f>f0*2**(-7/12))&(f<f0*2**(7/12)); d=69+12*np.log2(f[np.argmax(np.where(m,S,0))]/440)-root
+    return round(d*100) if abs(d)<0.75 else 0
 def prep(x,I):
     pk=np.abs(x).max(); on=max(0,int(np.argmax(np.abs(x)>pk*0.02))-int(0.008*SR)); n=int(I['LEN']*SR)
     y=x[on:on+n].copy()
@@ -81,7 +116,7 @@ def build(iid):
         L=[[prep(load(s),I) for s in rr] for rr in layers]
         g=0.1/np.mean([loud(y,I) for y in L[-1]])          # lauteste Stufe → gleiche Lautheit je Ton
         L=[[y*g for y in rr] for rr in L]
-        C=[[cents(y,root,I['sustain']) for y in rr] for rr in L]
+        C=[[cents_spec(y,root) if I.get('tune')=='spec' else cents(y,root,I['sustain']) for y in rr] for rr in L]
         md=int(np.median([c for rr in C for c in rr]))                 # Ausreißer (Anschlag gezupft) → Mittel des Tons
         C=[[c if abs(c-md)<=15 else md for c in rr] for rr in C]
         zs.append((root,[[(y,c) for y,c in zip(yr,cr)] for yr,cr in zip(L,C)])); nm+=sum(len(rr) for rr in L)
@@ -103,8 +138,8 @@ def build(iid):
     h=hashlib.sha1(open(tmp,'rb').read()).hexdigest()[:8]; fn=f'{iid}-{h}.mp3'; os.replace(tmp,OUT+'/'+fn)
     cs=[c for _,L in zs for rr in L for _,c in rr]
     print(f'{iid}: {len(zs)} Töne, {nm} Slots, {len(wav)/SR:.0f} s, {os.path.getsize(OUT+"/"+fn)/1e6:.2f} MB, Cent {min(cs)}…{max(cs)}')
-    d={k2:I[k2] for k2 in ('name','desc','rel','atk','g') if k2 in I}
-    d.update(file='samples/instr/'+fn, mode='loop' if I['sustain'] else 'oneshot', z=Z)
+    d={k2:I[k2] for k2 in ('name','desc','grp','rel','atk','g') if k2 in I}
+    d.update(file='samples/instr/'+fn, mode='loop' if I['sustain'] else I.get('mode','oneshot'), z=Z)
     if I['sustain']: d['loop']=[I['LOOP_A'],I['LEN']]
     return d
 def main():
