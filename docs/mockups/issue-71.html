@@ -37,7 +37,7 @@ iframe{border:0;width:100%;height:100%;background:#050507;display:block}
 <body>
 <div id="mbar">
   <span>#71</span>
-  <div class="g"><button data-v="a" class="on">A Liste</button><button data-v="b">B Gruppen</button></div>
+  <div class="g"><button data-v="c" class="on">C LCD-Feld</button><button data-v="d">D LCD-Liste</button><button data-v="b">B Chips</button></div>
   <span class="sp"></span>
   <button id="exBtn">Öffnen</button>
   <button id="infoBtn">ⓘ</button>
@@ -50,7 +50,7 @@ iframe{border:0;width:100%;height:100%;background:#050507;display:block}
 <template id="notes">
   <h3>Was das ist</h3>
   <p>Die <b>echte App</b>. <b>Öffnen</b> legt eine Sampler-Spur an (falls keine da ist) und öffnet Klang · Sound. Nur die Liste <b>Sample</b> ist ersetzt.</p>
-  <p>Chips mit Punkt = <b>neu vorgeschlagen</b> (noch keine Aufnahme, Antippen zeigt nur Quelle). STREICHER, PIZZICATO, KONTRABASS, BASS ARCO und eigene Samples klingen wie in der App.</p>
+  <p>Einträge mit <b>NEU</b> = <b>neu vorgeschlagen</b> (noch keine Aufnahme, Antippen zeigt nur Quelle). STREICHER, PIZZICATO, KONTRABASS, BASS ARCO und eigene Samples klingen wie in der App.</p>
   <h3>Vorschlag (alle CC0, wie #61 gebaut)</h3>
   <ul>
     <li><b>E-PIANO</b> – FM-E-Piano (Yamaha TX81Z, 80er), VCSL</li>
@@ -61,11 +61,13 @@ iframe{border:0;width:100%;height:100%;background:#050507;display:block}
     <li><b>KALIMBA</b> – VCSL</li>
   </ul>
   <p>Je Instrument eine MP3 von ca. 0,5–1 MB, geladen erst bei Wahl (wie heute).</p>
-  <h3>Varianten</h3>
+  <h3>Varianten (Auswahl als LCD)</h3>
   <ul>
-    <li><b>A · Liste</b>: alle Chips in einer Reihe wie heute; VOX/GLAS/SYNTH-BASS fallen weg (alte Beats → Ersatz, siehe Frage im Issue).</li>
-    <li><b>B · Gruppen</b>: kleine Überschriften <b>Orchester</b> · <b>Tasten &amp; Mallets</b> · <b>Synth</b> (VOX/SYNTH-BASS bleiben) · <b>Eigene</b>. Mehr Höhe, aber bei 10+ Instrumenten leichter zu finden.</li>
+    <li><b>C · LCD-Feld</b>: eine Zeile wie bei den Effekt-Presets: <b>◀ SAMPLE ▶</b>. Pfeile = nächstes Instrument, <b>wird gleich angespielt</b> (durchhören). Antippen = Klappliste mit Gruppen. Braucht kaum Platz.</li>
+    <li><b>D · LCD-Liste</b>: Display mit ca. 5 Zeilen, immer offen, scrollt. Gewähltes invertiert, Zähler 3/14, ▲▼ zum Durchhören. Alles auf einen Blick, braucht aber ca. 300 px Höhe.</li>
+    <li><b>B · Chips</b>: bisherige Variante (Gruppen als Chips) zum Vergleich.</li>
   </ul>
+  <p>Gruppen in allen: <b>Orchester</b> · <b>Tasten &amp; Mallets</b> · <b>Synth</b> (VOX/SYNTH-BASS bleiben) · <b>Eigene</b> (Stücke einklappbar). <b>NEU</b> = Vorschlag ohne Aufnahme. „Aufnehmen / Laden“ bleibt als Taste darunter.</p>
   <h3>Offen: Chor und echtes E-Piano (Rhodes)</h3>
   <p>In VSCO 2 CE und VCSL gibt es <b>keinen Chor</b> und kein Rhodes. Optionen: VOX (Synth) behalten, oder andere freie Quelle suchen (dann evtl. CC-BY mit Nennung).</p>
 </template>
@@ -73,43 +75,110 @@ iframe{border:0;width:100%;height:100%;background:#050507;display:block}
 // ===== Läuft im globalen Scope der App (per eval im Rahmen) =====
 function MK(){
   if(window.__mk) return;
-  let V='a';
+  let V='c';
   const NEW={ep:['E-PIANO','FM, 80er','VCSL · Yamaha TX81Z FM Piano'], vib:['VIBRAPHON','weiche Schlägel','VCSL · Vibraphone, Soft Mallets'],
     mar:['MARIMBA','Holz','VCSL / VSCO 2 CE · Marimba'], glo:['GLOCKENSPIEL','hell','VSCO 2 CE · Glock'],
     hrp:['HARFE','Konzertharfe','VCSL · Concert Harp'], kal:['KALIMBA','Daumenklavier','VCSL · Kalimba, Kenya']};
   let fake=null; // gewählter Platzhalter (nur Anzeige)
+  const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  // Liste wie Variante B (Gruppen): h = Überschrift, i = wählbar, t = Stücke auf-/zuklappen
+  function items(tr){
+    const L=[], I=k=>L.push({t:'i',key:k,label:SMP_INSTR[k].name,sub:SMP_INSTR[k].desc}), N=k=>L.push({t:'i',key:k,label:NEW[k][0],sub:NEW[k][1],isNew:1}),
+      W=k=>L.push({t:'i',key:k,label:SMP_WERK[k].name,sub:SMP_WERK[k].desc}), H=x=>L.push({t:'h',label:x});
+    H('Orchester'); ['str','piz','kb','kba'].forEach(I); N('hrp');
+    H('Tasten & Mallets'); ['ep','vib','mar','glo','kal'].forEach(N);
+    H('Synth'); ['vox','bass'].forEach(W);
+    H('Eigene');
+    const G=smpLibGroup(SMP_LIB);
+    if(!G.length) L.push({t:'e',label:'– noch keine –'});
+    G.forEach(({e,kids})=>{ L.push({t:'i',key:'lib:'+e.id,label:e.name}); if(!kids.length) return;
+      const open=SMP_LIB_OPEN.has(e.id) || kids.some(k=>tr.smp==='lib:'+k.id);
+      L.push({t:'t',id:e.id,open,label:(open?'▾ ':'▸ ')+kids.length+' Stücke'});
+      if(open) kids.forEach(k=>L.push({t:'i',key:'lib:'+k.id,label:k.name,ind:1})); });
+    if(tr.smp.startsWith('lib:') && !SMP_LIB.some(e=>'lib:'+e.id===tr.smp)) L.push({t:'i',key:tr.smp,label:samplerGet(tr.smp).name});
+    return L;
+  }
+  const isCur=(tr,it)=>it.isNew ? fake===it.key : (!fake && tr.smp===it.key);
+  async function pick(tr,it){
+    if(it.isNew){ fake=it.key; renderKlang(); hmToast('Vorschlag – Aufnahme folgt',false); return; }
+    fake=null; await samplerPick(tr,it.key); samplerPreview(tr); // Wählen = gleich anhören
+  }
+  function step(tr,L,d){ const S=L.filter(x=>x.t==='i'); let i=S.findIndex(x=>isCur(tr,x)); i=(i+d+S.length)%S.length; pick(tr,S[i]); }
+  function toggle(id){ if(SMP_LIB_OPEN.has(id)) SMP_LIB_OPEN.delete(id); else SMP_LIB_OPEN.add(id); renderKlang(); }
+  const rowHtml=(tr,it,j)=>it.t==='h' ? '<div class="mk-h">'+esc(it.label)+'</div>'
+    : it.t==='e' ? '<div class="mk-e">'+esc(it.label)+'</div>'
+    : '<button data-j="'+j+'" class="'+(it.t==='t'?'mk-t':'')+(it.ind?' mk-ind':'')+(isCur(tr,it)?' cur':'')+'"><span>'+esc(it.label)+'</span>'
+      +(it.isNew?'<i class="mk-new">NEU</i>':it.sub?'<small>'+esc(it.sub)+'</small>':'')+'</button>';
+  function bindRows(root,tr,L){ root.querySelectorAll('[data-j]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); const it=L[+b.dataset.j]; if(it.t==='t') toggle(it.id); else pick(tr,it); }); }
+
   const oKl=samplerKlang;
   samplerKlang=function(tr, box, grp){
     oKl(tr, box, grp);
     const ch=box.querySelector('.smp-chips'); if(!ch) return;
-    const old=[...ch.children], lib=old.slice(Object.keys(SMP_INSTR).length+Object.keys(SMP_WERK).length); // Bibliothek + „Aufnehmen“ bleiben
-    ch.innerHTML='';
-    const chip=(key,label,sub,isNew)=>{ const b=document.createElement('button');
-      const on=isNew ? fake===key : (!fake && tr.smp===key);
-      b.className='smp-chip'+(on?' on':''); b.innerHTML=(isNew?'<i class="mk-dot"></i>':'')+'<b></b>'+(sub?'<small></small>':'');
-      b.querySelector('b').textContent=label; if(sub) b.querySelector('small').textContent=sub;
-      b.onclick=()=>{ if(isNew){ fake=key; renderKlang(); hmToast('Vorschlag – Aufnahme folgt',false); } else { fake=null; samplerPick(tr,key); } };
-      return b; };
-    const I=k=>chip(k,SMP_INSTR[k].name,SMP_INSTR[k].desc,false), N=k=>chip(k,NEW[k][0],NEW[k][1],true), W=k=>chip(k,SMP_WERK[k].name,SMP_WERK[k].desc,false);
-    const head=t=>{ const h=document.createElement('div'); h.className='mk-sub'; h.textContent=t; return h; };
-    if(V==='a'){
-      ['str','piz','kb','kba'].forEach(k=>ch.appendChild(I(k)));
-      ['ep','vib','mar','glo','hrp','kal'].forEach(k=>ch.appendChild(N(k)));
-      lib.forEach(b=>ch.appendChild(b));
+    const old=[...ch.children], lib=old.slice(Object.keys(SMP_INSTR).length+Object.keys(SMP_WERK).length), rec=old[old.length-1]; // Bibliothek + „Aufnehmen“
+    const L=items(tr), sel=L.filter(x=>x.t==='i'), ci=sel.findIndex(x=>isCur(tr,x)), cur=sel[ci];
+    if(V==='b'){ // Chips in Gruppen (bisherige Variante B)
+      ch.innerHTML='';
+      L.forEach(it=>{ if(it.t==='h'){ const h=document.createElement('div'); h.className='mk-sub'; h.textContent=it.label; ch.appendChild(h); return; }
+        if(it.t==='e') return;
+        const b=document.createElement('button'); b.className='smp-chip'+(isCur(tr,it)?' on':'')+(it.t==='t'?' subt':'')+(it.ind?' sub':'');
+        b.innerHTML=(it.isNew?'<i class="mk-dot"></i>':'')+'<b></b>'+(it.sub?'<small></small>':''); b.querySelector('b').textContent=it.label; if(it.sub) b.querySelector('small').textContent=it.sub;
+        b.onclick=()=>it.t==='t'?toggle(it.id):pick(tr,it); ch.appendChild(b); });
+      ch.appendChild(rec);
     } else {
-      ch.appendChild(head('Orchester')); ['str','piz','kb','kba'].forEach(k=>ch.appendChild(I(k))); ch.appendChild(N('hrp'));
-      ch.appendChild(head('Tasten & Mallets')); ['ep','vib','mar','glo','kal'].forEach(k=>ch.appendChild(N(k)));
-      ch.appendChild(head('Synth')); ['vox','bass'].forEach(k=>ch.appendChild(W(k)));
-      ch.appendChild(head('Eigene')); lib.forEach(b=>ch.appendChild(b));
+      const w=document.createElement('div');
+      const name=cur?esc(cur.label):'–', sub=cur?(cur.isNew?'<i class="mk-new">NEU</i>':cur.sub?'<em>'+esc(cur.sub)+'</em>':''):'';
+      if(V==='c'){ // LCD-Feld mit Pfeilen + Klappliste
+        w.className='fxlsel mk-ls';
+        w.innerHTML='<button class="ar" data-st="-1" aria-label="Voriges Sample">'+FXI.l+'</button>'
+          +'<button class="lb" aria-haspopup="listbox"><span class="k">SAMPLE</span><span class="x">'+name+' '+sub+'</span>'+FXI.dn+'</button>'
+          +'<button class="ar" data-st="1" aria-label="Nächstes Sample">'+FXI.go+'</button>'
+          +'<div class="menu mk-menu" role="listbox">'+L.map((it,j)=>rowHtml(tr,it,j)).join('')+'</div>';
+        const m=w.querySelector('.menu');
+        w.querySelector('.lb').onclick=e=>{ e.stopPropagation(); const o=!m.classList.contains('open'); m.classList.toggle('open',o);
+          if(o){ const c=m.querySelector('.cur'); if(c) m.scrollTop=c.offsetTop-m.clientHeight/2+c.offsetHeight/2; m.scrollIntoView({block:'nearest',behavior:'smooth'}); } };
+        w.querySelectorAll('[data-st]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); step(tr,L,+b.dataset.st); });
+      } else { // D: LCD-Liste immer offen
+        w.className='mk-lcd';
+        w.innerHTML='<div class="mk-top"><span class="k">SAMPLE</span><b>'+(ci+1)+'/'+sel.length+'</b>'
+          +'<button data-st="-1" aria-label="Voriges Sample">'+FXI.up+'</button><button data-st="1" aria-label="Nächstes Sample">'+FXI.dn+'</button></div>'
+          +'<div class="mk-list" role="listbox">'+L.map((it,j)=>rowHtml(tr,it,j)).join('')+'</div>';
+        w.querySelectorAll('[data-st]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); step(tr,L,+b.dataset.st); });
+        requestAnimationFrame(()=>{ const ls=w.querySelector('.mk-list'), c=ls.querySelector('.cur'); if(c) ls.scrollTop=c.offsetTop-ls.clientHeight/2+c.offsetHeight/2; });
+      }
+      bindRows(w,tr,L);
+      const g=ch.previousElementSibling; if(g && g.classList.contains('grp')) g.remove(); // Überschrift steckt im LCD
+      ch.replaceWith(w);
+      const a=document.createElement('div'); a.className='smp-chips mk-rec'; a.appendChild(rec); w.after(a);
     }
-    if(fake){ let n=ch.nextSibling; while(n){ const x=n.nextSibling; if(n.classList && n.classList.contains('grp')) break; n.remove(); n=x; } // Hinweise zum echten Sample weg
+    if(fake){ const anchor=box.querySelector('.mk-rec')||box.querySelector('.smp-chips');
+      let n=anchor.nextSibling; while(n){ const x=n.nextSibling; if(n.classList && n.classList.contains('grp')) break; n.remove(); n=x; } // Hinweise zum echten Sample weg
       const h=document.createElement('div'); h.className='kl-note';
-      h.textContent='Vorschlag: '+NEW[fake][2]+' (CC0). Mehrere Töne × Lautstärken, Laden bei Wahl.'; ch.after(h); }
+      h.textContent='Vorschlag: '+NEW[fake][2]+' (CC0). Mehrere Töne × Lautstärken, Laden bei Wahl.'; anchor.after(h); }
   };
   const st=document.createElement('style');
   st.textContent='.mk-dot{width:7px;height:7px;border-radius:50%;background:#3fa9ff;box-shadow:0 0 6px rgba(63,169,255,.8);flex:none}'
-    +'.mk-sub{flex-basis:100%;font:700 11px Rajdhani,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin:6px 0 0}'
-    +'.mk-sub:first-child{margin-top:0}';
+    +'.mk-sub{flex-basis:100%;font:700 11px Rajdhani,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin:6px 0 0}.mk-sub:first-child{margin-top:0}'
+    // gemeinsame Zeilen (Klappliste C + Liste D)
+    +'.mk-h{font:700 11px Rajdhani,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#3a7aa8;padding:10px 12px 4px;border-bottom:1px solid rgba(63,169,255,.12)}'
+    +'.mk-e{font:18px VT323,monospace;color:#3a7aa8;padding:8px 12px}'
+    +'.mk-menu button,.mk-list button{width:100%;min-height:44px;display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:10px;padding:4px 12px;background:none;border:0;border-bottom:1px solid rgba(63,169,255,.08);color:var(--lcd-fg);font:21px VT323,monospace;text-align:left;cursor:pointer}'
+    +'.mk-menu button span,.mk-list button span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}'
+    +'.mk-menu button small,.mk-list button small{font:15px VT323,monospace;color:#3a7aa8;white-space:nowrap}'
+    +'.mk-ind{padding-left:30px!important}.mk-t{color:#3a7aa8!important;font-size:17px!important;min-height:36px!important}'
+    +'.mk-new{font:700 10px Rajdhani,sans-serif;letter-spacing:.1em;font-style:normal;color:#3fa9ff;border:1px solid rgba(63,169,255,.5);border-radius:4px;padding:1px 4px;flex:none}'
+    +'.mk-ls{margin-top:10px}.mk-ls .menu{max-height:52vh}.mk-ls .lb .x .mk-new{vertical-align:2px;margin-left:4px}'
+    +'.mk-menu button.cur,.mk-list button.cur{background:var(--lcd-fg);color:#04070a}'
+    +'.mk-menu button.cur small,.mk-list button.cur small,.mk-list button.cur .mk-new,.mk-menu button.cur .mk-new{color:#04070a;border-color:#04070a}'
+    // D: Display
+    +'.mk-lcd{background:var(--lcd-bg);border:1px solid rgba(63,169,255,.3);border-radius:10px;margin:10px 0 4px;overflow:hidden;box-shadow:inset 0 0 18px rgba(63,169,255,.06)}'
+    +'.mk-top{display:flex;align-items:center;gap:8px;padding:4px 4px 4px 12px;border-bottom:1px solid rgba(63,169,255,.25)}'
+    +'.mk-top .k{font:500 13px Rajdhani,sans-serif;color:var(--dim);flex:1}.mk-top b{font:400 18px VT323,monospace;color:var(--lcd-fg)}'
+    +'.mk-top button{width:44px;height:40px;border-radius:8px;border:1px solid rgba(63,169,255,.25);background:none;color:var(--lcd-fg);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}'
+    +'.mk-top button svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2}'
+    +'.mk-list{position:relative;max-height:250px;overflow-y:auto;overscroll-behavior:contain;text-shadow:0 0 6px rgba(95,194,255,.35)}'
+    +'.mk-list button.cur{text-shadow:none}'
+    +'.mk-rec{margin-top:6px}';
   document.head.appendChild(st);
   function setV(v){ V=v; if($id('klSheet').classList.contains('open')) renderKlang(); }
   function open(){
@@ -123,7 +192,7 @@ function MK(){
 
 // ===== Rahmen-Steuerung =====
 const fR=document.getElementById('fR');
-let V='a';
+let V='c';
 function hook(){ const w=fR.contentWindow; try{ if(!w||w.eval('typeof TRACKS')!=='object') return null; if(!w.__mk) w.eval('('+MK.toString()+')()'); }catch(e){ console.error(e); return null; } return w.__mk; }
 function apply(){ const m=hook(); if(m) m.setV(V); document.querySelectorAll('[data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v===V)); }
 fR.addEventListener('load',()=>setTimeout(()=>{ apply(); const m=hook(); if(m) m.open(); },900));
