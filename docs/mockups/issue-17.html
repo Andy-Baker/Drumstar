@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fill für Perc (#17)</title>
+<link rel="stylesheet" href="../../fonts.css">
+<style>
+/* Mockup zu Issue #17: Die echte App (../../index.html) läuft im Rahmen. Der Fill-Generator wird im Mockup
+   umhüllt, damit die Perc-Spur im Fill-Fenster wirklich etwas Eigenes spielt (mit Play hörbar, Fill alle 1–2
+   Durchläufe stellen). A = Abschnitt „Perc“ im bestehenden Fill-Sheet der Drums. B = eigene Fill-Taste bei PERC. */
+:root{color-scheme:dark;--bg:#050507;--blue:#3fa9ff;--blue-2:#8fd4ff;--white:#f4f5f7;--dim:#7d818c;--metal:#c7cbd4}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--white);font-family:'Rajdhani',system-ui,sans-serif}
+#mbar{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:calc(6px + env(safe-area-inset-top,0px)) 10px 6px;background:repeating-linear-gradient(135deg,#0b1622 0 8px,#0d1a28 8px 16px);border-bottom:1px dashed rgba(63,169,255,.45);font:700 11px 'JetBrains Mono',monospace;color:var(--blue-2)}
+#mbar .sp{flex:1}
+#mbar button{height:28px;padding:0 10px;border-radius:6px;border:1px solid rgba(63,169,255,.45);background:rgba(63,169,255,.12);font:700 11px 'JetBrains Mono',monospace;color:var(--blue-2);cursor:pointer}
+#mbar button.on{background:var(--blue);color:#042c53}
+#stage{position:fixed;top:calc(42px + env(safe-area-inset-top,0px));left:0;right:0;bottom:0;display:flex;justify-content:center;align-items:flex-start;gap:28px;overflow:auto}
+.ph{display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;width:100%}
+.ph h4{display:none;margin:0;font:700 11px 'Rajdhani';letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.ph h4 b{color:var(--blue-2)}
+iframe{border:0;width:100%;height:100%;background:#050507;display:block}
+#side{display:none;width:330px;font-size:14px;color:var(--metal);line-height:1.45;padding-top:26px}
+#side h3{font:700 11px 'Rajdhani';letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin:16px 0 6px}
+#side p{margin:0 0 8px} #side b{color:var(--white)} #side ol,#side ul{margin:0 0 8px;padding-left:18px}
+@media (min-width:900px) and (min-height:900px){
+  #stage{padding:14px 0}
+  .ph{width:auto;height:auto}
+  .ph h4{display:block}
+  iframe{width:390px;height:844px;border-radius:30px;border:8px solid #1a1e26;box-shadow:0 30px 80px rgba(0,0,0,.75);box-sizing:content-box}
+  #side{display:block}
+}
+</style>
+</head>
+<body>
+<div id="mbar">
+  <span>#17 Perc-Fill</span>
+  <button data-v="A" class="on">A · im Drums-Fill</button>
+  <button data-v="B">B · eigene Taste</button>
+  <span class="sp"></span>
+</div>
+<div id="stage">
+  <div class="ph"><h4 id="hR">Vorschlag · <b>A</b></h4><iframe id="fR" src="../../index.html" title="App mit Vorschlag"></iframe></div>
+  <div id="side">
+    <h3>Was das ist</h3>
+    <p>Die <b>echte App</b>. Heute spielt PERC im Fill einfach weiter. Hier bekommt PERC im selben Moment wie DRUMS etwas Eigenes – mit Play hörbar (zum Ausprobieren „Alle 1“ stellen).</p>
+    <h3>Variante A · im Drums-Fill</h3>
+    <p>Keine neue Taste. Im Fill-Sheet der Drums ein Abschnitt <b>Perc</b>: <b>Weiter</b> (wie heute) · <b>Pause</b> · <b>Mitfüllen</b>. Bei „Mitfüllen“ passt der Perc-Stil zum gewürfelten Drums-Stil.</p>
+    <h3>Variante B · eigene Taste</h3>
+    <p>Die Fill-Taste erscheint auch bei <b>PERC</b>. Eigenes Sheet „Fill · Perc“ mit An/Aus, Intensität und Stilen. Länge und Abstand übernimmt es von den Drums, damit beide Fills zusammen kommen.</p>
+    <h3>Perc-Stile</h3>
+    <ul>
+      <li><b>Pause</b> – Perc schweigt, Platz für die Drums</li>
+      <li><b>Antwort</b> – spielt nur in die Lücken des Drums-Fills</li>
+      <li><b>Lauf</b> – Shaker/Maracas in 16teln, wird lauter</li>
+      <li><b>Wirbel</b> – zwei Perc-Zeilen im Wechsel (Latin: Conga/Bongo)</li>
+      <li><b>Akzente</b> – Clap/Rim auf die Snare-Akzente, Cowbell zum Schluss</li>
+    </ul>
+    <h3>Zur Entscheidung</h3>
+    <p>1. A oder B?<br>2. Stile so passend? Welche weg, welche fehlen?<br>3. Perc nur <b>zusammen</b> mit dem Drums-Fill (Vorschlag) oder auch eigener Abstand/eigene Länge?<br>4. Ab Werk: „Weiter“ (klingt wie heute) oder gleich „Mitfüllen“?</p>
+  </div>
+</div>
+<script>
+const STY=[['pause','Pause'],['answer','Antwort'],['run','Lauf'],['roll','Wirbel'],['acc','Akzente']];
+// Drums-Stil → passender Perc-Stil (Variante A „Mitfüllen“)
+const MATCH={linear:'answer',rollDense:'roll',buildUp:'run',snareBurst:'acc',alternateToms:'roll',sparse:'answer',oneDrop:'pause',chokeCrash:'acc'};
+let variant='A';
+const S={modeA:'mit', onB:true, intB:.5, styB:{pause:true,answer:true,run:true,roll:true,acc:true}};
+const fR=document.getElementById('fR');
+
+function hook(){
+  const w=fR.contentWindow, d=fR.contentDocument; if(!d||!d.getElementById('fillOverlay')||!w.generateFillOverride||w.__pf) return;
+  const E=s=>w.eval(s);
+  const st=d.createElement('style'); st.textContent=`
+  .pf-seg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .pf-hint{font-size:12px;color:var(--dim);margin-top:8px;line-height:1.35}
+  .pf-hint b{color:var(--blue-2);font-weight:700}
+  #pfSheet{max-height:90vh;overflow-y:auto}
+  #pfBody{display:flex;flex-direction:column;gap:12px}
+  .pf-link{display:flex;align-items:center;gap:10px;padding:12px;border-radius:10px;border:1px dashed rgba(63,169,255,.35);background:rgba(63,169,255,.06);font-size:13px;color:var(--metal)}
+  .pf-link svg{width:20px;height:20px;flex-shrink:0;fill:none;stroke:var(--blue-2);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .pf-link b{color:var(--blue-2)}
+  #pfOn{font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;border:1px solid rgba(63,169,255,.4);border-radius:10px;padding:14px 0;background:var(--panel);color:var(--dim);cursor:pointer}
+  #pfOn.on{background:rgba(63,169,255,.18);color:var(--blue-2);border-color:rgba(63,169,255,.6);box-shadow:0 0 12px rgba(63,169,255,.25)}
+  #pfInt{width:100%;accent-color:var(--blue);height:28px}
+  #pfIntV{text-align:right;font-size:11px;color:var(--blue-2);font-family:'JetBrains Mono',monospace;margin-top:-6px}
+  #pfSheet.off .pf-dis{opacity:.35;pointer-events:none}
+  body.pfB #pfSecA{display:none}`;
+  d.head.appendChild(st);
+
+  // ---- Variante A: Abschnitt im Drums-Fill-Sheet ----
+  const secA=d.createElement('div'); secA.className='fillSection'; secA.id='pfSecA';
+  secA.innerHTML='<div class="fillSectionLabel">Perc</div><div class="pf-seg" id="pfModeA"></div><div class="pf-hint" id="pfHintA"></div>';
+  d.getElementById('fillOverlay').appendChild(secA);
+  const MODES=[['weiter','Weiter'],['pause','Pause'],['mit','Mitfüllen']];
+  const HINT={weiter:'PERC spielt im Fill sein Muster weiter (wie bisher).',pause:'PERC schweigt im Fill.',mit:'PERC bekommt einen eigenen Fill, <b>passend zum Drums-Stil</b> (z. B. Linear → Antwort, Roll → Wirbel).'};
+  function renderA(){
+    const box=d.getElementById('pfModeA'); box.innerHTML='';
+    MODES.forEach(([k,l])=>{ const c=d.createElement('div'); c.className='fill-chip'+(S.modeA===k?' active':''); c.textContent=l; c.onclick=()=>{ S.modeA=k; renderA(); }; box.appendChild(c); });
+    d.getElementById('pfHintA').innerHTML=HINT[S.modeA];
+  }
+  renderA();
+
+  // ---- Variante B: eigene Taste + Sheet ----
+  const sh=d.createElement('div'); sh.className='sheet'; sh.id='pfSheet';
+  sh.innerHTML='<div class="sh"><span>Fill · Perc</span><button class="shx" aria-label="Schließen">✕</button></div><div id="pfBody">'+
+    '<button id="pfOn"></button>'+
+    '<div class="pf-link pf-dis"><svg viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg><span id="pfLinkT"></span></div>'+
+    '<div class="fillSection pf-dis"><div class="fillSectionLabel">Intensität</div><input id="pfInt" type="range" min="0" max="100" value="50"><div id="pfIntV">50%</div></div>'+
+    '<div class="fillSection pf-dis"><div class="fillSectionLabel">Stile</div><div class="fillChips fillChips-wrap" id="pfSty"></div></div></div>';
+  d.body.appendChild(sh);
+  const oc=w.closeSheets; w.closeSheets=function(){ oc(); sh.classList.remove('open'); };
+  sh.querySelector('.shx').onclick=()=>w.closeSheets();
+  function renderB(){
+    const on=d.getElementById('pfOn'); on.classList.toggle('on',S.onB); on.textContent=S.onB?'Perc-Fill aktiv':'Perc-Fill aus (spielt weiter)';
+    sh.classList.toggle('off',!S.onB);
+    d.getElementById('pfLinkT').innerHTML='Kommt mit dem Drums-Fill: <b>'+E('fillLengthSteps')+' Steps · alle '+E('fillEveryN')+'</b>'+(E('fillEnabled')?'':' <b>(Drums-Fill ist aus)</b>');
+    d.getElementById('pfInt').value=Math.round(S.intB*100); d.getElementById('pfIntV').textContent=Math.round(S.intB*100)+'%';
+    const box=d.getElementById('pfSty'); box.innerHTML='';
+    STY.forEach(([k,l])=>{ const c=d.createElement('div'); c.className='fill-style-chip'+(S.styB[k]?' active':''); c.textContent=l; c.onclick=()=>{ S.styB[k]=!S.styB[k]; renderB(); }; box.appendChild(c); });
+  }
+  d.getElementById('pfOn').onclick=()=>{ S.onB=!S.onB; renderB(); };
+  d.getElementById('pfInt').oninput=e=>{ S.intB=e.target.value/100; d.getElementById('pfIntV').textContent=e.target.value+'%'; };
+  const fb=d.getElementById('fillBtn');
+  fb.addEventListener('click',e=>{ if(variant==='B' && E('patternGroup')==='perc'){ e.stopImmediatePropagation(); renderB(); w.openSheet('pfSheet'); } },true);
+
+  // ---- Perc-Fill erzeugen (hörbar) ----
+  const VG=E('VEL_GHOST'),VN=E('VEL_NORMAL'),VA=E('VEL_ACCENT'),VO=E('VEL_OFF');
+  function percFill(o,len,style,it){
+    const rows=E("dtById('perc').rows").map(id=>E('TRACKS').find(t=>t.id===id)).filter(Boolean);
+    if(!rows.length) return;
+    const z=()=>new Array(len).fill(VO), out={}; rows.forEach(t=>out[t.id]=z());
+    const RB=E('rowBase'), role=t=>w.trRole(t), base=t=>RB(t.id);
+    const shaker=rows.find(t=>base(t)==='mr')||rows[rows.length-1];
+    const hand=rows.filter(t=>role(t)==='clap'||role(t)==='rim');
+    const bell=rows.find(t=>base(t)==='cb')||rows.find(t=>role(t)==='perc');
+    const drumHit=s=>Object.keys(o).some(id=>o[id].vel[s]>0 && !(E("dtById('perc').rows").includes(id)));
+    if(style==='answer'){
+      const pool=rows.filter(t=>t!==shaker); let k=0;
+      for(let s=0;s<len;s++) if(!drumHit(s) && Math.random()<.55+it*.4){ out[pool[k++%pool.length].id][s]=Math.random()<.2+it*.4?VA:VN; }
+    } else if(style==='run'){
+      for(let s=0;s<len;s++){ const p=(s+1)/len; out[shaker.id][s]= p<.4?VG : p<.8?VN : VA; }
+      if(bell) out[bell.id][len-1]=VA;
+    } else if(style==='roll'){
+      const two=rows.filter(t=>role(t)==='perc'&&t!==shaker); const a=two[0]||rows[0], b=two[1]||a;
+      for(let s=0;s<len;s++) if(s%2===0||Math.random()<.4+it*.5) out[(s%2?b:a).id][s]=Math.random()<.25+it*.4?VA:VN;
+    } else if(style==='acc'){
+      const sd=Object.keys(o).filter(id=>{ const t=E('TRACKS').find(x=>x.id===id); return t && ['snare','crash'].includes(role(t)); });
+      for(let s=0;s<len;s++) if(sd.some(id=>o[id].vel[s]>=VA) && hand[0]) out[hand[s%hand.length].id][s]=VA;
+      if(bell) out[bell.id][len-1]=VA;
+    } // pause: alles leer
+    Object.keys(out).forEach(id=>o[id]={vel:out[id]});
+  }
+  const orig=w.generateFillOverride;
+  w.generateFillOverride=function(len){
+    const o=orig(len);
+    // Drums-Stil grob erraten geht nicht von außen → Mockup: Stil zufällig aus den passenden
+    if(variant==='A'){
+      if(S.modeA==='pause') percFill(o,len,'pause',0);
+      else if(S.modeA==='mit'){ const ks=Object.keys(MATCH); percFill(o,len,MATCH[ks[Math.floor(Math.random()*ks.length)]],E('fillIntensity')); }
+    } else if(S.onB){
+      const on=STY.map(s=>s[0]).filter(k=>S.styB[k]); const pick=on.length?on:STY.map(s=>s[0]);
+      percFill(o,len,pick[Math.floor(Math.random()*pick.length)],S.intB);
+    }
+    return o;
+  };
+  w.__pf={setVariant(v){
+    d.body.classList.toggle('pfB',v==='B');
+    E("dtById('perc').fill="+(v==='B'));
+    w.setPatternGroup(E('patternGroup'));
+    w.closeSheets();
+  }};
+  w.__pf.setVariant(variant);
+}
+fR.addEventListener('load',()=>{ const t=setInterval(()=>{ try{ hook(); if(fR.contentWindow.__pf) clearInterval(t); }catch(e){ console.warn(e); } },300); });
+document.querySelectorAll('#mbar [data-v]').forEach(b=>b.onclick=()=>{
+  variant=b.dataset.v; document.querySelectorAll('#mbar [data-v]').forEach(x=>x.classList.toggle('on',x===b));
+  document.getElementById('hR').innerHTML='Vorschlag · <b>'+variant+'</b>';
+  if(fR.contentWindow.__pf) fR.contentWindow.__pf.setVariant(variant);
+});
+const fitTop=()=>document.getElementById('stage').style.top=document.getElementById('mbar').offsetHeight+'px'; addEventListener('resize',fitTop); fitTop();
+</script>
+</body>
+</html>
