@@ -46,28 +46,33 @@ iframe{border:0;width:100%;height:100%;background:#050507;display:block}
 <div id="info"></div>
 <template id="notes">
   <h3>Die Idee</h3>
-  <p>Die <b>Sampler-Spur</b> kann statt eines gestimmten Samples eine <b>Tastenbelegung</b> haben: jede Taste ihr eigenes Sample. Bearbeitet wird <b>auf der Klaviatur</b>, die es schon gibt. Neue Fenster gibt es nicht.</p>
-  <h3>Auf der Klaviatur (Leiste: „Tasten“ oder „Roll“)</h3>
+  <p>Die <b>Sampler-Spur</b> kann statt eines gestimmten Samples eine <b>Tastenbelegung</b> haben: jede Taste ihr eigenes Sample. Bearbeitet wird nur <b>in der Piano Roll</b>. Der Spielmodus bleibt zum Spielen, dort ändert Halten nichts.</p>
+  <h3>In der Piano Roll, Klaviatur links</h3>
   <ul>
     <li><b>Tippen</b> = anhören (wie bisher).</li>
-    <li><b>Halten</b> = Taste ändern: Welle, Anderes Sample, Bearbeiten, Taste leeren.</li>
-    <li><b>Halten und ziehen</b> = Sample auf eine andere Taste verschieben, die <b>Noten wandern mit</b>. Ist die Zieltaste belegt, tauschen beide. Rückgängig im Hinweis.</li>
+    <li><b>Halten</b> = Taste-Sheet: Welle, <b>Liegt auf ‹ E3 ›</b> (genau Taste für Taste verschieben), Anderes Sample, Bearbeiten, Taste leeren.</li>
+    <li><b>Halten und ziehen</b> = verschieben. Für große Finger:
+      <ul>
+        <li>Der Balken über die ganze Breite zeigt das Ziel rechts neben dem Finger, nicht darunter: „→ G3 · tauscht mit Break 7“.</li>
+        <li>Ziehen ist <b>relativ</b>: eine Zeile je Zeilenhöhe, egal wo der Finger genau liegt. Jede neue Zeile tickt kurz.</li>
+        <li>Am oberen und unteren Rand scrollt die Ansicht mit.</li>
+        <li>Die Noten wandern mit, eine belegte Taste wird getauscht (gelber Balken). Rückgängig im Hinweis.</li>
+      </ul></li>
     <li><b>Leere Taste halten</b> = Sample wählen, auch „Alle Stücke ab hier“.</li>
-    <li>Das geht im <b>Spielmodus</b> (große Tasten, dafür am besten) und an der <b>Klaviatur links</b> im Zeichenmodus (ziehen = hoch/runter, die Zielzeile ist markiert).</li>
-    <li>Belegte Tasten tragen ein grünes Schild, unbelegte Zeilen sind dunkel. „Nur Skalentöne“ zeigt nur die belegten.</li>
+    <li>Belegte Tasten tragen ein grünes Schild, unbelegte Zeilen sind dunkel. Mehr Platz zum Treffen gibt es per Zoom (zwei Finger).</li>
   </ul>
   <h3>Wie die Samples hinkommen</h3>
   <ul>
-    <li><b>Schneiden</b> im Sample-Editor, Chip <b>„Stücke → Tasten“</b>: ab C3 bzw. hinter die belegten Tasten der Spur, danach geht die Piano Roll auf.</li>
+    <li><b>Schneiden</b> im Sample-Editor, Chip <b>„Stücke → Tasten“</b>, danach geht die Piano Roll auf.</li>
     <li><b>Leere Taste halten</b> (siehe oben).</li>
   </ul>
-  <h3>Klang → Sound (abgespeckt)</h3>
+  <h3>Klang → Sound</h3>
   <ul>
-    <li>Das bekannte LCD-Feld zeigt „Tastenbelegung · 12 Samples · C3–B3“. Umschalten geht über die Sound-Auswahl: oben „Jede Taste eigenes Sample“, darunter wie bisher ein einzelnes Sample. Die Belegung bleibt dabei gespeichert.</li>
-    <li>Darunter nur eine Mini-Klaviatur als Überblick und „Auf der Klaviatur bearbeiten“. Keine Liste, kein zweiter Bearbeitungsort.</li>
+    <li>LCD-Feld „Tastenbelegung · 12 Samples · C3–B3“. Umschalten über die Sound-Auswahl (oben „Jede Taste eigenes Sample“), die Belegung bleibt gespeichert.</li>
+    <li>Mini-Klaviatur als Überblick und <b>„In der Piano Roll bearbeiten“</b>.</li>
   </ul>
   <h3>Bewusst nicht drin</h3>
-  <ul><li>Pads aufnehmen (#77), Stimmung/Lautstärke je Taste, mehrere Samples pro Taste.</li><li>Am Rand mitscrollen beim Ziehen (kommt beim Bau).</li><li>Mockup: der Break ist erzeugt, nichts wird in der Bibliothek gespeichert.</li></ul>
+  <ul><li>Sample direkt aufnehmen (#78), Pads aufnehmen (#77), Stimmung/Lautstärke je Taste.</li><li>Mockup: der Break ist erzeugt, nichts wird in der Bibliothek gespeichert.</li></ul>
 </template>
 <script>
 // ===== Läuft im globalen Scope der App (per eval im Rahmen) =====
@@ -122,45 +127,50 @@ function MK(){
     $id('prKb').querySelectorAll('[data-n]').forEach(k=>{ const e=K(tr)[+k.dataset.n]; if(e){ const b=document.createElement('i'); b.className='mk-kb'; b.dataset.bn=k.dataset.n; b.textContent=e.tag; k.appendChild(b); } }); };
   [['prFitView'],['prFitKb']].forEach(([f])=>{ const o=window[f]; window[f]=function(){ const tr=prTr||arguments[0]; if(!isKeys(tr)) return o.apply(this,arguments);
     const ev=tr.events; tr.events=ev.concat(keyList(tr).map(n=>({s:0,n,l:1,v:0}))); try{ return o.apply(this,arguments); } finally{ tr.events=ev; } }; });
-  // ---- Geste auf den Tasten (Klaviatur links und Spielmodus) ----
+  // ---- Geste an der Klaviatur links (nur Piano Roll; der Spielmodus bleibt zum Spielen) ----
   //   tippen = anhören (wie bisher) · halten = Taste-Sheet (leer: Sample wählen) · halten und ziehen = verschieben
-  let gs=null;
-  const keyAt=(src,x,y)=>{ if(src==='kb'){ const e=document.elementFromPoint(x,y), k=e && e.closest('#prKb [data-n]'); return k ? +k.dataset.n : null; }
-    const r=$id('prLbl').getBoundingClientRect(); if(x<r.left-30 || x>r.right+400) return null; const i=Math.floor((y-r.top)/prV(prTr).rh); return i>=0 && i<prR.length ? prR[i] : null; };
-  function gsDown(e,src){ if(!isKeys(prTr)) return; const n=keyAt(src,e.clientX,e.clientY); if(n==null) return;
-    gsEnd(); gs={src, pid:e.pointerId, n, x:e.clientX, y:e.clientY, ph:'wait', t:setTimeout(gsHold,450)}; }
-  function gsHold(){ if(!gs) return; gs.ph='held'; if(navigator.vibrate) try{ navigator.vibrate(12); }catch(er){}
-    if(gs.src==='kb'){ prRelease(gs.pid); }
-    mark(gs.n,'mk-lift'); }
-  function mark(n,cls){ document.querySelectorAll('.'+cls).forEach(x=>x.classList.remove(cls)); if(n==null) return;
-    const k=gs && gs.src==='kb' ? $id('prKb').querySelector('[data-n="'+n+'"]') : $id('prLbl').querySelector('.pkl[data-n="'+n+'"]'); if(k) k.classList.add(cls);
-    const b=document.querySelector('[data-bn="'+n+'"]'); if(b && cls==='mk-lift') b.classList.add(cls); }
-  function dropRow(n){ const d=$id('mkDropRow'); if(!d) return; const i=n==null?-1:prR.indexOf(n); if(i<0){ d.style.display='none'; return; }
-    const rh=prV(prTr).rh; d.style.display='block'; d.style.top=(i*rh)+'px'; d.style.height=rh+'px'; }
-  function gsMove(e){ if(!gs || e.pointerId!==gs.pid) return; const dx=e.clientX-gs.x, dy=e.clientY-gs.y, far=Math.hypot(dx,dy)>9;
+  //   Ziehen ist relativ (eine Zeile je Zeilenhöhe, egal wo der Finger liegt), die Zielzeile wird über die ganze Breite markiert
+  //   und beschriftet (rechts vom Finger, nicht darunter), jede neue Zeile tickt kurz, am Rand scrollt die Ansicht mit.
+  let gs=null, bar=null;
+  function gsDown(e){ if(!isKeys(prTr)) return; const r=$id('prLbl').getBoundingClientRect(), v=prV(prTr), i=Math.floor((e.clientY-r.top)/v.rh);
+    if(i<0 || i>=prR.length) return; gsEnd(); gs={pid:e.pointerId, i, n:prR[i], y:e.clientY, x:e.clientX, sy0:v.sy, ph:'wait', t:setTimeout(gsHold,420)}; }
+  function gsHold(){ if(!gs) return; gs.ph='held'; tick(14); lift(gs.n,true); }
+  const tick=ms=>{ if(navigator.vibrate) try{ navigator.vibrate(ms); }catch(er){} };
+  function lift(n,on){ document.querySelectorAll('.mk-lift').forEach(x=>x.classList.remove('mk-lift')); if(!on) return;
+    const b=document.querySelector('#prLbl [data-bn="'+n+'"]'); if(b) b.classList.add('mk-lift'); }
+  function showBar(i){ const tr=prTr, v=prV(tr), vr=prView.getBoundingClientRect(), lr=$id('prLblCol').getBoundingClientRect();
+    if(!bar){ bar=document.createElement('div'); bar.id='mkBar'; document.body.appendChild(bar); }
+    const top=vr.top+i*v.rh-v.sy; bar.style.display='flex'; bar.style.left=lr.left+'px'; bar.style.width=(vr.right-lr.left)+'px';
+    bar.style.top=Math.max(vr.top,top)+'px'; bar.style.height=Math.max(0,Math.min(top+v.rh,vr.bottom)-Math.max(vr.top,top))+'px';
+    const n=prR[i], src=K(tr)[gs.n], o=K(tr)[n], same=n===gs.n;
+    bar.classList.toggle('sw',!!o && !same);
+    bar.innerHTML='<b class="mk-tg">'+src.tag+'</b><span>'+(same ? 'Ziehen zum Verschieben' : '→ '+noteName(tr,n)+(o ? ' · tauscht mit '+o.name : ''))+'</span>'; }
+  function gsMove(e){ if(!gs || e.pointerId!==gs.pid) return; const far=Math.hypot(e.clientX-gs.x,e.clientY-gs.y)>9;
     if(gs.ph==='wait'){ if(far) gsEnd(); return; }
-    e.stopPropagation(); e.preventDefault();
-    if(gs.ph==='held' && far && K(prTr)[gs.n]){ gs.ph='drag'; const g=document.createElement('div'); g.id='mkGhost'; g.textContent=K(prTr)[gs.n].tag; document.body.appendChild(g); gs.g=g; }
-    if(gs.ph==='drag'){ gs.g.style.left=e.clientX+'px'; gs.g.style.top=e.clientY+'px';
-      const t=keyAt(gs.src,e.clientX,e.clientY); if(t!==gs.to){ gs.to=t; if(gs.src==='kb') mark(t,'mk-tgt'); else dropRow(t);
-        if(t!=null && t!==gs.n){ gs.g.dataset.to=noteName(prTr,t)+(K(prTr)[t]?' ⇄':''); } else gs.g.dataset.to=''; } } }
+    e.stopPropagation(); e.preventDefault(); gs.cy=e.clientY;
+    if(gs.ph==='held' && far && K(prTr)[gs.n]){ gs.ph='drag'; gs.to=gs.i; showBar(gs.i); edge(); }
+    if(gs.ph==='drag') aim(); }
+  function aim(){ const v=prV(prTr), i=Math.max(0,Math.min(prR.length-1,gs.i+Math.round((gs.cy-gs.y+(v.sy-gs.sy0))/v.rh)));
+    if(i!==gs.to){ gs.to=i; tick(6); } showBar(i); }
+  function edge(){ if(!gs || gs.ph!=='drag') return; const vr=prView.getBoundingClientRect(), v=prV(prTr), z=56;
+    const d=gs.cy<vr.top+z ? -(vr.top+z-gs.cy) : gs.cy>vr.bottom-z ? gs.cy-(vr.bottom-z) : 0;
+    if(d){ const sy=v.sy; v.sy+=d*0.25; prClamp(v); if(v.sy!==sy){ prRender(); aim(); } }
+    gs.raf=requestAnimationFrame(edge); }
   function gsUp(e){ if(!gs || e.pointerId!==gs.pid) return; const g=gs; gsEnd();
-    if(g.ph==='wait') return;
-    e.stopPropagation(); const tr=prTr;
+    if(g.ph==='wait') return; e.stopPropagation(); const tr=prTr;
     if(g.ph==='held'){ keyOpen(tr,g.n); return; }
-    if(g.to==null || g.to===g.n) return;
-    const a=g.n, b=g.to, sw=!!K(tr)[b], nm=K(tr)[a].name; moveKey(tr,a,b); refresh(tr); hear(tr,b);
-    hmToast(nm+' → '+noteName(tr,b)+(sw?' (getauscht)':''),true,()=>{ moveKey(tr,b,a); refresh(tr); }); }
-  function gsEnd(){ if(!gs) return; clearTimeout(gs.t); if(gs.g) gs.g.remove(); gs=null; mark(null,'mk-lift'); mark(null,'mk-tgt'); dropRow(null); }
-  $id('prKb').addEventListener('pointerdown',e=>gsDown(e,'kb'));
-  $id('prLblCol').addEventListener('pointerdown',e=>gsDown(e,'lbl'));
+    const b=prR[g.to]; if(b==null || b===g.n) return; move(tr,g.n,b); }
+  function move(tr,a,b){ const sw=K(tr)[b], nm=K(tr)[a].name; moveKey(tr,a,b); refresh(tr); hear(tr,b);
+    hmToast(nm+' → '+noteName(tr,b)+(sw?' (getauscht)':''),true,()=>{ moveKey(tr,b,a); refresh(tr); if(sh.classList.contains('open')) keyOpen(tr,a); }); }
+  function gsEnd(){ if(!gs) return; clearTimeout(gs.t); cancelAnimationFrame(gs.raf); gs=null; lift(0,false); if(bar) bar.style.display='none'; }
+  $id('prLblCol').addEventListener('pointerdown',gsDown);
   window.addEventListener('pointermove',gsMove,true);
   window.addEventListener('pointerup',gsUp,true);
   window.addEventListener('pointercancel',()=>gsEnd(),true);
-  $id('prKb').addEventListener('contextmenu',e=>e.preventDefault()); $id('prLblCol').addEventListener('contextmenu',e=>e.preventDefault());
+  $id('prLblCol').addEventListener('contextmenu',e=>e.preventDefault());
   // ---- Taste-Sheet ----
   const sh=document.createElement('div'); sh.className='sheet'; sh.id='mkKeySh';
-  sh.innerHTML='<div class="sh"><span id="mkKeyT"></span><button class="shx" id="mkKeyX" aria-label="Schließen">✕</button></div><div id="mkKeyB"></div>';
+  sh.innerHTML='<div class="sh"><span id="mkKeyT"></span><button class="shx" id="mkKeyX" aria-label="Schließen">✕</button></div><div id="mkKeyB" class="mk-ks"></div>';
   document.body.appendChild(sh);
   const oClose=closeSheets; closeSheets=function(){ oClose(); sh.classList.remove('open'); };
   $id('mkKeyX').onclick=closeSheets;
@@ -168,16 +178,23 @@ function MK(){
     if(!e){ pickFor(tr,n); return; }
     $id('mkKeyT').textContent='Taste '+noteName(tr,n);
     const B=$id('mkKeyB'); B.innerHTML='';
-    const w=document.createElement('button'); w.className='mk-wv'; w.innerHTML='<b class="mk-tg">'+e.tag+'</b><span><b></b><small>Antippen = anhören</small></span><canvas width="300" height="56"></canvas>';
-    w.querySelector('span b').textContent=e.name; wave(w.querySelector('canvas'),e.buf); w.onclick=()=>hear(tr,n); B.appendChild(w);
-    const a=document.createElement('div'); a.className='acts';
+    // Karte: Sample + Welle (antippen = hören)
+    const w=document.createElement('button'); w.className='mk-wv'; w.setAttribute('aria-label','Anhören');
+    w.innerHTML='<div class="mk-wh"><b class="mk-tg">'+e.tag+'</b><span class="mk-wn"></span><span class="mk-pl"><svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><polygon points="8,5 19,12 8,19" fill="currentColor"/></svg></span></div><canvas width="600" height="96"></canvas>';
+    w.querySelector('.mk-wn').textContent=e.name; wave(w.querySelector('canvas'),e.buf); w.onclick=()=>hear(tr,n); B.appendChild(w);
+    // Taste wechseln: große Schritt-Tasten (genauer als Ziehen)
+    const mv=document.createElement('div'); mv.className='mk-mv';
+    const o=d=>K(tr)[n+d];
+    mv.innerHTML='<span class="mk-ml">Liegt auf</span><button data-d="-1" aria-label="Eine Taste tiefer"><svg class="uic" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button><b>'+noteName(tr,n)+'</b><button data-d="1" aria-label="Eine Taste höher"><svg class="uic" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>';
+    mv.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{ const t=n+(+b.dataset.d); move(tr,n,t); keyOpen(tr,t); });
+    B.appendChild(mv);
+    const a=document.createElement('div'); a.className='mk-row2';
     a.innerHTML='<button class="act" data-x="pick"><svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h13l-3-3M20 16H7l3 3"/></svg>Anderes Sample</button><button class="act" data-x="edit">'+UI_IC.trim+'Bearbeiten</button>';
     B.appendChild(a);
-    const c=document.createElement('div'); c.className='acts'; c.innerHTML='<button class="act mk-del" data-x="clr">'+UI_IC.del+'Taste leeren</button>'; B.appendChild(c);
-    const h=document.createElement('div'); h.className='kl-note'; h.textContent='Verschieben: auf der Klaviatur halten und auf eine andere Taste ziehen.'; B.appendChild(h);
+    const c=document.createElement('button'); c.className='mk-clr'; c.innerHTML=UI_IC.del+'Taste leeren'; B.appendChild(c);
     a.querySelector('[data-x=pick]').onclick=()=>pickFor(tr,n);
     a.querySelector('[data-x=edit]').onclick=()=>hmToast('Öffnet „'+e.name+'“ im Sample-Editor (Trimmen, Tonhöhe …)',false);
-    c.querySelector('[data-x=clr]').onclick=()=>{ delete K(tr)[n]; refresh(tr); closeSheets(); hmToast('Taste '+noteName(tr,n)+' geleert',true,()=>{ K(tr)[n]=e; refresh(tr); }); };
+    c.onclick=()=>{ delete K(tr)[n]; refresh(tr); closeSheets(); hmToast('Taste '+noteName(tr,n)+' geleert',true,()=>{ K(tr)[n]=e; refresh(tr); }); };
     if(!sh.classList.contains('open')) openSheet('mkKeySh');
   }
   // ---- Sound-Auswahl (vorhandenes Fenster) ----
@@ -204,7 +221,7 @@ function MK(){
     const P=pick; pick=null;
     if(String(key).endsWith('#')) return; // schon aktiv
     if(key==='mk:keys'){ setKeys(tr); refresh(tr); closeSheets();
-      if(!keyList(tr).length){ prOpen(tr); setTimeout(()=>{ prSetMode('play'); prRender(); },60); hmToast('Leere Taste halten = Sample wählen',false); } return; }
+      if(!keyList(tr).length){ openRoll(tr); hmToast('Links eine Taste halten = Sample wählen',false); } return; }
     if(!P){ if(isKeys(tr)){ tr.smpArt=null; hmToast('Tastenbelegung bleibt gespeichert',false); } return oPick(tr,key,q); }
     if(key==='mk:brk:sl'){ const [a,b]=putList(tr,BREAK_SL,P.n); refresh(tr); hmToast(BREAK_SL.length+' Stücke auf '+noteName(tr,a)+'–'+noteName(tr,b),false); hear(tr,a); return; }
     let e; if(key.startsWith('mk:s:')) e={...BREAK_SL[+key.slice(5)]};
@@ -224,19 +241,20 @@ function MK(){
     fld.querySelector('.sb').textContent=keyList(tr).length ? keyList(tr).length+' Samples · '+range(tr) : 'noch leer';
     fld.onclick=()=>smpPickOpen(tr); box.appendChild(fld);
     const l=keyList(tr);
-    if(l.length){ const lo=Math.floor((l[0]+ROOT)/12)*12-ROOT, hi=Math.ceil((l[l.length-1]+ROOT+1)/12)*12-ROOT-1;
-      const kb=document.createElement('button'); kb.className='mk-ov'; kb.setAttribute('aria-label','Auf der Klaviatur bearbeiten');
-      const whites=[]; for(let n=lo;n<=hi;n++) if(![1,3,6,8,10].includes(((n+ROOT)%12+12)%12)) whites.push(n);
+    if(l.length){ const pc=n=>((n+9+ROOT)%12+12)%12, lo=l[0]-pc(l[0]), hi=l[l.length-1]+11-pc(l[l.length-1]);
+      const kb=document.createElement('button'); kb.className='mk-ov'; kb.setAttribute('aria-label','In der Piano Roll bearbeiten');
+      const blk=n=>[1,3,6,8,10].includes(pc(n)), whites=[]; for(let n=lo;n<=hi;n++) if(!blk(n)) whites.push(n);
       const W=100/whites.length; let h='';
       whites.forEach((n,i)=>{ const e=K(tr)[n]; h+='<i class="w" style="left:'+(i*W)+'%;width:'+W+'%">'+(e?'<b>'+e.tag+'</b>':'')+'</i>'; });
-      for(let n=lo;n<=hi;n++){ if(![1,3,6,8,10].includes(((n+ROOT)%12+12)%12)) continue; const i=whites.indexOf(n-1), e=K(tr)[n];
+      for(let n=lo;n<=hi;n++){ if(!blk(n)) continue; const i=whites.indexOf(n-1), e=K(tr)[n];
         h+='<i class="k" style="left:'+((i+1)*W-W*0.32)+'%;width:'+(W*0.64)+'%">'+(e?'<b>'+e.tag+'</b>':'')+'</i>'; }
-      kb.innerHTML=h; kb.onclick=()=>openKb(tr); box.appendChild(kb); }
+      kb.innerHTML=h; kb.onclick=()=>openRoll(tr); box.appendChild(kb); }
     const a=document.createElement('div'); a.className='acts';
-    a.innerHTML='<button class="act"><svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 5v8M12 5v8M16 5v8"/></svg>Auf der Klaviatur bearbeiten</button>';
-    a.querySelector('button').onclick=()=>openKb(tr); box.appendChild(a);
-    const n=document.createElement('div'); n.className='kl-note'; n.textContent='Dort: Taste halten = ändern, halten und ziehen = verschieben, leere Taste halten = Sample wählen.'; box.appendChild(n);
+    a.innerHTML='<button class="act"><svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 5v8M12 5v8M16 5v8"/></svg>In der Piano Roll bearbeiten</button>';
+    a.querySelector('button').onclick=()=>openRoll(tr); box.appendChild(a);
+    const n=document.createElement('div'); n.className='kl-note'; n.textContent='Dort an der Klaviatur links: Taste halten = ändern oder ziehen, leere Taste halten = Sample wählen.'; box.appendChild(n);
   };
+  function openRoll(tr){ closeSheets(); if(!prIsOpen()) prOpen(tr); setTimeout(()=>{ prSetMode('edit'); prV(tr).fit=true; prRender(); },60); }
   function openKb(tr){ closeSheets(); if(!prIsOpen()) prOpen(tr); setTimeout(()=>{ prSetMode('play'); prK(tr).w=0; prFitKb(tr); prRender(); },60); }
   // ---- Sample-Editor · Schneiden: neuer Chip „Stücke → Tasten“ ----
   let seTarget=null;
@@ -272,8 +290,17 @@ function MK(){
    +'.mk-ov{position:relative;display:block;width:100%;height:64px;margin:8px 0 4px;padding:0;border:1px solid rgba(255,255,255,.1);border-radius:8px;overflow:hidden;background:#e8e9ee;cursor:pointer}'
    +'.mk-ov i{position:absolute;top:0;bottom:0;border-right:1px solid #0003;display:flex;align-items:flex-end;justify-content:center;padding-bottom:5px}.mk-ov i.k{bottom:40%;background:#15161a;border-radius:0 0 3px 3px;z-index:2;padding-bottom:3px}'
    +'.mk-ov b{min-width:15px;height:15px;padding:0 2px;border-radius:4px;background:'+G+';color:#0b1a07;font:700 9px "JetBrains Mono",monospace;display:flex;align-items:center;justify-content:center}'
-   +'.mk-wv{display:flex;flex-direction:column;gap:6px;align-items:stretch;padding:10px;border-radius:10px;border:1px solid rgba(139,232,106,.3);background:linear-gradient(180deg,#14261d,#0e1813);color:var(--white);cursor:pointer;text-align:left;position:relative}'
-   +'.mk-wv>span{display:flex;flex-direction:column;padding-left:30px}.mk-wv>span b{font:700 17px Rajdhani,sans-serif}.mk-wv small{color:var(--dim);font:500 12px Rajdhani,sans-serif}.mk-wv .mk-tg{position:absolute;left:10px;top:12px}.mk-wv canvas{width:100%;height:56px}'
+   +'#mkBar{position:fixed;z-index:9998;display:none;align-items:center;gap:8px;padding-left:56px;box-sizing:border-box;border:2px solid '+G+';border-radius:6px;background:rgba(139,232,106,.16);pointer-events:none;overflow:hidden;color:var(--white);font:700 14px Rajdhani,sans-serif;white-space:nowrap}'
+   +'#mkBar.sw{border-style:dashed;background:rgba(255,196,77,.14);border-color:#ffc44d}#mkBar span{text-shadow:0 1px 3px #000}'
+   +'.mk-ks{display:flex;flex-direction:column;gap:12px;padding-bottom:6px}'
+   +'.mk-wv{width:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:12px;border:1px solid rgba(139,232,106,.28);background:linear-gradient(180deg,#14261d,#0c1510);color:var(--white);cursor:pointer;text-align:left}'
+   +'.mk-wh{display:flex;align-items:center;gap:10px}.mk-wn{flex:1;font:700 18px Rajdhani,sans-serif}.mk-pl{width:34px;height:34px;border-radius:50%;background:rgba(139,232,106,.16);color:'+G+';display:flex;align-items:center;justify-content:center}.mk-pl .uic{width:16px;height:16px}'
+   +'.mk-wv canvas{width:100%;height:48px;display:block}'
+   +'.mk-mv{display:flex;align-items:center;gap:10px;padding:6px 6px 6px 14px;border-radius:12px;background:var(--panel-inset);border:1px solid rgba(255,255,255,.06)}'
+   +'.mk-ml{flex:1;color:var(--metal);font:600 15px Rajdhani,sans-serif}.mk-mv b{min-width:58px;text-align:center;font:700 18px "JetBrains Mono",monospace;color:var(--white)}'
+   +'.mk-mv button{width:52px;height:48px;border-radius:10px;border:1px solid rgba(63,169,255,.4);background:rgba(63,169,255,.1);color:var(--blue-2);display:flex;align-items:center;justify-content:center;cursor:pointer}.mk-mv .uic{width:20px;height:20px}'
+   +'.mk-row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.mk-row2 .act{min-height:48px;margin:0}'
+   +'.mk-clr{align-self:center;display:flex;align-items:center;gap:8px;min-height:44px;padding:0 16px;margin-top:2px;border:0;background:none;color:#ff8b8b;font:700 14px Rajdhani,sans-serif;cursor:pointer}.mk-clr .uic{width:18px;height:18px}'
    +'.sheet .act.mk-del{border-color:rgba(255,107,107,.4);background:rgba(255,107,107,.08);color:#ff8b8b}'
    +'#mkTastChip{display:none!important}#sampleEditorOverlay.mode-slice #mkTastChip{display:inline-flex!important}#mkTastChip.on{border-color:'+G+';background:rgba(139,232,106,.14);color:'+G+'}#mkTastChip small{opacity:.75;font-size:11px;white-space:nowrap}#mkTastChip span{white-space:nowrap}';
   document.head.appendChild(st);
