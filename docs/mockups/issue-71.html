@@ -37,7 +37,7 @@ iframe{border:0;width:100%;height:100%;background:#050507;display:block}
 <body>
 <div id="mbar">
   <span>#71</span>
-  <div class="g"><button data-v="e1" class="on">E1 Liste allein</button><button data-v="e2">E2 Liste schiebt</button></div>
+  <div class="g"><button data-v="g" class="on">G Klappliste</button><button data-v="h">H Fenster</button></div>
   <span class="sp"></span>
   <button id="exBtn">Öffnen</button>
   <button id="infoBtn">ⓘ</button>
@@ -61,11 +61,11 @@ iframe{border:0;width:100%;height:100%;background:#050507;display:block}
     <li><b>KALIMBA</b> – VCSL</li>
   </ul>
   <p>Je Instrument eine MP3 von ca. 0,5–1 MB, geladen erst bei Wahl (wie heute).</p>
-  <h3>Varianten (E verfeinert, ruhig)</h3>
-  <p>Zu: ein LCD-Feld mit <b>Name groß, Beschreibung klein darunter</b>, kein Zähler, keine Pfeile. Antippen = Liste mit Gruppen. Auswahl <b>klappt sofort zu</b> und spielt den Sound einmal an. „Aufnehmen / Laden“ ist die letzte Zeile der Liste (keine Extra-Taste mehr im Reiter). Keine Liste mit eigenem Scrollbereich – das Sheet scrollt.</p>
+  <h3>Varianten (Seite bleibt stehen)</h3>
+  <p>Zu: ruhiges LCD-Feld, Name groß, Beschreibung klein. Liste nur beim Antippen, <b>der Reiter darunter bewegt sich nicht</b>. Auswahl schließt und spielt einmal an. „Aufnehmen / Laden“ = letzte Zeile.</p>
   <ul>
-    <li><b>E1 · Liste allein</b>: offen zeigt der Reiter nur die Liste (Hüllkurve, Hinweise ausgeblendet). Volle Konzentration, Rest kommt nach der Wahl zurück.</li>
-    <li><b>E2 · Liste schiebt</b>: Liste klappt auf, Rest rutscht darunter.</li>
+    <li><b>G · Klappliste</b>: LCD-Liste legt sich <b>über</b> den Inhalt direkt unter dem Feld, ca. 6 Zeilen hoch, scrollt in sich. Daneben tippen = zu.</li>
+    <li><b>H · Fenster</b>: eigenes Auswahl-Fenster von unten (wie die Kit-Auswahl), Hintergrund abgedunkelt, LCD-Liste darin, ✕ zum Schließen.</li>
   </ul>
   <p>Gruppen: <b>Orchester</b> · <b>Tasten &amp; Mallets</b> · <b>Synth</b> (VOX/SYNTH-BASS) · <b>Eigene</b> (Stücke einklappbar). <b>NEU</b> = Vorschlag ohne Aufnahme.</p>
   <h3>Offen: Chor und echtes E-Piano (Rhodes)</h3>
@@ -75,7 +75,7 @@ iframe{border:0;width:100%;height:100%;background:#050507;display:block}
 // ===== Läuft im globalen Scope der App (per eval im Rahmen) =====
 function MK(){
   if(window.__mk) return;
-  let V='e1';
+  let V='g';
   const NEW={ep:['E-PIANO','FM, 80er','VCSL · Yamaha TX81Z FM Piano'], vib:['VIBRAPHON','weiche Schlägel','VCSL · Vibraphone, Soft Mallets'],
     mar:['MARIMBA','Holz','VCSL / VSCO 2 CE · Marimba'], glo:['GLOCKENSPIEL','hell','VSCO 2 CE · Glock'],
     hrp:['HARFE','Konzertharfe','VCSL · Concert Harp'], kal:['KALIMBA','Daumenklavier','VCSL · Kalimba, Kenya']};
@@ -97,7 +97,7 @@ function MK(){
       L.push({t:'t',id:e.id,open,label:(open?'▾ ':'▸ ')+kids.length+' Stücke'});
       if(open) kids.forEach(k=>L.push({t:'i',key:'lib:'+k.id,label:k.name,ind:1})); });
     if(tr.smp.startsWith('lib:') && !SMP_LIB.some(e=>'lib:'+e.id===tr.smp)) L.push({t:'i',key:tr.smp,label:samplerGet(tr.smp).name});
-    if(V==='e1'||V==='e2'){ const k=L.findIndex(x=>x.t==='e'); if(k>=0) L.splice(k,1); L.push({t:'r',label:'Aufnehmen / Laden'}); }
+    if(V==='g'||V==='h'){ const k=L.findIndex(x=>x.t==='e'); if(k>=0) L.splice(k,1); L.push({t:'r',label:'Aufnehmen / Laden'}); }
     return L;
   }
   const isCur=(tr,it)=>it.isNew ? fake===it.key : (!fake && tr.smp===it.key);
@@ -133,20 +133,33 @@ function MK(){
     } else {
       const w=document.createElement('div');
       const name=cur?esc(cur.label):'–', sub=cur?(cur.isNew?'<i class="mk-new">NEU</i>':cur.sub?'<em>'+esc(cur.sub)+'</em>':''):'';
-      // E1/E2: ruhiges LCD-Feld (2 Zeilen), Liste nur auf Wunsch; Auswahl klappt zu. E1 blendet den Rest aus, E2 schiebt ihn nach unten.
-      w.className='mk-lcd mk-ef'+(eOpen?' open':'');
+      // G/H: ruhiges LCD-Feld; Liste nur auf Wunsch, Seite bewegt sich nicht. G = Klappliste über dem Inhalt, H = eigenes Auswahl-Fenster.
+      w.className='mk-lcd mk-ef'+(eOpen&&V==='g'?' open':'');
       w.innerHTML='<button class="mk-fld" aria-expanded="'+eOpen+'" aria-label="Sound wählen">'
-        +(eOpen ? '<span class="x"><span class="nm mk-dimh">Sound wählen</span></span>'
-                : '<span class="x"><span class="nm">'+name+(cur&&cur.isNew?' <i class="mk-new">NEU</i>':'')+'</span>'+(cur&&cur.sub?'<span class="sb">'+esc(cur.sub)+'</span>':'')+'</span>')
-        +(eOpen?FXI.up:FXI.dn)+'</button>'
-        +(eOpen?'<div class="mk-full" role="listbox">'+L.map((it,j)=>rowHtml(tr,it,j)).join('')+'</div>':'');
+        +'<span class="x"><span class="nm">'+name+(cur&&cur.isNew?' <i class="mk-new">NEU</i>':'')+'</span>'+(cur&&cur.sub?'<span class="sb">'+esc(cur.sub)+'</span>':'')+'</span>'
+        +(eOpen&&V==='g'?FXI.up:FXI.dn)+'</button>'
+        +(eOpen&&V==='g'?'<div class="mk-pop mk-full" role="listbox">'+L.map((it,j)=>rowHtml(tr,it,j)).join('')+'</div>':'');
       w.querySelector('.mk-fld').onclick=e=>{ e.stopPropagation(); eOpen=!eOpen; renderKlang(); };
-      if(eOpen) requestAnimationFrame(()=>{ const f=document.querySelector('#klSheet .mk-ef'); if(f) f.scrollIntoView({block:'start',behavior:'smooth'}); });
+      const centre=ls=>{ const c=ls&&ls.querySelector('.cur'); if(c) ls.scrollTop=c.offsetTop-ls.clientHeight/2+c.offsetHeight/2; };
+      if(eOpen&&V==='g') requestAnimationFrame(()=>{ const pp=w.querySelector('.mk-pop'), r=w.getBoundingClientRect(), dn=innerHeight-r.bottom-14, up=r.top-14;
+        Object.assign(pp.style,{position:'fixed',left:r.left+'px',right:'auto',width:r.width+'px'}); // nicht vom Sheet abschneiden lassen
+        if(dn<260 && up>dn){ pp.style.top='auto'; pp.style.bottom=(innerHeight-r.top+4)+'px'; pp.style.maxHeight=Math.min(380,up)+'px'; } else { pp.style.top=(r.bottom+4)+'px'; pp.style.maxHeight=Math.min(380,dn)+'px'; }
+        centre(pp); });
+      let ov=document.getElementById('mkPick'); if(ov) ov.remove();
+      if(eOpen&&V==='h'){ // eigenes Fenster wie die Kit-Auswahl
+        ov=document.createElement('div'); ov.id='mkPick';
+        ov.innerHTML='<div class="mk-bd"></div><div class="mk-sh"><div class="mk-shh"><b>Sound wählen</b><button class="mk-x" aria-label="Schließen">✕</button></div>'
+          +'<div class="mk-lcd"><div class="mk-full mk-shl" role="listbox">'+L.map((it,j)=>rowHtml(tr,it,j)).join('')+'</div></div></div>';
+        document.body.appendChild(ov);
+        const shut=()=>{ eOpen=false; ov.remove(); renderKlang(); };
+        ov.querySelector('.mk-bd').onclick=shut; ov.querySelector('.mk-x').onclick=shut;
+        bindRows(ov,tr,L); ov.querySelectorAll('[data-j]').forEach(b=>{ const f=b.onclick; b.onclick=e=>{ f(e); ov.remove(); }; });
+        requestAnimationFrame(()=>centre(ov.querySelector('.mk-shl')));
+      }
       bindRows(w,tr,L);
       ch.replaceWith(w);
-      if(eOpen && V==='e1'){ let n=w.nextSibling; while(n){ if(n.nodeType===1) n.style.display='none'; n=n.nextSibling; } } // E1: nur die Liste
     }
-    if(fake && !(eOpen&&V==='e1')){ const anchor=box.querySelector('.mk-ef')||box.querySelector('.smp-chips');
+    if(fake){ const anchor=box.querySelector('.mk-ef')||box.querySelector('.smp-chips');
       let n=anchor.nextSibling; while(n){ const x=n.nextSibling; if(n.classList && n.classList.contains('grp')) break; n.remove(); n=x; } // Hinweise zum echten Sample weg
       const h=document.createElement('div'); h.className='kl-note';
       h.textContent='Vorschlag: '+NEW[fake][2]+' (CC0). Mehrere Töne × Lautstärken, Laden bei Wahl.'; anchor.after(h); }
@@ -190,9 +203,21 @@ function MK(){
     +'.mk-full button.cur{background:var(--lcd-fg);color:#04070a}.mk-full button.cur small,.mk-full button.cur .mk-new{color:#04070a;border-color:#04070a}'
     +'.mk-full .mk-h{color:#5b8db5}'
     +'.mk-full .mk-r{justify-content:flex-start;color:var(--blue-2);font:700 15px Rajdhani,sans-serif;letter-spacing:.04em;border-bottom:0;border-top:1px dashed rgba(63,169,255,.3)}'
-    +'.mk-full .mk-r svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2}';
+    +'.mk-full .mk-r svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2}'
+    +'.mk-ef{position:relative;overflow:visible}'
+    +'.mk-pop{position:absolute;left:-1px;right:-1px;top:calc(100% + 4px);z-index:40;max-height:min(330px,48vh);overflow-y:auto;overscroll-behavior:contain;background:var(--lcd-bg);border:1px solid rgba(63,169,255,.5);border-radius:10px;box-shadow:0 14px 34px #000d}'
+    +'#mkPick{position:fixed;inset:0;z-index:300}'
+    +'#mkPick .mk-bd{position:absolute;inset:0;background:#000a}'
+    +'#mkPick .mk-sh{position:absolute;left:0;right:0;bottom:0;max-height:72vh;display:flex;flex-direction:column;gap:10px;padding:14px 14px calc(14px + env(safe-area-inset-bottom,0px));background:var(--panel,#121419);border-top:1px solid rgba(63,169,255,.35);border-radius:18px 18px 0 0}'
+    +'#mkPick .mk-shh{display:flex;align-items:center;justify-content:space-between;min-height:44px}'
+    +'#mkPick .mk-shh b{font:700 19px Rajdhani,sans-serif;color:var(--white)}'
+    +'#mkPick .mk-x{width:44px;height:44px;border-radius:9px;border:1px solid rgba(255,255,255,.12);background:var(--panel);color:var(--blue-2);font-size:15px;cursor:pointer}'
+    +'#mkPick .mk-lcd{margin:0;min-height:0;display:flex}'
+    +'#mkPick .mk-shl{flex:1;overflow-y:auto;overscroll-behavior:contain}';
   document.head.appendChild(st);
-  function setV(v){ V=v; if($id('klSheet').classList.contains('open')) renderKlang(); }
+  document.addEventListener('click',e=>{ if(V==='g' && eOpen && !e.target.closest('.mk-ef')){ eOpen=false; renderKlang(); } });
+  document.addEventListener('scroll',e=>{ if(V==='g' && eOpen && !(e.target.closest&&e.target.closest('.mk-pop'))){ eOpen=false; renderKlang(); } },true); // Seite scrollt = zu
+  function setV(v){ V=v; eOpen=false; const o=document.getElementById('mkPick'); if(o) o.remove(); if($id('klSheet').classList.contains('open')) renderKlang(); }
   function open(){
     if(isPlaying) stop(); closeSheets(); if(prIsOpen()) prClose();
     let tr=TRACKS.find(t=>trInstKey(t)==='sampler');
@@ -204,7 +229,7 @@ function MK(){
 
 // ===== Rahmen-Steuerung =====
 const fR=document.getElementById('fR');
-let V='e1';
+let V='g';
 function hook(){ const w=fR.contentWindow; try{ if(!w||w.eval('typeof TRACKS')!=='object') return null; if(!w.__mk) w.eval('('+MK.toString()+')()'); }catch(e){ console.error(e); return null; } return w.__mk; }
 function apply(){ const m=hook(); if(m) m.setV(V); document.querySelectorAll('[data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v===V)); }
 fR.addEventListener('load',()=>setTimeout(()=>{ apply(); const m=hook(); if(m) m.open(); },900));
