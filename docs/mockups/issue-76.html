@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Stücke spielen: Raster · Pads · Piano Roll (#76)</title>
+<title>Stücke auf Tasten (#76)</title>
 <link rel="stylesheet" href="../../fonts.css">
 <style>
 /* Mockup zu Issue #76: geschnittene Stücke als Sampler-Spur „Stücke“, eine Notenspur (Note n = Stück n+1) mit drei
@@ -34,7 +34,7 @@ iframe{border:0;width:100%;height:100%;background:#050507;display:block}
 </head>
 <body>
 <div id="mbar">
-  <span>#76 Stücke</span>
+  <span>#76 Stücke auf Tasten</span>
   <span class="sp"></span>
   <button id="exBtn">Neu anlegen</button>
   <button id="infoBtn">ⓘ</button>
@@ -45,174 +45,71 @@ iframe{border:0;width:100%;height:100%;background:#050507;display:block}
 </div>
 <div id="info"></div>
 <template id="notes">
-  <h3>Was das ist</h3>
-  <p>Die <b>echte App</b> mit einer Sampler-Spur <b>BREAK</b> im Modus <b>Stücke</b>: ein Drum-Loop, in 12 Stücke geschnitten. Unter der Spur liegt <b>eine Notenspur</b>, Note = Stück. Die drei Ansichten zeigen und ändern dieselben Noten.</p>
-  <p>Beim Start ist die Spur schon angelegt und spielt den <b>Original-Groove</b>. Drück Play und schalte zwischen den Ansichten um.</p>
-  <h3>Die drei Ansichten (Umschalter über dem Editor)</h3>
+  <h3>Schritt 1: Stücke auf die Tasten</h3>
+  <p>Nichts Neues an Fenstern. Die <b>Sampler-Spur</b> bekommt in der Sound-Auswahl unter einem geschnittenen Sample den Eintrag <b>„Alle Stücke auf Tasten“</b>. Dann liegt Stück 1 auf C3, Stück 2 auf C♯3 und so weiter, jedes in Originaltonhöhe.</p>
+  <p>Eingezeichnet wird in der <b>Piano Roll, die es schon gibt</b>. Sie zeigt dann nur die belegten Tasten, links steht die Stück-Nummer statt des Tonnamens. Antippen spielt das Stück an.</p>
+  <h3>Ausprobieren</h3>
   <ul>
-    <li><b>Raster</b>: eine Zeile pro Stück, 16tel-Steps. Antippen = setzen/löschen, Zahl links = Stück hören. Längere Noten aus der Piano Roll erscheinen als Balken und bleiben erhalten.</li>
-    <li><b>Pads</b>: 12 Pads mit Wellenbild. Tippen = spielen. Mit <b>Aufnahme</b> (läuft Play nicht, startet es) werden Treffer auf 16tel eingerastet ins Pattern geschrieben, jeder Durchgang kommt dazu (Overdub). Darunter siehst du mit, was entsteht.</li>
-    <li><b>Piano Roll</b>: der echte Noteneditor. Die Zeilen heißen 1–12 statt Tonnamen. Hier gibt es Länge und Stärke pro Treffer.</li>
+    <li>Spur <b>BREAK</b> ist angelegt und spielt den Original-Groove. Auf die Vorschau tippen, dann öffnet sich die Piano Roll.</li>
+    <li>Klang → Sound: unter „Eigene“ steht der neue Eintrag.</li>
+    <li>Andere Sampler-Spuren sind unverändert.</li>
   </ul>
-  <h3>Aktionen</h3>
+  <h3>Später (eigene Schritte)</h3>
   <ul>
-    <li><b>Original</b>: schreibt die Stücke in Originalreihenfolge und Lage, also klingt es wie der Loop (wie Logic und FL Studio).</li>
-    <li><b>Mischen</b>: Rhythmus bleibt, Stücke werden getauscht (der typische Ableton-Trick).</li>
-  </ul>
-  <h3>Woher die Spur kommt (nicht im Mockup)</h3>
-  <p>Im Sample-Editor, Modus Schneiden, neben „Stücke → Pads“ ein Chip <b>„Stücke → Spur“</b>: legt diese Spur an (oder nimmt die gewählte Sampler-Spur) und schreibt den Original-Groove. Im Klang-Sheet der Sampler-Spur: Spielweise <b>Tasten | Stücke</b>.</p>
-  <h3>Offene Fragen</h3>
-  <ul>
-    <li><b>Pads-Reiter unten</b>: bleibt er freie Live-Fläche, oder zeigt er künftig die Pads der gewählten Stücke-Spur? Meine Meinung: zweiteres, sonst gibt es zwei Sorten Pads.</li>
-    <li><b>Ansicht merken</b>: je Spur (Vorschlag) oder für alle gleich.</li>
-    <li><b>Mehr als 12 Stücke</b>: Raster scrollt senkrecht, Pads bekommen Bänke A/B.</li>
+    <li><b>Pads</b> spielen die gewählte Spur und können auf sie aufnehmen.</li>
+    <li>Ob Drum-Zeilen auch in der Piano Roll gehen, entscheiden wir danach.</li>
   </ul>
   <h3>Im Mockup nicht drin</h3>
-  <ul>
-    <li>Speichern mit dem Beat, WAV-Export, Rückgängig für eine Aufnahme.</li>
-    <li>Echtes Sample aus der Bibliothek: hier ein im Rahmen erzeugter Break (1 Takt, 120 BPM).</li>
-  </ul>
+  <ul><li>Echtes Sample aus der Bibliothek (hier ein erzeugter Break), Speichern.</li></ul>
 </template>
 <script>
 // ===== Läuft im globalen Scope der App (per eval im Rahmen) =====
 function MK(){
   if(window.__mk) return;
-  const GREEN='#8be86a', N=12;
-  // ---- Demo-Break: 1 Takt bei 120 BPM, 12 Schläge auf 16tel; Schnitt an jedem Schlag ----
+  const N=12, KEY='cut:demo';
+  // ---- Demo-Break: 1 Takt bei 120 BPM, 12 Schläge auf 16tel; Schnitt an jedem Schlag (steht für ein geschnittenes Sample aus der Bibliothek) ----
   const HITS=[[0,'k'],[2,'h'],[3,'k'],[4,'s'],[6,'h'],[7,'g'],[8,'k'],[10,'k'],[11,'h'],[12,'s'],[14,'h'],[15,'o']];
-  let BUF=null, CUT=[];
   function brk(){
-    if(BUF) return BUF; const sr=audioCtx.sampleRate, st=0.125, n=Math.round(sr*2), b=audioCtx.createBuffer(1,n,sr), d=b.getChannelData(0);
+    const sr=audioCtx.sampleRate, st=0.125, n=Math.round(sr*2), b=audioCtx.createBuffer(1,n,sr), d=b.getChannelData(0);
     let z=987; const rnd=()=>{ z=(z*1103515245+12345)%2147483648; return z/1073741824-1; };
     const F={k:t=>Math.sin(2*Math.PI*(48*t+110*0.035*(1-Math.exp(-t/0.035))))*Math.exp(-t/0.2)*1.1,
-      s:t=>(rnd()*0.75+Math.sin(2*Math.PI*185*t)*0.55)*Math.exp(-t/0.1),
-      g:t=>(rnd()*0.4+Math.sin(2*Math.PI*190*t)*0.25)*Math.exp(-t/0.05),
+      s:t=>(rnd()*0.75+Math.sin(2*Math.PI*185*t)*0.55)*Math.exp(-t/0.1), g:t=>(rnd()*0.4+Math.sin(2*Math.PI*190*t)*0.25)*Math.exp(-t/0.05),
       h:t=>rnd()*Math.exp(-t/0.022)*0.38, o:t=>rnd()*Math.exp(-t/0.16)*0.33};
     HITS.forEach(([s,k])=>{ const a=Math.round(s*st*sr); for(let i=0;i<0.5*sr && a+i<n;i++) d[a+i]+=F[k](i/sr); });
     let pk=0; for(let i=0;i<n;i++) pk=Math.max(pk,Math.abs(d[i])); for(let i=0;i<n;i++) d[i]*=0.85/pk;
-    CUT=HITS.map(([s])=>s*st); BUF=b; return b;
+    return {buf:b, cuts:HITS.map(([s])=>s*st)};
   }
-  const sliceDur=i=>(i<N-1?CUT[i+1]:BUF.duration)-CUT[i];
-  // ---- Stimme: Stück = Ausschnitt, Einmal (bis zum Stückende), 1,5/3 ms Blenden ----
-  function voice(tr,time,n,vel){
-    if(!audioCtx || !tr.bus || n<0 || n>=N) return null; brk();
-    const src=audioCtx.createBufferSource(), g=audioCtx.createGain(), L=sliceDur(n), pk=Math.max(0.05,Math.min(1.3,vel))*tr.vol;
-    src.buffer=BUF; g.gain.setValueAtTime(0,time); g.gain.linearRampToValueAtTime(pk,time+0.0015);
-    g.gain.setValueAtTime(pk,time+L-0.003); g.gain.linearRampToValueAtTime(0,time+L);
-    src.connect(g).connect(tr.bus); src.start(time,CUT[n],L); src.onended=()=>{ try{ g.disconnect(); }catch(e){} };
-    return {rel(){}};
-  }
-  const IS=INSTR.sampler, oTrig=IS.trigger, oLive=IS.live;
-  IS.trigger=(t,tr,n,v,l)=>tr._stk ? voice(tr,t,n,v) : oTrig(t,tr,n,v,l);
-  IS.live=(tr,n,v)=>tr._stk ? (voice(tr,audioCtx.currentTime+0.005,n,v)||{rel(){}}) : oLive(tr,n,v);
-  const hear=(tr,n,v)=>Promise.resolve(initAudio()).then(()=>{ if(audioCtx.state!=='running') audioCtx.resume(); voice(tr,audioCtx.currentTime+0.006,n,v||0.9); });
-  // Notenname/Unterzeile/Skala/Zeilen der Piano Roll für Stücke-Spuren
-  const oSub=prSubName; prSubName=tr=>tr._stk ? '12 Stücke' : oSub(tr);
-  const oIn=pitchInScale; pitchInScale=(v,tr)=>(tr&&tr._stk) || (typeof prTr!=='undefined' && prTr && prTr._stk) ? true : oIn(v,tr);
-  const oRows=prRows; prRows=tr=>{ if(!tr._stk) return oRows(tr); const o=[]; for(let n=N-1;n>=0;n--) o.push(n); return o; };
-  const oKeys=prKeysHtml; prKeysHtml=(tr,v)=>{ if(!tr._stk) return oKeys(tr,v); let h='';
-    prR.forEach((n,i)=>{ h+='<div class="pkl w" data-n="'+n+'" style="top:'+(i*v.rh)+'px;height:'+v.rh+'px"></div><div class="pkn" style="top:'+(i*v.rh)+'px;height:'+v.rh+'px;color:#8be86a;font-weight:700;right:auto;left:0;width:100%;text-align:center">'+(n+1)+'</div>'; });
+  const B=brk();
+  // Neuer Sound-Eintrag: alle Stücke eines geschnittenen Samples auf Tasten (Stück 1 = C3, je Halbton das nächste)
+  SMPL[KEY]={name:'Break · 12 Stücke', state:'ok', cut:true, buf:B.buf, cuts:B.cuts, mode:'oneshot'};
+  const isCut=tr=>tr && trInstKey(tr)==='sampler' && tr.smp===KEY;
+  const ROOT=48-45; // rootNote so, dass n=0 → MIDI 48 (C3)
+  const oVoice=samplerVoice;
+  samplerVoice=function(tr,time,n,vel,hold){ if(!isCut(tr)) return oVoice(tr,time,n,vel,hold);
+    const S=SMPL[KEY]; if(!audioCtx||!tr.bus||n<0||n>=N) return null;
+    const a=S.cuts[n], L=(n<N-1?S.cuts[n+1]:S.buf.duration)-a, src=audioCtx.createBufferSource(), g=audioCtx.createGain(), pk=Math.max(0.05,Math.min(1.3,vel))*tr.vol;
+    src.buffer=S.buf; g.gain.setValueAtTime(0,time); g.gain.linearRampToValueAtTime(pk,time+0.0015); g.gain.setValueAtTime(pk,time+L-0.003); g.gain.linearRampToValueAtTime(0,time+L);
+    src.connect(g).connect(tr.bus); src.start(time,a,L); src.onended=()=>{ try{ g.disconnect(); }catch(e){} }; return {rel(){}}; };
+  // Sound-Auswahl: unter „Eigene“ der neue Eintrag
+  const oItems=smpPickItems;
+  smpPickItems=function(tr){ const L=oItems(tr), i=L.findIndex(x=>x.h==='Eigene');
+    L.splice(i+1,0,{k:'lib:demo', name:'Break'},{t:'demo-x', open:true, name:'▾ 12 Stücke'},{k:KEY, name:'Alle Stücke auf Tasten', sub:'ab C3', ind:1});
+    return L.filter(x=>x.k!=='lib:demo'||true); };
+  const oPick=samplerPick;
+  samplerPick=async function(tr,key,q){ if(key!==KEY) return oPick(tr,key,q); tr.smp=KEY; tr.rootNote=ROOT; samplerChanged&&samplerChanged(); renderKlang(); if(prIsOpen()) prRenderChrome(); if(!q) samplerVoice(tr,audioCtx.currentTime+0.01,0,0.9); };
+  // Piano Roll: bei Stücken nur die belegten Tasten als Zeilen, links Stück-Nummer statt Tonname
+  const oRows=prRows; prRows=tr=>{ if(!isCut(tr)) return oRows(tr); const o=[]; for(let n=N-1;n>=0;n--) o.push(n); return o; };
+  const oIn=pitchInScale; pitchInScale=(v,tr)=>isCut(tr)||isCut(prTr) ? true : oIn(v,tr);
+  const oKeys=prKeysHtml; prKeysHtml=(tr,v)=>{ if(!isCut(tr)) return oKeys(tr,v); let h='';
+    prR.forEach((n,i)=>{ h+='<div class="pkl w" data-n="'+n+'" style="top:'+(i*v.rh)+'px;height:'+v.rh+'px"></div><div class="pkn" style="top:'+(i*v.rh)+'px;height:'+v.rh+'px;color:#8be86a;font-weight:700;left:0;right:auto;width:100%;text-align:center">'+(n+1)+'</div>'; });
     return h; };
-  // ---- Noten-Helfer ----
-  const evAt=(tr,s,n)=>tr.events.findIndex(e=>e.n===n && e.s===s);
-  function changed(tr){ evTouch(tr); try{ prDrawPreview(tr); }catch(e){} try{ ovRender(); }catch(e){} draw(); }
-  function groove(tr){ tr.events=HITS.map(([s],i)=>({s,n:i,l:1,v:i===5?0.45:0.9})); const L=PATTERN_LENGTH;
-    for(let p=16;p<L;p+=16) HITS.forEach(([s],i)=>tr.events.push({s:s+p,n:i,l:1,v:i===5?0.45:0.9})); changed(tr); }
-  function shuffle(tr){ const m=[...Array(N).keys()]; for(let i=N-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [m[i],m[j]]=[m[j],m[i]]; }
-    tr.events.forEach(e=>{ if(e.n<N) e.n=m[e.n]; }); changed(tr); hmToast('Stücke getauscht, Rhythmus bleibt',false); }
-  // ---- Editor-Bereich ----
-  const box=document.createElement('div'); box.id='mkStk'; $id('prPreview').before(box);
-  let curTr=null, view='grid', rec=false;
-  const oArea=renderEditorArea;
-  renderEditorArea=function(tr){ oArea(tr); curTr=tr; const on=!!tr._stk; box.style.display=on?'flex':'none';
-    if(!on) return; view=tr._view||'grid'; $id('prPreview').style.display=view==='roll'?'flex':'none'; build(); };
-  const IC={grid:'<svg class="uic" viewBox="0 0 24 24"><rect x="3" y="4" width="5" height="4" rx="1"/><rect x="10" y="4" width="5" height="4" rx="1"/><rect x="17" y="10" width="4" height="4" rx="1"/><rect x="3" y="16" width="5" height="4" rx="1"/><rect x="10" y="10" width="5" height="4" rx="1"/></svg>',
-    pads:'<svg class="uic" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg>',
-    roll:'<svg class="uic" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h5M11 13h6M7 17h4" stroke-width="2.4"/></svg>'};
-  function build(){
-    const tr=curTr; box.innerHTML='';
-    const top=document.createElement('div'); top.className='mk-top';
-    top.innerHTML='<div class="mk-seg" role="tablist">'+[['grid','RASTER'],['pads','PADS'],['roll','PIANO ROLL']].map(([k,l])=>'<button data-w="'+k+'" class="'+(view===k?'on':'')+'">'+IC[k]+l+'</button>').join('')+'</div>';
-    box.appendChild(top);
-    top.querySelectorAll('[data-w]').forEach(b=>b.onclick=()=>{ tr._view=b.dataset.w; if(b.dataset.w!=='pads') setRec(false); renderEditorArea(tr); });
-    const act=document.createElement('div'); act.className='mk-act';
-    act.innerHTML='<button data-x="orig">Original</button><button data-x="mix">Mischen</button><span class="mk-sp"></span>'+(view==='pads'?'<button data-x="rec" class="mk-rec'+(rec?' on':'')+'"><i></i>Aufnahme</button>':'<span class="mk-cap">1 Note = 1 Stück</span>');
-    box.appendChild(act);
-    act.querySelector('[data-x=orig]').onclick=()=>{ groove(tr); hmToast('Original-Groove geschrieben',false); };
-    act.querySelector('[data-x=mix]').onclick=()=>shuffle(tr);
-    const rb=act.querySelector('[data-x=rec]'); if(rb) rb.onclick=()=>setRec(!rec);
-    if(view==='grid') buildGrid(tr); else if(view==='pads') buildPads(tr);
-    else { const h=document.createElement('div'); h.className='mk-cap mk-pad'; h.textContent='Zeilen 1–12 = Stücke · Länge und Stärke je Treffer'; box.appendChild(h); }
-    draw();
-  }
-  function setRec(v){ rec=v; const b=box.querySelector('[data-x=rec]'); if(b) b.classList.toggle('on',rec);
-    if(rec && !isPlaying) start(); }
-  // Raster: 12 Zeilen × 16 Steps der aktuellen Seite
-  let gridEl=null, padEls=[], miniEl=null;
-  function buildGrid(tr){
-    const g=document.createElement('div'); g.className='mk-grid'; gridEl=g; padEls=[]; miniEl=null;
-    let h='<div class="mk-hd"><span></span>'; for(let c=0;c<16;c++) h+='<span>'+(c%4===0?currentPage*16+c+1:'')+'</span>'; h+='</div>';
-    for(let n=0;n<N;n++){ h+='<div class="mk-row"><button class="mk-lb" data-h="'+n+'">'+(n+1)+'</button>';
-      for(let c=0;c<16;c++) h+='<i data-n="'+n+'" data-c="'+c+'" class="'+(c%4===0?'b':'')+'"></i>'; h+='</div>'; }
-    g.innerHTML=h; box.appendChild(g);
-    g.addEventListener('pointerdown',e=>{ const lb=e.target.closest('[data-h]'); if(lb){ hear(tr,+lb.dataset.h); lb.classList.add('fl'); setTimeout(()=>lb.classList.remove('fl'),120); return; }
-      const c=e.target.closest('i[data-c]'); if(!c) return; const n=+c.dataset.n, s=currentPage*16+(+c.dataset.c);
-      const cover=tr.events.findIndex(x=>x.n===n && x.s<=s && s<x.s+(x.l||1));
-      if(cover>=0) tr.events.splice(cover,1); else { tr.events.push({s,n,l:1,v:0.9}); if(!isPlaying) hear(tr,n); }
-      changed(tr); });
-  }
-  // Pads: 3×4 mit Wellenbild, darunter Mitschrift (ganzes Pattern, klein)
-  function buildPads(tr){
-    gridEl=null; brk(); const g=document.createElement('div'); g.className='mk-pads'; padEls=[];
-    for(let n=0;n<N;n++){ const p=document.createElement('button'); p.className='mk-pd';
-      p.innerHTML='<b>'+(n+1)+'</b><canvas width="120" height="40"></canvas>'; g.appendChild(p); padEls.push(p); wave(p.querySelector('canvas'),n);
-      p.addEventListener('pointerdown',e=>{ e.preventDefault(); try{ p.setPointerCapture(e.pointerId); }catch(er){} hear(tr,n);
-        p.classList.add('fl'); setTimeout(()=>p.classList.remove('fl'),110);
-        if(rec && isPlaying){ const s=nowStep(true); if(evAt(tr,s,n)<0){ tr.events.push({s,n,l:1,v:0.9}); changed(tr); } } }); }
-    box.appendChild(g);
-    const m=document.createElement('div'); m.className='mk-mini'; miniEl=m; box.appendChild(m);
-    const hint=document.createElement('div'); hint.className='mk-cap mk-pad'; hint.textContent='Aufnahme: rastet auf 1/16, jeder Durchgang kommt dazu'; box.appendChild(hint);
-  }
-  function wave(cv,n){ const x=cv.getContext('2d'), d=BUF.getChannelData(0), sr=BUF.sampleRate, a=Math.round(CUT[n]*sr), L=Math.round(sliceDur(n)*sr), W=cv.width, H=cv.height;
-    x.fillStyle=GREEN; for(let i=0;i<W;i++){ let m=0; const s=a+Math.floor(i*L/W), e=a+Math.floor((i+1)*L/W); for(let j=s;j<e;j++) m=Math.max(m,Math.abs(d[j])); const h=Math.max(1,m*H*0.95); x.fillRect(i,(H-h)/2,1,h); } }
-  // Step, der gerade klingt (Scheduler plant voraus: currentStep = nächster ungeplanter Step bei nextNoteTime)
-  function nowStep(round){ const dt=(audioCtx.currentTime-nextNoteTime)/stepDuration(), L=PATTERN_LENGTH; return ((currentStep+(round?Math.round(dt):Math.floor(dt)))%L+L)%L; }
-  function draw(){
-    const tr=curTr; if(!tr || !tr._stk) return;
-    if(gridEl){ gridEl.querySelectorAll('i[data-c]').forEach(c=>{ const n=+c.dataset.n, s=currentPage*16+(+c.dataset.c);
-      const e=tr.events.find(x=>x.n===n && x.s<=s && s<x.s+(x.l||1)); c.className=(+c.dataset.c%4===0?'b ':'')+(e?(e.s===s?'on':'tl'):''); if(e && e.s===s) c.style.opacity=0.45+0.55*Math.min(1,e.v); else c.style.opacity=''; }); }
-    if(miniEl){ const L=PATTERN_LENGTH; let h=''; tr.events.forEach(e=>{ if(e.n<N) h+='<i style="left:'+(e.s/L*100)+'%;width:'+(Math.max(1,e.l||1)/L*100)+'%;top:'+(e.n/N*100)+'%;height:'+(100/N)+'%"></i>'; });
-      miniEl.innerHTML=h+'<s id="mkPh"></s>'; }
-  }
-  // Abspielkopf in Raster und Mitschrift
-  (function loop(){ requestAnimationFrame(loop); const tr=curTr; if(!tr || !tr._stk || box.style.display==='none') return;
-    const s=isPlaying && audioCtx ? nowStep(false) : -1;
-    if(gridEl){ const c=s>=0 && Math.floor(s/16)===currentPage ? s%16 : -1; if(gridEl._ph!==c){ gridEl._ph=c; gridEl.querySelectorAll('i.ph').forEach(x=>x.classList.remove('ph')); if(c>=0) gridEl.querySelectorAll('i[data-c="'+c+'"]').forEach(x=>x.classList.add('ph')); } }
-    const ph=miniEl && miniEl.querySelector('#mkPh'); if(ph){ ph.style.display=s>=0?'':'none'; ph.style.left=(s/PATTERN_LENGTH*100)+'%'; ph.style.width=(100/PATTERN_LENGTH)+'%'; }
-  })();
-  const st=document.createElement('style');
-  st.textContent='#mkStk{display:none;flex-direction:column;gap:8px;flex:1;min-height:300px;--g:'+GREEN+'}'
-   +'.mk-top{display:flex}.mk-seg{display:flex;flex:1;border-radius:9px;overflow:hidden;border:1px solid rgba(255,255,255,.12);background:var(--panel-inset)}'
-   +'.mk-seg button{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;min-height:44px;border:0;background:transparent;color:var(--dim);font:700 13px Rajdhani,sans-serif;letter-spacing:.1em;cursor:pointer}'
-   +'.mk-seg button+button{border-left:1px solid rgba(255,255,255,.08)}.mk-seg button.on{color:var(--white);background:color-mix(in srgb,var(--g) 20%,transparent);box-shadow:inset 0 -2px 0 var(--g)}.mk-seg .uic{width:18px;height:18px}'
-   +'.mk-act{display:flex;align-items:center;gap:6px}.mk-act button{min-height:40px;padding:0 12px;border-radius:20px;border:1px solid rgba(255,255,255,.12);background:var(--panel);color:var(--metal);font:600 14px Rajdhani,sans-serif;letter-spacing:.04em;cursor:pointer}.mk-sp{flex:1}'
-   +'.mk-rec{display:inline-flex;align-items:center;gap:6px}.mk-rec i{width:11px;height:11px;border-radius:50%;background:#ff4d4d;opacity:.45}.mk-rec.on{border-color:#ff4d4d;color:var(--white);background:rgba(255,77,77,.16)}.mk-rec.on i{opacity:1;animation:mkb 1s infinite}@keyframes mkb{50%{opacity:.3}}'
-   +'.mk-cap{font:500 12px Rajdhani,sans-serif;color:var(--dim)}.mk-pad{padding:0 2px}'
-   +'.mk-grid{display:flex;flex-direction:column;gap:3px;background:var(--panel-inset);border-radius:10px;padding:8px 6px;box-shadow:inset 0 2px 6px rgba(0,0,0,.6)}'
-   +'.mk-hd,.mk-row{display:grid;grid-template-columns:30px repeat(16,1fr);gap:2px;align-items:center}.mk-hd span{font:600 10px "JetBrains Mono",monospace;color:var(--dim)}'
-   +'.mk-row i{height:22px;border-radius:3px;background:#ffffff0d}.mk-row i.b{background:#ffffff1a}.mk-row i.on{background:var(--g)}.mk-row i.tl{background:color-mix(in srgb,var(--g) 38%,transparent);border-radius:0 3px 3px 0}.mk-row i.ph{outline:1px solid #ffffff80}'
-   +'.mk-lb{height:22px;border:0;border-radius:4px;background:color-mix(in srgb,var(--g) 14%,transparent);color:var(--g);font:700 12px "JetBrains Mono",monospace;padding:0;cursor:pointer}.mk-lb.fl{background:var(--g);color:#0b1a07}'
-   +'.mk-pads{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.mk-pd{position:relative;min-height:66px;border-radius:12px;border:1px solid color-mix(in srgb,var(--g) 35%,transparent);background:linear-gradient(180deg,#14261d,#0e1813);padding:6px 6px 4px;display:flex;flex-direction:column;align-items:stretch;gap:2px;cursor:pointer;touch-action:none}'
-   +'.mk-pd b{font:700 13px "JetBrains Mono",monospace;color:var(--g);text-align:left}.mk-pd canvas{width:100%;height:28px;opacity:.75}.mk-pd.fl{background:color-mix(in srgb,var(--g) 45%,#0e1813)}'
-   +'.mk-mini{position:relative;height:84px;border-radius:8px;background:var(--panel-inset);box-shadow:inset 0 2px 6px rgba(0,0,0,.6);overflow:hidden;background-image:repeating-linear-gradient(90deg,transparent 0,transparent calc(25% - 1px),#ffffff1f calc(25% - 1px),#ffffff1f 25%)}.mk-mini i{position:absolute;background:var(--g);border-radius:2px;outline:1px solid #0b0d10}.mk-mini s{position:absolute;top:0;bottom:0;background:#ffffff26}';
-  document.head.appendChild(st);
-  // ---- Spur anlegen ----
+  function groove(tr){ tr.events=[]; for(let p=0;p<PATTERN_LENGTH;p+=16) HITS.forEach(([s],i)=>tr.events.push({s:s+p,n:i,l:1,v:i===5?0.45:0.9})); evTouch(tr); }
   function make(){
     if(isPlaying) stop(); closeSheets(); if(prIsOpen()) prClose();
-    let tr=TRACKS.find(t=>t._stk);
+    let tr=TRACKS.find(isCut);
     if(!tr){ if(melCount()>=MEL_MAX){ hmToast('Höchstens '+MEL_MAX+' Melodiespuren',false); return; }
-      tr=trCreate('sampler',{label:melSuggest('BREAK')}); tr.smp='vox'; tr._stk=true; tr.rootNote=3; tr.harm=hmDefaultTrack(tr); tr.harmOwn=null; tr._view='grid'; trAttach(tr,null); }
-    brk(); groove(tr); melChanged(tr);
+      tr=trCreate('sampler',{label:melSuggest('BREAK')}); tr.smp=KEY; tr.rootNote=ROOT; tr.harm=hmDefaultTrack(tr); tr.harmOwn=null; trAttach(tr,null); }
+    groove(tr); melChanged(tr);
   }
   window.__mk={make};
 }
