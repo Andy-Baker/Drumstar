@@ -36,7 +36,12 @@ const INSTR={
   sampler:{name:'SAMPLER', grp:'sampler', poly:true, oct:12, cls:'smp', arpStyle:'classic', bass:'hold', extra:true, desc:'Sample auf Tasten',
           trigger:(t,tr,n,v,l)=>samplerVoice(tr,t,n,v,Math.max(0.08,stepDuration()*Math.max(1,l||1)*0.96)),
           live:(tr,n,v)=>samplerVoice(tr,audioCtx.currentTime+0.005,n,v,null)||{rel(){}},
-          fields:{smp:'str', smpAtk:0.005, smpRel:0.4}, undo:[], valid:{smp:v=>typeof v==='string' && v.length>0},
+          // Tastenbelegung (#76): smpArt 'keys' = jede Taste ihr eigenes Sample, smpKeys {Note: Sample-Schlüssel wie tr.smp}; tr.smp bleibt für „Ein Sample“.
+          // smpKeys wird nie verändert, nur ersetzt (smpKeySet …), damit kopierte Spuren sich nichts teilen.
+          fields:{smp:'str', smpAtk:0.005, smpRel:0.4, smpArt:'', smpKeys:null}, undo:[],
+          valid:{smp:v=>typeof v==='string' && v.length>0, smpArt:v=>v===''||v==='keys',
+            smpKeys:v=>typeof v==='object' && !Array.isArray(v) && Object.keys(v).every(k=>/^-?\d+$/.test(k) && typeof v[k]==='string' && v[k].length>0)},
+          keyMap:tr=>smpIsKeys(tr) ? (tr.smpKeys||{}) : null, keyInfo:(tr,n)=>smpKeyInfo(tr,n),
           klang:(tr,box,grp)=>samplerKlang(tr,box,grp), sub:tr=>samplerSub(tr),
           tplOf:{base:'piano', del:['sound','tremolo'], set:{name:'SAMPLER', short:'SMP', color:'#8be86a', vol:0.85, reverbAmount:0.12, delaySend:0}}},
 };
@@ -48,6 +53,9 @@ function instLoad(tr,sv){ const I=trInst(tr); if(!I) return;
 // Gewählter Klang eines Instruments mit Klang-Auswahl (Keys); Ersatz = Standardklang
 function instSound(tr){ const I=trInst(tr), S=I&&I.sounds&&I.sounds(); return S ? (S[tr.sound]||S[I.fields.sound]) : null; }
 // Zusatz zum Spurnamen (Noteneditor-Kopf, Spur-Menü): gewählter Klang (Keys) bzw. eigener Text des Instruments (Sampler: Sample-Name)
+// Tastenbelegung (#76): Instrument mit eigenem Sample je Taste → {Note: …} bzw. null; Info je Taste {tag, name, key, state}
+function trKeyMap(tr){ const I=tr && trInst(tr); return I && I.keyMap ? I.keyMap(tr) : null; }
+function trKeyInfo(tr,n){ const I=tr && trInst(tr); return I && I.keyInfo ? I.keyInfo(tr,n) : null; }
 function instSub(tr){ const I=trInst(tr); if(!I) return ''; if(I.sub) return I.sub(tr)||''; const s=instSound(tr); return s ? s.name : ''; }
 // Übersichts-Gruppen: jede Gruppe ist eine Zeile in der Song-Übersicht; Clips liegen weiterhin pro Stimme/Spur.
 // Melodiespuren sind frei (#13): ARR_GROUPS wird aus TRACKS neu gebaut (arrGroupsBuild), ARR_GROUPS_BASE = Werksaufbau

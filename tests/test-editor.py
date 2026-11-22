@@ -309,7 +309,7 @@ async def main():
     ok('#61 Instrument ohne Spur wird freigegeben', r['freed']==[False,True], r['freed'])
     ok('#8 Klang-Sheet: Attack/Release, kein Grundton bei Werk-Instrument', r['sheet'][0] and r['sheet'][2]=='Attack,Release' and not r['sheet'][3], r['sheet'])
     ok('#71 neue Instrumente laden (Harfe, E-Piano, Vibraphon, Marimba, Glockenspiel, Kalimba)', all(':ok:' in x for x in r['sheet'][11].split('|')) and ':hold:' in r['sheet'][11].split('|')[1] and 'Tasten & Mallets:oneshot' in r['sheet'][11].split('|')[3] and r['sheet'][11].split('|')[0].split(':')[2]=='Orchester', r['sheet'][11])
-    ok('#71 Sound-Auswahl: LCD-Feld → Fenster mit Gruppen, aktuelles markiert, Wahl schließt', r['sheet'][4]=='STREICHER' and r['sheet'][5] and r['sheet'][1]>=13 and r['sheet'][6].startswith('Orchester,Tasten & Mallets,Synth,Eigene') and r['sheet'][7]=='str' and r['sheet'][8] is False and r['sheet'][9]=='piz' and r['sheet'][10]=='PIZZICATO', r['sheet'])
+    ok('#71 Sound-Auswahl: LCD-Feld → Fenster mit Gruppen, aktuelles markiert, Wahl schließt', r['sheet'][4]=='STREICHER' and r['sheet'][5] and r['sheet'][1]>=13 and r['sheet'][6].startswith('Belegung,Orchester,Tasten & Mallets,Synth,Eigene') and r['sheet'][7]=='str' and r['sheet'][8] is False and r['sheet'][9]=='piz' and r['sheet'][10]=='PIZZICATO', r['sheet'])
     ok('#8 Speichern: mel + eigene Felder, kein Keys-Klang', r['saved']==['arp,cosmic,piano,sampler','glas',.5,4,False], r['saved'])
     ok('#8 Laden: Standard ohne Sampler, Beat mit Sampler stellt ihn her', r['gone']=='arp:ACID cosmic:COSMIC piano:KEYS' and r['back']==['arp:ACID cosmic:COSMIC piano:KEYS sampler:SAMPLER','glas',.5,4], [r['gone'],r['back']])
     ok('#8 ungültiges Sample → Standard STREICHER', r['fix']=='str', r['fix'])
@@ -318,6 +318,66 @@ async def main():
        and r['mig'][1:4]==['lib:p_test',.7,'2:60 4:60A'] and r['mig'][4]=='1:1' and r['mig'][5] is False, r['mig'])
     ok('#8 alte SAMPLE-Spur ohne Sample (war stumm) → entfällt', r['nomig']=='arp:ACID cosmic:COSMIC piano:KEYS', r['nomig'])
     ok('#8 Beat aus Reiter „Sample“ → Sampler-Beat', r['beat']==['sampler',1,'lib:p_x',1,False], r['beat'])
+    # #76 Tastenbelegung: Sampler-Spur mit eigenem Sample je Taste (Originaltonhöhe), Piano Roll mit Schildern/Namen, Halten/Ziehen, Taste-Sheet, Auswahl für eine Taste
+    r=await pg.evaluate("""(async()=>{ const wait=ms=>new Promise(r=>setTimeout(r,ms)); const base=JSON.parse(JSON.stringify(collectPatternData('t0','t0')));
+      const S=trAddNew({k:'sampler',label:melSuggest('BREAK')}); smpSetKeys(S,true); const c3=smpKeyC3(S);
+      smpKeySet(S,c3,'vox'); smpKeySet(S,c3+1,'glas'); smpKeySet(S,c3+4,'bass'); await samplerSync();
+      S.events=[{s:0,n:c3,l:1,v:.9,a:false},{s:4,n:c3+1,l:1,v:.9,a:false}]; S._idx=null; evTouch(S);
+      await Promise.resolve(initAudio()); ensureTrackBuses();
+      const v1=samplerVoice(S,audioCtx.currentTime+0.05,c3+1,0.9,0.2), v2=samplerVoice(S,audioCtx.currentTime+0.05,c3+2,0.9,0.2);
+      const basic=[smpIsKeys(S), smpKeyName(S,c3), samplerSub(S), pitchInScale(c3,S), pitchInScale(c3+2,S), !!v1 && v1.oscs[0].playbackRate.value, v2, smpKeyInfo(S,c3+1).tag, hmOn(S)];
+      const sv=instSave(S), ld={}; Object.assign(ld,{inst:'sampler'}); instLoad(Object.assign(ld,{id:'x'}), sv);
+      const bad={inst:'sampler',id:'y'}; instLoad(bad, Object.assign({}, sv, {smpKeys:{a:'vox'}, smpArt:'foo'}));
+      const save=[sv.smpArt, JSON.stringify(sv.smpKeys)===JSON.stringify(S.smpKeys), ld.smpArt, bad.smpKeys, bad.smpArt];
+      // Verschieben samt Noten, tauschen
+      smpKeyMove(S,c3,c3+1); const mv=[S.smpKeys[c3], S.smpKeys[c3+1], S.events.map(e=>e.s+':'+(e.n-c3)).join(' ')]; smpKeyMove(S,c3+1,c3);
+      // Piano Roll: Schilder, Namen, Einpassen auf die Belegung
+      selectTrack(TRACKS.indexOf(S)); prOpen(S); prSetMode('edit'); prV(S).fit=true; prRender(); await wait(80);
+      const bd=[...document.querySelectorAll('#prLbl .pk-bd')].map(e=>e.textContent).join(','), nm=[...document.querySelectorAll('#prKNames span')].map(e=>e.textContent).join(',');
+      const vis=[c3,c3+4].every(n=>{ const i=prR.indexOf(n), v=prV(S); return i*v.rh>=v.sy-1 && (i+1)*v.rh<=v.sy+prVH()+1; });
+      const sel=$id('prSel').getBoundingClientRect(), chev=$id('prIBtn').querySelector('svg').getBoundingClientRect();
+      const pr={bd, nm, vis, chev:chev.right<=sel.right+1, sub:$id('prSub').textContent};
+      // Halten → Taste-Sheet; Halten + Ziehen 2 Zeilen tiefer → verschoben (tauscht nicht, Ziel leer)
+      const col=$id('prLblCol'), y0=n=>prLbl.getBoundingClientRect().top+(prR.indexOf(n)+0.5)*prV(S).rh, x=col.getBoundingClientRect().left+20;
+      const P=(t,y)=>(t==='pointerdown'?col:window).dispatchEvent(new PointerEvent(t,{pointerId:7,clientX:x,clientY:y,bubbles:true,pointerType:'touch',isPrimary:true}));
+      P('pointerdown',y0(c3+4)); await wait(520); P('pointerup',y0(c3+4)); await wait(50);
+      const sheet=[$id('smpKeySheet').classList.contains('open'), $id('smpKeyT').textContent, !!document.querySelector('#smpKeyB .smp-kmv'), document.querySelectorAll('#smpKeyB .smp-krow .act').length];
+      document.querySelector('#smpKeyB .smp-kmv [data-d="1"]').click(); await wait(30); const step=[S.smpKeys[c3+5], !S.smpKeys[c3+4], $id('smpKeyT').textContent];
+      smpKeySheetClose(); smpKeyMove(S,c3+5,c3+4); prRender(); await wait(80);
+      const yA=y0(c3+1), rh=prV(S).rh; P('pointerdown',yA); await wait(520);
+      for(let k=1;k<=6;k++){ P('pointermove',yA+rh*2*k/6+2); await wait(16); }
+      const bar=$id('smpKeyBar') ? $id('smpKeyBar').textContent : ''; P('pointerup',yA+rh*2+2); await wait(30);
+      const drag=[bar, S.smpKeys[c3+1]||'-', S.smpKeys[c3-1], S.events.map(e=>e.s+':'+(e.n-c3)).join(' ')];
+      // Auswahl für eine leere Taste: nur Einzel-Samples, Titel mit Taste, Wahl belegt die Taste
+      smpPickOpen(S,c3+7); const pk=[$id('smpPick').querySelector('.sh span').textContent, [...document.querySelectorAll('#smpPickList [data-k]')].some(b=>SMP_INSTR[b.dataset.k]), !!document.querySelector('#smpPickList [data-k="keys:"]')];
+      document.querySelector('#smpPickList [data-k="glas"]').click(); await wait(30); pk.push(S.smpKeys[c3+7], $id('smpPick').classList.contains('open'));
+      smpPickOpen(S); pk.push(document.querySelector('#smpPickList .cur') && document.querySelector('#smpPickList .cur').dataset.k); smpPickClose();
+      prClose(); openKlang(S); await wait(50);
+      const kl=[document.querySelector('#klRows .smp-fld .nm').textContent, document.querySelectorAll('#klRows .smp-kov b').length, !!document.querySelector('#klRows .smp-root')];
+      closeSheets();
+      // Stücke → Tasten (Sample-Editor): neue Spur ab C3, erneut schneiden ersetzt an derselben Stelle
+      seAssignTrack=false; seKeyN=null; const n0=TRACKS.length;
+      const t1=seSlicesToKeys('t76',[{id:'t76.s1'},{id:'t76.s2'}],'Loop 1'), T=t1.tr;
+      const sl=[TRACKS.length-n0, trTitle(T), smpIsKeys(T), smpKeyName(T,t1.a)+'-'+smpKeyName(T,t1.b), T.smpKeys[t1.a]];
+      seAssignTrack=true; seSmpTr=T; const t2=seSlicesToKeys('t76',[{id:'t76.s1'},{id:'t76.s2'},{id:'t76.s3'}],'Loop 1'); seAssignTrack=false;
+      sl.push(TRACKS.length-n0, t2.a===t1.a, Object.keys(T.smpKeys).length, T.smpKeys[t1.a+2]);
+      randomizeTrackPattern(S); const dice=[S.events.length>0, S.events.every(e=>!!S.smpKeys[e.n])];
+      // zurück auf ein Sample: Belegung bleibt gespeichert
+      await samplerPick(S,'vox',true); const back=[smpIsKeys(S), Object.keys(S.smpKeys).length, S.smp];
+      applyPatternData(base);
+      return {basic,save,mv,pr,sheet,step,drag,pk,kl,sl,dice,back}; })()""")
+    ok('#76 Tasten: Originaltonhöhe, belegte Tasten = Tonart, Untertitel, Schild', r['basic']==[True,'C3','3 Tasten',True,False,1,None,'G',False], r['basic'])
+    ok('#76 Speichern/Laden der Belegung, ungültig → Standard', r['save'][:3]==['keys',True,'keys'] and r['save'][3] is None and r['save'][4]=='', r['save'])
+    ok('#76 Verschieben tauscht samt Noten', r['mv']==['glas','vox','0:1 4:0'], r['mv'])
+    ok('#76 Piano Roll: Schilder, Namen im Raster, Belegung sichtbar, Kopf ohne Überlauf', r['pr']['bd'].count(',')==2 and 'VOX' in r['pr']['nm'].upper() and r['pr']['vis'] and r['pr']['chev'] and r['pr']['sub']=='3 Tasten', r['pr'])
+    ok('#76 Halten → Taste-Sheet mit Liegt auf ‹ ›, Anderes Sample | Bearbeiten', r['sheet']==[True,'Taste E3',True,2], r['sheet'])
+    ok('#76 Taste-Sheet: › verschiebt eine Taste weiter', r['step']==['bass',True,'Taste F3'], r['step'])
+    ok('#76 Halten + Ziehen: Balken zeigt Ziel, Sample und Noten wandern', '→ B2' in r['drag'][0] and r['drag'][1]=='-' and r['drag'][2]=='glas' and r['drag'][3]=='0:0 4:-1', r['drag'])
+    ok('#76 Auswahl für eine Taste: Titel, keine Werk-Instrumente, Wahl belegt die Taste, Belegung markiert', r['pk'][0].startswith('Sample für Taste G3') and r['pk'][1] is False and r['pk'][2] is False and r['pk'][3]=='glas' and r['pk'][4] is False and r['pk'][5]=='keys:', r['pk'])
+    ok('#76 Klang-Sheet: Tastenbelegung + Mini-Klaviatur, kein Grundton', r['kl'][0]=='Tastenbelegung' and r['kl'][1]==4 and r['kl'][2] is False, r['kl'])
+    ok('#76 Stücke → Tasten: neue Spur ab C3, erneut schneiden ersetzt an derselben Stelle', r['sl'][:5]==[1,'LOOP 1',True,'C3-C♯3','lib:t76.s1'] and r['sl'][5:]==[1,True,3,'lib:t76.s3'], r['sl'])
+    ok('#76 Würfeln: Treffer nur auf belegten Tasten', r['dice']==[True,True], r['dice'])
+    ok('#76 Zurück auf ein Sample: Belegung bleibt gespeichert', r['back']==[False,4,'vox'], r['back'])
     # #9 Sample-Editor: Griff-Leiste (S links an der Linie, E rechts), relatives Ziehen, Feinmodus, Lupe, Einrasten, ein Undo je Zug
     await pg.evaluate("""(()=>{ const sr=44100, n=sr*2, b=new AudioBuffer({length:n,numberOfChannels:1,sampleRate:sr}), d=b.getChannelData(0);
       for(let i=0;i<n;i++) d[i]=0.6*Math.sin(2*Math.PI*100*i/sr+0.3); openSampleEditor({buffer:b,label:'Test'}); })()""")

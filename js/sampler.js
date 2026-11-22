@@ -96,7 +96,8 @@ function samplerChanged(){
 // Alle Samples der Sampler-Spuren laden; Promise erst fertig, wenn alle da sind (WAV-Export)
 // Werk-Instrumente ohne Spur werden freigegeben (dekodiert 15–30 MB je Instrument), fehlgeschlagene neu versucht.
 function samplerSync(){
-  const used=new Set(TRACKS.filter(t=>trInstKey(t)==='sampler').map(t=>t.smp));
+  const used=new Set();
+  TRACKS.forEach(t=>{ if(trInstKey(t)!=='sampler') return; if(smpIsKeys(t)) Object.values(t.smpKeys||{}).forEach(k=>used.add(k)); else used.add(t.smp); });
   Object.keys(SMPL).forEach(k=>{ const S=SMPL[k]; if(S.multi && S.state!=='load' && (!used.has(k) || S.state==='err')) delete SMPL[k]; });
   return Promise.all([...used].map(k=>{ const S=samplerGet(k); return S && S.p; }));
 }
@@ -123,7 +124,7 @@ function smpDetect(S){
 // ---- Stimme ----
 function samplerVoice(tr, time, n, vel, holdSec){
   if(!audioCtx || !tr.bus) return null;
-  const S=samplerGet(tr.smp); if(!S || S.state!=='ok') return null;
+  const keys=smpIsKeys(tr), S=samplerGet(keys ? (tr.smpKeys||{})[n] : tr.smp); if(!S || S.state!=='ok' || (keys && S.multi)) return null;
   const midi=33+(tr.rootNote||0)+n+12, src=audioCtx.createBufferSource(); src.buffer=S.buf;
   const oneshot=S.mode==='oneshot'; let peak, at0, dur=null;
   if(S.multi){ // Werk-Instrument: Zone/Stufe/Round Robin, Stimmung je Slot
@@ -131,7 +132,7 @@ function samplerVoice(tr, time, n, vel, holdSec){
     at0=S.t0+z.s[0]; peak=Math.min(1.6, tr.vol*z.fine*SMP_IGAIN*(S.I.g||1));
     if(S.mode==='loop' && S.I.loop){ src.loop=true; src.loopStart=at0+S.I.loop[0]; src.loopEnd=at0+S.I.loop[1]-0.001; } else dur=z.s[1];
   } else {
-    src.playbackRate.value=Math.pow(2,(midi-smpRoot(S))/12); at0=Math.min(S.off||0, Math.max(0, S.buf.duration-0.01)); peak=Math.min(1.2, vel*tr.vol);
+    src.playbackRate.value=keys ? 1 : Math.pow(2,(midi-smpRoot(S))/12); at0=Math.min(S.off||0, Math.max(0, S.buf.duration-0.01)); peak=Math.min(1.2, vel*tr.vol); // Tastenbelegung: Originaltonhöhe
     if(S.mode==='loop' && S.loop){ src.loop=true; src.loopStart=S.loop[0]; src.loopEnd=S.loop[1]; }
   }
   const g=audioCtx.createGain(); peak=Math.max(0.0001, peak);
@@ -152,12 +153,76 @@ function samplerVoice(tr, time, n, vel, holdSec){
 // Anhören im Klang-Sheet: Grundton des Samples (= Originaltonhöhe)
 function samplerPreview(tr){
   Promise.resolve(initAudio()).then(()=>{ if(audioCtx.state!=='running') audioCtx.resume(); ensureTrackBuses();
+    if(smpIsKeys(tr)){ const l=smpKeyList(tr); if(l.length) smpKeyHear(tr,l[0]); return; }
     const S=samplerGet(tr.smp); if(!S || S.state!=='ok') return;
     samplerVoice(tr, audioCtx.currentTime+0.01, (S.multi ? 60 : smpRoot(S))-45-(tr.rootNote||0), 0.9, S.multi ? 1.2 : 0.7); });
 }
-function samplerSub(tr){ const S=samplerGet(tr.smp); return S ? (S.multi || !(S.state==='missing'||S.state==='err') ? S.name : 'Sample fehlt') : ''; }
+function samplerSub(tr){ if(smpIsKeys(tr)) return smpKeyList(tr).length+' Tasten';
+  const S=samplerGet(tr.smp); return S ? (S.multi || !(S.state==='missing'||S.state==='err') ? S.name : 'Sample fehlt') : ''; }
+// ---- Tastenbelegung (#76, Mockup docs/mockups/issue-76.html): jede Taste ihr eigenes Sample in Originaltonhöhe ----
+// Bearbeiten nur in der Piano Roll (Klaviatur links, js/sampler-tasten.js); Klang-Sheet = Überblick.
+function smpIsKeys(tr){ return !!(tr && trInstKey(tr)==='sampler' && tr.smpArt==='keys'); }
+function smpKeyList(tr){ return Object.keys(tr.smpKeys||{}).map(Number).sort((a,b)=>a-b); }
+function smpKeyName(tr,n){ return pitchNoteName(tr,n).replace('#','♯'); }
+function smpKeyC3(tr){ return 3-(tr.rootNote||0); } // Note, die als C3 heißt (erste Taste beim Belegen)
+function smpKeyRange(tr){ const l=smpKeyList(tr); return l.length ? smpKeyName(tr,l[0])+'–'+smpKeyName(tr,l[l.length-1]) : ''; }
+// Schild: Nummer des Stücks, sonst erster Buchstabe des Namens
+function smpKeyTag(key){ const m=/\.s(\d+)$/.exec(key); if(m) return m[1]; const S=samplerGet(key), t=((S && S.name)||'?').replace(/[^0-9A-Za-zÄÖÜäöü]/g,''); return (t[0]||'?').toUpperCase(); }
+function smpKeyInfo(tr,n){ const k=smpIsKeys(tr) && tr.smpKeys && tr.smpKeys[n]; if(!k) return null; const S=samplerGet(k);
+  return {key:k, tag:smpKeyTag(k), name:S ? S.name : '?', state:S ? S.state : 'missing'}; }
+function smpKeySet(tr,n,key){ const o={...(tr.smpKeys||{})}; if(key) o[n]=key; else delete o[n]; tr.smpKeys=o; samplerSync(); }
+// Verschieben samt Noten; ist die Zieltaste belegt, tauschen beide
+function smpKeyMove(tr,a,b){ const o={...(tr.smpKeys||{})}, ea=o[a], eb=o[b]; if(!ea || a===b) return;
+  if(eb) o[a]=eb; else delete o[a]; o[b]=ea; tr.smpKeys=o;
+  const sw=e=>{ if(e.n===a) e.n=b; else if(eb && e.n===b) e.n=a; }; tr.events.forEach(sw); if(tr.harmOwn && tr.harmOwn!==tr.events) tr.harmOwn.forEach(sw);
+  evTouch(tr); }
+// Belegung geändert: Anzeigen auffrischen
+function smpKeysChanged(tr){
+  if(typeof prIsOpen==='function' && prIsOpen() && prTr===tr){ prRender(); prRenderChrome(); }
+  if(typeof klTr!=='undefined' && klTr===tr && $id('klSheet').classList.contains('open')) renderKlang();
+  try{ prDrawPreview(tr); ovRender(); }catch(e){} trMenuRefresh();
+}
+function smpKeyHear(tr,n){ Promise.resolve(initAudio()).then(async()=>{ if(audioCtx.state!=='running') audioCtx.resume(); ensureTrackBuses();
+  const S=samplerGet((tr.smpKeys||{})[n]); if(S && S.p) await S.p; samplerVoice(tr, audioCtx.currentTime+0.01, n, 0.9, 0.7); }); }
+// Umschalten auf Tastenbelegung (Sound-Auswahl „Jede Taste eigenes Sample“); Harmonie passt nicht dazu und geht aus
+function smpSetKeys(tr, quiet){
+  tr.smpArt='keys'; if(hmOn(tr)) hmSetMode(tr,'off'); samplerSync(); smpKeysChanged(tr);
+  if(quiet || smpKeyList(tr).length) return;
+  closeSheets(); prOpen(tr); prSetMode('edit'); hmToast('Links eine Taste halten = Sample wählen',false);
+}
+// Für eine Taste gewählt (Sound-Auswahl): ein Sample oder „Alle Stücke ab hier“ (all:<Original-ID>)
+function smpKeyPick(tr,n,key){
+  if(key.startsWith('all:')){ const g=smpLibGroup(SMP_LIB).find(x=>x.e.id===key.slice(4)); if(!g) return;
+    const o={...(tr.smpKeys||{})}; g.kids.forEach((k,i)=>o[n+i]='lib:'+k.id); tr.smpKeys=o; samplerSync(); smpKeysChanged(tr);
+    hmToast(g.kids.length+' Stücke auf '+smpKeyName(tr,n)+'–'+smpKeyName(tr,n+g.kids.length-1),false); smpKeyHear(tr,n); return; }
+  smpKeySet(tr,n,key); smpKeysChanged(tr); smpKeyHear(tr,n);
+  if(typeof smpKeySheetRefresh==='function') smpKeySheetRefresh(tr,n);
+}
+// Klang → Sound bei Tastenbelegung: LCD-Feld, Mini-Klaviatur als Überblick, Weg in die Piano Roll
+function smpKeysKlang(tr, box, grp){
+  grp('Sample');
+  const l=smpKeyList(tr), fld=document.createElement('button'); fld.className='smp-fld'; fld.setAttribute('aria-haspopup','dialog'); fld.setAttribute('aria-label','Sound wählen');
+  fld.innerHTML='<span class="x"><span class="nm">Tastenbelegung</span><span class="sb"></span></span>'+FXI.dn;
+  fld.querySelector('.sb').textContent=l.length ? l.length+' Samples · '+smpKeyRange(tr) : 'noch leer';
+  fld.onclick=()=>smpPickOpen(tr); box.appendChild(fld);
+  if(l.length){
+    const pc=n=>(((9+(tr.rootNote||0)+n)%12)+12)%12, blk=n=>[1,3,6,8,10].includes(pc(n)), lo=l[0]-pc(l[0]), hi=l[l.length-1]+11-pc(l[l.length-1]);
+    const wh=[]; for(let n=lo;n<=hi;n++) if(!blk(n)) wh.push(n);
+    const W=100/wh.length, tag=n=>{ const i=smpKeyInfo(tr,n); return i ? '<b>'+i.tag+'</b>' : ''; }; let h='';
+    wh.forEach((n,i)=>{ h+='<i class="w" style="left:'+(i*W)+'%;width:'+W+'%">'+tag(n)+'</i>'; });
+    for(let n=lo;n<=hi;n++) if(blk(n)){ const i=wh.indexOf(n-1); h+='<i class="k" style="left:'+((i+1)*W-W*0.32)+'%;width:'+(W*0.64)+'%">'+tag(n)+'</i>'; }
+    const kb=document.createElement('button'); kb.className='smp-kov'; kb.setAttribute('aria-label','In der Piano Roll bearbeiten'); kb.innerHTML=h;
+    kb.onclick=()=>smpKeysEdit(tr); box.appendChild(kb);
+  }
+  const a=document.createElement('div'); a.className='acts';
+  a.innerHTML='<button class="act">'+UI_IC.keys+'In der Piano Roll bearbeiten</button>'; a.querySelector('button').onclick=()=>smpKeysEdit(tr); box.appendChild(a);
+  const h=document.createElement('div'); h.className='kl-note'; h.textContent='Dort an der Klaviatur links: Taste halten = ändern oder ziehen, leere Taste halten = Sample wählen.'; box.appendChild(h);
+}
+function smpKeysEdit(tr){ closeSheets(); if(!prIsOpen() || prTr!==tr) prOpen(tr); prSetMode('edit'); prV(tr).fit=true; prRender(); }
 // Sample wählen. Bibliothek ohne Grundton: erkennen (sonst C4) und am Eintrag speichern.
 async function samplerPick(tr, key, quiet){
+  if(key==='keys:'){ smpSetKeys(tr); return; }
+  if(smpIsKeys(tr)){ tr.smpArt=''; hmToast('Tastenbelegung bleibt gespeichert',false); }
   if(SMPL[key] && SMPL[key].state==='err') delete SMPL[key]; // erneut versuchen (z. B. wieder online)
   tr.smp=key; const S=samplerGet(key);
   if(S.multi){ tr.smpAtk=S.I.atk; tr.smpRel=S.I.rel; } // Hüllkurve passend zum Instrument
@@ -173,41 +238,51 @@ function trMenuRefresh(){ if(typeof grpSelRender==='function') try{ grpSelRender
 let SMP_LIB=[]; // Bibliothek (id, name) für die Auswahl; neu gelesen beim Öffnen
 async function samplerLibRefresh(){ try{ SMP_LIB=(await listSampleLibrary()).map(e=>({id:e.id, name:e.name||'Sample', src:e.src, slice:e.slice})); }catch(e){ SMP_LIB=[]; } }
 // Einträge der Sound-Auswahl: h = Gruppe, k = Sample, t = Stücke auf-/zuklappen, r = Aufnehmen / Laden
+// smpPickKey = Taste, für die gewählt wird (Tastenbelegung #76), sonst null = Sound der Spur
+let smpPickKey=null;
+function smpPickCur(tr){ return smpPickKey!=null ? (tr.smpKeys||{})[smpPickKey] : smpIsKeys(tr) ? 'keys:' : tr.smp; }
 function smpPickItems(tr){
-  const L=[], grps=new Map();
-  if(typeof SMP_INSTR!=='undefined') Object.keys(SMP_INSTR).forEach(k=>{ const g=SMP_INSTR[k].grp||'Orchester'; if(!grps.has(g)) grps.set(g,[]); grps.get(g).push({k, name:SMP_INSTR[k].name, sub:SMP_INSTR[k].desc}); });
+  const L=[], grps=new Map(), forKey=smpPickKey!=null, cur=smpPickCur(tr)||'';
+  if(!forKey){ const n=smpKeyList(tr).length;
+    L.push({h:'Belegung'},{k:'keys:', name:'Jede Taste eigenes Sample', sub:smpIsKeys(tr) ? n+' Tasten belegt' : 'z. B. Stücke eines Loops'}); }
+  if(!forKey && typeof SMP_INSTR!=='undefined') Object.keys(SMP_INSTR).forEach(k=>{ const g=SMP_INSTR[k].grp||'Orchester'; if(!grps.has(g)) grps.set(g,[]); grps.get(g).push({k, name:SMP_INSTR[k].name, sub:SMP_INSTR[k].desc}); });
   grps.forEach((v,g)=>{ L.push({h:g}); L.push(...v); });
   L.push({h:'Synth'}); Object.keys(SMP_WERK).forEach(k=>L.push({k, name:SMP_WERK[k].name, sub:SMP_WERK[k].desc}));
   L.push({h:'Eigene'});
   smpLibGroup(SMP_LIB).forEach(({e,kids})=>{ L.push({k:'lib:'+e.id, name:e.name}); if(!kids.length) return; // Stücke (#11) eingeklappt unter dem Original
-    const open=SMP_LIB_OPEN.has(e.id) || kids.some(k=>tr.smp==='lib:'+k.id);
+    const open=SMP_LIB_OPEN.has(e.id) || kids.some(k=>cur==='lib:'+k.id);
     L.push({t:e.id, open, name:(open?'▾ ':'▸ ')+kids.length+' Stücke'});
+    if(open && forKey) L.push({k:'all:'+e.id, name:'Alle '+kids.length+' Stücke', sub:'ab '+smpKeyName(tr,smpPickKey), ind:1});
     if(open) kids.forEach(k=>L.push({k:'lib:'+k.id, name:k.name, ind:1})); });
-  if(tr.smp.startsWith('lib:') && !SMP_LIB.some(e=>'lib:'+e.id===tr.smp)) L.push({k:tr.smp, name:samplerGet(tr.smp).name}); // fehlt in der Bibliothek
+  if(cur.startsWith('lib:') && !SMP_LIB.some(e=>'lib:'+e.id===cur)) L.push({k:cur, name:samplerGet(cur).name}); // fehlt in der Bibliothek
   L.push({r:1, name:'Aufnehmen / Laden'});
   return L;
 }
 let smpPickTr=null;
-function smpPickOpen(tr){ smpPickTr=tr; smpPickRender(); $id('smpPick').classList.add('open');
+function smpPickOpen(tr, key){ smpPickTr=tr; smpPickKey=key!=null ? key : null;
+  $id('smpPick').querySelector('.sh span').textContent=smpPickKey!=null ? 'Sample für Taste '+smpKeyName(tr,smpPickKey) : 'Sound wählen';
+  smpPickRender(); $id('smpPick').classList.add('open');
   const ls=$id('smpPickList'), c=ls.querySelector('.cur'); if(c) ls.scrollTop=c.offsetTop-ls.clientHeight/2+c.offsetHeight/2; }
-function smpPickClose(){ const o=$id('smpPick'); if(o) o.classList.remove('open'); smpPickTr=null; }
+function smpPickClose(){ const o=$id('smpPick'); if(o) o.classList.remove('open'); smpPickTr=null; smpPickKey=null; }
 function smpPickRender(){
-  const tr=smpPickTr, ls=$id('smpPickList'); if(!tr) return; ls.innerHTML='';
+  const tr=smpPickTr, ls=$id('smpPickList'); if(!tr) return; ls.innerHTML=''; const cur=smpPickCur(tr);
   smpPickItems(tr).forEach(it=>{
     if(it.h){ const h=document.createElement('div'); h.className='sp-h'; h.textContent=it.h; ls.appendChild(h); return; }
     const b=document.createElement('button'); b.setAttribute('role','option');
-    b.className=(it.t?'sp-t':it.r?'sp-r':'')+(it.ind?' sp-ind':'')+(it.k&&it.k===tr.smp?' cur':'');
-    if(it.k) b.setAttribute('aria-selected', it.k===tr.smp ? 'true':'false');
+    b.className=(it.t?'sp-t':it.r?'sp-r':'')+(it.ind?' sp-ind':'')+(it.k&&it.k===cur?' cur':'');
+    if(it.k) b.setAttribute('aria-selected', it.k===cur ? 'true':'false');
     b.innerHTML=(it.r?TR_IC.plus:'')+'<span></span>'+(it.sub?'<small></small>':''); b.querySelector('span').textContent=it.name; if(it.sub) b.querySelector('small').textContent=it.sub;
     if(it.k) b.dataset.k=it.k;
     b.onclick=()=>{ if(it.t){ if(it.open) SMP_LIB_OPEN.delete(it.t); else SMP_LIB_OPEN.add(it.t); smpPickRender(); return; }
-      if(it.r){ smpPickClose(); closeSheets(); openSampleEditor({forSampler:tr}); return; }
-      smpPickClose(); samplerPick(tr, it.k); };
+      const key=smpPickKey;
+      if(it.r){ smpPickClose(); closeSheets(); openSampleEditor({forSampler:tr, forKey:key}); return; }
+      smpPickClose(); if(key!=null) smpKeyPick(tr, key, it.k); else samplerPick(tr, it.k); };
     ls.appendChild(b); });
 }
 $id('smpPick').querySelector('.sp-bd').addEventListener('click', smpPickClose);
 $id('smpPickX').addEventListener('click', smpPickClose);
 function samplerKlang(tr, box, grp){
+  if(smpIsKeys(tr)){ smpKeysKlang(tr, box, grp); smpEnvRows(tr, box, grp); return; }
   const S=samplerGet(tr.smp);
   grp('Sample');
   // Auswahl (#71, Mockup issue-71.html H): ruhiges LCD-Feld, Liste im eigenen Fenster #smpPick
@@ -245,6 +320,9 @@ function samplerKlang(tr, box, grp){
     if(S.id){ const ed=document.createElement('div'); ed.className='acts'; ed.innerHTML='<button class="act" data-x="edit">'+UI_IC.trim+'Im Sample-Editor bearbeiten</button>';
       ed.querySelector('button').onclick=()=>{ closeSheets(); openSampleEditor({sampleId:S.id, forSampler:tr}); }; box.appendChild(ed); }
   }
+  smpEnvRows(tr, box, grp);
+}
+function smpEnvRows(tr, box, grp){
   grp('Hüllkurve');
   const ms=v=>v<1000 ? v+' ms' : (v/1000).toFixed(1)+' s';
   box.appendChild(soundRow('Attack',2,500,Math.round((tr.smpAtk!=null?tr.smpAtk:0.005)*1000),5,ms,v=>tr.smpAtk=v/1000));

@@ -68,7 +68,8 @@ function pitchNoteName(tr,v){
   const t=9+tr.rootNote+v+trOct(tr); // Cosmic klingt 2 Oktaven höher -> Namen passen zum Klang
   return NOTE_NAMES[((t%12)+12)%12]+(Math.floor(t/12)+1);
 }
-function pitchInScale(v,tr){ return (SCALES[(tr&&tr.scale)||'minor']||SCALES.minor).semis.indexOf(((v%12)+12)%12)>=0; }
+function pitchInScale(v,tr){ const km=trKeyMap(tr); if(km) return !!km[v]; // Tastenbelegung: belegte Tasten = „in der Tonart“
+  return (SCALES[(tr&&tr.scale)||'minor']||SCALES.minor).semis.indexOf(((v%12)+12)%12)>=0; }
 // Anspielen nur im Stillstand: triggerArpStep() nutzt die eine dauerhafte Stimme der Spur und
 // würde sonst bereits eingeplante Sequencer-Events (cancelScheduledValues) abräumen.
 function pitchPreview(tr, semis, vel){

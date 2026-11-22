@@ -161,7 +161,7 @@ let seOriginalBuffer=null;   // unveränderte Fassung, für "Zurücksetzen"
 let seWorkingBuffer=null;    // aktuelle Arbeitskopie, auf die Tools angewendet werden
 let seTrimStart=0, seTrimEnd=0;
 let seZoomFactor=1; // 1..8 — horizontaler Zoom der Wellenform, echte Breite (nicht nur optisch)
-let seAssignTrack=false, seAssignPads=new Set(), seSmpTr=null; // seAssignTrack = Sampler-Spur seSmpTr bekommt das Sample (#8)
+let seAssignTrack=false, seAssignPads=new Set(), seSmpTr=null, seKeyN=null; // seKeyN = Taste der Tastenbelegung (#76), sonst null // seAssignTrack = Sampler-Spur seSmpTr bekommt das Sample (#8)
 let seIsRecording=false, seRecStartTime=0, seRecTimerId=null;
 let seMicSourceNode=null, seMicRecorderNode=null, seMicSilentGain=null;
 let seMediaRecorder=null, seMediaChunks=[], seRecChunksFloat=[];
@@ -526,7 +526,8 @@ seAssignTrackChip.addEventListener('click', ()=>{
 });
 function renderSEAssignUI(){
   seAssignTrackChip.style.display=seSmpTr ? '' : 'none';
-  if(seSmpTr) $id('seAssignTrackName').textContent=trTitle(seSmpTr)==='SAMPLER' ? 'Sampler' : 'Sampler · '+trTitle(seSmpTr);
+  if(seSmpTr) $id('seAssignTrackName').textContent=(trTitle(seSmpTr)==='SAMPLER' ? 'Sampler' : 'Sampler · '+trTitle(seSmpTr))+(seKeyN!=null ? ' · Taste '+smpKeyName(seSmpTr,seKeyN) : '');
+  seKeysChipSync();
   seAssignTrackChip.classList.toggle('on', seAssignTrack);
   sePadChips.forEach((chip,i)=> chip.classList.toggle('on', seAssignPads.has(i)));
 }
@@ -571,7 +572,9 @@ seSaveBtn.addEventListener('click', async ()=>{
   if(entry.root===undefined) delete entry.root;
   await saveSampleLibraryEntry(entry);
   if(old) samplerInvalidate(entryId); // Sampler-Spuren mit diesem Sample laden neu
-  if(seAssignTrack && seSmpTr && TRACKS.indexOf(seSmpTr)>=0) await samplerPick(seSmpTr, 'lib:'+entryId, true);
+  if(seAssignTrack && seSmpTr && TRACKS.indexOf(seSmpTr)>=0){
+    if(seKeyN!=null && smpIsKeys(seSmpTr)){ smpKeySet(seSmpTr, seKeyN, 'lib:'+entryId); smpKeysChanged(seSmpTr); } // Tastenbelegung: nur diese Taste
+    else await samplerPick(seSmpTr, 'lib:'+entryId, true); }
   for(let i=0;i<PAD_COUNT;i++){
     if(seAssignPads.has(i)) await applySampleToPad(i, entry);
     else if(padSampleId[i]===entryId){
@@ -589,7 +592,7 @@ seSaveBtn.addEventListener('click', async ()=>{
 // ---- Öffnen/Schließen — öffnet mit dem übergebenen Bibliothekseintrag (oder leer für ein
 // neues Sample) und erkennt bestehende Zuweisungen automatisch (Spur/Pads, die diesen
 // Eintrag bereits nutzen, sind beim Öffnen schon als Chip markiert). ----
-async function openSampleEditor({sampleId=null, forSampler=null, forPad=null, buffer=null, label=''}={}){
+async function openSampleEditor({sampleId=null, forSampler=null, forPad=null, forKey=null, buffer=null, label=''}={}){
   closeAllOverlays();
   seEditingId=sampleId;
   if(sampleId){
@@ -623,7 +626,9 @@ async function openSampleEditor({sampleId=null, forSampler=null, forPad=null, bu
   }
   { const a=TRACKS[activeTrackIdx], isS=t=>t && trInstKey(t)==='sampler';
     seSmpTr=isS(forSampler) ? forSampler : isS(a) ? a : TRACKS.find(isS)||null; }
-  seAssignTrack = !!forSampler || (sampleId!=null && !!seSmpTr && seSmpTr.smp==='lib:'+sampleId);
+  seAssignTrack = !!forSampler || (sampleId!=null && !!seSmpTr && !smpIsKeys(seSmpTr) && seSmpTr.smp==='lib:'+sampleId);
+  seKeyN = forKey!=null && forSampler && smpIsKeys(forSampler) ? forKey : null;
+  seCutToKeys = seKeyN!=null || (!!forSampler && smpIsKeys(forSampler)); // Stücke → Tasten: an, wenn aus einer Tastenbelegung geöffnet
   seAssignPads = new Set(sampleId!=null ? padSampleId.map((id,idx)=> id===sampleId ? idx : null).filter(x=>x!=null) : []);
   if(forPad!=null) seAssignPads.add(forPad);
   renderSEAssignUI();
@@ -736,6 +741,21 @@ $id('seCutDel').addEventListener('click', ()=>{
   const i=Math.max(0, seCutSel-1); seCuts.splice(i,1); seCutSel=Math.max(0,i); seCutAutoMode=''; seCutDraw();
 });
 seSlicePadsChip.addEventListener('click', ()=>{ seCutToPads=!seCutToPads; seSlicePadsChip.classList.toggle('on', seCutToPads); seCutDraw(); });
+// Stücke → Tasten (#76): Ziel = Sampler-Spur, für die der Editor geöffnet wurde, sonst eine neue Sampler-Spur
+let seCutToKeys=false;
+const seKeysTarget=()=>seAssignTrack && seSmpTr && TRACKS.indexOf(seSmpTr)>=0 ? seSmpTr : null;
+function seKeysChipSync(){ const c=$id('seSliceKeysChip'); if(!c) return; c.classList.toggle('on', seCutToKeys); const t=seKeysTarget(); $id('seSliceKeysTo').textContent=t ? trTitle(t) : 'neue Spur'; }
+$id('seSliceKeysChip').addEventListener('click', ()=>{ seCutToKeys=!seCutToKeys; seKeysChipSync(); });
+// Stücke auf Tasten legen: ab der gewählten Taste, sonst dort, wo Stücke desselben Originals lagen, sonst hinter die belegten Tasten (leer: ab C3)
+function seSlicesToKeys(srcId, kids, name){
+  let tr=seKeysTarget();
+  if(!tr){ if(melCount()>=MEL_MAX){ hmToast('Höchstens '+MEL_MAX+' Melodiespuren – Stücke nur in der Bibliothek', false); return null; }
+    tr=trCreate('sampler', {label:melSuggest(String(name||'LOOP').toUpperCase().replace(/[^A-Z0-9ÄÖÜ ]/g,'').trim().slice(0,8)||'LOOP')}); trAttach(tr, null); melChanged(tr); }
+  const pre='lib:'+srcId+'.s', o={...(tr.smpKeys||{})}, own=Object.keys(o).map(Number).filter(n=>o[n].startsWith(pre)), all=Object.keys(o).map(Number);
+  const a=seKeyN!=null ? seKeyN : own.length ? Math.min(...own) : all.length ? Math.max(...all)+1 : smpKeyC3(tr);
+  own.forEach(n=>delete o[n]); kids.forEach((e,i)=>o[a+i]='lib:'+e.id); tr.smpKeys=o;
+  smpSetKeys(tr, true); return {tr, a, b:a+kids.length-1};
+}
 function seCutPadTap(i){
   const n=seCutBounds().length-1; if(!seCutToPads || i>=n) return;
   seCutSel=i; seCutDraw(); seCutPlay(i);
@@ -794,8 +814,10 @@ async function seSaveSlices(){
   }
   const ds=Object.values(drumSet.voices).some(v=>v && v.t==='smp' && (kidIds.has(v.sampleId) || goneIds.has(v.sampleId) || v.sampleId===srcId));
   if(ds) await drumSetLoadBuffers();
+  const tk=seCutToKeys && n ? seSlicesToKeys(srcId, kids, name) : null;
   closeSampleEditor();
-  hmToast(n+' Stücke von „'+name+'“ angelegt'+(m ? ' · Pad 1–'+m : ''), false);
+  hmToast(n+' Stücke von „'+name+'“ angelegt'+(m ? ' · Pad 1–'+m : '')+(tk ? ' · Tasten '+smpKeyName(tk.tr,tk.a)+'–'+smpKeyName(tk.tr,tk.b) : ''), false);
+  if(tk){ smpKeysChanged(tk.tr); setTimeout(()=>smpKeysEdit(tk.tr), 250); }
 }
 
 // ---- Tonhöhe / Tempo (v118, #11 Stufe 2, Variante B): Werte im Eintrag, Original bleibt; Rechnen in js/wav-export.js (ptRender).

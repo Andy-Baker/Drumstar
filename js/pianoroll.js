@@ -33,7 +33,7 @@ function prFitView(all){
   const tr=prTr, v=prV(tr); prR=prRows(tr);
   const steps=all ? PATTERN_LENGTH : Math.min(PATTERN_LENGTH, prLandOn()?32:16);
   v.cw=prVW()/steps; v.sx=all ? 0 : Math.floor(currentPage*16/steps)*steps*v.cw;
-  const idx=tr.events.map(e=>prR.indexOf(e.n)).filter(i=>i>=0);
+  const idx=tr.events.map(e=>e.n).concat(Object.keys(trKeyMap(tr)||{}).map(Number)).map(n=>prR.indexOf(n)).filter(i=>i>=0); // Tastenbelegung (#76) zählt mit
   let lo, hi;
   if(idx.length){ lo=Math.min.apply(null,idx); hi=Math.max.apply(null,idx); }
   else { const c=prR.indexOf(isPoly(tr)?12:0); lo=hi=c<0?Math.floor(prR.length/2):c; }
@@ -137,7 +137,7 @@ function prRender(){
 // eine Taste je Zeile; weiße reichen halb in eine direkt benachbarte schwarze Zeile, schwarze 60 % breit
 // darüber; Name nur bei C (Grundton in Instrumentfarbe). Breite fest 48 px, Höhe zoomt mit v.rh.
 function prKeysHtml(tr,v){
-  const pc=n=>(((9+tr.rootNote+n)%12)+12)%12, rt=n=>(((n%12)+12)%12)===0, R=prR, h=v.rh;
+  const pc=n=>(((9+tr.rootNote+n)%12)+12)%12, rt=n=>(((n%12)+12)%12)===0, R=prR, h=v.rh, km=trKeyMap(tr);
   let w='', b='', t='';
   R.forEach((n,i)=>{ const y=i*h;
     if(prWhite(tr,n)){
@@ -145,6 +145,8 @@ function prKeysHtml(tr,v){
       w+='<div class="pkl w" data-n="'+n+'" style="top:'+(y-(up?h/2:0))+'px;height:'+(h+(up?h/2:0)+(dn?h/2:0))+'px"></div>';
     } else b+='<div class="pkl b" data-n="'+n+'" style="top:'+(y+.5)+'px;height:'+(h-1)+'px"></div>';
     if(pc(n)===0) t+='<div class="pkn'+(rt(n)?' rt':'')+'" style="top:'+y+'px;height:'+h+'px'+(prWhite(tr,n)?'':';right:40%')+'">'+pitchNoteName(tr,n)+'</div>';
+    const ki=km && km[n] ? trKeyInfo(tr,n) : null; // Tastenbelegung (#76): grünes Schild mit Nummer
+    if(ki) t+='<div class="pk-bd'+(ki.state==='missing'||ki.state==='err'?' miss':'')+'" data-bn="'+n+'" style="top:'+(y+Math.max(1,(h-18)/2))+'px">'+ki.tag+'</div>';
   });
   return w+b+t;
 }
@@ -161,6 +163,10 @@ function prRenderGrid(){
   let h='';
   prR.forEach((n,i)=>{ const rt=(((n%12)+12)%12)===0; h+='<div class="prr'+(rt?' rt':'')+(!prScaleOnly&&!pitchInScale(n,tr)?' ox':'')+'" style="top:'+(i*v.rh)+'px;height:'+v.rh+'px"></div>'; });
   for(let c=1;c<L;c++){ if(v.cw<10 && c%4) continue; h+='<div class="prv'+(c%16===0?' bar':c%4===0?' b':'')+'" style="left:'+(c*v.cw)+'px"></div>'; }
+  const km=trKeyMap(tr); // Tastenbelegung (#76): Sample-Name blass hinter der Zeile, bleibt beim seitlichen Scrollen links
+  if(km && v.rh>=16){ const fs=Math.round(Math.max(11,Math.min(16,v.rh*0.42))); h+='<div id="prKNames">';
+    prR.forEach((n,i)=>{ if(!km[n]) return; const ki=trKeyInfo(tr,n); h+='<span style="top:'+(i*v.rh)+'px;height:'+v.rh+'px;font-size:'+fs+'px">'+String(ki.name).replace(/[<&]/g,c=>c==='<'?'&lt;':'&amp;')+'</span>'; });
+    h+='</div>'; }
   prCv.innerHTML=h+'<div id="prNotes"></div>';
   prLbl.innerHTML=prKeysHtml(tr,v); prLbl.style.height=H+'px';
   let r=''; for(let c=0;c<L;c+=4) r+='<span class="'+(c%16?'sub':'')+'" style="left:'+(c*v.cw)+'px">'+(c%16?'':(c/16+1))+'</span>';
@@ -186,6 +192,7 @@ function prDraw(){
 function prApplyScroll(){
   const v=prV(prTr);
   prCv.style.transform='translate('+(-v.sx)+'px,'+(-v.sy)+'px)'; prLbl.style.transform='translateY('+(-v.sy)+'px)';
+  const kn=$id('prKNames'); if(kn) kn.style.transform='translateX('+v.sx+'px)';
   $id('prRIn').style.transform='translateX('+(-v.sx)+'px)'; $id('prVIn').style.transform='translateX('+(-v.sx)+'px)';
   const top=v.sy/v.rh, bot=(v.sy+prVH())/v.rh; let up=0,dn=0;
   prTr.events.forEach(e=>{ const ri=prR.indexOf(e.n); if(ri<0) return; if(ri+1<=top+0.3) up++; else if(ri>=bot-0.3) dn++; });
@@ -316,7 +323,7 @@ function prKWhites(tr){ const w=[]; for(let n=PR_KLO;n<=PR_KHI;n++) if(prWhite(t
 function prKMaxW(){ return prLandOn()?24:15; }
 function prFitKb(tr){ // Fenster um die vorhandenen Noten bzw. den Grundton legen
   const k=prK(tr), wl=prKWhites(tr); k.w=prLandOn()?15:11;
-  const ns=tr.events.map(e=>e.n); let c=ns.length ? Math.round((Math.min.apply(null,ns)+Math.max.apply(null,ns))/2) : (isPoly(tr)?12:0);
+  const ns=tr.events.map(e=>e.n).concat(Object.keys(trKeyMap(tr)||{}).map(Number)); let c=ns.length ? Math.round((Math.min.apply(null,ns)+Math.max.apply(null,ns))/2) : (isPoly(tr)?12:0);
   let i=0; while(i<wl.length-1 && wl[i]<c) i++; i=Math.max(0,Math.min(wl.length-k.w,i-Math.floor(k.w/2))); k.lo=wl[i];
 }
 function prBuildKb(){
@@ -339,6 +346,8 @@ function prBuildKb(){
       const b=n+1; if(i<W-1 && !prWhite(tr,b)){ const bs=pitchInScale(b,tr), e=document.createElement('div'); e.className='pkb'+(bs?' sc':'')+(prScaleOnly&&!bs?' off':''); e.dataset.n=b; e.style.left=((i+1)/W*100-bw/2)+'%'; e.style.width=bw+'%'; prKb.appendChild(e); }
     });
   }
+  if(trKeyMap(tr)) prKb.querySelectorAll('[data-n]').forEach(el=>{ const ki=trKeyInfo(tr,+el.dataset.n); if(!ki) return; // Tastenbelegung (#76)
+    const b=document.createElement('i'); b.className='pk-kb'; b.textContent=ki.tag; el.appendChild(b); });
   prDrawMini(wl,li,k.w);
   const zl=$id('prZoomL'); if(zl) zl.textContent=prZoomTxt();
 }

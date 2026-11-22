@@ -5,6 +5,10 @@
 // Generiert ein neues Zufalls-Pattern für EINE Spur — genutzt vom globalen
 // Random-Button (über alle Nicht-Arp-Spuren) und vom Pro-Spur-🎲-Button.
 function randomizeTrackPattern(tr, from=0, to=PATTERN_LENGTH){
+  const km=trKeyMap(tr); // Tastenbelegung (#76): Treffer nur auf belegten Tasten, betonte Zählzeiten häufiger
+  if(km){ const keys=Object.keys(km).map(Number); tr.events=tr.events.filter(e=>e.s<from || e.s>=to);
+    if(keys.length) for(let s=from;s<to;s++){ const p=s%4===0 ? 0.7 : s%2===0 ? 0.35 : 0.2; if(Math.random()<p) tr.events.push({s, n:keys[Math.floor(Math.random()*keys.length)], l:1, v:s%4===0 ? 0.95 : 0.7, a:false}); }
+    tr._idx=null; evTouch(tr); return; }
   if(tr.type==='arp'){ generateAcidBassline(tr, from, to); return; }
   for(let s=from;s<to;s++){
     const beatPos = s%16; // Rhythmus-Gewichtung bleibt pro Takt (16 Steps) gleich

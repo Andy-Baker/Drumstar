@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>MRM-44 — Mobile Rhythm Machine</title>
 <link rel="stylesheet" href="./fonts.css">
-<link rel="stylesheet" href="./css/app.css?v=122">
+<link rel="stylesheet" href="./css/app.css?v=123">
 
 
 <!-- Drumstar PWA -->
@@ -235,6 +235,7 @@
         <div id="seAssignRow">
           <div class="se-assign-chip" id="seAssignTrackChip"><svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h2M7 8v8M11 5v14M15 9v6M19 11v2"/></svg><span id="seAssignTrackName">Sampler</span></div>
           <div class="se-assign-chip on" id="seSlicePadsChip"><svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Stücke → Pads</div>
+          <div class="se-assign-chip" id="seSliceKeysChip"><svg class="uic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 5v8M12 5v8M16 5v8"/></svg>Stücke → Tasten<small id="seSliceKeysTo"></small></div>
         </div>
         <div id="sePadGrid"></div>
 
@@ -488,6 +489,7 @@
  <div id="prFoot"></div>
 </div>
 <div class="sheet" id="klSheet"><div class="sh"><span id="klT"></span><button class="shx" id="klX" aria-label="Schließen">✕</button></div><div class="am-seg" id="klTabs"><button data-t="sound">SOUND</button><button data-t="fx">MIX &amp; FX</button><button data-t="key">TONART</button></div><div id="klRows"></div></div>
+<div class="sheet" id="smpKeySheet"><div class="sh"><span id="smpKeyT"></span><button class="shx" id="smpKeyX" aria-label="Schließen">✕</button></div><div id="smpKeyB" class="smp-ks"></div></div>
 <div id="smpPick" role="dialog" aria-label="Sound wählen"><div class="sp-bd"></div><div class="sp-sh"><div class="sh"><span>Sound wählen</span><button class="shx" id="smpPickX" aria-label="Schließen">✕</button></div><div class="sp-lcd" id="smpPickList" role="listbox"></div></div></div>
 <div class="sheet" id="hmChordSheet"><div class="sh"><span id="hmChT"></span><button class="shx" id="hmChX" aria-label="Schließen">✕</button></div>
   <div class="hm-aff" id="hmAff"></div>
@@ -538,32 +540,33 @@
       </div>
 </div>
 
-<script src="./js/base.js?v=122"></script>
-<script src="./js/audio.js?v=122"></script>
-<script src="./js/fx.js?v=122"></script>
-<script src="./js/voices.js?v=122"></script>
-<script src="./js/events.js?v=122"></script>
-<script src="./js/kits.js?v=122"></script>
-<script src="./js/tracks.js?v=122"></script>
-<script src="./js/controls.js?v=122"></script>
-<script src="./js/harmony.js?v=122"></script>
-<script src="./js/editor.js?v=122"></script>
-<script src="./js/sheets.js?v=122"></script>
-<script src="./js/sample-track.js?v=122"></script>
-<script src="./js/wav-export.js?v=122"></script>
-<script src="./js/sampler-werk.js?v=122"></script>
-<script src="./js/sampler.js?v=122"></script>
-<script src="./js/mixer.js?v=122"></script>
-<script src="./js/sample-editor.js?v=122"></script>
-<script src="./js/storage.js?v=122"></script>
-<script src="./js/beats.js?v=122"></script>
-<script src="./js/spuren.js?v=122"></script>
-<script src="./js/rhythmen.js?v=122"></script>
-<script src="./js/pianoroll.js?v=122"></script>
-<script src="./js/scheduler.js?v=122"></script>
-<script src="./js/transport-ui.js?v=122"></script>
-<script src="./js/tempo-detect.js?v=122"></script>
-<script src="./js/main.js?v=122"></script>
+<script src="./js/base.js?v=123"></script>
+<script src="./js/audio.js?v=123"></script>
+<script src="./js/fx.js?v=123"></script>
+<script src="./js/voices.js?v=123"></script>
+<script src="./js/events.js?v=123"></script>
+<script src="./js/kits.js?v=123"></script>
+<script src="./js/tracks.js?v=123"></script>
+<script src="./js/controls.js?v=123"></script>
+<script src="./js/harmony.js?v=123"></script>
+<script src="./js/editor.js?v=123"></script>
+<script src="./js/sheets.js?v=123"></script>
+<script src="./js/sample-track.js?v=123"></script>
+<script src="./js/wav-export.js?v=123"></script>
+<script src="./js/sampler-werk.js?v=123"></script>
+<script src="./js/sampler.js?v=123"></script>
+<script src="./js/mixer.js?v=123"></script>
+<script src="./js/sample-editor.js?v=123"></script>
+<script src="./js/storage.js?v=123"></script>
+<script src="./js/beats.js?v=123"></script>
+<script src="./js/spuren.js?v=123"></script>
+<script src="./js/rhythmen.js?v=123"></script>
+<script src="./js/pianoroll.js?v=123"></script>
+<script src="./js/sampler-tasten.js?v=123"></script>
+<script src="./js/scheduler.js?v=123"></script>
+<script src="./js/transport-ui.js?v=123"></script>
+<script src="./js/tempo-detect.js?v=123"></script>
+<script src="./js/main.js?v=123"></script>
 
 <script>
 // Drumstar PWA service worker

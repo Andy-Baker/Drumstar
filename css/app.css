@@ -1037,8 +1037,9 @@ html,body{min-height:100%;height:100%;}
 #prSel{flex:0 1 auto;min-width:0}
 #prIBtn{min-height:44px;padding:4px 10px;gap:9px}
 #prIBtn i{width:10px;height:10px;border-radius:50%;background:var(--c);box-shadow:0 0 8px var(--c);flex:none}
-#prName{white-space:nowrap}
-#prSub{font-size:17px;color:var(--dim);white-space:nowrap}
+#prIBtn{min-width:0;overflow:hidden}
+#prName{white-space:nowrap;flex:none}
+#prSub{font-size:17px;color:var(--dim);white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis}
 #prSub:empty{display:none}
 #prLand{display:none;flex:1;min-width:0}
 .pr-seg{display:flex;height:44px;border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,.12);flex:none}
@@ -1540,8 +1541,8 @@ html,body{min-height:100%;height:100%;}
 .se-cut-ib:active{transform:scale(.92)}
 #seCutCnt{flex:1;font:700 12px 'JetBrains Mono',monospace;color:#8be86a;text-align:center}
 #seCutWarn{font-size:12px;color:#ff9b6b;display:none} #seCutWarn.on{display:block}
-#seSlicePadsChip{display:none!important}
-#sampleEditorOverlay.mode-slice #seSlicePadsChip{display:inline-flex!important}
+#seSlicePadsChip,#seSliceKeysChip{display:none!important}
+#sampleEditorOverlay.mode-slice #seSlicePadsChip,#sampleEditorOverlay.mode-slice #seSliceKeysChip{display:inline-flex!important}
 #seSlicePadsChip.on{border-color:#8be86a;background:rgba(139,232,106,.14);color:#8be86a;box-shadow:0 0 10px rgba(139,232,106,.25)}
 #sampleEditorOverlay.mode-slice .se-pad-chip.on{border-color:rgba(255,255,255,.1);background:var(--panel);color:var(--dim)}
 #sampleEditorOverlay.mode-slice .se-pad-chip.s{border-color:#8be86a;background:rgba(139,232,106,.16);color:#8be86a}
@@ -1577,3 +1578,39 @@ html,body{min-height:100%;height:100%;}
 .rh-pop button{min-height:46px;display:flex;align-items:center;gap:10px;padding:0 12px;border:0;border-radius:8px;background:none;color:var(--blue-2);font:700 15px 'Rajdhani',sans-serif;text-align:left;cursor:pointer}
 .rh-pop button:active{background:rgba(63,169,255,.12)} .rh-pop button.del{color:#ff9a76}
 .rh-pop small{display:block;font:600 11px 'Rajdhani',sans-serif;color:var(--dim)}
+
+/* Tastenbelegung (#76, Mockup docs/mockups/issue-76.html v6): Sampler-Spur mit eigenem Sample je Taste */
+#prLbl .pk-bd{position:absolute;left:3px;z-index:3;min-width:18px;height:18px;padding:0 3px;border-radius:5px;background:#8be86a;color:#0b1a07;font:700 10px 'JetBrains Mono',monospace;display:flex;align-items:center;justify-content:center;pointer-events:none;transition:transform .12s}
+#prLbl .pk-bd.miss{background:#5a3a3a;color:#ff9b9b}
+#prLbl .pk-bd.lift{transform:scale(1.35);box-shadow:0 0 0 3px #0b1a07,0 0 12px #8be86a}
+.pk-kb{position:absolute;left:50%;transform:translateX(-50%);min-width:18px;height:18px;padding:0 3px;border-radius:5px;background:#8be86a;color:#0b1a07;font:700 10px 'JetBrains Mono',monospace;font-style:normal;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.pkw .pk-kb{bottom:38px}.pkb .pk-kb{bottom:10px}.pkw.pkbar .pk-kb{position:static;transform:none;margin-left:6px}
+#prKNames{position:absolute;left:0;top:0;width:0;pointer-events:none}
+#prKNames span{position:absolute;left:8px;display:flex;align-items:center;white-space:nowrap;color:rgba(139,232,106,.38);font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:.04em}
+#smpKeyBar{position:fixed;z-index:9998;display:none;align-items:center;gap:8px;padding-left:56px;box-sizing:border-box;border:2px solid #8be86a;border-radius:6px;background:rgba(139,232,106,.16);pointer-events:none;overflow:hidden;color:var(--white);font:700 14px 'Rajdhani',sans-serif;white-space:nowrap}
+#smpKeyBar.sw{border-style:dashed;border-color:#ffc44d;background:rgba(255,196,77,.14)}
+#smpKeyBar span{text-shadow:0 1px 3px #000}
+.smp-tg{min-width:20px;height:20px;border-radius:5px;background:#8be86a;color:#0b1a07;font:700 11px 'JetBrains Mono',monospace;display:inline-flex;align-items:center;justify-content:center;padding:0 3px;flex:none}
+.smp-kov{position:relative;display:block;width:100%;height:64px;margin:8px 0 4px;padding:0;border:1px solid rgba(255,255,255,.1);border-radius:8px;overflow:hidden;background:#e8e9ee;cursor:pointer}
+.smp-kov i{position:absolute;top:0;bottom:0;border-right:1px solid #0003;display:flex;align-items:flex-end;justify-content:center;padding-bottom:5px}
+.smp-kov i.k{bottom:40%;background:#15161a;border-radius:0 0 3px 3px;z-index:2;padding-bottom:3px}
+.smp-kov b{min-width:15px;height:15px;padding:0 2px;border-radius:4px;background:#8be86a;color:#0b1a07;font:700 9px 'JetBrains Mono',monospace;display:flex;align-items:center;justify-content:center}
+.smp-ks{display:flex;flex-direction:column;gap:12px;padding-bottom:6px}
+.smp-kcard{width:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:12px;border:1px solid rgba(139,232,106,.28);background:linear-gradient(180deg,#14261d,#0c1510);color:var(--white);cursor:pointer;text-align:left}
+.smp-kh{display:flex;align-items:center;gap:10px}
+.smp-kn{flex:1;min-width:0;font:700 18px 'Rajdhani',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.smp-kp{width:34px;height:34px;border-radius:50%;background:rgba(139,232,106,.16);color:#8be86a;display:flex;align-items:center;justify-content:center;flex:none}
+.smp-kp .uic{width:16px;height:16px}
+.smp-kcard canvas{width:100%;height:48px;display:block}
+.smp-kmv{display:flex;align-items:center;gap:10px;padding:6px 6px 6px 14px;border-radius:12px;background:var(--panel-inset);border:1px solid rgba(255,255,255,.06)}
+.smp-kmv span{flex:1;color:var(--metal);font:600 15px 'Rajdhani',sans-serif}
+.smp-kmv b{min-width:58px;text-align:center;font:700 18px 'JetBrains Mono',monospace;color:var(--white)}
+.smp-kmv button{width:52px;height:48px;border-radius:10px;border:1px solid rgba(63,169,255,.4);background:rgba(63,169,255,.1);color:var(--blue-2);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.smp-kmv .uic{width:20px;height:20px}
+.smp-krow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.smp-krow .act{min-height:48px;margin:0}
+.smp-krow .act:disabled{opacity:.4}
+.smp-kclr{align-self:center;display:flex;align-items:center;gap:8px;min-height:44px;padding:0 16px;margin-top:2px;border:0;background:none;color:#ff8b8b;font:700 14px 'Rajdhani',sans-serif;cursor:pointer}
+.smp-kclr .uic{width:18px;height:18px}
+#seSliceKeysChip.on{border-color:#8be86a;background:rgba(139,232,106,.14);color:#8be86a;box-shadow:0 0 10px rgba(139,232,106,.25)}
+#seSliceKeysChip small{opacity:.75;font-size:11px;white-space:nowrap;margin-left:2px}
