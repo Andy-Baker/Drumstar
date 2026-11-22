@@ -55,10 +55,11 @@ iframe{border:0;width:100%;height:100%;background:#050507;display:block}
       <ul>
         <li>Der Balken über die ganze Breite zeigt das Ziel rechts neben dem Finger, nicht darunter: „→ G3 · tauscht mit Break 7“.</li>
         <li>Ziehen ist <b>relativ</b>: eine Zeile je Zeilenhöhe, egal wo der Finger genau liegt. Jede neue Zeile tickt kurz.</li>
-        <li>Am oberen und unteren Rand scrollt die Ansicht mit.</li>
+        <li>Am oberen und unteren Rand scrollt die Ansicht mit, aber erst, wenn du in diese Richtung gezogen hast, und dann ruhig Zeile für Zeile.</li>
         <li>Die Noten wandern mit, eine belegte Taste wird getauscht (gelber Balken). Rückgängig im Hinweis.</li>
       </ul></li>
     <li><b>Leere Taste halten</b> = Sample wählen, auch „Alle Stücke ab hier“.</li>
+    <li><b>Sample-Namen im Raster</b>: blass hinter jeder belegten Zeile, bleiben beim seitlichen Scrollen links stehen (ab mittlerer Zoomstufe).</li>
     <li>Belegte Tasten tragen ein grünes Schild, unbelegte Zeilen sind dunkel. Mehr Platz zum Treffen gibt es per Zoom (zwei Finger).</li>
   </ul>
   <h3>Wie die Samples hinkommen</h3>
@@ -127,13 +128,19 @@ function MK(){
     $id('prKb').querySelectorAll('[data-n]').forEach(k=>{ const e=K(tr)[+k.dataset.n]; if(e){ const b=document.createElement('i'); b.className='mk-kb'; b.dataset.bn=k.dataset.n; b.textContent=e.tag; k.appendChild(b); } }); };
   [['prFitView'],['prFitKb']].forEach(([f])=>{ const o=window[f]; window[f]=function(){ const tr=prTr||arguments[0]; if(!isKeys(tr)) return o.apply(this,arguments);
     const ev=tr.events; tr.events=ev.concat(keyList(tr).map(n=>({s:0,n,l:1,v:0}))); try{ return o.apply(this,arguments); } finally{ tr.events=ev; } }; });
+  // ---- Sample-Namen im Raster: blass hinter jeder belegten Zeile, bleiben beim seitlichen Scrollen links stehen ----
+  const oGrid=prRenderGrid; prRenderGrid=function(){ oGrid(); const tr=prTr; if(!isKeys(tr)) return; const v=prV(tr);
+    if(v.rh<16) return; const box=document.createElement('div'); box.id='mkNames'; let h='';
+    prR.forEach((n,i)=>{ const e=K(tr)[n]; if(e) h+='<span style="top:'+(i*v.rh)+'px;height:'+v.rh+'px;font-size:'+Math.round(Math.max(11,Math.min(16,v.rh*0.42)))+'px">'+e.name.replace(/</g,'&lt;')+'</span>'; });
+    box.innerHTML=h; prCv.insertBefore(box,$id('prNotes')); box.style.transform='translateX('+v.sx+'px)'; };
+  const oApply=prApplyScroll; prApplyScroll=function(){ oApply(); const b=$id('mkNames'); if(b) b.style.transform='translateX('+prV(prTr).sx+'px)'; };
   // ---- Geste an der Klaviatur links (nur Piano Roll; der Spielmodus bleibt zum Spielen) ----
   //   tippen = anhören (wie bisher) · halten = Taste-Sheet (leer: Sample wählen) · halten und ziehen = verschieben
   //   Ziehen ist relativ (eine Zeile je Zeilenhöhe, egal wo der Finger liegt), die Zielzeile wird über die ganze Breite markiert
   //   und beschriftet (rechts vom Finger, nicht darunter), jede neue Zeile tickt kurz, am Rand scrollt die Ansicht mit.
   let gs=null, bar=null;
-  function gsDown(e){ if(!isKeys(prTr)) return; const r=$id('prLbl').getBoundingClientRect(), v=prV(prTr), i=Math.floor((e.clientY-r.top)/v.rh);
-    if(i<0 || i>=prR.length) return; gsEnd(); gs={pid:e.pointerId, i, n:prR[i], y:e.clientY, x:e.clientX, sy0:v.sy, ph:'wait', t:setTimeout(gsHold,420)}; }
+  function gsDown(e){ if(!isKeys(prTr) || e.button>0) return; const r=$id('prLbl').getBoundingClientRect(), v=prV(prTr), i=Math.floor((e.clientY-r.top)/v.rh);
+    if(i<0 || i>=prR.length) return; gsEnd(); gs={pid:e.pointerId, i, n:prR[i], y:e.clientY, x:e.clientX, cy:e.clientY, sy0:v.sy, last:0, ph:'wait', t:setTimeout(gsHold,420)}; }
   function gsHold(){ if(!gs) return; gs.ph='held'; tick(14); lift(gs.n,true); }
   const tick=ms=>{ if(navigator.vibrate) try{ navigator.vibrate(ms); }catch(er){} };
   function lift(n,on){ document.querySelectorAll('.mk-lift').forEach(x=>x.classList.remove('mk-lift')); if(!on) return;
@@ -145,17 +152,24 @@ function MK(){
     const n=prR[i], src=K(tr)[gs.n], o=K(tr)[n], same=n===gs.n;
     bar.classList.toggle('sw',!!o && !same);
     bar.innerHTML='<b class="mk-tg">'+src.tag+'</b><span>'+(same ? 'Ziehen zum Verschieben' : '→ '+noteName(tr,n)+(o ? ' · tauscht mit '+o.name : ''))+'</span>'; }
-  function gsMove(e){ if(!gs || e.pointerId!==gs.pid) return; const far=Math.hypot(e.clientX-gs.x,e.clientY-gs.y)>9;
+  function gsMove(e){ if(!gs || e.pointerId!==gs.pid) return;
+    if(e.pointerType==='mouse' && e.buttons===0){ gsUp(e); return; } // Taste außerhalb losgelassen
+    const far=Math.hypot(e.clientX-gs.x,e.clientY-gs.y)>9;
     if(gs.ph==='wait'){ if(far) gsEnd(); return; }
     e.stopPropagation(); e.preventDefault(); gs.cy=e.clientY;
-    if(gs.ph==='held' && far && K(prTr)[gs.n]){ gs.ph='drag'; gs.to=gs.i; showBar(gs.i); edge(); }
+    if(gs.ph==='held' && far && K(prTr)[gs.n]){ gs.ph='drag'; gs.to=gs.i; showBar(gs.i); gs.raf=requestAnimationFrame(edge); }
     if(gs.ph==='drag') aim(); }
-  function aim(){ const v=prV(prTr), i=Math.max(0,Math.min(prR.length-1,gs.i+Math.round((gs.cy-gs.y+(v.sy-gs.sy0))/v.rh)));
+  // Ziel = Startzeile + gezogene Zeilen + gescrollte Zeilen (alles ganze Zeilen, nichts läuft weg)
+  function aim(){ const v=prV(prTr), lo=Math.ceil(v.sy/v.rh-0.01), hi=Math.floor((v.sy+prVH())/v.rh+0.01)-1; // nur ganz sichtbare Zeilen
+    const i=Math.max(0,lo,Math.min(prR.length-1,hi,gs.i+Math.round((gs.cy-gs.y+v.sy-gs.sy0)/v.rh)));
     if(i!==gs.to){ gs.to=i; tick(6); } showBar(i); }
-  function edge(){ if(!gs || gs.ph!=='drag') return; const vr=prView.getBoundingClientRect(), v=prV(prTr), z=56;
-    const d=gs.cy<vr.top+z ? -(vr.top+z-gs.cy) : gs.cy>vr.bottom-z ? gs.cy-(vr.bottom-z) : 0;
-    if(d){ const sy=v.sy; v.sy+=d*0.25; prClamp(v); if(v.sy!==sy){ prRender(); aim(); } }
-    gs.raf=requestAnimationFrame(edge); }
+  // Mitscrollen am Rand: nur wenn der Finger in Richtung Rand gezogen hat, zeilenweise im Takt (ruhig, vorhersehbar)
+  function edge(t){ if(!gs || gs.ph!=='drag') return; gs.raf=requestAnimationFrame(edge);
+    const vr=prView.getBoundingClientRect(), v=prV(prTr), z=36, dy=gs.cy-gs.y;
+    const dir=(gs.cy<vr.top+z && dy<-v.rh*0.6) ? -1 : (gs.cy>vr.bottom-z && dy>v.rh*0.6) ? 1 : 0;
+    if(!dir || t-gs.last<160) return;
+    const sy=v.sy, al=dir>0 ? Math.ceil((sy+prVH())/v.rh)*v.rh-prVH() : Math.floor(sy/v.rh)*v.rh; v.sy=(Math.abs(al-sy)>1 ? al : sy+dir*v.rh); prClamp(v); if(v.sy===sy) return;
+    gs.last=t; prApplyScroll(); aim(); }
   function gsUp(e){ if(!gs || e.pointerId!==gs.pid) return; const g=gs; gsEnd();
     if(g.ph==='wait') return; e.stopPropagation(); const tr=prTr;
     if(g.ph==='held'){ keyOpen(tr,g.n); return; }
@@ -163,6 +177,7 @@ function MK(){
   function move(tr,a,b){ const sw=K(tr)[b], nm=K(tr)[a].name; moveKey(tr,a,b); refresh(tr); hear(tr,b);
     hmToast(nm+' → '+noteName(tr,b)+(sw?' (getauscht)':''),true,()=>{ moveKey(tr,b,a); refresh(tr); if(sh.classList.contains('open')) keyOpen(tr,a); }); }
   function gsEnd(){ if(!gs) return; clearTimeout(gs.t); cancelAnimationFrame(gs.raf); gs=null; lift(0,false); if(bar) bar.style.display='none'; }
+  document.addEventListener('visibilitychange',()=>gsEnd()); window.addEventListener('blur',()=>gsEnd());
   $id('prLblCol').addEventListener('pointerdown',gsDown);
   window.addEventListener('pointermove',gsMove,true);
   window.addEventListener('pointerup',gsUp,true);
@@ -292,6 +307,7 @@ function MK(){
    +'.mk-ov b{min-width:15px;height:15px;padding:0 2px;border-radius:4px;background:'+G+';color:#0b1a07;font:700 9px "JetBrains Mono",monospace;display:flex;align-items:center;justify-content:center}'
    +'#mkBar{position:fixed;z-index:9998;display:none;align-items:center;gap:8px;padding-left:56px;box-sizing:border-box;border:2px solid '+G+';border-radius:6px;background:rgba(139,232,106,.16);pointer-events:none;overflow:hidden;color:var(--white);font:700 14px Rajdhani,sans-serif;white-space:nowrap}'
    +'#mkBar.sw{border-style:dashed;background:rgba(255,196,77,.14);border-color:#ffc44d}#mkBar span{text-shadow:0 1px 3px #000}'
+   +'#mkNames{position:absolute;left:0;top:0;width:0;pointer-events:none;z-index:0}#mkNames span{position:absolute;left:8px;display:flex;align-items:center;white-space:nowrap;color:rgba(139,232,106,.38);font-family:Rajdhani,sans-serif;font-weight:700;letter-spacing:.04em}'
    +'.mk-ks{display:flex;flex-direction:column;gap:12px;padding-bottom:6px}'
    +'.mk-wv{width:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:12px;border:1px solid rgba(139,232,106,.28);background:linear-gradient(180deg,#14261d,#0c1510);color:var(--white);cursor:pointer;text-align:left}'
    +'.mk-wh{display:flex;align-items:center;gap:10px}.mk-wn{flex:1;font:700 18px Rajdhani,sans-serif}.mk-pl{width:34px;height:34px;border-radius:50%;background:rgba(139,232,106,.16);color:'+G+';display:flex;align-items:center;justify-content:center}.mk-pl .uic{width:16px;height:16px}'
