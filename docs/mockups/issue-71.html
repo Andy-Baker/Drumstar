@@ -37,7 +37,7 @@ iframe{border:0;width:100%;height:100%;background:#050507;display:block}
 <body>
 <div id="mbar">
   <span>#71</span>
-  <div class="g"><button data-v="c" class="on">C LCD-Feld</button><button data-v="d">D LCD-Liste</button><button data-v="b">B Chips</button></div>
+  <div class="g"><button data-v="e" class="on">E Feld</button><button data-v="f">F Fenster</button><button data-v="d">D Liste</button></div>
   <span class="sp"></span>
   <button id="exBtn">Öffnen</button>
   <button id="infoBtn">ⓘ</button>
@@ -61,11 +61,11 @@ iframe{border:0;width:100%;height:100%;background:#050507;display:block}
     <li><b>KALIMBA</b> – VCSL</li>
   </ul>
   <p>Je Instrument eine MP3 von ca. 0,5–1 MB, geladen erst bei Wahl (wie heute).</p>
-  <h3>Varianten (Auswahl als LCD)</h3>
+  <h3>Varianten (Mischung aus C und D)</h3>
   <ul>
-    <li><b>C · LCD-Feld</b>: eine Zeile wie bei den Effekt-Presets: <b>◀ SAMPLE ▶</b>. Pfeile = nächstes Instrument, <b>wird gleich angespielt</b> (durchhören). Antippen = Klappliste mit Gruppen. Braucht kaum Platz.</li>
-    <li><b>D · LCD-Liste</b>: Display mit ca. 5 Zeilen, immer offen, scrollt. Gewähltes invertiert, Zähler 3/14, ▲▼ zum Durchhören. Alles auf einen Blick, braucht aber ca. 300 px Höhe.</li>
-    <li><b>B · Chips</b>: bisherige Variante (Gruppen als Chips) zum Vergleich.</li>
+    <li><b>E · Feld</b>: zu = eine LCD-Zeile im Look von D (Name, Zusatz, 3/12), <b>keine Seitenpfeile</b>. Antippen klappt das Display <b>an Ort und Stelle</b> auf (kein schwebendes Menü), Zeile antippen = wählen + anspielen. Nochmal oben tippen = zu.</li>
+    <li><b>F · Fenster</b>: Display zeigt immer <b>3 Zeilen</b>: vorheriges (blass) · aktuelles (invertiert) · nächstes (blass). Blasse Zeile antippen = dorthin + anspielen, aktuelle = nochmal hören. Oben stehen Gruppe und 3/12; antippen = ganze Liste, Auswahl klappt wieder zu.</li>
+    <li><b>D · Liste</b>: wie vorher, zum Vergleich.</li>
   </ul>
   <p>Gruppen in allen: <b>Orchester</b> · <b>Tasten &amp; Mallets</b> · <b>Synth</b> (VOX/SYNTH-BASS bleiben) · <b>Eigene</b> (Stücke einklappbar). <b>NEU</b> = Vorschlag ohne Aufnahme. „Aufnehmen / Laden“ bleibt als Taste darunter.</p>
   <h3>Offen: Chor und echtes E-Piano (Rhodes)</h3>
@@ -75,11 +75,12 @@ iframe{border:0;width:100%;height:100%;background:#050507;display:block}
 // ===== Läuft im globalen Scope der App (per eval im Rahmen) =====
 function MK(){
   if(window.__mk) return;
-  let V='c';
+  let V='e';
   const NEW={ep:['E-PIANO','FM, 80er','VCSL · Yamaha TX81Z FM Piano'], vib:['VIBRAPHON','weiche Schlägel','VCSL · Vibraphone, Soft Mallets'],
     mar:['MARIMBA','Holz','VCSL / VSCO 2 CE · Marimba'], glo:['GLOCKENSPIEL','hell','VSCO 2 CE · Glock'],
     hrp:['HARFE','Konzertharfe','VCSL · Concert Harp'], kal:['KALIMBA','Daumenklavier','VCSL · Kalimba, Kenya']};
   let fake=null; // gewählter Platzhalter (nur Anzeige)
+  let eOpen=false, fOpen=false; // E: Feld aufgeklappt · F: ganze Liste offen
   const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   // Liste wie Variante B (Gruppen): h = Überschrift, i = wählbar, t = Stücke auf-/zuklappen
   function items(tr){
@@ -100,9 +101,11 @@ function MK(){
   }
   const isCur=(tr,it)=>it.isNew ? fake===it.key : (!fake && tr.smp===it.key);
   async function pick(tr,it){
-    if(it.isNew){ fake=it.key; renderKlang(); hmToast('Vorschlag – Aufnahme folgt',false); return; }
+    if(it.isNew){ if(V==='f') fOpen=false; fake=it.key; renderKlang(); hmToast('Vorschlag – Aufnahme folgt',false); return; }
+    if(V==='f') fOpen=false;
     fake=null; await samplerPick(tr,it.key); samplerPreview(tr); // Wählen = gleich anhören
   }
+  const grpOf=(L,it)=>{ let g=''; for(const x of L){ if(x.t==='h') g=x.label; if(x===it) return g; } return g; };
   function step(tr,L,d){ const S=L.filter(x=>x.t==='i'); let i=S.findIndex(x=>isCur(tr,x)); i=(i+d+S.length)%S.length; pick(tr,S[i]); }
   function toggle(id){ if(SMP_LIB_OPEN.has(id)) SMP_LIB_OPEN.delete(id); else SMP_LIB_OPEN.add(id); renderKlang(); }
   const rowHtml=(tr,it,j)=>it.t==='h' ? '<div class="mk-h">'+esc(it.label)+'</div>'
@@ -128,16 +131,22 @@ function MK(){
     } else {
       const w=document.createElement('div');
       const name=cur?esc(cur.label):'–', sub=cur?(cur.isNew?'<i class="mk-new">NEU</i>':cur.sub?'<em>'+esc(cur.sub)+'</em>':''):'';
-      if(V==='c'){ // LCD-Feld mit Pfeilen + Klappliste
-        w.className='fxlsel mk-ls';
-        w.innerHTML='<button class="ar" data-st="-1" aria-label="Voriges Sample">'+FXI.l+'</button>'
-          +'<button class="lb" aria-haspopup="listbox"><span class="k">SAMPLE</span><span class="x">'+name+' '+sub+'</span>'+FXI.dn+'</button>'
-          +'<button class="ar" data-st="1" aria-label="Nächstes Sample">'+FXI.go+'</button>'
-          +'<div class="menu mk-menu" role="listbox">'+L.map((it,j)=>rowHtml(tr,it,j)).join('')+'</div>';
-        const m=w.querySelector('.menu');
-        w.querySelector('.lb').onclick=e=>{ e.stopPropagation(); const o=!m.classList.contains('open'); m.classList.toggle('open',o);
-          if(o){ const c=m.querySelector('.cur'); if(c) m.scrollTop=c.offsetTop-m.clientHeight/2+c.offsetHeight/2; m.scrollIntoView({block:'nearest',behavior:'smooth'}); } };
-        w.querySelectorAll('[data-st]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); step(tr,L,+b.dataset.st); });
+      if(V==='e'){ // E: LCD-Feld ohne Seitenpfeile, klappt zum Display auf
+        w.className='mk-lcd mk-ef'+(eOpen?' open':'');
+        w.innerHTML='<button class="mk-fld" aria-expanded="'+eOpen+'"><span class="k">SAMPLE</span><span class="x">'+name+' '+sub+'</span><b>'+(ci+1)+'/'+sel.length+'</b>'+(eOpen?FXI.up:FXI.dn)+'</button>'
+          +(eOpen?'<div class="mk-list" role="listbox">'+L.map((it,j)=>rowHtml(tr,it,j)).join('')+'</div>':'');
+        w.querySelector('.mk-fld').onclick=e=>{ e.stopPropagation(); eOpen=!eOpen; renderKlang(); };
+        if(eOpen) requestAnimationFrame(()=>{ const ls=w.querySelector('.mk-list'), c=ls&&ls.querySelector('.cur'); if(c) ls.scrollTop=c.offsetTop-ls.clientHeight/2+c.offsetHeight/2; });
+      } else if(V==='f'){ // F: Display mit 3 Zeilen (vorher · aktuell · danach), aufklappbar
+        w.className='mk-lcd mk-ff'+(fOpen?' open':'');
+        const pv=sel[(ci-1+sel.length)%sel.length], nx=sel[(ci+1)%sel.length];
+        const top='<button class="mk-top mk-tb" aria-expanded="'+fOpen+'"><span class="k">'+esc(fOpen?'Sample':grpOf(L,cur)||'Sample')+'</span><b>'+(ci+1)+'/'+sel.length+'</b><i>'+(fOpen?FXI.up:FXI.dn)+'</i></button>';
+        if(fOpen) w.innerHTML=top+'<div class="mk-list" role="listbox">'+L.map((it,j)=>rowHtml(tr,it,j)).join('')+'</div>';
+        else w.innerHTML=top+'<div class="mk-win">'+[[pv,-1],[cur,0],[nx,1]].map(([it,d])=>'<button data-d="'+d+'" class="'+(d?'mk-dim':'cur')+'"><span>'+(d<0?'▴ ':d>0?'▾ ':'')+esc(it?it.label:'–')+'</span>'
+            +(it&&it.isNew?'<i class="mk-new">NEU</i>':it&&it.sub?'<small>'+esc(it.sub)+'</small>':'')+'</button>').join('')+'</div>';
+        w.querySelector('.mk-tb').onclick=e=>{ e.stopPropagation(); fOpen=!fOpen; renderKlang(); };
+        w.querySelectorAll('[data-d]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); const d=+b.dataset.d; if(d) step(tr,L,d); else samplerPreview(tr); });
+        if(fOpen) requestAnimationFrame(()=>{ const ls=w.querySelector('.mk-list'), c=ls&&ls.querySelector('.cur'); if(c) ls.scrollTop=c.offsetTop-ls.clientHeight/2+c.offsetHeight/2; });
       } else { // D: LCD-Liste immer offen
         w.className='mk-lcd';
         w.innerHTML='<div class="mk-top"><span class="k">SAMPLE</span><b>'+(ci+1)+'/'+sel.length+'</b>'
@@ -178,7 +187,26 @@ function MK(){
     +'.mk-top button svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2}'
     +'.mk-list{position:relative;max-height:250px;overflow-y:auto;overscroll-behavior:contain;text-shadow:0 0 6px rgba(95,194,255,.35)}'
     +'.mk-list button.cur{text-shadow:none}'
-    +'.mk-rec{margin-top:6px}';
+    +'.mk-rec{margin-top:6px}'
+    // E: Feld
+    +'.mk-fld{width:100%;min-height:50px;display:flex;align-items:center;gap:10px;padding:0 12px;background:none;border:0;color:var(--lcd-fg);cursor:pointer;text-align:left;text-shadow:0 0 6px rgba(95,194,255,.35)}'
+    +'.mk-fld .k{font:500 13px Rajdhani,sans-serif;color:var(--dim);flex:none;text-shadow:none}'
+    +'.mk-fld .x{flex:1;min-width:0;font:22px VT323,monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'
+    +'.mk-fld .x em{font-style:normal;font-size:16px;color:#3a7aa8}.mk-fld .x .mk-new{vertical-align:3px;margin-left:4px}'
+    +'.mk-fld b{font:400 17px VT323,monospace;color:#3a7aa8;flex:none}'
+    +'.mk-fld svg,.mk-tb svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;flex:none;opacity:.8}'
+    +'.mk-ef.open .mk-fld{border-bottom:1px solid rgba(63,169,255,.25)}'
+    // F: Fenster mit 3 Zeilen
+    +'.mk-tb{width:100%;min-height:40px;background:none;border:0;border-bottom:1px solid rgba(63,169,255,.25);cursor:pointer;padding:0 14px 0 12px;text-align:left}'
+    +'.mk-tb .k{font:700 11px Rajdhani,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#3a7aa8}'
+    +'.mk-tb i{color:var(--lcd-fg);display:flex}'
+    +'.mk-win button{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 12px;background:none;border:0;color:var(--lcd-fg);font:21px VT323,monospace;text-align:left;cursor:pointer}'
+    +'.mk-win button span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}'
+    +'.mk-win button small{font:15px VT323,monospace;color:#3a7aa8;white-space:nowrap}'
+    +'.mk-win .mk-dim{min-height:38px;opacity:.45;font-size:18px}'
+    +'.mk-win .cur{min-height:50px;background:var(--lcd-fg);color:#04070a;font-size:24px}'
+    +'.mk-win .cur small,.mk-win .cur .mk-new{color:#04070a;border-color:#04070a}'
+    +'.mk-ff.open .mk-list,.mk-ef.open .mk-list{max-height:290px}';
   document.head.appendChild(st);
   function setV(v){ V=v; if($id('klSheet').classList.contains('open')) renderKlang(); }
   function open(){
@@ -192,7 +220,7 @@ function MK(){
 
 // ===== Rahmen-Steuerung =====
 const fR=document.getElementById('fR');
-let V='c';
+let V='e';
 function hook(){ const w=fR.contentWindow; try{ if(!w||w.eval('typeof TRACKS')!=='object') return null; if(!w.__mk) w.eval('('+MK.toString()+')()'); }catch(e){ console.error(e); return null; } return w.__mk; }
 function apply(){ const m=hook(); if(m) m.setV(V); document.querySelectorAll('[data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v===V)); }
 fR.addEventListener('load',()=>setTimeout(()=>{ apply(); const m=hook(); if(m) m.open(); },900));
