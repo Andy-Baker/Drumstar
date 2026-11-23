@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Drumstar · Latenz-Test</title>
+<link rel="stylesheet" href="../../fonts.css">
+<style>
+/* Testseite: wie schnell reagiert dieses Gerät? (Chrome-Angaben, Tipp-Test, Mikro-Schleife, MIDI). Gehört zu #73/#79. */
+:root{color-scheme:dark;--chassis:#0e0e13;--chassis-2:#08080b;--panel:#16161c;--panel-inset:#0a0a0d;--blue:#3fa9ff;--blue-2:#8fd4ff;--white:#f4f5f7;--dim:#7d818c;--metal:#c7cbd4;--lcd-bg:#04070a;--lcd-fg:#5fc2ff;--ok:#8be86a;--mid:#ffc247;--bad:#ff6b6b}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%;background:linear-gradient(180deg,var(--chassis),var(--chassis-2)) fixed;color:var(--white);font-family:'Rajdhani',system-ui,sans-serif}
+main{max-width:560px;margin:0 auto;padding:max(14px,env(safe-area-inset-top)) 14px max(30px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:14px}
+h1{margin:0;font:700 22px 'Rajdhani';display:flex;align-items:center;gap:10px}
+h1 small{font:600 13px 'Rajdhani';color:var(--dim);letter-spacing:.06em}
+.card{background:var(--panel);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.card h2{margin:0;font:700 11px 'Rajdhani';letter-spacing:.14em;text-transform:uppercase;color:var(--dim);display:flex;justify-content:space-between;align-items:center}
+.lcd{background:var(--lcd-bg);border:1px solid rgba(63,169,255,.3);border-radius:10px;padding:10px 12px;font:20px 'VT323',monospace;color:var(--lcd-fg);text-shadow:0 0 6px rgba(95,194,255,.35);display:grid;grid-template-columns:1fr auto;gap:2px 12px}
+.lcd span{color:#5b8db5;font-size:17px}
+.lcd b{font-weight:400;text-align:right}
+.big{font:44px 'VT323',monospace;line-height:1;text-align:center;padding:6px 0 0}
+.verdict{text-align:center;font:700 15px 'Rajdhani';min-height:20px}
+.ok{color:var(--ok)}.mid{color:var(--mid)}.bad{color:var(--bad)}
+.note{font-size:12px;color:var(--dim);line-height:1.4}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.btn{flex:1;min-height:46px;padding:0 12px;border-radius:10px;border:1px solid rgba(63,169,255,.4);background:rgba(63,169,255,.12);color:var(--blue-2);font:700 14px 'Rajdhani';cursor:pointer}
+.btn:disabled{opacity:.4}
+.btn.rec{border-color:rgba(255,107,107,.55);background:rgba(255,107,107,.12);color:#ffb4b4}
+.seg{display:flex;border-radius:9px;overflow:hidden;border:1px solid rgba(255,255,255,.12)}
+.seg button{flex:1;min-height:40px;border:0;background:var(--panel-inset);color:var(--dim);font:700 13px 'Rajdhani';cursor:pointer}
+.seg button.on{background:rgba(63,169,255,.2);color:var(--blue-2)}
+#pad{height:150px;border-radius:14px;border:1px solid rgba(63,169,255,.35);background:radial-gradient(circle at 50% 40%,#13314d,#0a1622);display:flex;align-items:center;justify-content:center;font:700 18px 'Rajdhani';color:var(--blue-2);user-select:none;touch-action:none;cursor:pointer}
+#pad.hit{background:radial-gradient(circle at 50% 40%,#2c6aa1,#0f2840)}
+.sounds{display:flex;gap:6px}
+#midiLog{font:15px 'VT323',monospace;color:var(--lcd-fg);min-height:20px}
+.scale{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:12.5px;color:var(--metal)}
+.scale b{font-family:'JetBrains Mono',monospace;font-size:12px}
+</style>
+</head>
+<body>
+<main>
+  <h1>Latenz-Test <small>DRUMSTAR</small></h1>
+  <div class="note">Misst, wie lange es auf diesem Gerät vom Antippen (bzw. Keyboard-Taste) bis zum Ton dauert. Mit <b>Kabel-Kopfhörern</b> oder Lautsprecher testen – Bluetooth verfälscht alles.</div>
+
+  <section class="card">
+    <h2>1 · Was Chrome meldet <button class="btn" id="start" style="flex:none;min-height:36px">Audio starten</button></h2>
+    <div class="seg" id="hint"><button data-h="interactive" class="on">Live</button><button data-h="0">Minimum</button><button data-h="playback">Wiedergabe</button></div>
+    <div class="lcd" id="info"><span>Status</span><b>– antippen –</b></div>
+    <div class="note">„Puffer“ = Rechenpuffer des Browsers, „Ausgabe“ = Weg bis zum Lautsprecher (Schätzung des Geräts, oft geschönt). „Live“ = wie Drumstar, „Minimum“ = was das Gerät bestenfalls kann.</div>
+  </section>
+
+  <section class="card">
+    <h2>2 · Spüren</h2>
+    <div class="sounds seg" id="snd"><button data-s="click" class="on">Klick</button><button data-s="kick">Kick</button><button data-s="key">Piano-Ton</button></div>
+    <div id="pad">Hier trommeln</div>
+    <div class="note">Gleichmäßig zu Musik oder einem Metronom tippen. Fühlt sich der Ton „angeklebt“ an, ist es gut; hinkt er hinterher, ist die Latenz zu hoch zum Live-Spielen.</div>
+  </section>
+
+  <section class="card">
+    <h2>3 · Messen (Mikro-Schleife)</h2>
+    <div class="note">Spielt 8 Klicks über den <b>Lautsprecher</b> (kein Kopfhörer!) und hört sie mit dem Mikro wieder. Ergibt die Zeit hin und zurück; die Ausgabe allein ist etwa die Hälfte. Ruhig halten, leise Umgebung.</div>
+    <button class="btn rec" id="loop">● Messung starten</button>
+    <div class="big" id="loopRes">– ms</div>
+    <div class="verdict" id="loopV"></div>
+    <div class="lcd" id="loopInfo" style="display:none"></div>
+  </section>
+
+  <section class="card">
+    <h2>4 · Keyboard (MIDI)</h2>
+    <div class="lcd" id="midi"><span>MIDI</span><b>–</b></div>
+    <div id="midiLog"></div>
+    <div class="note">Keyboard per USB (OTG-Adapter) anschließen und Tasten drücken – spielt den gewählten Ton aus 2. Auf iPhone/iPad gibt es im Browser kein MIDI.</div>
+  </section>
+
+  <section class="card">
+    <h2>Einordnung</h2>
+    <div class="scale">
+      <b class="ok">unter 15 ms</b><span>wie Hardware – auch Fingerdrumming und schnelles Klavier</span>
+      <b class="ok">15–30 ms</b><span>gut spielbar: Flächen, Bass, Melodien, Samples</span>
+      <b class="mid">30–50 ms</b><span>spürbar: Einspielen geht, danach in der Piano Roll gerade rücken</span>
+      <b class="bad">über 50 ms</b><span>live kaum spielbar, nur zum Ausprobieren</span>
+    </div>
+    <div class="note">Werte gelten für Taste → Ton (Ausgabe). Ein Touch-Display legt noch ca. 10–30 ms obendrauf, ein USB-Keyboard nur wenige ms.</div>
+    <button class="btn" id="copy">Ergebnis kopieren</button>
+  </section>
+</main>
+<script>
+let ctx=null, hint='interactive', snd='click', R={};
+const $=id=>document.getElementById(id);
+const ms=s=>Math.round(s*1000*10)/10;
+function grade(v){ return v<15?['ok','sehr gut']:v<30?['ok','gut spielbar']:v<50?['mid','spürbar']:['bad','zu langsam zum Live-Spielen']; }
+async function mkCtx(){
+  if(ctx){ try{ await ctx.close(); }catch(e){} }
+  const lh=hint==='0'?0:hint; ctx=new (window.AudioContext||window.webkitAudioContext)({latencyHint:lh});
+  if(ctx.state!=='running') await ctx.resume();
+  setTimeout(showInfo,400); setTimeout(showInfo,1500);
+}
+function showInfo(){
+  if(!ctx) return; const b=ctx.baseLatency||0, o=ctx.outputLatency||0;
+  R.base=ms(b); R.out=ms(o); R.sr=ctx.sampleRate; R.hint=hint;
+  const tot=ms(b+o), [c,t]=grade(tot); R.tot=tot;
+  $('info').innerHTML='<span>Abtastrate</span><b>'+ctx.sampleRate+' Hz</b><span>Puffer</span><b>'+R.base+' ms</b><span>Ausgabe</span><b>'+(o?R.out+' ms':'nicht gemeldet')+'</b><span>Zusammen</span><b class="'+c+'">'+tot+' ms</b>';
+}
+$('start').onclick=async()=>{ await mkCtx(); $('start').textContent='Neu messen'; };
+document.querySelectorAll('#hint button').forEach(b=>b.onclick=async()=>{ hint=b.dataset.h; document.querySelectorAll('#hint button').forEach(x=>x.classList.toggle('on',x===b)); await mkCtx(); });
+document.querySelectorAll('#snd button').forEach(b=>b.onclick=()=>{ snd=b.dataset.s; document.querySelectorAll('#snd button').forEach(x=>x.classList.toggle('on',x===b)); });
+
+function voice(t, kind, midi, vel){
+  vel=vel==null?0.9:vel; const g=ctx.createGain(); g.connect(ctx.destination);
+  if(kind==='click'){ const o=ctx.createOscillator(); o.type='square'; o.frequency.value=2000; o.connect(g);
+    g.gain.setValueAtTime(0.5*vel,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.02); o.start(t); o.stop(t+0.03); }
+  else if(kind==='kick'){ const o=ctx.createOscillator(); o.frequency.setValueAtTime(160,t); o.frequency.exponentialRampToValueAtTime(45,t+0.12); o.connect(g);
+    g.gain.setValueAtTime(vel,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.35); o.start(t); o.stop(t+0.4); }
+  else { const f=440*Math.pow(2,((midi||60)-69)/12); [1,2,3].forEach((h,i)=>{ const o=ctx.createOscillator(), og=ctx.createGain(); o.type=i?'sine':'triangle'; o.frequency.value=f*h; og.gain.value=[0.5,0.18,0.07][i]; o.connect(og); og.connect(g); o.start(t); o.stop(t+1.4); });
+    g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.5*vel,t+0.004); g.gain.exponentialRampToValueAtTime(0.001,t+1.3); }
+}
+$('pad').addEventListener('pointerdown',async e=>{ e.preventDefault(); if(!ctx) await mkCtx(); voice(ctx.currentTime,snd,60); const p=$('pad'); p.classList.add('hit'); setTimeout(()=>p.classList.remove('hit'),80); });
+
+// Mikro-Schleife: Klicks zu bekannten Zeitpunkten, Mikro-Aufnahme mit Frame-Zählung (Worklet), Anschlag suchen
+const WK=`class Tap extends AudioWorkletProcessor{process(i){const c=i[0]&&i[0][0];if(c)this.port.postMessage({f:currentFrame,d:c.slice(0)});return true}}registerProcessor('tap',Tap)`;
+$('loop').onclick=async()=>{
+  const btn=$('loop'); btn.disabled=true; $('loopV').textContent=''; $('loopRes').textContent='…';
+  try{
+    if(!ctx) await mkCtx();
+    const st=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});
+    await ctx.audioWorklet.addModule(URL.createObjectURL(new Blob([WK],{type:'text/javascript'})));
+    const src=ctx.createMediaStreamSource(st), tap=new AudioWorkletNode(ctx,'tap'), mute=ctx.createGain(); mute.gain.value=0;
+    const chunks=[]; tap.port.onmessage=e=>chunks.push(e.data); src.connect(tap); tap.connect(mute); mute.connect(ctx.destination);
+    const SR=ctx.sampleRate, N=8, gap=0.45, t0=ctx.currentTime+0.6, T=[];
+    for(let i=0;i<N;i++){ const t=t0+i*gap; T.push(Math.round(t*SR)); voice(t,'click'); }
+    btn.textContent='hört zu …';
+    await new Promise(r=>setTimeout(r,(0.6+N*gap+0.5)*1000));
+    st.getTracks().forEach(t=>t.stop()); src.disconnect(); tap.disconnect();
+    // Mikro-Daten zu einem Puffer ab erstem Frame
+    if(!chunks.length) throw new Error('keine Mikro-Daten');
+    const f0=chunks[0].f, len=chunks[chunks.length-1].f+chunks[chunks.length-1].d.length-f0, x=new Float32Array(len);
+    chunks.forEach(c=>x.set(c.d,c.f-f0));
+    // Grundrauschen
+    let nz=0; const nN=Math.min(len,Math.max(0,T[0]-f0)); for(let i=0;i<nN;i++) nz=Math.max(nz,Math.abs(x[i]));
+    const lat=[];
+    T.forEach(tf=>{ const a=tf-f0, b=Math.min(len,a+Math.round(0.3*SR)); let pk=0; for(let i=a;i<b;i++) pk=Math.max(pk,Math.abs(x[i]));
+      if(pk<nz*3||pk<0.01) return; const th=Math.max(nz*2.5,pk*0.3); for(let i=a;i<b;i++) if(Math.abs(x[i])>=th){ lat.push((i-a)/SR); break; } });
+    if(lat.length<4) throw new Error('Klicks nicht gehört ('+lat.length+'/'+N+') – lauter stellen, Kopfhörer ab');
+    lat.sort((p,q)=>p-q); const med=lat[Math.floor(lat.length/2)], spread=ms(lat[lat.length-1]-lat[0]);
+    const rt=ms(med), out=ms(med/2), [c,t]=grade(out);
+    R.rt=rt; R.loopOut=out; R.spread=spread; R.n=lat.length;
+    $('loopRes').innerHTML='<span class="'+c+'">'+out+' ms</span>';
+    $('loopV').innerHTML='<span class="'+c+'">Ausgabe ≈ '+out+' ms · '+t+'</span>';
+    const li=$('loopInfo'); li.style.display=''; li.innerHTML='<span>hin + zurück</span><b>'+rt+' ms</b><span>Schwankung</span><b>'+spread+' ms</b><span>gehört</span><b>'+lat.length+'/'+N+'</b>';
+  }catch(e){ $('loopRes').textContent='– ms'; $('loopV').innerHTML='<span class="bad">'+(e.name==='NotAllowedError'?'Mikro nicht erlaubt':e.message)+'</span>'; }
+  btn.disabled=false; btn.textContent='● Nochmal messen';
+};
+
+// MIDI
+(async()=>{
+  if(!navigator.requestMIDIAccess){ $('midi').innerHTML='<span>MIDI</span><b class="bad">im Browser nicht verfügbar</b>'; R.midi='nein'; return; }
+  try{
+    const acc=await navigator.requestMIDIAccess(); R.midi='ja';
+    const list=()=>{ const ins=[...acc.inputs.values()]; $('midi').innerHTML='<span>MIDI</span><b class="ok">verfügbar</b><span>Geräte</span><b>'+(ins.length?ins.map(i=>i.name).join(', '):'keins angeschlossen')+'</b>';
+      ins.forEach(i=>i.onmidimessage=async m=>{ const [s,n,v]=m.data; if((s&0xf0)===0x90&&v>0){ if(!ctx) await mkCtx();
+        const lag=ms((performance.now()-m.timeStamp)/1000); voice(ctx.currentTime,snd==='click'?'key':snd,n,v/127);
+        $('midiLog').textContent='Taste '+n+' · Anschlag '+v+' · Verarbeitung '+lag+' ms'; } }); };
+    acc.onstatechange=list; list();
+  }catch(e){ $('midi').innerHTML='<span>MIDI</span><b class="bad">nicht erlaubt</b>'; R.midi='nicht erlaubt'; }
+})();
+
+$('copy').onclick=async()=>{
+  const t='Latenz-Test '+new Date().toLocaleString('de-DE')+'\n'+navigator.userAgent+'\n'
+    +'Chrome: Puffer '+(R.base??'–')+' ms, Ausgabe '+(R.out||'–')+' ms, zusammen '+(R.tot??'–')+' ms (Modus '+(R.hint||'–')+', '+(R.sr||'–')+' Hz)\n'
+    +'Mikro-Schleife: hin+zurück '+(R.rt??'–')+' ms, Ausgabe ≈ '+(R.loopOut??'–')+' ms, Schwankung '+(R.spread??'–')+' ms\n'
+    +'MIDI: '+(R.midi||'–');
+  try{ await navigator.clipboard.writeText(t); $('copy').textContent='Kopiert ✓'; }catch(e){ prompt('Kopieren:',t); }
+  setTimeout(()=>$('copy').textContent='Ergebnis kopieren',1500);
+};
+</script>
+</body>
+</html>
