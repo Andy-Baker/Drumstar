@@ -36,6 +36,7 @@ canvas{width:100%;height:56px;display:block;margin-top:8px;background:var(--inse
 
 <div class="card"><div class="row"><button class="play" data-p="dry"></button><div><div class="t">Trocken</div><div class="s">das Sample allein</div></div></div><canvas id="c_dry"></canvas></div>
 <div class="card"><div class="row"><button class="play" data-p="hall"></button><div><div class="t">Normaler Hall</div><div class="s">klingt nach dem Schlag aus (geht heute über die Spur)</div></div></div><canvas id="c_hall"></canvas></div>
+<div class="card"><div class="row"><button class="play" data-p="rh"></button><div><div class="t">Umgedreht, dann Hall</div><div class="s">Sample läuft rückwärts, Hall klingt danach normal aus (geht heute schon: Rückwärts + Hall der Spur)</div></div></div><canvas id="c_rh"></canvas></div>
 <div class="card rv"><div class="row"><button class="play" data-p="rev"></button><div><div class="t">Rückwärts-Hall</div><div class="s">schwillt in den Schlag hinein (geht nur im Sample)</div></div></div><canvas id="c_rev"></canvas></div>
 <div class="card rv"><div class="row"><button class="play" data-p="beat"></button><div><div class="t">Im Beat</div><div class="s">100 BPM, Rückwärts-Hall führt jeweils in Schlag 4 von Takt 2</div></div></div></div>
 
@@ -68,6 +69,7 @@ async function build(){
   const z=rev(await wet(rev(dry),I));            // umdrehen → Hall → umdrehen: endet dort, wo der Schlag beginnt
   B.dry=mk(D+.2); mixInto(B.dry,dry,.1,1);
   B.hall=mk(D+M+.2); mixInto(B.hall,dry,.1,1); mixInto(B.hall,w,.1,mx);
+  const rd=rev(dry), wr=await wet(rd,I); B.rh=mk(D+M+.2); mixInto(B.rh,rd,.1,1); mixInto(B.rh,wr,.1,mx);
   B.rev=mk(M+D+.3); mixInto(B.rev,z,.1,mx); mixInto(B.rev,dry,.1+M,1);
   // Beat: 2 Takte, Kick/Hat synthetisch, Snare auf 2 und 4, letzte 4 = Sample mit Rückwärts-Hall
   const st=60/100/4, bar=st*16, beat=mk(bar*2+D+.5); let lp=0; seed=5;
@@ -76,8 +78,8 @@ async function build(){
   const sn=S==='snare'?dry:(seed=3,S='snare',(()=>{ const x=source(); S=cur_S; return x; })());
   for(let s=0;s<32;s++){ const t=s*st; if([0,6,10,16,22].includes(s)) mixInto(beat,kick,t,1); if(s%2===0&&s<28) mixInto(beat,hat,t,1); if([4,12,20].includes(s)) mixInto(beat,sn,t,1); }
   mixInto(beat,z,28*st-M,mx); mixInto(beat,dry,28*st,1); B.beat=beat;
-  ['dry','hall','rev','beat'].forEach(k=>norm(B[k]));
-  draw('c_dry',B.dry,null); draw('c_hall',B.hall,null); draw('c_rev',B.rev,.1+M);
+  ['dry','hall','rh','rev','beat'].forEach(k=>norm(B[k]));
+  draw('c_dry',B.dry,null); draw('c_hall',B.hall,null); draw('c_rh',B.rh,.1+D); draw('c_rev',B.rev,.1+M);
 }
 let cur_S='snare';
 const $=id=>document.getElementById(id);
