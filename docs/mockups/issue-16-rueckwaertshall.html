@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rückwärts-Hall (#16)</title>
+<link rel="stylesheet" href="../../fonts.css">
+<style>
+:root{color-scheme:dark;--bg:#050507;--panel:#16161c;--inset:#0a0a0d;--blue:#3fa9ff;--blue-2:#8fd4ff;--white:#f4f5f7;--dim:#7d818c;--metal:#c7cbd4;--grn:#4fd18b}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--white);font-family:'Rajdhani',system-ui,sans-serif;padding:calc(14px + env(safe-area-inset-top,0px)) 16px 40px;max-width:520px;margin:0 auto}
+h1{font-size:20px;margin:0 0 4px;letter-spacing:.04em}
+p{color:var(--metal);font-size:14px;line-height:1.4;margin:0 0 12px}
+.lb{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;margin:16px 0 6px}
+.seg{display:flex;border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,.12)}
+.seg button{flex:1;min-height:40px;border:0;background:var(--panel);color:var(--dim);font:700 13px inherit;font-family:inherit;cursor:pointer}
+.seg button.on{background:rgba(63,169,255,.2);color:var(--blue-2)}
+.card{background:var(--panel);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px;margin-top:8px}
+.card.rv{border-color:rgba(63,169,255,.45);box-shadow:0 0 14px rgba(63,169,255,.15)}
+.row{display:flex;align-items:center;gap:10px}
+.play{width:44px;height:44px;border-radius:8px;border:1px solid rgba(63,169,255,.45);background:rgba(63,169,255,.12);color:var(--blue-2);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+.play svg{width:18px;height:18px}
+.play.on{background:var(--blue);color:#042c53}
+.t{font-weight:700;font-size:15px}.s{font-size:12px;color:var(--dim)}
+canvas{width:100%;height:56px;display:block;margin-top:8px;background:var(--inset);border-radius:6px}
+.sl{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--metal);margin-top:8px}
+.sl span{width:90px}.sl input{flex:1;accent-color:#3fa9ff}
+</style>
+</head>
+<body>
+<h1>Rückwärts-Hall</h1>
+<p>Sample umdrehen → Hall drauf → wieder umdrehen. Der Hall läuft dadurch <b>vor</b> dem Schlag und schwillt in ihn hinein. Bekannt aus Shoegaze, Dub, Trailer-Sounds und Vocal-Intros.</p>
+
+<div class="lb">Sample</div>
+<div class="seg" id="src"><button data-s="snare" class="on">Snare</button><button data-s="stab">Akkord</button><button data-s="vox">Stimme</button></div>
+
+<div class="card"><div class="row"><button class="play" data-p="dry"></button><div><div class="t">Trocken</div><div class="s">das Sample allein</div></div></div><canvas id="c_dry"></canvas></div>
+<div class="card"><div class="row"><button class="play" data-p="hall"></button><div><div class="t">Normaler Hall</div><div class="s">klingt nach dem Schlag aus (geht heute über die Spur)</div></div></div><canvas id="c_hall"></canvas></div>
+<div class="card rv"><div class="row"><button class="play" data-p="rev"></button><div><div class="t">Rückwärts-Hall</div><div class="s">schwillt in den Schlag hinein (geht nur im Sample)</div></div></div><canvas id="c_rev"></canvas></div>
+<div class="card rv"><div class="row"><button class="play" data-p="beat"></button><div><div class="t">Im Beat</div><div class="s">100 BPM, Rückwärts-Hall führt jeweils in Schlag 4 von Takt 2</div></div></div></div>
+
+<div class="lb">Einstellen</div>
+<div class="sl"><span>Hall-Länge</span><input type="range" id="len" min="0.4" max="3" step="0.1" value="1.6"></div>
+<div class="sl"><span>Mischung</span><input type="range" id="mix" min="0" max="1" step="0.01" value="0.8"></div>
+
+<script>
+const PLAY='<svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20" fill="currentColor"/></svg>', STOP='<svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1" fill="currentColor"/></svg>';
+let ctx=null, SR=44100, S='snare', B={}, cur=null, curBtn=null, seed=3;
+const rnd=()=>((seed=(seed*16807)%2147483647)/2147483647)*2-1;
+function mk(len){ return new AudioBuffer({length:Math.round(len*SR),numberOfChannels:2,sampleRate:SR}); }
+function fill(b,fn){ const L=b.getChannelData(0),R=b.getChannelData(1); for(let i=0;i<L.length;i++){ const v=fn(i/SR); L[i]=v; R[i]=v; } return b; }
+function source(){
+  seed=3;
+  if(S==='snare'){ let lp=0; return fill(mk(.35),t=>{ lp+=(rnd()-lp)*.55; return (lp*.7*Math.exp(-t*16)+Math.sin(2*Math.PI*(180+60*Math.exp(-t*40))*t)*.5*Math.exp(-t*25))*.8; }); }
+  if(S==='stab'){ const f=[220,277.18,329.63,440]; return fill(mk(.6),t=>{ let s=0; f.forEach((x,k)=>{ for(let h=1;h<6;h++) s+=Math.sin(2*Math.PI*x*h*t+k)/h/h; }); return s*.12*Math.min(1,t/.004)*Math.exp(-t*5); }); }
+  // „Ah“: Sägezahn durch zwei Formanten
+  const b=mk(.7), d=b.getChannelData(0); let ph=0; const sw=[]; for(let i=0;i<d.length;i++){ const t=i/SR; ph+=(165*(1+.01*Math.sin(2*Math.PI*5*t)))/SR; sw.push(((ph%1)*2-1)*Math.min(1,t/.03)*Math.min(1,(.7-t)/.15)); }
+  const bp=(x,f,q)=>{ const w=2*Math.PI*f/SR, a=Math.sin(w)/(2*q), c=Math.cos(w), b0=a/(1+a), a1=-2*c/(1+a), a2=(1-a)/(1+a); let x1=0,x2=0,y1=0,y2=0; return x.map(v=>{ const y=b0*v-b0*x2-a1*y1-a2*y2; x2=x1;x1=v;y2=y1;y1=y; return y; }); };
+  const f1=bp(sw,750,6), f2=bp(sw,1200,8); for(let i=0;i<d.length;i++){ d[i]=(f1[i]+f2[i]*.6)*.9; } b.getChannelData(1).set(d); return b;
+}
+function ir(len){ const b=mk(len); for(let c=0;c<2;c++){ const d=b.getChannelData(c); for(let i=0;i<d.length;i++) d[i]=rnd()*Math.pow(1-i/d.length,2.6)*.35; } return b; }
+function rev(b){ const o=mk(b.length/SR); for(let c=0;c<2;c++){ const s=b.getChannelData(c), d=o.getChannelData(c); for(let i=0;i<s.length;i++) d[i]=s[s.length-1-i]; } return o; }
+async function wet(b,I){ const oc=new OfflineAudioContext(2,b.length+I.length,SR), s=oc.createBufferSource(), cv=oc.createConvolver(); cv.normalize=false; cv.buffer=I; s.buffer=b; s.connect(cv); cv.connect(oc.destination); s.start(); return oc.startRendering(); }
+function mixInto(dst,src,at,g){ const o=Math.round(at*SR); for(let c=0;c<2;c++){ const d=dst.getChannelData(c), s=src.getChannelData(c); for(let i=0;i<s.length&&o+i<d.length;i++) if(o+i>=0) d[o+i]+=s[i]*g; } }
+async function build(){
+  const len=+$('len').value, mx=+$('mix').value, dry=source(); seed=11; const I=ir(len), M=I.length/SR, D=dry.length/SR;
+  const w=await wet(dry,I);                      // normaler Hall
+  const z=rev(await wet(rev(dry),I));            // umdrehen → Hall → umdrehen: endet dort, wo der Schlag beginnt
+  B.dry=mk(D+.2); mixInto(B.dry,dry,.1,1);
+  B.hall=mk(D+M+.2); mixInto(B.hall,dry,.1,1); mixInto(B.hall,w,.1,mx);
+  B.rev=mk(M+D+.3); mixInto(B.rev,z,.1,mx); mixInto(B.rev,dry,.1+M,1);
+  // Beat: 2 Takte, Kick/Hat synthetisch, Snare auf 2 und 4, letzte 4 = Sample mit Rückwärts-Hall
+  const st=60/100/4, bar=st*16, beat=mk(bar*2+D+.5); let lp=0; seed=5;
+  const kick=fill(mk(.4),t=>Math.sin(2*Math.PI*(50*t+90*(1-Math.exp(-t*30))/30))*Math.exp(-t*9)*.8);
+  const hat=fill(mk(.06),t=>rnd()*Math.exp(-t*70)*.12);
+  const sn=S==='snare'?dry:(seed=3,S='snare',(()=>{ const x=source(); S=cur_S; return x; })());
+  for(let s=0;s<32;s++){ const t=s*st; if([0,6,10,16,22].includes(s)) mixInto(beat,kick,t,1); if(s%2===0&&s<28) mixInto(beat,hat,t,1); if([4,12,20].includes(s)) mixInto(beat,sn,t,1); }
+  mixInto(beat,z,28*st-M,mx); mixInto(beat,dry,28*st,1); B.beat=beat;
+  ['dry','hall','rev','beat'].forEach(k=>norm(B[k]));
+  draw('c_dry',B.dry,null); draw('c_hall',B.hall,null); draw('c_rev',B.rev,.1+M);
+}
+let cur_S='snare';
+const $=id=>document.getElementById(id);
+function norm(b){ let pk=0; for(let c=0;c<2;c++){ const d=b.getChannelData(c); for(let i=0;i<d.length;i++) pk=Math.max(pk,Math.abs(d[i])); } if(pk>0) for(let c=0;c<2;c++){ const d=b.getChannelData(c); for(let i=0;i<d.length;i++) d[i]*=.8/pk; } }
+function draw(id,b,mark){ const cv=$(id), dpr=devicePixelRatio||1, w=cv.clientWidth, h=cv.clientHeight; cv.width=w*dpr; cv.height=h*dpr; const g=cv.getContext('2d'); g.scale(dpr,dpr);
+  const d=b.getChannelData(0), n=d.length; const ref=3.4*SR; // gleicher Zeitmaßstab für alle
+  g.fillStyle='#3fa9ff'; for(let x=0;x<w;x++){ const a=Math.floor(x/w*ref), e=Math.floor((x+1)/w*ref); let pk=0; for(let i=a;i<e&&i<n;i++) pk=Math.max(pk,Math.abs(d[i])); const y=Math.min(1,pk)*h/2; g.fillRect(x,h/2-y,1,y*2||.5); }
+  if(mark!=null){ const x=mark*SR/ref*w; g.fillStyle='#ffc247'; g.fillRect(x,0,2,h); } }
+function stop(){ if(cur){ try{cur.stop();}catch(e){} cur=null; } if(curBtn){ curBtn.innerHTML=PLAY; curBtn.classList.remove('on'); curBtn=null; } }
+document.querySelectorAll('.play').forEach(b=>{ b.innerHTML=PLAY; b.onclick=async ()=>{
+  if(!ctx){ ctx=new AudioContext({sampleRate:SR}); } await ctx.resume();
+  const was=curBtn===b; stop(); if(was) return;
+  const s=ctx.createBufferSource(); s.buffer=B[b.dataset.p]; s.loop=b.dataset.p==='beat'; s.connect(ctx.destination); s.start();
+  s.onended=()=>{ if(cur===s) stop(); }; cur=s; curBtn=b; b.innerHTML=STOP; b.classList.add('on'); }; });
+document.querySelectorAll('#src button').forEach(b=>b.onclick=()=>{ document.querySelectorAll('#src button').forEach(x=>x.classList.toggle('on',x===b)); S=cur_S=b.dataset.s; stop(); build(); });
+['len','mix'].forEach(id=>$(id).onchange=()=>{ const p=curBtn&&curBtn.dataset.p; stop(); build().then(()=>{ if(p) document.querySelector('[data-p='+p+']').click(); }); });
+addEventListener('resize',()=>{ if(B.dry) build(); });
+build();
+</script>
+</body>
+</html>
