@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sampler: eigenes Instrument bauen (#72)</title>
+<link rel="stylesheet" href="../../fonts.css">
+<style>
+/* Mockup zu Issue #72: eigenes Sampler-Instrument aus mehreren Samples (Töne × Lautstärken). Die echte App läuft im Rahmen;
+   das Fenster „Instrument bauen“ wird zur Laufzeit eingehängt. Beispiel-Instrument GITARRE ist gespielt (Klang = Pizzicato als Platzhalter). */
+:root{color-scheme:dark;--bg:#050507;--blue:#3fa9ff;--blue-2:#8fd4ff;--white:#f4f5f7;--dim:#7d818c;--metal:#c7cbd4}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--white);font-family:'Rajdhani',system-ui,sans-serif}
+#mbar{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:calc(6px + env(safe-area-inset-top,0px)) 10px 6px;background:repeating-linear-gradient(135deg,#0b1622 0 8px,#0d1a28 8px 16px);border-bottom:1px dashed rgba(63,169,255,.45);font:700 11px 'JetBrains Mono',monospace;color:var(--blue-2)}
+#mbar .g{display:flex;align-items:center;gap:4px}
+#mbar button{height:30px;padding:0 7px;border-radius:6px;border:1px solid rgba(63,169,255,.45);background:rgba(63,169,255,.12);font:700 11px 'JetBrains Mono',monospace;color:var(--blue-2);cursor:pointer}
+#mbar button.on{background:var(--blue);color:#042c53}
+#mbar .sp{flex:1}
+#stage{position:fixed;top:44px;left:0;right:0;bottom:0;display:flex;justify-content:center;align-items:flex-start;gap:28px;overflow:auto}
+.ph{display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;width:100%}
+iframe{border:0;width:100%;height:100%;background:#050507;display:block}
+#side{display:none;width:340px;font-size:14px;color:var(--metal);line-height:1.45;padding-top:20px}
+#side h3,#info h3{font:700 11px 'Rajdhani';letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin:16px 0 6px}
+#side p,#info p{margin:0 0 8px} #side b,#info b{color:var(--white)}
+#side ul,#info ul{margin:0 0 8px;padding-left:18px} #side li,#info li{margin:3px 0}
+#info{position:fixed;inset:44px 0 0 0;z-index:190;background:#07080bf2;overflow:auto;padding:8px 18px 40px;font-size:14.5px;color:var(--metal);line-height:1.45;display:none}
+#info.open{display:block}
+@media (min-width:900px) and (min-height:900px){
+  #stage{padding:14px 0}
+  .ph{width:auto;height:auto}
+  iframe{width:390px;height:844px;border-radius:30px;border:8px solid #1a1e26;box-shadow:0 30px 80px rgba(0,0,0,.75);box-sizing:content-box}
+  #side{display:block} #infoBtn{display:none}
+}
+</style>
+</head>
+<body>
+<div id="mbar">
+  <span>#72</span>
+  <div class="g"><button data-v="a" class="on">A Tastatur</button><button data-v="b">B Liste</button></div>
+  <span class="sp"></span>
+  <button id="exBtn">Öffnen</button>
+  <button id="infoBtn">ⓘ</button>
+</div>
+<div id="stage">
+  <div class="ph"><iframe id="fR" src="../../index.html" title="App mit Vorschlag"></iframe></div>
+  <div id="side"></div>
+</div>
+<div id="info"></div>
+<template id="notes">
+  <h3>Was das ist</h3>
+  <p>Die <b>echte App</b>. <b>Öffnen</b> legt eine Sampler-Spur an und öffnet <b>Sound wählen</b>. Unter <b>Eigene</b> neu: das Beispiel <b>GITARRE</b> (eigenes Instrument) und <b>+ Instrument bauen</b>. Beides öffnet das Fenster <b>Instrument bauen</b>.</p>
+  <p>Das Beispiel ist gespielt: 7 Töne, beim C3 drei Lautstärken. Klang im Mockup = Pizzicato als Platzhalter, Aufnehmen ist nur angedeutet.</p>
+  <h3>Idee</h3>
+  <ul>
+    <li>Instrument = mehrere Samples aus der Bibliothek, je Sample <b>Grundton</b> (erkannt, −/+) und <b>Stufe</b> leise · mittel · laut.</li>
+    <li><b>Bereiche ergeben sich selbst</b>: jeder Ton gilt bis zur Mitte zum Nachbarn. Gleicher Ton + gleiche Stufe = Varianten (abwechselnd).</li>
+    <li><b>Tonleiter aufnehmen</b>: mehrere Töne am Stück einspielen, wird an den Anschlägen geschnitten und gestimmt.</li>
+    <li>Optional: Lautheit je Ton angleichen. Im Sampler wie ein Werk-Instrument wählbar.</li>
+  </ul>
+  <h3>Varianten</h3>
+  <ul>
+    <li><b>A · Tastatur</b>: Klaviatur mit farbigen Bereichen darüber. Taste = anhören, Bereich = Ton bearbeiten (Stufen, Grundton) im Fenster von unten.</li>
+    <li><b>B · Liste</b>: oben schmale Übersicht der Bereiche, darunter je Ton eine Karte mit den Samples und Stufen-Schalter L·M·L direkt in der Zeile.</li>
+  </ul>
+</template>
+<script>
+// ===== Läuft im globalen Scope der App (per eval im Rahmen) =====
+function MK(){
+  if(window.__mk) return;
+  let V='a', sel=null, rec=null;
+  const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const LV=['leise','mittel','laut'], LS=['L','M','F'];
+  // Beispiel: eigenes Instrument aus Gitarren-Samples (Namen wie aus dem Sample-Editor)
+  const INS={name:'GITARRE', s:[
+    {n:'gitarre-c3-leise',r:48,l:0},{n:'gitarre-c3',r:48,l:1},{n:'gitarre-c3-b',r:48,l:1},{n:'gitarre-c3-laut',r:48,l:2},
+    {n:'gitarre-e3',r:52,l:1},{n:'gitarre-g3',r:55,l:1},{n:'gitarre-c4',r:60,l:1},{n:'gitarre-e4',r:64,l:1},{n:'gitarre-g4',r:67,l:1},{n:'gitarre-c5',r:72,l:1}]};
+  const roots=()=>[...new Set(INS.s.map(x=>x.r))].sort((a,b)=>a-b);
+  const zones=()=>{ const R=roots(); return R.map((r,i)=>({r, lo:i?Math.floor((R[i-1]+r)/2)+1:36, hi:i<R.length-1?Math.floor((r+R[i+1])/2):84})); };
+  const zoneOf=m=>zones().find(z=>m>=z.lo&&m<=z.hi);
+  const blk=m=>[1,3,6,8,10].includes(((m%12)+12)%12);
+  let tr=null;
+  function play(m,vel){ if(!tr) return; Promise.resolve(initAudio()).then(()=>{ if(audioCtx.state!=='running') audioCtx.resume(); ensureTrackBuses();
+    const keep=tr.smp; tr.smp='piz'; const S=samplerGet('piz'); const go=()=>{ samplerVoice(tr,audioCtx.currentTime+0.01,m-45-(tr.rootNote||0),vel||0.8,0.6); tr.smp=keep; };
+    if(S.state==='ok') go(); else S.p.then(go); }); }
+  // ---------- Fenster ----------
+  const st=document.createElement('style');
+  st.textContent=`
+#mkIb{display:none;position:fixed;inset:0;z-index:85;background:linear-gradient(180deg,var(--chassis),var(--chassis-2));padding:14px;padding-top:max(14px,env(safe-area-inset-top));padding-bottom:max(14px,env(safe-area-inset-bottom));flex-direction:column;gap:10px;overflow:hidden}
+#mkIb.open{display:flex}
+#mkIb .hd{display:flex;align-items:center;gap:10px;min-height:52px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.06);flex-shrink:0}
+#mkIb .x,#mkZs .x{width:44px;height:44px;border-radius:9px;border:1px solid rgba(255,255,255,.12);background:var(--panel);color:var(--blue-2);font-size:15px;flex:none;display:flex;align-items:center;justify-content:center;cursor:pointer}
+#mkIb .bar{display:flex;gap:6px;flex-shrink:0}
+#mkIb .bar input{flex:1;min-width:0;background:var(--panel-inset);border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:8px 9px;color:var(--white);font:600 15px 'Rajdhani',sans-serif}
+#mkIb .btn{min-height:44px;padding:0 12px;border-radius:9px;border:1px solid rgba(63,169,255,.4);background:rgba(63,169,255,.12);color:var(--blue-2);font:700 13px 'Rajdhani',sans-serif;display:flex;align-items:center;justify-content:center;gap:7px;cursor:pointer}
+#mkIb .btn svg,#mkZs .btn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2}
+#mkIb .btn.g{border-color:rgba(139,232,106,.45);background:rgba(139,232,106,.12);color:#b9f59e}
+#mkIb .body{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:10px}
+#mkIb .body>*{flex-shrink:0}
+#mkIb .cap,#mkZs .cap{font-size:11px;color:var(--dim);line-height:1.4}
+#mkIb .lbl{font:700 11px 'Rajdhani',sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.kbw{overflow-x:auto;overscroll-behavior-x:contain;border-radius:10px;background:var(--panel-inset);border:1px solid rgba(255,255,255,.08);padding:8px 0 0}
+.kb{position:relative;height:168px}
+.kb .zn{position:absolute;top:0;height:42px;border-radius:7px;background:rgba(139,232,106,.12);border:1px solid rgba(139,232,106,.4);color:#b9f59e;font:700 12px 'JetBrains Mono',monospace;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;overflow:hidden}
+.kb .zn.on{background:rgba(139,232,106,.3);border-color:#8be86a;color:#fff}
+.kb .zn i{display:flex;gap:2px}.kb .zn i b{width:6px;height:6px;border-radius:2px;background:rgba(139,232,106,.25)}.kb .zn i b.y{background:#8be86a}
+.kb .k{position:absolute;top:50px;cursor:pointer}
+.kb .w{width:34px;height:110px;background:linear-gradient(#e9ebef,#c9ccd3);border:1px solid #0a0a0d;border-radius:0 0 5px 5px}
+.kb .b{width:22px;height:68px;background:linear-gradient(#2a2d34,#111317);border:1px solid #000;border-radius:0 0 4px 4px;z-index:2}
+.kb .k.rt::after{content:'';position:absolute;left:50%;bottom:8px;width:8px;height:8px;margin-left:-4px;border-radius:50%;background:#3aa64a;box-shadow:0 0 6px #8be86a}
+.kb .k.dn{filter:brightness(.8)}
+.kb .k span{position:absolute;bottom:20px;left:0;right:0;text-align:center;font:700 10px 'JetBrains Mono',monospace;color:#3a3d44}
+.zbar{display:flex;height:30px;border-radius:7px;overflow:hidden;border:1px solid rgba(139,232,106,.35)}
+.zbar div{display:flex;align-items:center;justify-content:center;font:700 10px 'JetBrains Mono',monospace;color:#b9f59e;border-right:1px solid rgba(139,232,106,.35);background:rgba(139,232,106,.1);min-width:0;overflow:hidden}
+.zbar div:last-child{border-right:0}
+.zc{background:var(--panel);border-radius:10px;border:1px solid rgba(255,255,255,.06);padding:8px 10px;display:flex;flex-direction:column;gap:6px}
+.zc .zt{display:flex;align-items:center;gap:8px}
+.zc .zt b{font:700 18px 'JetBrains Mono',monospace;color:#8be86a;min-width:46px}
+.zc .zt small{flex:1;font:11px 'JetBrains Mono',monospace;color:var(--dim)}
+.srow{display:grid;grid-template-columns:44px 1fr auto 44px;gap:6px;align-items:center;min-height:44px}
+.srow .pl,.srow .mo{width:44px;height:40px;border-radius:8px;border:1px solid rgba(63,169,255,.3);background:none;color:var(--blue-2);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.srow .pl svg,.srow .mo svg{width:15px;height:15px}
+.srow .nm{font:600 14px 'Rajdhani',sans-serif;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.seg3{display:flex;border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,.12)}
+.seg3 button{width:34px;height:36px;border:0;background:var(--panel-inset);color:var(--dim);font:700 12px 'JetBrains Mono',monospace;cursor:pointer}
+.seg3 button.on{background:rgba(139,232,106,.22);color:#b9f59e}
+#mkZs{position:absolute;left:0;right:0;bottom:0;background:#0f1015;border-top:1px solid rgba(63,169,255,.4);border-radius:14px 14px 0 0;padding:12px 14px calc(16px + env(safe-area-inset-bottom));transform:translateY(105%);transition:transform .2s;max-height:78%;display:flex;flex-direction:column;gap:10px;box-shadow:0 -10px 30px rgba(0,0,0,.6);z-index:5;overflow-y:auto}
+#mkZs.open{transform:none}
+#mkZs .sh{display:flex;align-items:center;gap:10px}#mkZs .sh span{flex:1;font:700 17px 'Rajdhani',sans-serif;color:var(--white)}
+#mkZs .rt{display:flex;align-items:center;gap:6px}
+#mkZs .rt .btn{padding:0 10px;font-size:13px}
+#mkZs .rt button{width:44px;height:40px;border-radius:8px;border:1px solid rgba(63,169,255,.35);background:var(--panel);color:var(--blue-2);font:700 18px 'Rajdhani';cursor:pointer}
+#mkZs .rt b{min-width:48px;text-align:center;font:700 19px 'JetBrains Mono',monospace;color:#8be86a}
+#mkZs .lv{display:flex;flex-direction:column;gap:4px;background:var(--panel);border-radius:9px;padding:6px 10px}
+#mkZs .lv h4{margin:0;font:700 11px 'Rajdhani';letter-spacing:.14em;text-transform:uppercase;color:var(--dim);display:flex;justify-content:space-between}
+#mkZs .add{min-height:40px;border:1px dashed rgba(63,169,255,.35);border-radius:8px;background:none;color:var(--blue-2);font:700 13px 'Rajdhani';cursor:pointer}
+#mkRec{display:none;position:absolute;inset:0;z-index:6;background:#000c;align-items:flex-end}
+#mkRec.open{display:flex}
+#mkRec .box{width:100%;background:#0f1015;border-top:1px solid rgba(255,90,90,.5);border-radius:14px 14px 0 0;padding:14px 14px calc(18px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px}
+#mkRec .tones{display:flex;flex-wrap:wrap;gap:6px}
+#mkRec .tones span{min-width:46px;height:40px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:var(--panel);display:flex;align-items:center;justify-content:center;font:700 14px 'JetBrains Mono',monospace;color:var(--dim)}
+#mkRec .tones span.now{border-color:#ff5a5a;color:#fff;background:rgba(255,90,90,.2)}#mkRec .tones span.ok{border-color:rgba(139,232,106,.5);color:#b9f59e}
+#mkRec .opt{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font:600 13px 'Rajdhani';color:var(--metal)}
+#mkRec .opt button{min-height:38px;padding:0 10px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:var(--panel);color:var(--dim);font:700 13px 'Rajdhani';cursor:pointer}
+#mkRec .opt button.on{border-color:rgba(63,169,255,.5);color:var(--blue-2);background:rgba(63,169,255,.12)}
+#mkRec .big{min-height:56px;border-radius:12px;border:1px solid rgba(255,90,90,.6);background:rgba(255,90,90,.15);color:#ffb4b4;font:700 16px 'Rajdhani';cursor:pointer}
+`;
+  document.head.appendChild(st);
+  const ov=document.createElement('div'); ov.id='mkIb'; document.body.appendChild(ov);
+  const IC={play:'<svg viewBox="0 0 24 24"><polygon points="7,5 19,12 7,19" fill="currentColor"/></svg>', more:'<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2" fill="currentColor"/><circle cx="12" cy="12" r="2" fill="currentColor"/><circle cx="19" cy="12" r="2" fill="currentColor"/></svg>',
+    mic:'<svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>', plus:'<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>', lev:'<svg viewBox="0 0 24 24"><path d="M4 18V12M9 18V8M14 18V5M19 18V10"/></svg>'};
+  const W=34, BW=22, LO=36, HI=84;
+  const wIdx=m=>{ let c=0; for(let i=LO;i<m;i++) if(!blk(i)) c++; return c; };
+  const kx=m=>blk(m) ? wIdx(m)*W-BW/2 : wIdx(m)*W;
+  const kr=m=>blk(m) ? kx(m)+BW : kx(m)+W;
+  function srow(x){ const i=INS.s.indexOf(x);
+    return '<div class="srow" data-i="'+i+'"><button class="pl" data-pl="'+i+'" aria-label="Anhören">'+IC.play+'</button><span class="nm">'+esc(x.n)+'</span>'
+      +'<div class="seg3" role="group" aria-label="Stufe">'+LS.map((s,l)=>'<button data-lv="'+l+'" class="'+(x.l===l?'on':'')+'" aria-label="'+LV[l]+'">'+s+'</button>').join('')+'</div>'
+      +'<button class="mo" aria-label="Mehr">'+IC.more+'</button></div>'; }
+  let sc0=null;
+  function render(){
+    const Z=zones(); const kw0=ov.querySelector('.kbw'); sc0=kw0?kw0.scrollLeft:null;
+    let h='<div class="hd"><h2 class="ovt">Instrument bauen<small>SAMPLER</small></h2><button class="x" data-a="close" aria-label="Schließen">✕</button></div>'
+      +'<div class="bar"><input value="'+esc(INS.name)+'" aria-label="Name" maxlength="30"><button class="btn">Speichern</button></div><div class="body">';
+    if(V==='a'){
+      h+='<div class="lbl">Töne · '+Z.length+' Bereiche</div><div class="kbw"><div class="kb" style="width:'+(wIdx(HI+1)*W)+'px">';
+      Z.forEach(z=>{ const L=INS.s.filter(x=>x.r===z.r), has=[0,1,2].map(l=>L.some(x=>x.l===l));
+        h+='<div class="zn'+(sel===z.r?' on':'')+'" data-z="'+z.r+'" style="left:'+(kx(z.lo)+1)+'px;width:'+(kr(z.hi)-kx(z.lo)-2)+'px"><span>'+midiName(z.r)+'</span><i>'+has.map(y=>'<b class="'+(y?'y':'')+'"></b>').join('')+'</i></div>'; });
+      for(let m=LO;m<=HI;m++){ const isR=Z.some(z=>z.r===m); h+='<div class="k '+(blk(m)?'b':'w')+(isR?' rt':'')+'" data-k="'+m+'" style="left:'+kx(m)+'px">'+(!blk(m)&&m%12===0?'<span>C'+(m/12-1)+'</span>':'')+'</div>'; }
+      h+='</div></div><div class="cap">Taste = anhören · grüner Punkt = Grundton eines Samples · Bereich antippen = Ton bearbeiten. ▪▪▪ = leise · mittel · laut vorhanden.</div>';
+    } else {
+      h+='<div class="zbar">'+Z.map(z=>'<div style="flex:'+(z.hi-z.lo+1)+'">'+midiName(z.r)+'</div>').join('')+'</div>'
+        +'<div class="cap">Bereiche ergeben sich aus den Grundtönen (bis zur Mitte zum Nachbarn). L · M · F = leise · mittel · laut.</div>';
+      Z.forEach(z=>{ const L=INS.s.filter(x=>x.r===z.r);
+        h+='<div class="zc"><div class="zt"><b>'+midiName(z.r)+'</b><small>'+midiName(z.lo)+'–'+midiName(z.hi)+' · '+L.length+' Sample'+(L.length>1?'s':'')+'</small><button class="btn" data-z="'+z.r+'" style="min-height:36px">Grundton</button></div>'
+          +L.map(srow).join('')+'</div>'; });
+    }
+    h+='<div class="bar" style="flex-wrap:wrap"><button class="btn g" data-a="rec" style="flex:1">'+IC.mic+'Tonleiter aufnehmen</button><button class="btn" data-a="add" style="flex:1">'+IC.plus+'Sample aus Bibliothek</button></div>'
+      +'<button class="btn" data-a="norm">'+IC.lev+'Lautheit je Ton angleichen</button></div>'
+      +'<div id="mkZs"></div><div id="mkRec"></div>';
+    const keep=sc0; ov.innerHTML=h; bind(); const kw=ov.querySelector('.kbw'); if(kw) kw.scrollLeft=keep!=null?keep:kx(45); if(sel!=null && V==='a') zsheet(sel,true);
+  }
+  function bind(){
+    ov.querySelector('[data-a="close"]').onclick=()=>{ ov.classList.remove('open'); sel=null; };
+    ov.querySelectorAll('[data-k]').forEach(k=>{ k.onpointerdown=()=>{ k.classList.add('dn'); play(+k.dataset.k); }; k.onpointerup=k.onpointerleave=()=>k.classList.remove('dn'); });
+    ov.querySelectorAll('[data-z]').forEach(z=>z.onclick=()=>{ sel=+z.dataset.z; if(V==='a') render(); else zsheet(sel); });
+    ov.querySelectorAll('[data-pl]').forEach(b=>b.onclick=()=>{ const x=INS.s[+b.dataset.pl]; play(x.r,[0.35,0.75,1.1][x.l]); });
+    ov.querySelectorAll('.srow .seg3 button').forEach(b=>b.onclick=()=>{ const i=+b.closest('.srow').dataset.i; INS.s[i].l=+b.dataset.lv; const sh=ov.querySelector('#mkZs.open'); if(sh) zsheet(sel,true); else render(); });
+    ov.querySelectorAll('.srow .mo').forEach(b=>b.onclick=()=>hmToast('Menü: Im Sample-Editor öffnen · Entfernen',false));
+    ov.querySelector('[data-a="rec"]').onclick=recOpen;
+    ov.querySelector('[data-a="add"]').onclick=()=>hmToast('Bibliothek öffnet sich – Sample wählen, Grundton wird erkannt',false);
+    ov.querySelector('[data-a="norm"]').onclick=()=>hmToast('Lautheit angeglichen (Rückgängig)',true,()=>{});
+  }
+  function zsheet(r,keep){
+    const zs=ov.querySelector('#mkZs'), z=zoneOf(r)||{r,lo:r,hi:r}, L=INS.s.filter(x=>x.r===r);
+    zs.innerHTML='<div class="sh"><span>Ton '+midiName(r)+' <small style="font:500 12px JetBrains Mono;color:var(--dim)">gilt '+midiName(z.lo)+'–'+midiName(z.hi)+'</small></span><button class="x" aria-label="Schließen">✕</button></div>'
+      +'<div class="rt"><span class="lbl" style="flex:1">Grundton</span><button data-d="-1">−</button><b>'+midiName(r)+'</b><button data-d="1">+</button><button class="btn" style="min-height:40px">Erkennen</button></div>'
+      +[2,1,0].map(l=>{ const S=L.filter(x=>x.l===l); return '<div class="lv"><h4><span>'+LV[l]+'</span><span>'+(S.length>1?S.length+' Varianten, abwechselnd':S.length?'':'fehlt – nimmt nächste Stufe')+'</span></h4>'+S.map(srow).join('')+'<button class="add">+ Sample</button></div>'; }).join('')
+      +'<div class="cap">Stufe bestimmt, ab welcher Anschlagstärke das Sample spielt. Mehrere in einer Stufe = Varianten (klingt weniger gleich).</div>';
+    zs.classList.add('open');
+    zs.querySelector('.x').onclick=()=>{ zs.classList.remove('open'); sel=null; if(V==='a') render(); };
+    zs.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{ const d=+b.dataset.d, nr=r+d; INS.s.filter(x=>x.r===r).forEach(x=>x.r=nr); sel=nr; render(); if(V==='b') zsheet(nr,true); });
+    zs.querySelectorAll('[data-pl]').forEach(b=>b.onclick=()=>{ const x=INS.s[+b.dataset.pl]; play(x.r,[0.35,0.75,1.1][x.l]); });
+    zs.querySelectorAll('.srow .seg3 button').forEach(b=>b.onclick=()=>{ const i=+b.closest('.srow').dataset.i; INS.s[i].l=+b.dataset.lv; render(); zsheet(r,true); });
+    zs.querySelectorAll('.add').forEach(b=>b.onclick=()=>hmToast('Bibliothek oder aufnehmen',false));
+  }
+  // Tonleiter aufnehmen (angedeutet)
+  let rStart=48, rStep=4, rN=6;
+  function recOpen(){
+    const rc=ov.querySelector('#mkRec'); const T=[...Array(rN)].map((_,i)=>rStart+i*rStep);
+    rc.innerHTML='<div class="box"><div class="sh" style="display:flex;align-items:center;gap:10px"><span style="flex:1;font:700 17px Rajdhani;color:var(--white)">Tonleiter aufnehmen</span><button class="x" style="width:44px;height:44px;border-radius:9px;border:1px solid rgba(255,255,255,.12);background:var(--panel);color:var(--blue-2)" aria-label="Schließen">✕</button></div>'
+      +'<div class="opt">Ab <button data-s="-12">−</button><b style="font:700 16px JetBrains Mono;color:#8be86a;min-width:40px;text-align:center">'+midiName(rStart)+'</b><button data-s="12">+</button></div>'
+      +'<div class="opt">Abstand '+[[2,'Ganzton'],[4,'Terz'],[7,'Quinte'],[12,'Oktave']].map(([v,t])=>'<button data-st="'+v+'" class="'+(rStep===v?'on':'')+'">'+t+'</button>').join('')+'</div>'
+      +'<div class="opt">Töne '+[4,6,8,12].map(v=>'<button data-n="'+v+'" class="'+(rN===v?'on':'')+'">'+v+'</button>').join('')+'</div>'
+      +'<div class="tones">'+T.map(m=>'<span data-t="'+m+'">'+midiName(m)+'</span>').join('')+'</div>'
+      +'<div class="cap">Jeden Ton einmal spielen und ausklingen lassen. Wird an den Anschlägen geschnitten, Tonhöhe erkannt und als Stufe „mittel“ eingetragen. Für mehr Stufen einfach leiser/lauter nochmal aufnehmen.</div>'
+      +'<button class="big">● Aufnahme starten</button></div>';
+    rc.classList.add('open');
+    rc.querySelector('.x').onclick=()=>{ clearInterval(rec); rc.classList.remove('open'); };
+    rc.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{ rStart=Math.max(36,Math.min(72,rStart+ +b.dataset.s)); recOpen(); });
+    rc.querySelectorAll('[data-st]').forEach(b=>b.onclick=()=>{ rStep=+b.dataset.st; recOpen(); });
+    rc.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>{ rN=+b.dataset.n; recOpen(); });
+    rc.querySelector('.big').onclick=()=>{ let i=0; const sp=rc.querySelectorAll('.tones span'), bt=rc.querySelector('.big'); bt.textContent='■ Stopp – spiel '+midiName(T[0]);
+      rec=setInterval(()=>{ if(i>0){ sp[i-1].classList.remove('now'); sp[i-1].classList.add('ok'); } if(i<T.length){ sp[i].classList.add('now'); bt.textContent='■ Stopp – spiel '+midiName(T[i]); play(T[i]); i++; }
+        else { clearInterval(rec); bt.textContent='✓ '+T.length+' Töne erkannt – übernehmen';
+          bt.onclick=()=>{ T.forEach(m=>{ if(!INS.s.some(x=>x.r===m&&x.l===1)) INS.s.push({n:'aufnahme-'+midiName(m).toLowerCase().replace('#','is'),r:m,l:1}); }); rc.classList.remove('open'); render(); hmToast(T.length+' Töne eingetragen',true,()=>{}); }; } },700); };
+  }
+  // Einstieg im Fenster „Sound wählen“
+  const oRender=smpPickRender;
+  smpPickRender=function(){ oRender(); const ls=$id('smpPickList'), r=ls.querySelector('.sp-r'); if(!r) return;
+    const mk=(html,cls,fn)=>{ const b=document.createElement('button'); b.className=cls; b.innerHTML=html; b.onclick=fn; ls.insertBefore(b,r); };
+    mk('<span>GITARRE</span><small>Instrument · '+roots().length+' Töne</small>','',()=>{ smpPickClose(); openB(); });
+    mk(TR_IC.plus+'<span>Instrument bauen</span>','sp-r',()=>{ smpPickClose(); openB(); }); };
+  function openB(){ sel=null; ov.innerHTML=''; render(); ov.classList.add('open'); }
+  function setV(v){ V=v; sel=null; if(ov.classList.contains('open')){ ov.innerHTML=''; render(); } }
+  function open(){
+    if(isPlaying) stop(); closeSheets(); ov.classList.remove('open'); if(prIsOpen()) prClose();
+    tr=TRACKS.find(t=>trInstKey(t)==='sampler');
+    if(!tr){ if(melCount()>=MEL_MAX){ hmToast('Höchstens '+MEL_MAX+' Melodiespuren',false); return; } tr=trAddNew({k:'sampler', label:melSuggest('SAMPLER')}); }
+    setTimeout(()=>{ openKlang(tr,'sound'); setTimeout(()=>smpPickOpen(tr),250); },80);
+  }
+  window.__mk={setV,open,openB};
+}
+
+// ===== Rahmen-Steuerung =====
+const fR=document.getElementById('fR');
+let V='a';
+function hook(){ const w=fR.contentWindow; try{ if(!w||w.eval('typeof TRACKS')!=='object') return null; if(!w.__mk) w.eval('('+MK.toString()+')()'); }catch(e){ console.error(e); return null; } return w.__mk; }
+function apply(){ const m=hook(); if(m) m.setV(V); document.querySelectorAll('[data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v===V)); }
+fR.addEventListener('load',()=>setTimeout(()=>{ apply(); const m=hook(); if(m) m.open(); },900));
+document.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{ V=b.dataset.v; apply(); });
+document.getElementById('exBtn').onclick=()=>{ const m=hook(); if(m) m.open(); };
+const notes=document.getElementById('notes').innerHTML; document.getElementById('side').innerHTML=notes; const info=document.getElementById('info'); info.innerHTML=notes;
+document.getElementById('infoBtn').onclick=()=>info.classList.toggle('open');
+const fitTop=()=>{ const h=document.getElementById('mbar').offsetHeight; document.getElementById('stage').style.top=h+'px'; info.style.top=h+'px'; }; addEventListener('resize',fitTop); fitTop();
+</script>
+</body>
+</html>
