@@ -38,8 +38,8 @@ iframe{border:0;width:100%;height:100%;background:#050507;display:block}
 </head>
 <body>
 <div id="mbar">
-  <span>#16</span>
-  <div class="g"><button data-v="">Heute</button><button data-v="a" class="on">A Anwenden</button><button data-v="b">B Bleibt einstellbar</button></div>
+  <span>#16 v2</span>
+  <div class="g"><button data-v="">Heute</button><button data-v="a" class="on">Neu</button></div>
   <span class="sp"></span>
   <label><input type="checkbox" id="mk"> Neu</label>
   <button id="demoBtn">Demo</button>
@@ -51,167 +51,124 @@ iframe{border:0;width:100%;height:100%;background:#050507;display:block}
 </div>
 <div id="info"></div>
 <template id="notes">
-  <h3>Was das ist</h3>
-  <p>Die <b>echte App</b>, Sample-Editor mit einem Demo-Loop. Unter „3 · Bearbeiten“ steht neu die Karte <b>Effekte</b>. Mit <b>+</b> einen Effekt wählen (höchstens 4, jeder einmal), Preset mit ◀ ▶, Regler über den Pfeil aufklappen, Punkt = an/aus. <b>Vorhören</b> spielt live durch die Effekte. „Neu“ umrandet die neuen Teile gelb.</p>
+  <h3>Was das ist (v2, schlank)</h3>
+  <p>Die <b>echte App</b>, Sample-Editor mit Demo-Loop. Unter „3 · Bearbeiten“ neu eine Zeile <b>Effekte</b>. Arbeitsweise wie Wavelab: Effekt antippen, Preset wählen, mit Schiebern nach Gehör einstellen, <b>Vorhören</b>, <b>Anwenden</b> – dann ist er fest im Sample. Weitere Effekte einfach danach anwenden.</p>
   <h3>Effekte</h3>
   <ul>
-    <li><b>EQ, Filter, Kompressor, Verzerrung</b> = dieselben Geräte und Presets wie in Mix &amp; FX.</li>
-    <li><b>Hall, Delay</b> = im Sample selbst (mit Mischung), unabhängig vom Hall/Delay-Send der Spur. Der Ausklang wird hinten angehängt (Sample wird länger).</li>
+    <li><b>Filter</b> (Dumpf, Dünn, Telefon) · Schieber Frequenz</li>
+    <li><b>Verzerrung</b> (Wärme, Crunch, Fuzz) · Schieber Drive</li>
+    <li><b>Kompressor</b> (Sanft, Punch, Platt) · Schieber Stärke</li>
+    <li><b>Hall</b> (Raum, Halle, Weit) + <b>Normal | Rückwärts</b> · Schieber Länge, Mischung</li>
+    <li><b>Delay</b> (Slapback, Echo, Dub) · Schieber Feedback, Mischung</li>
   </ul>
-  <h3>A · Anwenden</h3>
-  <p>Wie „Lauter“ oder „Rückwärts“: <b>Anwenden</b> rechnet die Effekte fest ins Sample (Rückgängig und „Zurück zum Original“ gehen). Die Karte ist danach leer. Einfach, keine Last beim Spielen, nichts Neues im Speicherformat.</p>
-  <h3>B · Bleibt einstellbar</h3>
-  <p>Kein Anwenden-Knopf: die Kette wird mit dem Sample gespeichert und beim Laden eingerechnet (wie Tonhöhe/Tempo). Später wieder änderbar oder abschaltbar, das Original bleibt. Auch hier <b>keine Last beim Spielen</b>, aber das Laden dauert pro Sample etwas länger und es braucht mehr Umbau (Laden von Pads/Sampler/Drum-Sets muss auf das Rechnen warten).</p>
+  <p>Immer nur ein Effekt offen, höchstens 2 Schieber. Wirkt aufs ganze Sample (wie Lauter/Rückwärts). Hall/Delay hängen den Ausklang an, Rückwärts-Hall setzt ihn davor. Rückgängig und „Zurück zum Original“ gehen. Beim Spielen keine Last, nichts Neues im Speicherformat.</p>
   <h3>Zur Entscheidung</h3>
   <ul>
-    <li>A oder B?</li>
-    <li>Hall/Delay im Sample überhaupt? (Die Spur hat schon Hall/Delay-Sends.)</li>
-    <li>Wirken die Effekte aufs ganze Sample oder nur auf den gewählten Bereich (Start–Ende)?</li>
+    <li>Passt die Auswahl der 5 Effekte (EQ weggelassen, Filter deckt das Grobe ab)?</li>
+    <li>Passt der Platz unter „Bearbeiten“?</li>
   </ul>
 </template>
 <script>
 // ===== Läuft im Rahmen der echten App (per eval im Fenster der App) =====
 function MK(){
-  let V='a', FX=[], open=-1, live=null, uid=0;
+  let V='a', cur=null, P=null, preBuf=null, busy=false;
   const IC={
-    eq:'<path d="M3 16c3 0 4-8 7-8s3 6 5 6 3-4 6-4"/>',
     filter:'<path d="M3 8h9c3 0 4 2 5 5l3 6"/>',
-    comp:'<path d="M4 20L12 12h8M4 4v16"/>',
     dist:'<path d="M3 12c2-6 4-6 5 0s3 6 5 0 3-6 5 0 2 4 3 4"/>',
+    comp:'<path d="M4 4v16M4 20L12 12h8"/>',
     hall:'<path d="M4 20c0-9 7-16 16-16M8 20c0-6 6-12 12-12M12 20c0-4 4-8 8-8"/>',
     delay:'<circle cx="6" cy="12" r="3"/><circle cx="13" cy="12" r="2.2" opacity=".7"/><circle cx="19" cy="12" r="1.5" opacity=".45"/>'
   };
-  // EQ, Filter, Kompressor, Verzerrung aus der App; Hall/Delay als Mischung im Sample
-  const EQ_P=[{k:'eqLowGain',l:'Tiefen',a:-12,b:12,s:.5},{k:'eqMidGain',l:'Mitten',a:-12,b:12,s:.5},{k:'eqHighGain',l:'Höhen',a:-12,b:12,s:.5},{k:'eqLc',l:'Tiefen-Filter',a:0,b:1,s:.005}];
   const T={
-    eq:{n:'EQ',ps:EQ_P,pre:EQ_PRE.map(x=>[x[0],Object.assign({},x[1])])},
-    filter:{n:'Filter',ps:FXDEF.filter.ps.filter(p=>!p.sel),pre:FXDEF.filter.pre,dev:'filter'},
-    comp:{n:'Kompressor',ps:FXDEF.comp.ps,pre:FXDEF.comp.pre.slice(1),dev:'comp'},
-    dist:{n:'Verzerrung',ps:FXDEF.dist.ps,pre:FXDEF.dist.pre,dev:'dist'},
-    hall:{n:'Hall',tail:p=>p.sz,ps:[{k:'sz',l:'Größe',a:.3,b:5,s:.1},{k:'to',l:'Ton',a:0,b:1,s:.01},{k:'mx',l:'Mischung',a:0,b:1,s:.01}],
-      pre:[['Raum',{sz:.8,to:.6,mx:.25}],['Halle',{sz:2.4,to:.5,mx:.3}],['Platte',{sz:1.6,to:.95,mx:.25}],['Kathedrale',{sz:4.6,to:.4,mx:.35}]]},
-    delay:{n:'Delay',tail:p=>Math.min(4,p.tm*Math.log(.001)/Math.log(Math.max(.05,p.fb))),ps:[{k:'tm',l:'Zeit',a:.05,b:1,s:.01},{k:'fb',l:'Feedback',a:0,b:.85,s:.01},{k:'to',l:'Ton',a:0,b:1,s:.01},{k:'mx',l:'Mischung',a:0,b:1,s:.01}],
-      pre:[['Slapback',{tm:.09,fb:.15,to:.8,mx:.3}],['Echo',{tm:.3,fb:.4,to:.6,mx:.3}],['Dub',{tm:.45,fb:.6,to:.3,mx:.35}]]}
+    filter:{n:'Filter',pre:[['Dumpf',{ty:'lowpass',fr:.42,q:.25}],['Dünn',{ty:'highpass',fr:.45,q:.2}],['Telefon',{ty:'bandpass',fr:.6,q:.35}]],ps:[{k:'fr',l:'Frequenz',a:0,b:1,s:.005}]},
+    dist:{n:'Verzerrung',pre:FXDEF.dist.pre,ps:[{k:'dr',l:'Drive',a:0,b:1,s:.01}]},
+    comp:{n:'Kompressor',pre:[['Sanft',{st:.3}],['Punch',{st:.55}],['Platt',{st:.9}]],ps:[{k:'st',l:'Stärke',a:0,b:1,s:.01}]},
+    hall:{n:'Hall',md:1,pre:[['Raum',{sz:.8,to:.6,mx:.3}],['Halle',{sz:2,to:.5,mx:.35}],['Weit',{sz:3.8,to:.45,mx:.4}]],ps:[{k:'sz',l:'Länge',a:.3,b:5,s:.1},{k:'mx',l:'Mischung',a:0,b:1,s:.01}]},
+    delay:{n:'Delay',pre:[['Slapback',{tm:.09,fb:.15,to:.8,mx:.3}],['Echo',{tm:.3,fb:.4,to:.6,mx:.3}],['Dub',{tm:.45,fb:.6,to:.3,mx:.35}]],ps:[{k:'fb',l:'Feedback',a:0,b:.85,s:.01},{k:'mx',l:'Mischung',a:0,b:1,s:.01}]}
   };
-  const ORDER=['eq','filter','comp','dist','hall','delay'];
+  const ORDER=['filter','dist','comp','hall','delay'];
   const css=document.createElement('style');
   css.textContent=`
-  #mkFx{display:none;flex-direction:column;gap:6px;background:var(--panel);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:8px;flex-shrink:0}
-  html.mk-a #mkFx, html.mk-b #mkFx{display:flex}
-  .mkfx-h{display:flex;align-items:center;gap:8px;font-size:12px;color:#c7cbd4;padding:0 2px}
-  .mkfx-h .t{flex:1;display:flex;align-items:center;gap:6px;font-weight:700;letter-spacing:.04em}
-  .mkfx-h .n{font:700 11px 'JetBrains Mono',monospace;color:var(--dim)}
-  .mk-ib{width:36px;height:36px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:var(--panel-inset);color:var(--blue-2);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
-  .mk-ib:disabled{opacity:.3;cursor:default}
-  .mk-ib svg,.mkfx-h svg,.mkfx-r .ic svg,.mkfx-pk svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-  .mkfx-empty{font-size:12px;color:var(--dim);padding:2px 2px 4px}
-  .mkfx-r{display:flex;align-items:center;gap:6px;background:var(--panel-inset);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:4px 4px 4px 8px;min-height:44px}
-  .mkfx-r.off{opacity:.5}
-  .mkfx-r .dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--blue);background:var(--blue);box-shadow:0 0 6px rgba(63,169,255,.6);cursor:pointer;flex-shrink:0}
-  .mkfx-r.off .dot{background:transparent;box-shadow:none;border-color:#555a64}
-  .mkfx-r .ic{color:var(--blue-2);display:flex}
-  .mkfx-r .nm{font-size:13px;font-weight:700;color:var(--white);width:74px;flex-shrink:0}
-  .mkfx-lcd{flex:1;display:flex;align-items:center;min-width:0;height:32px;border-radius:6px;background:#06120c;border:1px solid rgba(63,169,255,.25)}
-  .mkfx-lcd button{width:26px;height:30px;border:0;background:transparent;color:var(--blue-2);cursor:pointer;font-size:12px}
-  .mkfx-lcd span{flex:1;text-align:center;font:700 11px 'JetBrains Mono',monospace;color:#8fd4ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .mkfx-r .ex,.mkfx-r .rm{width:30px;height:32px;border:0;background:transparent;color:var(--dim);cursor:pointer;display:flex;align-items:center;justify-content:center}
-  .mkfx-r .ex svg,.mkfx-r .rm svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
-  .mkfx-r.open .ex{color:var(--blue-2);transform:rotate(180deg)}
-  .mkfx-d{display:flex;flex-direction:column;gap:4px;padding:2px 6px 6px 30px}
-  .mkfx-k{display:flex;align-items:center;gap:8px;font-size:12px;color:#c7cbd4}
-  .mkfx-k span{width:84px;flex-shrink:0}
+  #mkFxLb,#mkFxRow,#mkFxP{display:none}
+  html.mk-a #mkFxLb{display:block} html.mk-a #mkFxRow{display:grid} html.mk-a #mkFxP.on{display:flex}
+  #mkFxLb{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;margin:2px 2px -2px}
+  #mkFxRow{grid-template-columns:repeat(5,1fr);gap:6px;flex-shrink:0}
+  #mkFxRow button{min-height:56px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:var(--panel);color:#c7cbd4;font:500 11px inherit;font-family:inherit;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;padding:6px 2px}
+  #mkFxRow button svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;color:var(--blue-2)}
+  #mkFxRow button.on{border-color:var(--blue);background:rgba(63,169,255,.15);color:var(--blue-2);box-shadow:0 0 10px rgba(63,169,255,.25)}
+  #mkFxP{flex-direction:column;gap:8px;background:var(--panel);border:1px solid rgba(63,169,255,.35);border-radius:10px;padding:10px;flex-shrink:0}
+  #mkFxP .seg button.on{background:rgba(63,169,255,.2);color:var(--blue-2)}
+  .mkfx-k{display:flex;align-items:center;gap:10px;font-size:13px;color:#c7cbd4;min-height:32px}
+  .mkfx-k span{width:78px;flex-shrink:0}
   .mkfx-k input{flex:1;accent-color:#3fa9ff}
-  .mkfx-pk{display:none;grid-template-columns:repeat(3,1fr);gap:6px}
-  .mkfx-pk.on{display:grid}
-  .mkfx-pk button{min-height:52px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:var(--panel-inset);color:#c7cbd4;font:500 11px inherit;font-family:inherit;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer}
-  .mkfx-pk button svg{color:var(--blue-2)}
-  .mkfx-pk button:disabled{opacity:.25;cursor:default}
-  .mkfx-f{display:flex;gap:6px;align-items:center}
-  .mkfx-f .note{flex:1;font-size:11.5px;color:var(--dim);line-height:1.3;padding:0 2px}
-  #mkFxApply{display:none;min-height:40px;padding:0 14px;border-radius:8px;border:1px solid var(--blue);background:rgba(63,169,255,.18);color:var(--blue-2);font:700 12px inherit;font-family:inherit;cursor:pointer;align-items:center;gap:6px}
-  #mkFxApply svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
-  #mkFxApply:disabled{opacity:.35;cursor:default}
-  html.mk-a #mkFxApply{display:flex}
+  .mkfx-f{display:flex;gap:6px}
+  .mkfx-f button{flex:1;min-height:42px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:var(--panel-inset);color:#c7cbd4;font:700 12px inherit;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer}
+  .mkfx-f button svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+  .mkfx-f .ok{border-color:var(--blue);background:rgba(63,169,255,.18);color:var(--blue-2);flex:1.4}
+  .mkfx-f .x{flex:0 0 44px}
   html.mkmark .mk-new{outline:1.5px dashed #ffc247!important;outline-offset:1px}`;
   document.head.appendChild(css);
   const svg=p=>'<svg viewBox="0 0 24 24" aria-hidden="true">'+p+'</svg>';
-  const box=document.createElement('div'); box.id='mkFx'; box.className='mk-new';
-  box.innerHTML='<div class="mkfx-h"><span class="t">'+svg('<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>')+'Effekte</span><span class="n" id="mkFxN"></span>'
-    +'<button class="mk-ib" id="mkFxAdd" aria-label="Effekt hinzufügen">'+svg('<path d="M12 5v14M5 12h14"/>')+'</button></div>'
-    +'<div class="mkfx-pk" id="mkFxPk"></div><div id="mkFxL"></div>'
-    +'<div class="mkfx-f"><span class="note" id="mkFxNote"></span><button id="mkFxApply">'+svg('<path d="M4 12l5 5L20 6"/>')+'Anwenden</button></div>';
-  seResetBtn.parentNode.insertBefore(box, seResetBtn);
-  const L=box.querySelector('#mkFxL'), PK=box.querySelector('#mkFxPk');
-  PK.innerHTML=ORDER.map(t=>'<button data-t="'+t+'">'+svg(IC[t])+T[t].n+'</button>').join('');
-  box.querySelector('#mkFxAdd').onclick=()=>{ PK.classList.toggle('on'); draw(); };
-  PK.onclick=e=>{ const b=e.target.closest('[data-t]'); if(!b||b.disabled) return; const t=b.dataset.t;
-    FX.push({id:++uid,t,on:true,pi:0,p:Object.assign({},T[t].pre[0][1])}); FX.sort((x,y)=>ORDER.indexOf(x.t)-ORDER.indexOf(y.t));
-    PK.classList.remove('on'); open=-1; changed(); };
+  const lb=document.createElement('div'); lb.id='mkFxLb'; lb.className='mk-new'; lb.textContent='Effekte';
+  const row=document.createElement('div'); row.id='mkFxRow'; row.className='mk-new';
+  row.innerHTML=ORDER.map(t=>'<button data-t="'+t+'">'+svg(IC[t])+T[t].n+'</button>').join('');
+  const pan=document.createElement('div'); pan.id='mkFxP'; pan.className='mk-new';
+  [lb,row,pan].forEach(e=>seResetBtn.parentNode.insertBefore(e, seResetBtn));
+  row.onclick=e=>{ const b=e.target.closest('[data-t]'); if(!b) return; const t=b.dataset.t; stopPre(); if(cur===t){ cur=null; } else { cur=t; P={pi:0,rev:false,p:Object.assign({},T[t].pre[0][1])}; } draw(); };
   function draw(){
-    box.querySelector('#mkFxN').textContent=FX.length+'/4';
-    box.querySelector('#mkFxAdd').disabled=FX.length>=4;
-    PK.querySelectorAll('[data-t]').forEach(b=>b.disabled=FX.some(f=>f.t===b.dataset.t));
-    L.innerHTML=FX.length?'':'<div class="mkfx-empty">Noch keine Effekte. Mit + hinzufügen.</div>';
-    FX.forEach((f,i)=>{ const d=T[f.t];
-      const r=document.createElement('div'); r.className='mkfx-r'+(f.on?'':' off')+(open===f.id?' open':'');
-      r.innerHTML='<span class="dot" role="switch" aria-label="an/aus"></span><span class="ic">'+svg(IC[f.t])+'</span><span class="nm">'+d.n+'</span>'
-        +'<div class="mkfx-lcd"><button data-d="-1" aria-label="Voriges Preset">◀</button><span>'+(f.pi<0?'Eigene':d.pre[f.pi][0])+'</span><button data-d="1" aria-label="Nächstes Preset">▶</button></div>'
-        +'<button class="ex" aria-label="Regler">'+svg('<path d="M6 9l6 6 6-6"/>')+'</button><button class="rm" aria-label="Entfernen">'+svg('<path d="M6 6l12 12M18 6L6 18"/>')+'</button>';
-      r.querySelector('.dot').onclick=()=>{ f.on=!f.on; changed(); };
-      r.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{ const n=d.pre.length; f.pi=((f.pi<0?0:f.pi)+ +b.dataset.d+n)%n; f.p=Object.assign({},d.pre[f.pi][1]); changed(); });
-      r.querySelector('.ex').onclick=()=>{ open=open===f.id?-1:f.id; draw(); };
-      r.querySelector('.rm').onclick=()=>{ FX.splice(i,1); changed(); };
-      L.appendChild(r);
-      if(open===f.id){ const k=document.createElement('div'); k.className='mkfx-d';
-        d.ps.forEach(p=>{ const row=document.createElement('label'); row.className='mkfx-k';
-          row.innerHTML='<span>'+p.l+'</span><input type="range" min="'+p.a+'" max="'+p.b+'" step="'+p.s+'" value="'+(f.p[p.k]!=null?f.p[p.k]:p.a)+'">';
-          row.querySelector('input').oninput=e=>{ f.p[p.k]=+e.target.value; f.pi=-1; r.querySelector('.mkfx-lcd span').textContent='Eigene'; rebuild(); };
-          k.appendChild(row); });
-        L.appendChild(k); }
-    });
-    const act=FX.filter(f=>f.on);
-    box.querySelector('#mkFxApply').disabled=!act.length;
-    box.querySelector('#mkFxNote').textContent = V==='a'
-      ? (act.length ? 'Vorhören klingt schon mit Effekt. Anwenden rechnet sie fest ins Sample.' : 'Rückgängig und „Zurück zum Original“ gehen auch nach dem Anwenden.')
-      : 'Wird mit dem Sample gespeichert, Original bleibt. Beim Laden eingerechnet – keine Last beim Spielen.';
+    row.querySelectorAll('[data-t]').forEach(b=>b.classList.toggle('on',b.dataset.t===cur));
+    pan.classList.toggle('on',!!cur); if(!cur){ pan.innerHTML=''; return; }
+    const d=T[cur];
+    pan.innerHTML='<div class="seg se-seg">'+d.pre.map((x,i)=>'<button data-pi="'+i+'" class="'+(P.pi===i?'on':'')+'">'+x[0]+'</button>').join('')+'</div>'
+      +(d.md?'<div class="seg se-seg"><button data-r="0" class="'+(P.rev?'':'on')+'">Normal</button><button data-r="1" class="'+(P.rev?'on':'')+'">Rückwärts</button></div>':'')
+      +d.ps.map(p=>'<label class="mkfx-k"><span>'+p.l+'</span><input type="range" data-k="'+p.k+'" min="'+p.a+'" max="'+p.b+'" step="'+p.s+'" value="'+P.p[p.k]+'"></label>').join('')
+      +'<div class="mkfx-f"><button class="x" data-a="x" aria-label="Schließen">'+svg('<path d="M6 6l12 12M18 6L6 18"/>')+'</button>'
+      +'<button data-a="pre">'+svg(prePlaying()?'<rect x="6" y="6" width="12" height="12" rx="1" fill="currentColor"/>':'<polygon points="6,4 20,12 6,20" fill="currentColor"/>')+(prePlaying()?'Stopp':'Vorhören')+'</button>'
+      +'<button class="ok" data-a="ok">'+svg('<path d="M4 12l5 5L20 6"/>')+'Anwenden</button></div>';
+    pan.querySelectorAll('[data-pi]').forEach(b=>b.onclick=()=>{ P.pi=+b.dataset.pi; P.p=Object.assign({},d.pre[P.pi][1]); changed(); });
+    pan.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{ P.rev=b.dataset.r==='1'; changed(); });
+    pan.querySelectorAll('[data-k]').forEach(i=>{ i.oninput=()=>{ P.p[i.dataset.k]=+i.value; P.pi=-1; pan.querySelectorAll('[data-pi]').forEach(b=>b.classList.remove('on')); }; i.onchange=()=>changed(true); });
+    pan.querySelector('[data-a=x]').onclick=()=>{ stopPre(); cur=null; draw(); };
+    pan.querySelector('[data-a=pre]').onclick=()=>{ if(prePlaying()){ stopPre(); draw(); } else play(); };
+    pan.querySelector('[data-a=ok]').onclick=apply;
   }
-  // ---- Signalkette (live und offline gleich) ----
+  // ---- Ein Effekt, offline gerechnet (Vorhören = dasselbe wie Anwenden) ----
   function ir(c,sz){ const n=Math.floor(c.sampleRate*sz), b=c.createBuffer(2,n,c.sampleRate); for(let ch=0;ch<2;ch++){ const d=b.getChannelData(ch); for(let i=0;i<n;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/n,2.8); } return b; }
-  function wetMix(c,i,o,wet,mx){ const dg=c.createGain(), wg=c.createGain(); dg.gain.value=1-mx*.5; wg.gain.value=mx; i.connect(dg); dg.connect(o); wet.connect(wg); wg.connect(o); }
-  function chain(c){
-    const i=c.createGain(); let cur=i; const all=[];
-    FX.filter(f=>f.on).forEach(f=>{ const p=f.p, o=c.createGain();
-      if(T[f.t].dev){ const n=FXDEF[T[f.t].dev].build(c); n.u(Object.assign({ty:'lowpass'},FXDEF[T[f.t].dev].pre[0][1],p)); cur.connect(n.i); n.o.connect(o); }
-      else if(f.t==='eq'){ const n={}; eqNodes(n,c); n.eqHp.frequency.value=eqLcHz(p.eqLc||0); n.eqLow.gain.value=p.eqLowGain||0; n.eqMid.gain.value=p.eqMidGain||0; n.eqMid.frequency.value=eqMfHz(p.eqMf); n.eqHigh.gain.value=p.eqHighGain||0; cur.connect(n.eqHp); n.eqHigh.connect(o); }
-      else if(f.t==='hall'){ const cv=c.createConvolver(), lp=c.createBiquadFilter(); cv.buffer=ir(c,p.sz); lp.type='lowpass'; lp.frequency.value=p.to>=.995?20000:fxEx(1500,16000,p.to); cur.connect(cv); cv.connect(lp); wetMix(c,cur,o,lp,p.mx); }
-      else if(f.t==='delay'){ const dl=c.createDelay(2), fb=c.createGain(), lp=c.createBiquadFilter(); dl.delayTime.value=p.tm; fb.gain.value=p.fb; lp.type='lowpass'; lp.frequency.value=p.to>=.995?20000:fxEx(600,13000,p.to);
-        cur.connect(dl); dl.connect(lp); lp.connect(fb); fb.connect(dl); wetMix(c,cur,o,lp,p.mx); }
-      cur=o; });
-    return {i,o:cur};
+  function node(c,t,p,wetOnly){ const i=c.createGain(), o=c.createGain();
+    if(t==='filter'){ const n=FXDEF.filter.build(c); n.u(Object.assign({},T.filter.pre[0][1],p)); i.connect(n.i); n.o.connect(o); }
+    else if(t==='dist'){ const n=FXDEF.dist.build(c); n.u(Object.assign({},FXDEF.dist.pre[1][1],p)); i.connect(n.i); n.o.connect(o); }
+    else if(t==='comp'){ const n=FXDEF.comp.build(c); n.u({th:-6-p.st*34,ra:1.5+p.st*10,at:10,re:150,kn:6,mk:0}); i.connect(n.i); n.o.connect(o); }
+    else { let wet;
+      if(t==='hall'){ const cv=c.createConvolver(), lp=c.createBiquadFilter(); cv.buffer=ir(c,p.sz); lp.type='lowpass'; lp.frequency.value=fxEx(1500,16000,p.to); i.connect(cv); cv.connect(lp); wet=lp; }
+      else { const dl=c.createDelay(2), fb=c.createGain(), lp=c.createBiquadFilter(); dl.delayTime.value=p.tm; fb.gain.value=p.fb; lp.type='lowpass'; lp.frequency.value=fxEx(600,13000,p.to); i.connect(dl); dl.connect(lp); lp.connect(fb); fb.connect(dl); wet=lp; }
+      const wg=c.createGain(); wg.gain.value=p.mx; wet.connect(wg); wg.connect(o);
+      if(!wetOnly){ const dg=c.createGain(); dg.gain.value=1-p.mx*.5; i.connect(dg); dg.connect(o); } }
+    return {i,o}; }
+  const tailOf=(t,p)=>t==='hall'?p.sz:t==='delay'?Math.min(4,p.tm*Math.log(.001)/Math.log(Math.max(.05,p.fb))):0;
+  function revBuf(b){ const o=new AudioBuffer({length:b.length,numberOfChannels:b.numberOfChannels,sampleRate:b.sampleRate}); for(let c=0;c<b.numberOfChannels;c++){ const s=b.getChannelData(c), d=o.getChannelData(c); for(let i=0;i<s.length;i++) d[i]=s[s.length-1-i]; } return o; }
+  async function renderWith(B,wetOnly,len){ const ch=(cur==='hall'||cur==='delay')?2:B.numberOfChannels, oc=new OfflineAudioContext(ch,len,B.sampleRate), s=oc.createBufferSource(); s.buffer=B; const n=node(oc,cur,P.p,wetOnly); s.connect(n.i); n.o.connect(oc.destination); s.start(0); return oc.startRendering(); }
+  async function render(){
+    const B=seWorkingBuffer, sr=B.sampleRate, M=Math.round(tailOf(cur,P.p)*sr);
+    let out;
+    if(cur==='hall' && P.rev){ // umdrehen → Hall (nur Hallanteil) → umdrehen, Original dahinter
+      const z=revBuf(await renderWith(revBuf(B),true,B.length+M));
+      out=new AudioBuffer({length:B.length+M,numberOfChannels:2,sampleRate:sr});
+      for(let c=0;c<2;c++){ const d=out.getChannelData(c), zc=z.getChannelData(c), bc=B.getChannelData(Math.min(c,B.numberOfChannels-1)); d.set(zc); for(let i=0;i<B.length;i++) d[M+i]+=bc[i]*(1-P.p.mx*.3); }
+    } else out=await renderWith(B,false,B.length+M);
+    if(M){ let last=out.length-1; const end=(cur==='hall'&&P.rev)?0:B.length; for(;last>end;last--){ let pk=0; for(let c=0;c<out.numberOfChannels;c++) pk=Math.max(pk,Math.abs(out.getChannelData(c)[last])); if(pk>.001) break; } if(last<out.length-1) out=bufferSlice(out,0,(last+1)/sr); }
+    return out;
   }
-  function tail(){ return Math.min(5, FX.filter(f=>f.on&&T[f.t].tail).reduce((s,f)=>s+T[f.t].tail(f.p),0)); }
-  function rebuild(){ if(!audioCtx) return; if(live){ try{live.o.disconnect();}catch(e){} }
-    live=FX.some(f=>f.on)&&V ? chain(audioCtx) : null; if(live) live.o.connect(master);
-    if(sePreviewSrc){ seStopPreview(); sePreviewBtn.click(); } }
-  function changed(){ draw(); rebuild(); }
-  // Vorhören läuft durch die Kette (nach dem Handler der App)
-  sePreviewBtn.addEventListener('click', ()=>{ if(sePreviewSrc && live){ try{ sePreviewSrc.disconnect(); }catch(e){} sePreviewSrc.connect(live.i); } });
-  // A: fest ins Sample rechnen (wie Lauter/Rückwärts: Rückgängig über die Historie)
-  box.querySelector('#mkFxApply').onclick=async ()=>{
-    const B=seWorkingBuffer; if(!B || !FX.some(f=>f.on)) return; seStopPreview();
-    const sr=B.sampleRate, len=B.length+Math.round(tail()*sr), ch=Math.max(B.numberOfChannels, FX.some(f=>f.on&&(f.t==='hall')) ? 2 : 1);
-    const oc=new OfflineAudioContext(ch,len,sr), s=oc.createBufferSource(); s.buffer=B; const k=chain(oc); s.connect(k.i); k.o.connect(oc.destination); s.start(0);
-    let out=await oc.startRendering();
-    // Stille am Ende abschneiden (unter −60 dB)
-    let last=out.length-1; for(;last>B.length;last--){ let pk=0; for(let c2=0;c2<out.numberOfChannels;c2++) pk=Math.max(pk,Math.abs(out.getChannelData(c2)[last])); if(pk>.001) break; }
-    if(last<out.length-1) out=bufferSlice(out,0,(last+1)/sr);
-    seApplyTransform(()=>out); FX=[]; open=-1; changed();
-  };
+  let preSrc=null; const prePlaying=()=>!!preSrc;
+  function stopPre(){ if(preSrc){ const s=preSrc; preSrc=null; try{s.stop();}catch(e){} } }
+  async function play(){ if(!seWorkingBuffer||busy) return; busy=true; seStopPreview(); const b=await render(); busy=false; if(!cur) return;
+    stopPre(); const s=audioCtx.createBufferSource(); s.buffer=b; s.connect(master); s.start(); s.onended=()=>{ if(preSrc===s){ preSrc=null; draw(); } }; preSrc=s; draw(); }
+  function changed(rePlay){ const was=prePlaying(); draw(); if(was) play(); }
+  async function apply(){ if(!seWorkingBuffer||busy) return; stopPre(); busy=true; const out=await render(); busy=false; seApplyTransform(()=>out); cur=null; draw(); }
   // ---- Demo: kleiner Drum-Loop (2 Takte, 100 BPM) ----
   function demo(){
     if(!audioCtx) initAudio();
-    if(sePreviewSrc) seStopPreview();
-    const sr=44100, bpm=100, st=60/bpm/4, n=Math.round(sr*st*32), b=new AudioBuffer({length:n,numberOfChannels:1,sampleRate:sr}), d=b.getChannelData(0);
+    if(sePreviewSrc) seStopPreview(); stopPre();
+    const sr=44100, st=60/100/4, n=Math.round(sr*st*32), b=new AudioBuffer({length:n,numberOfChannels:1,sampleRate:sr}), d=b.getChannelData(0);
     let seed=7; const rnd=()=>((seed=(seed*16807)%2147483647)/2147483647)*2-1;
     const add=(t0,fn,dur)=>{ const a=Math.round(t0*sr), m=Math.min(n-a,Math.round(dur*sr)); for(let i=0;i<m;i++) d[a+i]+=fn(i/sr); };
     const kick=t=>Math.sin(2*Math.PI*(50*t+90*(1-Math.exp(-t*30))/30))*Math.exp(-t*9)*.8;
@@ -220,9 +177,9 @@ function MK(){
     const K=[0,6,10,16,22,26,29], S=[4,12,20,28];
     for(let s=0;s<32;s++){ if(K.includes(s)) add(s*st,kick,.5); if(S.includes(s)) add(s*st,snare,.3); if(s%2===0) add(s*st,hat,.08); }
     openSampleEditor({buffer:b,label:'Demo-Loop'});
-    FX=[]; open=-1; setTimeout(()=>{ draw(); rebuild(); setTimeout(()=>box.scrollIntoView({block:'center'}),50); },80);
+    cur=null; setTimeout(()=>{ draw(); setTimeout(()=>row.scrollIntoView({block:'center'}),50); },80);
   }
-  function setV(v){ V=v; document.documentElement.classList.toggle('mk-a',v==='a'); document.documentElement.classList.toggle('mk-b',v==='b'); draw(); rebuild(); }
+  function setV(v){ V=v; stopPre(); document.documentElement.classList.toggle('mk-a',v==='a'); draw(); }
   function setMark(on){ document.documentElement.classList.toggle('mkmark',on); }
   draw();
   window.__mk={setV,demo,setMark};
