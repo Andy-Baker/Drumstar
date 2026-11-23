@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sample-Editor: Effekte (#16)</title>
+<link rel="stylesheet" href="../../fonts.css">
+<style>
+/* Mockup zu Issue #16 (Rest: Effekte im Sample-Editor). Die echte App läuft im Rahmen, der Sample-Editor
+   öffnet sich mit einem Demo-Loop. Neu ist nur die Karte „Effekte“ in „3 · Bearbeiten“. Klang = echte
+   Effekt-Geräte der App (FXDEF), Hall/Delay als Mischung im Sample. */
+:root{color-scheme:dark;--bg:#050507;--blue:#3fa9ff;--blue-2:#8fd4ff;--white:#f4f5f7;--dim:#7d818c;--metal:#c7cbd4}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--white);font-family:'Rajdhani',system-ui,sans-serif}
+#mbar{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:calc(6px + env(safe-area-inset-top,0px)) 10px 6px;background:repeating-linear-gradient(135deg,#0b1622 0 8px,#0d1a28 8px 16px);border-bottom:1px dashed rgba(63,169,255,.45);font:700 11px 'JetBrains Mono',monospace;color:var(--blue-2)}
+#mbar .g{display:flex;align-items:center;gap:4px}
+#mbar button{height:30px;padding:0 7px;border-radius:6px;border:1px solid rgba(63,169,255,.45);background:rgba(63,169,255,.12);font:700 11px 'JetBrains Mono',monospace;color:var(--blue-2);cursor:pointer}
+#mbar button.on{background:var(--blue);color:#042c53}
+#mbar label{display:flex;align-items:center;gap:4px;cursor:pointer}
+#mbar .sp{flex:1}
+#stage{position:fixed;top:44px;left:0;right:0;bottom:0;display:flex;justify-content:center;align-items:flex-start;gap:28px;overflow:auto}
+.ph{display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;width:100%}
+iframe{border:0;width:100%;height:100%;background:#050507;display:block}
+#side{display:none;width:340px;font-size:14px;color:var(--metal);line-height:1.45;padding-top:20px}
+#side h3,#info h3{font:700 11px 'Rajdhani';letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin:16px 0 6px}
+#side p,#info p{margin:0 0 8px} #side b,#info b{color:var(--white)}
+#side ul,#info ul{margin:0 0 8px;padding-left:18px} #side li,#info li{margin:3px 0}
+#info{position:fixed;inset:44px 0 0 0;z-index:190;background:#07080bf2;overflow:auto;padding:8px 18px 40px;font-size:14.5px;color:var(--metal);line-height:1.45;display:none}
+#info.open{display:block}
+@media (min-width:900px) and (min-height:900px){
+  #stage{padding:14px 0}
+  .ph{width:auto;height:auto}
+  iframe{width:390px;height:844px;border-radius:30px;border:8px solid #1a1e26;box-shadow:0 30px 80px rgba(0,0,0,.75);box-sizing:content-box}
+  #side{display:block} #infoBtn{display:none}
+}
+</style>
+</head>
+<body>
+<div id="mbar">
+  <span>#16</span>
+  <div class="g"><button data-v="">Heute</button><button data-v="a" class="on">A Anwenden</button><button data-v="b">B Bleibt einstellbar</button></div>
+  <span class="sp"></span>
+  <label><input type="checkbox" id="mk"> Neu</label>
+  <button id="demoBtn">Demo</button>
+  <button id="infoBtn">ⓘ</button>
+</div>
+<div id="stage">
+  <div class="ph"><iframe id="fR" src="../../index.html" title="App mit Vorschlag"></iframe></div>
+  <div id="side"></div>
+</div>
+<div id="info"></div>
+<template id="notes">
+  <h3>Was das ist</h3>
+  <p>Die <b>echte App</b>, Sample-Editor mit einem Demo-Loop. Unter „3 · Bearbeiten“ steht neu die Karte <b>Effekte</b>. Mit <b>+</b> einen Effekt wählen (höchstens 4, jeder einmal), Preset mit ◀ ▶, Regler über den Pfeil aufklappen, Punkt = an/aus. <b>Vorhören</b> spielt live durch die Effekte. „Neu“ umrandet die neuen Teile gelb.</p>
+  <h3>Effekte</h3>
+  <ul>
+    <li><b>EQ, Filter, Kompressor, Verzerrung</b> = dieselben Geräte und Presets wie in Mix &amp; FX.</li>
+    <li><b>Hall, Delay</b> = im Sample selbst (mit Mischung), unabhängig vom Hall/Delay-Send der Spur. Der Ausklang wird hinten angehängt (Sample wird länger).</li>
+  </ul>
+  <h3>A · Anwenden</h3>
+  <p>Wie „Lauter“ oder „Rückwärts“: <b>Anwenden</b> rechnet die Effekte fest ins Sample (Rückgängig und „Zurück zum Original“ gehen). Die Karte ist danach leer. Einfach, keine Last beim Spielen, nichts Neues im Speicherformat.</p>
+  <h3>B · Bleibt einstellbar</h3>
+  <p>Kein Anwenden-Knopf: die Kette wird mit dem Sample gespeichert und beim Laden eingerechnet (wie Tonhöhe/Tempo). Später wieder änderbar oder abschaltbar, das Original bleibt. Auch hier <b>keine Last beim Spielen</b>, aber das Laden dauert pro Sample etwas länger und es braucht mehr Umbau (Laden von Pads/Sampler/Drum-Sets muss auf das Rechnen warten).</p>
+  <h3>Zur Entscheidung</h3>
+  <ul>
+    <li>A oder B?</li>
+    <li>Hall/Delay im Sample überhaupt? (Die Spur hat schon Hall/Delay-Sends.)</li>
+    <li>Wirken die Effekte aufs ganze Sample oder nur auf den gewählten Bereich (Start–Ende)?</li>
+  </ul>
+</template>
+<script>
+// ===== Läuft im Rahmen der echten App (per eval im Fenster der App) =====
+function MK(){
+  let V='a', FX=[], open=-1, live=null, uid=0;
+  const IC={
+    eq:'<path d="M3 16c3 0 4-8 7-8s3 6 5 6 3-4 6-4"/>',
+    filter:'<path d="M3 8h9c3 0 4 2 5 5l3 6"/>',
+    comp:'<path d="M4 20L12 12h8M4 4v16"/>',
+    dist:'<path d="M3 12c2-6 4-6 5 0s3 6 5 0 3-6 5 0 2 4 3 4"/>',
+    hall:'<path d="M4 20c0-9 7-16 16-16M8 20c0-6 6-12 12-12M12 20c0-4 4-8 8-8"/>',
+    delay:'<circle cx="6" cy="12" r="3"/><circle cx="13" cy="12" r="2.2" opacity=".7"/><circle cx="19" cy="12" r="1.5" opacity=".45"/>'
+  };
+  // EQ, Filter, Kompressor, Verzerrung aus der App; Hall/Delay als Mischung im Sample
+  const EQ_P=[{k:'eqLowGain',l:'Tiefen',a:-12,b:12,s:.5},{k:'eqMidGain',l:'Mitten',a:-12,b:12,s:.5},{k:'eqHighGain',l:'Höhen',a:-12,b:12,s:.5},{k:'eqLc',l:'Tiefen-Filter',a:0,b:1,s:.005}];
+  const T={
+    eq:{n:'EQ',ps:EQ_P,pre:EQ_PRE.map(x=>[x[0],Object.assign({},x[1])])},
+    filter:{n:'Filter',ps:FXDEF.filter.ps.filter(p=>!p.sel),pre:FXDEF.filter.pre,dev:'filter'},
+    comp:{n:'Kompressor',ps:FXDEF.comp.ps,pre:FXDEF.comp.pre.slice(1),dev:'comp'},
+    dist:{n:'Verzerrung',ps:FXDEF.dist.ps,pre:FXDEF.dist.pre,dev:'dist'},
+    hall:{n:'Hall',tail:p=>p.sz,ps:[{k:'sz',l:'Größe',a:.3,b:5,s:.1},{k:'to',l:'Ton',a:0,b:1,s:.01},{k:'mx',l:'Mischung',a:0,b:1,s:.01}],
+      pre:[['Raum',{sz:.8,to:.6,mx:.25}],['Halle',{sz:2.4,to:.5,mx:.3}],['Platte',{sz:1.6,to:.95,mx:.25}],['Kathedrale',{sz:4.6,to:.4,mx:.35}]]},
+    delay:{n:'Delay',tail:p=>Math.min(4,p.tm*Math.log(.001)/Math.log(Math.max(.05,p.fb))),ps:[{k:'tm',l:'Zeit',a:.05,b:1,s:.01},{k:'fb',l:'Feedback',a:0,b:.85,s:.01},{k:'to',l:'Ton',a:0,b:1,s:.01},{k:'mx',l:'Mischung',a:0,b:1,s:.01}],
+      pre:[['Slapback',{tm:.09,fb:.15,to:.8,mx:.3}],['Echo',{tm:.3,fb:.4,to:.6,mx:.3}],['Dub',{tm:.45,fb:.6,to:.3,mx:.35}]]}
+  };
+  const ORDER=['eq','filter','comp','dist','hall','delay'];
+  const css=document.createElement('style');
+  css.textContent=`
+  #mkFx{display:none;flex-direction:column;gap:6px;background:var(--panel);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:8px;flex-shrink:0}
+  html.mk-a #mkFx, html.mk-b #mkFx{display:flex}
+  .mkfx-h{display:flex;align-items:center;gap:8px;font-size:12px;color:#c7cbd4;padding:0 2px}
+  .mkfx-h .t{flex:1;display:flex;align-items:center;gap:6px;font-weight:700;letter-spacing:.04em}
+  .mkfx-h .n{font:700 11px 'JetBrains Mono',monospace;color:var(--dim)}
+  .mk-ib{width:36px;height:36px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:var(--panel-inset);color:var(--blue-2);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+  .mk-ib:disabled{opacity:.3;cursor:default}
+  .mk-ib svg,.mkfx-h svg,.mkfx-r .ic svg,.mkfx-pk svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .mkfx-empty{font-size:12px;color:var(--dim);padding:2px 2px 4px}
+  .mkfx-r{display:flex;align-items:center;gap:6px;background:var(--panel-inset);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:4px 4px 4px 8px;min-height:44px}
+  .mkfx-r.off{opacity:.5}
+  .mkfx-r .dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--blue);background:var(--blue);box-shadow:0 0 6px rgba(63,169,255,.6);cursor:pointer;flex-shrink:0}
+  .mkfx-r.off .dot{background:transparent;box-shadow:none;border-color:#555a64}
+  .mkfx-r .ic{color:var(--blue-2);display:flex}
+  .mkfx-r .nm{font-size:13px;font-weight:700;color:var(--white);width:74px;flex-shrink:0}
+  .mkfx-lcd{flex:1;display:flex;align-items:center;min-width:0;height:32px;border-radius:6px;background:#06120c;border:1px solid rgba(63,169,255,.25)}
+  .mkfx-lcd button{width:26px;height:30px;border:0;background:transparent;color:var(--blue-2);cursor:pointer;font-size:12px}
+  .mkfx-lcd span{flex:1;text-align:center;font:700 11px 'JetBrains Mono',monospace;color:#8fd4ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mkfx-r .ex,.mkfx-r .rm{width:30px;height:32px;border:0;background:transparent;color:var(--dim);cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .mkfx-r .ex svg,.mkfx-r .rm svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+  .mkfx-r.open .ex{color:var(--blue-2);transform:rotate(180deg)}
+  .mkfx-d{display:flex;flex-direction:column;gap:4px;padding:2px 6px 6px 30px}
+  .mkfx-k{display:flex;align-items:center;gap:8px;font-size:12px;color:#c7cbd4}
+  .mkfx-k span{width:84px;flex-shrink:0}
+  .mkfx-k input{flex:1;accent-color:#3fa9ff}
+  .mkfx-pk{display:none;grid-template-columns:repeat(3,1fr);gap:6px}
+  .mkfx-pk.on{display:grid}
+  .mkfx-pk button{min-height:52px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:var(--panel-inset);color:#c7cbd4;font:500 11px inherit;font-family:inherit;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer}
+  .mkfx-pk button svg{color:var(--blue-2)}
+  .mkfx-pk button:disabled{opacity:.25;cursor:default}
+  .mkfx-f{display:flex;gap:6px;align-items:center}
+  .mkfx-f .note{flex:1;font-size:11.5px;color:var(--dim);line-height:1.3;padding:0 2px}
+  #mkFxApply{display:none;min-height:40px;padding:0 14px;border-radius:8px;border:1px solid var(--blue);background:rgba(63,169,255,.18);color:var(--blue-2);font:700 12px inherit;font-family:inherit;cursor:pointer;align-items:center;gap:6px}
+  #mkFxApply svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+  #mkFxApply:disabled{opacity:.35;cursor:default}
+  html.mk-a #mkFxApply{display:flex}
+  html.mkmark .mk-new{outline:1.5px dashed #ffc247!important;outline-offset:1px}`;
+  document.head.appendChild(css);
+  const svg=p=>'<svg viewBox="0 0 24 24" aria-hidden="true">'+p+'</svg>';
+  const box=document.createElement('div'); box.id='mkFx'; box.className='mk-new';
+  box.innerHTML='<div class="mkfx-h"><span class="t">'+svg('<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>')+'Effekte</span><span class="n" id="mkFxN"></span>'
+    +'<button class="mk-ib" id="mkFxAdd" aria-label="Effekt hinzufügen">'+svg('<path d="M12 5v14M5 12h14"/>')+'</button></div>'
+    +'<div class="mkfx-pk" id="mkFxPk"></div><div id="mkFxL"></div>'
+    +'<div class="mkfx-f"><span class="note" id="mkFxNote"></span><button id="mkFxApply">'+svg('<path d="M4 12l5 5L20 6"/>')+'Anwenden</button></div>';
+  seResetBtn.parentNode.insertBefore(box, seResetBtn);
+  const L=box.querySelector('#mkFxL'), PK=box.querySelector('#mkFxPk');
+  PK.innerHTML=ORDER.map(t=>'<button data-t="'+t+'">'+svg(IC[t])+T[t].n+'</button>').join('');
+  box.querySelector('#mkFxAdd').onclick=()=>{ PK.classList.toggle('on'); draw(); };
+  PK.onclick=e=>{ const b=e.target.closest('[data-t]'); if(!b||b.disabled) return; const t=b.dataset.t;
+    FX.push({id:++uid,t,on:true,pi:0,p:Object.assign({},T[t].pre[0][1])}); FX.sort((x,y)=>ORDER.indexOf(x.t)-ORDER.indexOf(y.t));
+    PK.classList.remove('on'); open=-1; changed(); };
+  function draw(){
+    box.querySelector('#mkFxN').textContent=FX.length+'/4';
+    box.querySelector('#mkFxAdd').disabled=FX.length>=4;
+    PK.querySelectorAll('[data-t]').forEach(b=>b.disabled=FX.some(f=>f.t===b.dataset.t));
+    L.innerHTML=FX.length?'':'<div class="mkfx-empty">Noch keine Effekte. Mit + hinzufügen.</div>';
+    FX.forEach((f,i)=>{ const d=T[f.t];
+      const r=document.createElement('div'); r.className='mkfx-r'+(f.on?'':' off')+(open===f.id?' open':'');
+      r.innerHTML='<span class="dot" role="switch" aria-label="an/aus"></span><span class="ic">'+svg(IC[f.t])+'</span><span class="nm">'+d.n+'</span>'
+        +'<div class="mkfx-lcd"><button data-d="-1" aria-label="Voriges Preset">◀</button><span>'+(f.pi<0?'Eigene':d.pre[f.pi][0])+'</span><button data-d="1" aria-label="Nächstes Preset">▶</button></div>'
+        +'<button class="ex" aria-label="Regler">'+svg('<path d="M6 9l6 6 6-6"/>')+'</button><button class="rm" aria-label="Entfernen">'+svg('<path d="M6 6l12 12M18 6L6 18"/>')+'</button>';
+      r.querySelector('.dot').onclick=()=>{ f.on=!f.on; changed(); };
+      r.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{ const n=d.pre.length; f.pi=((f.pi<0?0:f.pi)+ +b.dataset.d+n)%n; f.p=Object.assign({},d.pre[f.pi][1]); changed(); });
+      r.querySelector('.ex').onclick=()=>{ open=open===f.id?-1:f.id; draw(); };
+      r.querySelector('.rm').onclick=()=>{ FX.splice(i,1); changed(); };
+      L.appendChild(r);
+      if(open===f.id){ const k=document.createElement('div'); k.className='mkfx-d';
+        d.ps.forEach(p=>{ const row=document.createElement('label'); row.className='mkfx-k';
+          row.innerHTML='<span>'+p.l+'</span><input type="range" min="'+p.a+'" max="'+p.b+'" step="'+p.s+'" value="'+(f.p[p.k]!=null?f.p[p.k]:p.a)+'">';
+          row.querySelector('input').oninput=e=>{ f.p[p.k]=+e.target.value; f.pi=-1; r.querySelector('.mkfx-lcd span').textContent='Eigene'; rebuild(); };
+          k.appendChild(row); });
+        L.appendChild(k); }
+    });
+    const act=FX.filter(f=>f.on);
+    box.querySelector('#mkFxApply').disabled=!act.length;
+    box.querySelector('#mkFxNote').textContent = V==='a'
+      ? (act.length ? 'Vorhören klingt schon mit Effekt. Anwenden rechnet sie fest ins Sample.' : 'Rückgängig und „Zurück zum Original“ gehen auch nach dem Anwenden.')
+      : 'Wird mit dem Sample gespeichert, Original bleibt. Beim Laden eingerechnet – keine Last beim Spielen.';
+  }
+  // ---- Signalkette (live und offline gleich) ----
+  function ir(c,sz){ const n=Math.floor(c.sampleRate*sz), b=c.createBuffer(2,n,c.sampleRate); for(let ch=0;ch<2;ch++){ const d=b.getChannelData(ch); for(let i=0;i<n;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/n,2.8); } return b; }
+  function wetMix(c,i,o,wet,mx){ const dg=c.createGain(), wg=c.createGain(); dg.gain.value=1-mx*.5; wg.gain.value=mx; i.connect(dg); dg.connect(o); wet.connect(wg); wg.connect(o); }
+  function chain(c){
+    const i=c.createGain(); let cur=i; const all=[];
+    FX.filter(f=>f.on).forEach(f=>{ const p=f.p, o=c.createGain();
+      if(T[f.t].dev){ const n=FXDEF[T[f.t].dev].build(c); n.u(Object.assign({ty:'lowpass'},FXDEF[T[f.t].dev].pre[0][1],p)); cur.connect(n.i); n.o.connect(o); }
+      else if(f.t==='eq'){ const n={}; eqNodes(n,c); n.eqHp.frequency.value=eqLcHz(p.eqLc||0); n.eqLow.gain.value=p.eqLowGain||0; n.eqMid.gain.value=p.eqMidGain||0; n.eqMid.frequency.value=eqMfHz(p.eqMf); n.eqHigh.gain.value=p.eqHighGain||0; cur.connect(n.eqHp); n.eqHigh.connect(o); }
+      else if(f.t==='hall'){ const cv=c.createConvolver(), lp=c.createBiquadFilter(); cv.buffer=ir(c,p.sz); lp.type='lowpass'; lp.frequency.value=p.to>=.995?20000:fxEx(1500,16000,p.to); cur.connect(cv); cv.connect(lp); wetMix(c,cur,o,lp,p.mx); }
+      else if(f.t==='delay'){ const dl=c.createDelay(2), fb=c.createGain(), lp=c.createBiquadFilter(); dl.delayTime.value=p.tm; fb.gain.value=p.fb; lp.type='lowpass'; lp.frequency.value=p.to>=.995?20000:fxEx(600,13000,p.to);
+        cur.connect(dl); dl.connect(lp); lp.connect(fb); fb.connect(dl); wetMix(c,cur,o,lp,p.mx); }
+      cur=o; });
+    return {i,o:cur};
+  }
+  function tail(){ return Math.min(5, FX.filter(f=>f.on&&T[f.t].tail).reduce((s,f)=>s+T[f.t].tail(f.p),0)); }
+  function rebuild(){ if(!audioCtx) return; if(live){ try{live.o.disconnect();}catch(e){} }
+    live=FX.some(f=>f.on)&&V ? chain(audioCtx) : null; if(live) live.o.connect(master);
+    if(sePreviewSrc){ seStopPreview(); sePreviewBtn.click(); } }
+  function changed(){ draw(); rebuild(); }
+  // Vorhören läuft durch die Kette (nach dem Handler der App)
+  sePreviewBtn.addEventListener('click', ()=>{ if(sePreviewSrc && live){ try{ sePreviewSrc.disconnect(); }catch(e){} sePreviewSrc.connect(live.i); } });
+  // A: fest ins Sample rechnen (wie Lauter/Rückwärts: Rückgängig über die Historie)
+  box.querySelector('#mkFxApply').onclick=async ()=>{
+    const B=seWorkingBuffer; if(!B || !FX.some(f=>f.on)) return; seStopPreview();
+    const sr=B.sampleRate, len=B.length+Math.round(tail()*sr), ch=Math.max(B.numberOfChannels, FX.some(f=>f.on&&(f.t==='hall')) ? 2 : 1);
+    const oc=new OfflineAudioContext(ch,len,sr), s=oc.createBufferSource(); s.buffer=B; const k=chain(oc); s.connect(k.i); k.o.connect(oc.destination); s.start(0);
+    let out=await oc.startRendering();
+    // Stille am Ende abschneiden (unter −60 dB)
+    let last=out.length-1; for(;last>B.length;last--){ let pk=0; for(let c2=0;c2<out.numberOfChannels;c2++) pk=Math.max(pk,Math.abs(out.getChannelData(c2)[last])); if(pk>.001) break; }
+    if(last<out.length-1) out=bufferSlice(out,0,(last+1)/sr);
+    seApplyTransform(()=>out); FX=[]; open=-1; changed();
+  };
+  // ---- Demo: kleiner Drum-Loop (2 Takte, 100 BPM) ----
+  function demo(){
+    if(!audioCtx) initAudio();
+    if(sePreviewSrc) seStopPreview();
+    const sr=44100, bpm=100, st=60/bpm/4, n=Math.round(sr*st*32), b=new AudioBuffer({length:n,numberOfChannels:1,sampleRate:sr}), d=b.getChannelData(0);
+    let seed=7; const rnd=()=>((seed=(seed*16807)%2147483647)/2147483647)*2-1;
+    const add=(t0,fn,dur)=>{ const a=Math.round(t0*sr), m=Math.min(n-a,Math.round(dur*sr)); for(let i=0;i<m;i++) d[a+i]+=fn(i/sr); };
+    const kick=t=>Math.sin(2*Math.PI*(50*t+90*(1-Math.exp(-t*30))/30))*Math.exp(-t*9)*.8;
+    let lp=0; const snare=t=>{ lp+=(rnd()-lp)*.5; return (lp*.6+Math.sin(2*Math.PI*190*t)*.4)*Math.exp(-t*18)*.55; };
+    let hp=0; const hat=t=>{ const r=rnd(); const v=r-hp; hp=r; return v*Math.exp(-t*60)*.18; };
+    const K=[0,6,10,16,22,26,29], S=[4,12,20,28];
+    for(let s=0;s<32;s++){ if(K.includes(s)) add(s*st,kick,.5); if(S.includes(s)) add(s*st,snare,.3); if(s%2===0) add(s*st,hat,.08); }
+    openSampleEditor({buffer:b,label:'Demo-Loop'});
+    FX=[]; open=-1; setTimeout(()=>{ draw(); rebuild(); setTimeout(()=>box.scrollIntoView({block:'center'}),50); },80);
+  }
+  function setV(v){ V=v; document.documentElement.classList.toggle('mk-a',v==='a'); document.documentElement.classList.toggle('mk-b',v==='b'); draw(); rebuild(); }
+  function setMark(on){ document.documentElement.classList.toggle('mkmark',on); }
+  draw();
+  window.__mk={setV,demo,setMark};
+}
+
+// ===== Rahmen-Steuerung =====
+const fR=document.getElementById('fR');
+let V='a';
+function hook(){ const w=fR.contentWindow; try{ if(!w||w.eval('typeof openSampleEditor')!=='function') return null; if(!w.__mk) w.eval('('+MK.toString()+')()'); }catch(e){ console.error(e); return null; } return w.__mk; }
+function apply(){ const m=hook(); if(m) m.setV(V); document.querySelectorAll('[data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v===V)); }
+fR.addEventListener('load',()=>setTimeout(()=>{ const m=hook(); if(!m) return; m.demo(); setTimeout(apply,200); },800));
+document.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{ V=b.dataset.v; apply(); });
+document.getElementById('demoBtn').onclick=()=>{ const m=hook(); if(m){ m.demo(); setTimeout(()=>m.setV(V),200); } };
+document.getElementById('mk').onchange=e=>{ const m=hook(); if(m) m.setMark(e.target.checked); };
+const notes=document.getElementById('notes').innerHTML; document.getElementById('side').innerHTML=notes; const info=document.getElementById('info'); info.innerHTML=notes;
+document.getElementById('infoBtn').onclick=()=>info.classList.toggle('open');
+const fitTop=()=>{ const h=document.getElementById('mbar').offsetHeight; document.getElementById('stage').style.top=h+'px'; info.style.top=h+'px'; }; addEventListener('resize',fitTop); fitTop();
+</script>
+</body>
+</html>
