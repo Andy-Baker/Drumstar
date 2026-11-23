@@ -523,6 +523,29 @@ async def main():
       return {dis, tv1, tv2, reg:+reg.toFixed(3), e:[e.semi,e.tempo,e.art].join(), padLen:+padLen.toFixed(3), back}; })()""")
     ok('#11 Editor: Plattenspieler sperrt Tempo (zeigt 119 %), Töne 120 %, Vorhör-Ausschnitt 1/1,2 s', pt['dis'] and pt['tv1']=='119 %' and pt['tv2']=='120 %' and abs(pt['reg']-0.833)<0.01, pt)
     ok('#11 Speichern: semi/tempo/art im Eintrag, Pad spielt gerechnet, beim Öffnen wieder da', pt['e']=='3,120,tones' and abs(pt['padLen']-0.833)<0.01 and pt['back']=='3,120,tones', pt)
+    # #16 Effekte im Sample-Editor: ein Effekt offen, Presets/Schieber, Anwenden = fest ins Sample (Rückgängig), Hall verlängert, Rückwärts-Hall davor
+    fx=await pg.evaluate("""(async()=>{ const sr=44100, b=new AudioBuffer({length:sr,numberOfChannels:1,sampleRate:sr}), d=b.getChannelData(0);
+      for(let i=0;i<4410;i++) d[i]=0.6*Math.sin(2*Math.PI*220*i/sr)*(1-i/4410);
+      openSampleEditor({buffer:b,label:'FX-Test'}); await new Promise(r=>setTimeout(r,200));
+      const tiles=[...document.querySelectorAll('#seFxRow [data-fx]')].map(e=>e.dataset.fx);
+      document.querySelector('#seFxRow [data-fx=hall]').click();
+      const open=document.getElementById('seFxPanel').classList.contains('on'), sl=document.querySelectorAll('#seFxPanel input[type=range]').length, pre=document.querySelectorAll('#seFxPanel [data-pi]').length;
+      document.querySelector('#seFxRow [data-fx=dist]').click(); const one=document.querySelectorAll('#seFxRow .on').length===1 && document.querySelector('#seFxRow .on').dataset.fx==='dist';
+      document.querySelector('#seFxRow [data-fx=hall]').click(); document.querySelector('#seFxPanel [data-pi="2"]').click(); document.getElementById('seFxPanel').scrollIntoView({block:'center'}); await new Promise(r=>setTimeout(r,80));
+      document.querySelector('#seFxPanel [data-fa=ok]').click(); for(let i=0;i<80 && sfxBusy;i++) await new Promise(r=>setTimeout(r,50)); await new Promise(r=>setTimeout(r,50));
+      const len1=seWorkingBuffer.duration, ch=seWorkingBuffer.numberOfChannels, closed=!document.getElementById('seFxPanel').classList.contains('on'), undo=!seUndoBtn.disabled;
+      seUndoBtn.click(); const len0=seWorkingBuffer.duration;
+      document.querySelector('#seFxRow [data-fx=hall]').click(); document.querySelector('#seFxPanel [data-rv="1"]').click();
+      const P=Object.assign({},sfxP), out=await sfxRender(seWorkingBuffer,'hall',P), M=Math.round(P.p.sz*sr), od=out.getChannelData(0);
+      let pre1=0; for(let i=0;i<M;i++) pre1=Math.max(pre1,Math.abs(od[i])); let hit=0; for(let i=M;i<M+200;i++) hit=Math.max(hit,Math.abs(od[i]));
+      let tail=0; for(let i=M+sr*0.5;i<od.length;i++) tail=Math.max(tail,Math.abs(od[i]));
+      let pk=0; for(const k of ['filter','dist','comp','delay']){ const o=await sfxRender(b,k,{pi:0,rev:false,p:Object.assign({},SFX[k].pre[0][1])}); for(let c=0;c<o.numberOfChannels;c++){ const x=o.getChannelData(c); for(let i=0;i<x.length;i++) pk=Math.max(pk,Math.abs(x[i])); } }
+      closeSampleEditor(); const gone=!document.getElementById('seFxPanel').classList.contains('on');
+      return {tiles, open, sl, pre, one, len1:+len1.toFixed(2), ch, closed, undo, len0:+len0.toFixed(2), rlen:+(out.duration).toFixed(2), pre1:+pre1.toFixed(3), hit:+hit.toFixed(3), tail:+tail.toFixed(4), pk:+pk.toFixed(3), gone}; })()""")
+    await s('se_fx')
+    ok('#16 Effekte: 5 Kacheln, Panel mit 3 Presets + Schiebern, immer nur einer offen', fx['tiles']==['filter','dist','comp','hall','delay'] and fx['open'] and fx['sl']==2 and fx['pre']==3 and fx['one'], fx)
+    ok('#16 Hall „Weit“ anwenden: Sample länger, Stereo, Panel zu, Rückgängig stellt Länge her', 2<fx['len1']<4.9 and fx['ch']==2 and fx['closed'] and fx['undo'] and fx['len0']==1.0, fx)
+    ok('#16 Rückwärts-Hall: Hall vor dem Schlag, Schlag an Position Länge, danach still; übrige Effekte ohne Übersteuern', abs(fx['rlen']-1.8)<0.01 and fx['pre1']>0.01 and fx['hit']>0.3 and fx['tail']<0.001 and 0.05<fx['pk']<=1 and fx['gone'], fx)
     # #14 Rhythmen pro Spur: Würfel fragt bei Drums/Perc, Vorlagen, Speichern, Zufall, Löschen; Melodiespuren würfeln direkt
     await pg.evaluate("closeSheets(); selectTrack(TRACKS.findIndex(t=>t.id==='ch')); taScope='page'")
     await pg.click('#taRandBtn'); await pg.wait_for_timeout(150); await s('rh_dice_menu')

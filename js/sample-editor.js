@@ -634,14 +634,14 @@ async function openSampleEditor({sampleId=null, forSampler=null, forPad=null, fo
   renderSEAssignUI();
   sampleEditorOverlay.classList.add('open');
   if(!sampleId){ seCutRestore(null); sePTSet(ptOf(null)); }
-  seSetMode('trim'); seUpdatePlayModeUI(); seHistReset();
+  seSetMode('trim'); seUpdatePlayModeUI(); seHistReset(); seFxClose(); // Effekte (js/sample-fx.js, #16)
   syncBottomBarVisibility();
   seZoomFactor=1; seZoomEl.value=1; seZoomValEl.textContent='1.0×';
   requestAnimationFrame(()=>{ seWaveScroll.scrollLeft=0; drawSEWave(); updateSETrimUI(); });
 }
 function closeSampleEditor(){
   if(seIsRecording) seStopRecording();
-  seStopPreview(); seCutStop();
+  seStopPreview(); seCutStop(); seFxClose();
   sampleEditorOverlay.classList.remove('open');
   syncBottomBarVisibility();
 }
