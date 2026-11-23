@@ -12,6 +12,8 @@ Zusammengeführt am 28.10.2026 aus DECISIONS-2/-3, ARCHITECTURE-11/-12 und ROADM
 - Fremdänderungen (andere KI, eigene Edits) prüfen: Diff, Syntaxcheck, Nebenwirkungen auf geteilten Zustand.
 - Dient es Qualität und Sound, keine Rücksicht auf alte Patterns (keine Migrationspflicht).
 - Kein Autosave des Arbeitsstands (nicht erneut vorschlagen).
+- Regler (23.11., #16): Schieber statt Drehregler, Drehregler gehen am Handy schlecht. Gilt für neue Regler und Mockups.
+- Zusatzfunktionen kritisch prüfen (23.11.): Ergibt das am Handy musikalisch Sinn? Jede neue Einstellung muss auch bedient werden. Im Zweifel weglassen und im Vorschlag den Nutzen ehrlich nennen.
 
 **Bedienung & Layout**
 - Eine Transportleiste, immer bündig oben (Play, BPM, Pattern-Taste, Zahnrad). Kein Logo im Header; Logo mittig ganz unten, darunter Impressum/Datenschutz.
