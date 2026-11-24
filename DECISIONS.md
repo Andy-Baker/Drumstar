@@ -108,6 +108,14 @@ Zusammengeführt am 28.10.2026 aus DECISIONS-2/-3, ARCHITECTURE-11/-12 und ROADM
 - Grundton erkennen trifft bei Glocken/unharmonischen Klängen evtl. daneben (dann − / +).
 - Schriftgrößen < 11 px an vielen Stellen (entschieden: auf 11 px anheben, #19).
 - Rechtstexte (Impressum/Datenschutz) nicht anwaltlich geprüft.
+- **Latenz Browser/Handy (24.11., #73, Testseite `docs/test/latenz.html`)** – Testgerät Android 10, Chrome 157, Lautsprecher/Mikro:
+  - Chrome meldet 27 ms (Puffer 4 + Ausgabe 23); Mikro-Schleife gemessen **137 ms hin+zurück** (Ausgabe ≈ 40–70 ms), Schwankung 0–0,2 ms.
+  - Modus „Minimum“ (latencyHint 0): 142 ms → kein Gewinn. Engpass liegt unter Drumstar (Chrome-Puffer und/oder Android/Gerät), nicht im Code.
+  - Vergleich (Quellen: Google/Superpowered): iPad mit nativer App ca. 7–13 ms, Android nativ Ø 39 ms (Top-20-Handys 2021), „natürlich“ fühlt sich < 10 ms an.
+  - Folgen: Sequencer, Song, Piano-Roll-Wiedergabe sind nicht betroffen (Töne werden vorausgeplant). Betroffen ist nur Live-Spiel (Touch/Keyboard → Ton). Live auf diesem Gerät spürbar; Einspielen brauchbar mit Latenz-Ausgleich (Verzug ist konstant).
+  - Kein Hebel: latencyHint, WebAssembly (nur Rechenleistung), App-Hülle/TWA/WebView (gleiche Chrome-Audio-Engine). Nur native Audio-Engine (Oboe/AAudio bzw. Core Audio) wäre schneller – großer Umbau.
+  - iOS: Safari/iOS-Browser ohne Web MIDI → Keyboard am iPad nur mit eigener App.
+  - Offen (später): OboeTester auf dem Testgerät (Gerät vs. Chrome trennen), Testseite auf iPad/Safari und Laptop/Chrome.
 
 ## Offene Punkte
 Aufräumen, Struktur und spätere Vorhaben stehen seit 29.10.2026 als GitHub Issues (Labels `aufräumen`, `aufgabe`, `idee`), nicht mehr hier.
