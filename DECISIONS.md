@@ -73,6 +73,17 @@ Zusammengeführt am 28.10.2026 aus DECISIONS-2/-3, ARCHITECTURE-11/-12 und ROADM
 
 - Stücke auf Tasten (22.11., #76, Mockup `docs/mockups/issue-76.html` v6): Sampler-Spur mit zweiter Art „Jede Taste eigenes Sample“ (Originaltonhöhe), keine eigene Spurart und keine neuen Fenster. Bearbeitet wird nur in der Piano Roll an der Klaviatur links (Halten = Taste-Sheet, Halten + Ziehen = verschieben samt Noten, belegte Taste tauscht); der Spielmodus bleibt zum Spielen. Ziehen relativ mit Zielbalken, Mitscrollen nur in Zugrichtung und zeilenweise (erste Fassung lief am Rand davon). Klang-Sheet nur Überblick, Umschalten über die Sound-Auswahl (Belegung bleibt gespeichert). Harmonie geht bei Tastenbelegung aus. Verworfen: eigene Stücke-Spur mit umschaltbaren Ansichten Raster | Pads | Piano Roll (zu viel fürs Handy); Belegung als Liste im Klang-Sheet; Bearbeiten im Spielmodus. Pads aufnehmen → #77, Sample direkt aufnehmen → #78.
 
+### Architektur-Regel: Klang-Engine von der Oberfläche trennen (24.11., Ziel native iPad-App)
+Ziel (#26, Stufe 2/3): später Klang nativ (Core Audio/C++/Swift bzw. JUCE) für iPad-Latenz und AUv3/AUM; Oberfläche ggf. weiter Web. Damit das ohne Neuanfang geht, gilt ab jetzt bei jeder Entwicklung:
+1. **Engine-Dateien ohne DOM**: Klang-/Audio-Code (`audio`, `fx`, `voices`, `events`, `scheduler`, `wav-export`, künftige) greift nie auf `document`/`$id`/HTML zu. Rückmeldungen an die Oberfläche nur über Ereignisse (wie `transportOn`).
+2. **Oberfläche baut keine Audio-Knoten**: UI-Dateien (`sheets`, `editor`, `pianoroll`, `mixer`-UI, `sample-editor`, …) rufen Engine-Funktionen auf (z. B. Note anspielen, Parameter setzen, Sample laden) statt `audioCtx.create…` selbst.
+3. **Ein Datenmodell**: Song/Pattern/Spuren/Klang sind reine Daten (= Speicherformat, JSON-fähig). Die Engine liest nur das Modell; die Oberfläche ändert das Modell über Funktionen. Keine Klangzustände nur in DOM-Elementen oder Audio-Knoten.
+4. **Schmale Schnittstelle**: Befehle Oberfläche → Engine (play/stop/seek, noteOn/noteOff, setParam(Spur, Parameter, Wert), loadSample, export) und Ereignisse Engine → Oberfläche (Step, Pegel, Spitzen, Ladezustand). So kann die Engine später hinter einer nativen Brücke (Nachrichten) liegen.
+5. **Klang als nachbaubare Rechenvorschrift**: Eigene Synthese/Effekte möglichst als einfache Mathematik in AudioWorklets (portierbar nach C++); bei eingebauten Web-Audio-Knoten (Biquad, Compressor, Convolver …) Parameter und Verhalten dokumentieren. Referenz-Renderings aus `tests/test-audio.py`/WAV-Export dienen später als Vergleich, ob die native Engine gleich klingt.
+6. **Zeit unabhängig vom Browser**: Sequencer rechnet in Steps/Sekunden (wie `scheduler` ohne DOM); keine Timing-Logik in UI-Code.
+7. **Daten neutral**: Samples als Audiodateien + JSON-Karten (wie `sampler-werk.js`, `samples/`), keine Browser-spezifischen Formate.
+Stand 24.11.: `audio`, `fx`, `voices`, `events`, `scheduler`, `wav-export`, `tracks` ohne DOM ✓. Gemischt (aufräumen, schrittweise, nicht in einem Rutsch): `sampler`, `kits`, `sample-fx` (DOM in Engine-Datei), `editor`, `pianoroll`, `sample-editor` (erzeugen Audio-Knoten in UI). Siehe Issue „Architektur: Klang-Engine von der Oberfläche trennen“.
+
 ## Verworfen / bewusst nicht gebaut
 - Gemeinsamer Grundton/gemeinsame Skala für Acid und Cosmic; „Wie Cosmic“-Taste; Schalter „Cosmic sparsam“.
 - Logo im Header (alle Varianten), Logo-Startbild.
