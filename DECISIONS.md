@@ -116,6 +116,16 @@ Zusammengeführt am 28.10.2026 aus DECISIONS-2/-3, ARCHITECTURE-11/-12 und ROADM
   - Kein Hebel: latencyHint, WebAssembly (nur Rechenleistung), App-Hülle/TWA/WebView (gleiche Chrome-Audio-Engine). Nur native Audio-Engine (Oboe/AAudio bzw. Core Audio) wäre schneller – großer Umbau.
   - iOS: Safari/iOS-Browser ohne Web MIDI → Keyboard am iPad nur mit eigener App.
   - Offen (später): OboeTester auf dem Testgerät (Gerät vs. Chrome trennen), Testseite auf iPad/Safari und Laptop/Chrome.
+- **Plugins und Zusammenspiel im Browser (24.11., #67, Testseite `docs/test/wclap/`)**:
+  - Möglich: Plugin-Standards fürs Web gibt es – **WebCLAP** (CLAP nach WebAssembly, im AudioWorklet; openDAW lädt sie seit Okt. 2026) und **Web Audio Modules 2.0** (WAM, „VSTs fürs Web“, Export u. a. aus Faust/iPlug2). Test mit Oxo Synth2 am Handy: Rechenlast meist 3–4 %, höchstens ~13 % eines Kerns bei 8 Stimmen → CPU kein Hindernis, Klang sehr gut.
+  - Nicht möglich: VST2/VST3/AU/AAX (native Programme, im Browser nicht ladbar).
+  - Grenzen gegenüber iPad/AUM: (1) gleiche Latenz wie oben – Plugins laufen durch denselben Chrome/Android-Audioweg; (2) kein Austausch zwischen Apps – Plugins leben nur innerhalb einer Webseite, kein gemeinsamer Audio-/MIDI-Weg wie AUv3/AUM unter iOS; (3) Plugin-Oberflächen für Maus/Desktop gebaut → Regler in Drumstar nachbauen (Mockup `docs/mockups/issue-67.html`).
+  - Offen vor App-Einbau: Lizenz der WebCLAP-Host-Bibliothek (Signalsmith fragen), Host gibt Instanzen nicht frei, Threads nur mit Cross-Origin-Isolation, Pegel mancher Presets > 0 dBFS (Trim −6 dB).
+- **Einordnung Plattformen (24.11.)**:
+  - Browser/Handy (Drumstar): komponieren, arrangieren, Sequencer – ja; Live-Spiel mit Keyboard nur eingeschränkt (Latenz geräteabhängig, Testgerät spürbar); Keyboard per Web MIDI nur Android/Desktop-Chrome.
+  - iPad + native Apps: Live-Instrument in der Praxis (AUM als Mixer/Host, AUv3-Instrumente, Keyboard-Splits, ~7–13 ms Roundtrip). Drumstar dort nur als eigene App mit MIDI.
+  - Laptop + Chrome: vermutlich bester Ort für Drumstar mit Keyboard (noch messen).
+  - Vorbild für Konzepte: AUM (Mixer/Host, Sessions, MIDI-Routing), openDAW (Browser-DAW, Modular-System, WebCLAP).
 
 ## Offene Punkte
 Aufräumen, Struktur und spätere Vorhaben stehen seit 29.10.2026 als GitHub Issues (Labels `aufräumen`, `aufgabe`, `idee`), nicht mehr hier.
