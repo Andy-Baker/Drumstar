@@ -161,14 +161,6 @@ function setAcidScale(id, tr){
 }
 xyScaleSel.addEventListener('change', ()=>setAcidScale(xyScaleSel.value));
 
-function xyEnsureVoice(tr){
-  if(tr._live) return tr._live;
-  const o=audioCtx.createOscillator(); o.type='sawtooth';
-  const f=audioCtx.createBiquadFilter(); f.type='lowpass';
-  const a=audioCtx.createGain(); a.gain.value=0;
-  o.connect(f).connect(a).connect(tr.bus); o.start();
-  return tr._live={o,f,a,held:false,baseY:0.5};
-}
 function xyFilterY(L,y){
   const cents=1200*Math.log2((300+y*4000)/(300+L.baseY*4000));
   L.f.detune.setTargetAtTime(cents, audioCtx.currentTime, 0.02);

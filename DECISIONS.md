@@ -82,7 +82,7 @@ Ziel (#26, Stufe 2/3): später Klang nativ (Core Audio/C++/Swift bzw. JUCE) für
 5. **Klang als nachbaubare Rechenvorschrift**: Eigene Synthese/Effekte möglichst als einfache Mathematik in AudioWorklets (portierbar nach C++); bei eingebauten Web-Audio-Knoten (Biquad, Compressor, Convolver …) Parameter und Verhalten dokumentieren. Referenz-Renderings aus `tests/test-audio.py`/WAV-Export dienen später als Vergleich, ob die native Engine gleich klingt.
 6. **Zeit unabhängig vom Browser**: Sequencer rechnet in Steps/Sekunden (wie `scheduler` ohne DOM); keine Timing-Logik in UI-Code.
 7. **Daten neutral**: Samples als Audiodateien + JSON-Karten (wie `sampler-werk.js`, `samples/`), keine Browser-spezifischen Formate.
-Stand 24.11.: `audio`, `fx`, `voices`, `events`, `scheduler`, `wav-export`, `tracks` ohne DOM ✓. Gemischt (aufräumen, schrittweise, nicht in einem Rutsch): `sampler`, `kits`, `sample-fx` (DOM in Engine-Datei), `editor`, `pianoroll`, `sample-editor` (erzeugen Audio-Knoten in UI). Siehe Issue „Architektur: Klang-Engine von der Oberfläche trennen“.
+Stand 24.11.: `audio`, `fx`, `voices`, `events`, `scheduler`, `wav-export`, `tracks` ohne DOM ✓. Gemischt (aufräumen, schrittweise, nicht in einem Rutsch): `sampler`, `kits`, `sample-fx` (DOM in Engine-Datei), `editor` (stellt Parameter der Acid-Live-Stimme direkt), `sample-editor` (erzeugen Audio-Knoten in UI); Live-Stimmen Acid/Cosmic liegen in `events` (#80). Siehe Issue „Architektur: Klang-Engine von der Oberfläche trennen“.
 
 ## Verworfen / bewusst nicht gebaut
 - Gemeinsamer Grundton/gemeinsame Skala für Acid und Cosmic; „Wie Cosmic“-Taste; Schalter „Cosmic sparsam“.

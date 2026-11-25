@@ -351,6 +351,54 @@ function triggerPianoStep(time,tr,n,vel,lenSteps){
   pianoVoice(tr,time,n,vel,Math.max(0.08,stepDuration()*Math.max(1,lenSteps||1)*0.96));
 }
 function prPianoOn(tr,n,vel){ return pianoVoice(tr,audioCtx.currentTime+0.005,n,vel,null); }
+// Live-Stimmen (Spielfläche, Piano Roll): Acid einstimmig über tr._live, Cosmic polyphon mit Handle rel() – Engine, ohne DOM (#80)
+function xyEnsureVoice(tr){
+  if(tr._live) return tr._live;
+  const o=audioCtx.createOscillator(); o.type='sawtooth';
+  const f=audioCtx.createBiquadFilter(); f.type='lowpass';
+  const a=audioCtx.createGain(); a.gain.value=0;
+  o.connect(f).connect(a).connect(tr.bus); o.start();
+  return tr._live={o,f,a,held:false,baseY:0.5};
+}
+function prAcidOn(tr,n,vel,legato){
+  const L=xyEnsureVoice(tr), t=audioCtx.currentTime, freq=noteFreq(tr.rootNote+n);
+  L.o.frequency.cancelScheduledValues(t);
+  if(legato && L.held){ L.o.frequency.setTargetAtTime(freq,t,ARP_SLIDE_TC); return; }
+  L.o.frequency.setValueAtTime(freq,t);
+  const base=300+(tr.cutoff!=null?tr.cutoff:0.5)*4000, envMod=tr.envMod!=null?tr.envMod:0.5, dec=arpDecaySeconds(tr.decay!=null?tr.decay:0.26);
+  const fl=Math.max(60,base*0.35), pk=Math.min(12000,fl*Math.pow(2,envMod*3.03));
+  L.f.detune.cancelScheduledValues(t); L.f.detune.setValueAtTime(0,t);
+  L.f.frequency.cancelScheduledValues(t); L.f.frequency.setValueAtTime(pk,t); L.f.frequency.setTargetAtTime(fl,t,dec/3);
+  L.f.Q.value=1+(tr.resonance!=null?tr.resonance:0.35)*20;
+  const peak=Math.max(0.0001,Math.min(1,vel*tr.vol*1.1*ARP_LEVEL));
+  L.a.gain.cancelScheduledValues(t); L.a.gain.setValueAtTime(Math.max(0.0001,L.a.gain.value),t); L.a.gain.exponentialRampToValueAtTime(peak,t+0.004);
+  L.held=true;
+}
+function prAcidOff(tr){
+  const L=tr._live; if(!L || !audioCtx) return; const t=audioCtx.currentTime;
+  L.a.gain.cancelScheduledValues(t); L.a.gain.setValueAtTime(Math.max(0.0001,L.a.gain.value),t); L.a.gain.setTargetAtTime(0,t,0.03); L.held=false;
+}
+function prCosmicOn(tr,n,vel){
+  const t=audioCtx.currentTime+0.005, freq=noteFreq(tr.rootNote+n+24);
+  const cutoff=700+(tr.cutoff!=null?tr.cutoff:0.62)*7600, envMod=tr.envMod!=null?tr.envMod:0.62, decay=arpDecaySeconds(tr.decay!=null?tr.decay:0.42);
+  const width=tr.cosmicWidth!=null?tr.cosmicWidth:0.62, warmth=tr.cosmicWarmth!=null?tr.cosmicWarmth:0.22, air=tr.cosmicAir!=null?tr.cosmicAir:0.18;
+  const peak=Math.max(0.0001,Math.min(0.22,vel*tr.vol*0.16));
+  const filter=audioCtx.createBiquadFilter(); filter.type='lowpass'; filter.Q.value=0.65+(tr.resonance!=null?tr.resonance:0.22)*3.6;
+  filter.frequency.setValueAtTime(Math.min(15000,cutoff*(1.15+envMod*2.25)),t); filter.frequency.setTargetAtTime(Math.max(280,cutoff*0.5),t+0.02,Math.max(0.2,decay));
+  const amp=audioCtx.createGain(); amp.gain.setValueAtTime(0.0001,t); amp.gain.linearRampToValueAtTime(peak,t+0.012); amp.gain.setTargetAtTime(peak*0.76,t+0.013,0.2);
+  const left=audioCtx.createOscillator(), right=audioCtx.createOscillator(), sub=audioCtx.createOscillator(), shim=audioCtx.createOscillator();
+  left.type='sawtooth'; right.type='sawtooth'; sub.type='triangle'; shim.type='sine';
+  left.frequency.value=freq; right.frequency.value=freq; sub.frequency.value=freq/2; shim.frequency.value=Math.min(12000,freq*2);
+  const det=3+width*15; left.detune.value=-det; right.detune.value=det;
+  const lp=audioCtx.createStereoPanner(), rp=audioCtx.createStereoPanner(); lp.pan.value=-(0.15+width*0.62); rp.pan.value=0.15+width*0.62;
+  left.connect(lp).connect(filter); right.connect(rp).connect(filter);
+  const sg=audioCtx.createGain(); sg.gain.value=0.015+warmth*0.095; sub.connect(sg).connect(filter);
+  const hg=audioCtx.createGain(); hg.gain.value=0.002+air*0.025; shim.connect(hg).connect(amp);
+  filter.connect(amp).connect(tr.bus);
+  const oscs=[left,right,sub,shim]; oscs.forEach(o=>o.start(t));
+  let done=false;
+  return { rel(){ if(done) return; done=true; const now=audioCtx.currentTime; amp.gain.cancelScheduledValues(now); amp.gain.setValueAtTime(Math.max(0.0001,amp.gain.value),now); amp.gain.setTargetAtTime(0.0001,now,0.12); oscs.forEach(o=>{ try{ o.stop(now+0.8); }catch(e){} }); } };
+}
 // Stopp: laufende Cosmic-/Piano-Stimmen kurz ausblenden, noch nicht gestartete verwerfen
 function stopCosmicVoices(){
   if(!audioCtx) return;
