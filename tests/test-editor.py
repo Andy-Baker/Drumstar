@@ -577,6 +577,26 @@ async def main():
     await grp('ACID')
     rh5=await pg.evaluate("""(()=>{ document.getElementById('taRandBtn').click(); return {pop:!!document.getElementById('rhPop'), undo:!taUndoBtn.disabled}; })()""")
     ok('#14 Acid: Würfel ohne Menü, würfelt direkt', not rh5['pop'] and rh5['undo'], rh5)
+    # Live-Spiel (#80): Spielfläche + Piano Roll laufen über die Engine (liveAcid*/liveCosmicOn/livePianoOn) und klingen
+    lv=await pg.evaluate("""(async()=>{ await Promise.resolve(initAudio()); if(audioCtx.state!=='running') await audioCtx.resume();
+      const tr=xyTrack(), A=audioCtx.createAnalyser(); A.fftSize=2048; const buf=new Float32Array(2048);
+      const peak=async()=>{ await new Promise(r=>setTimeout(r,120)); A.getFloatTimeDomainData(buf); return Math.max(...buf.map(Math.abs)); };
+      openXY(); const r=xyPad.getBoundingClientRect(), ev=(t,x,y)=>xyPad.dispatchEvent(new PointerEvent(t,{pointerId:7,clientX:x,clientY:y,bubbles:true}));
+      ev('pointerdown',r.left+5,r.top+r.height*0.5); await new Promise(r=>setTimeout(r,30));
+      const L=tr._live; L.a.connect(A); const held=L.held, f0=L.o.frequency.value, want=noteFreq(tr.rootNote+xySemi(tr,0)), on=await peak();
+      ev('pointermove',r.right-5,r.top+r.height*0.1); await new Promise(r=>setTimeout(r,200));
+      const glide=L.held && L.o.frequency.value>f0*1.5, det=L.f.detune.value;
+      xyReso.value=80; xyReso.dispatchEvent(new Event('input')); const q=L.f.Q.value;
+      ev('pointerup',0,0); await new Promise(r=>setTimeout(r,400)); const off=await peak(); closeXY();
+      const out={held,f:Math.abs(f0-want)<0.5,on,glide,det,q,off,rel:!L.held};
+      liveAcidOn(tr,7,VEL_NORMAL,false); out.prHeld=L.held; out.prBase=L.baseY===(tr.cutoff!=null?tr.cutoff:0.5); liveAcidOff(tr); out.prOff=!L.held;
+      const co=__T.find(t=>t.id==='cosmic'), pi=__T.find(t=>t.id==='piano');
+      const hc=trInst(co).live(co,0,VEL_NORMAL), hp=trInst(pi).live(pi,0,VEL_NORMAL);
+      out.handles=!!(hc&&hc.rel&&hp&&hp.rel); hc.rel(); hp.rel(); hc.rel();
+      return out; })()""")
+    ok('#80 Spielfläche Acid: Note an (richtige Tonhöhe, klingt), Gleiten, Filter folgt Y, Reso-Regler', lv['held'] and lv['f'] and lv['on']>0.01 and lv['glide'] and lv['det']>0 and abs(lv['q']-17)<0.01, lv)
+    ok('#80 Spielfläche Acid: Loslassen blendet aus', lv['rel'] and lv['off']<lv['on']*0.1, lv)
+    ok('#80 Piano Roll: Acid an/aus, Cosmic/Piano mit Handle rel()', lv['prHeld'] and lv['prBase'] and lv['prOff'] and lv['handles'], lv)
     ok('Schrift überall ≥ 11 px (#19)', not fz.bad, fz.bad)
     ok('Keine Konsolenfehler', not errs, errs)
     await b.close()

@@ -15,7 +15,7 @@ function arrOn(){ return arr.enabled && !editClip; }
 //   name     Anzeige (Noteneditor, Klang-Sheet, Übersicht)   grp   Übersichts-Gruppe
 //   poly     Akkorde, keine Slides                          oct   Oktavlage der Namen/Töne (Halbtöne)
 //   trigger  Wiedergabe einer Note (time,tr,semis,vel,lenSteps,modPos,chordN); fehlt = Acid-Stimme in triggerArpStep
-//   live     Live-Spiel im Noteneditor (tr,n,vel,legato) → Handle mit rel() bzw. null (einstimmig, prAcidOff)
+//   live     Live-Spiel im Noteneditor (tr,n,vel,legato) → Handle mit rel() bzw. null (einstimmig, liveAcidOff)
 //   fields   eigene Klang-Felder mit Standard (werden gespeichert/geladen)   undo  Felder im Schritt-Rückgängig
 //   sounds   Auswahl an Klängen (Kit-Taste, Klang-Sheet), Wert in tr.sound   knobs Zusatzregler [Label, Feld]
 //   xy/accent  XY-Pad bzw. Accent-Regler im Klang-Sheet      arpStyle/bass  Harmonie-Standard
@@ -23,13 +23,13 @@ function arrOn(){ return arr.enabled && !editClip; }
 // =========================================================================
 const INSTR={
   arp:   {name:'ACID',   grp:'acid',   poly:false, oct:0,  cls:'',    xy:true, accent:true, arpStyle:'classic', bass:'roll',
-          live:(tr,n,v,lg)=>{ prAcidOn(tr,n,v,lg); return null; }, fields:{}, undo:[]},
+          live:(tr,n,v,lg)=>{ liveAcidOn(tr,n,v,lg); return null; }, fields:{}, undo:[]},
   cosmic:{name:'COSMIC', grp:'cosmic', poly:true,  oct:24, cls:'cos', arpStyle:'cosmic', bass:'hold',
-          trigger:(t,tr,n,v,l,m,c)=>triggerCosmicArpStep(t,tr,n,v,m,l,c), live:(tr,n,v)=>prCosmicOn(tr,n,v),
+          trigger:(t,tr,n,v,l,m,c)=>triggerCosmicArpStep(t,tr,n,v,m,l,c), live:(tr,n,v)=>liveCosmicOn(tr,n,v),
           fields:{cosmicWidth:0.62, cosmicMotion:0.46, cosmicWarmth:0.22, cosmicAir:0.18}, undo:['cosmicWidth','cosmicMotion','cosmicWarmth','cosmicAir'],
           knobs:[['Width','cosmicWidth'],['Motion','cosmicMotion'],['Warmth','cosmicWarmth'],['Air','cosmicAir']]},
   piano: {name:'KEYS',   grp:'piano',  poly:true,  oct:12, cls:'pno', arpStyle:'classic', bass:'hold',
-          trigger:(t,tr,n,v,l)=>triggerPianoStep(t,tr,n,v,l), live:(tr,n,v)=>prPianoOn(tr,n,v),
+          trigger:(t,tr,n,v,l)=>triggerPianoStep(t,tr,n,v,l), live:(tr,n,v)=>livePianoOn(tr,n,v),
           fields:{sound:'piano', tremolo:0}, undo:[], sounds:()=>KEY_SOUNDS},
   // Sampler (#8, js/sampler.js): Sample über die Klaviatur, mehrstimmig. extra = keine Spur ab Werk (nur über „Spur hinzufügen“),
   // tplOf = Vorlage aus einem anderen Instrument abgeleitet (tracks.js), klang = eigener Reiter Sound, sub = Zusatz zum Namen
@@ -350,9 +350,10 @@ function triggerPianoStep(time,tr,n,vel,lenSteps){
   if(!audioCtx || !tr.bus) return;
   pianoVoice(tr,time,n,vel,Math.max(0.08,stepDuration()*Math.max(1,lenSteps||1)*0.96));
 }
-function prPianoOn(tr,n,vel){ return pianoVoice(tr,audioCtx.currentTime+0.005,n,vel,null); }
-// Live-Stimmen (Spielfläche, Piano Roll): Acid einstimmig über tr._live, Cosmic polyphon mit Handle rel() – Engine, ohne DOM (#80)
-function xyEnsureVoice(tr){
+function livePianoOn(tr,n,vel){ return pianoVoice(tr,audioCtx.currentTime+0.005,n,vel,null); }
+// Live-Stimmen (Spielfläche, Piano Roll) – Engine, ohne DOM (#80). Acid einstimmig über tr._live (Saw→Lowpass→Gain→tr.bus),
+// Cosmic/Piano polyphon mit Handle rel(). Die Oberfläche ruft nur liveAcidOn/Off/Filter/Reso, liveCosmicOn, livePianoOn.
+function liveAcidVoice(tr){
   if(tr._live) return tr._live;
   const o=audioCtx.createOscillator(); o.type='sawtooth';
   const f=audioCtx.createBiquadFilter(); f.type='lowpass';
@@ -360,25 +361,34 @@ function xyEnsureVoice(tr){
   o.connect(f).connect(a).connect(tr.bus); o.start();
   return tr._live={o,f,a,held:false,baseY:0.5};
 }
-function prAcidOn(tr,n,vel,legato){
-  const L=xyEnsureVoice(tr), t=audioCtx.currentTime, freq=noteFreq(tr.rootNote+n);
+// n = Halbton über Grundton, cut = Grundhelligkeit 0…1 (fehlt = tr.cutoff). Legato bei gehaltener Note: nur gleiten, false zurück.
+function liveAcidOn(tr,n,vel,legato,cut){
+  const L=liveAcidVoice(tr), t=audioCtx.currentTime, freq=noteFreq(tr.rootNote+n);
   L.o.frequency.cancelScheduledValues(t);
-  if(legato && L.held){ L.o.frequency.setTargetAtTime(freq,t,ARP_SLIDE_TC); return; }
+  if(legato && L.held){ L.o.frequency.setTargetAtTime(freq,t,ARP_SLIDE_TC); return false; }
   L.o.frequency.setValueAtTime(freq,t);
-  const base=300+(tr.cutoff!=null?tr.cutoff:0.5)*4000, envMod=tr.envMod!=null?tr.envMod:0.5, dec=arpDecaySeconds(tr.decay!=null?tr.decay:0.26);
+  if(cut==null) cut=tr.cutoff!=null?tr.cutoff:0.5;
+  L.baseY=cut;
+  const base=300+cut*4000, envMod=tr.envMod!=null?tr.envMod:0.5, dec=arpDecaySeconds(tr.decay!=null?tr.decay:0.26);
   const fl=Math.max(60,base*0.35), pk=Math.min(12000,fl*Math.pow(2,envMod*3.03));
   L.f.detune.cancelScheduledValues(t); L.f.detune.setValueAtTime(0,t);
   L.f.frequency.cancelScheduledValues(t); L.f.frequency.setValueAtTime(pk,t); L.f.frequency.setTargetAtTime(fl,t,dec/3);
   L.f.Q.value=1+(tr.resonance!=null?tr.resonance:0.35)*20;
   const peak=Math.max(0.0001,Math.min(1,vel*tr.vol*1.1*ARP_LEVEL));
   L.a.gain.cancelScheduledValues(t); L.a.gain.setValueAtTime(Math.max(0.0001,L.a.gain.value),t); L.a.gain.exponentialRampToValueAtTime(peak,t+0.004);
-  L.held=true;
+  L.held=true; return true;
 }
-function prAcidOff(tr){
+// Filter während der Note nachführen (Spielfläche Y): relativ zur Grundhelligkeit beim Anschlag
+function liveAcidFilter(tr,cut){
+  const L=tr._live; if(!L || !audioCtx) return;
+  L.f.detune.setTargetAtTime(1200*Math.log2((300+cut*4000)/(300+L.baseY*4000)), audioCtx.currentTime, 0.02);
+}
+function liveAcidReso(tr){ if(tr._live) tr._live.f.Q.value=1+(tr.resonance!=null?tr.resonance:0.35)*20; }
+function liveAcidOff(tr){
   const L=tr._live; if(!L || !audioCtx) return; const t=audioCtx.currentTime;
   L.a.gain.cancelScheduledValues(t); L.a.gain.setValueAtTime(Math.max(0.0001,L.a.gain.value),t); L.a.gain.setTargetAtTime(0,t,0.03); L.held=false;
 }
-function prCosmicOn(tr,n,vel){
+function liveCosmicOn(tr,n,vel){
   const t=audioCtx.currentTime+0.005, freq=noteFreq(tr.rootNote+n+24);
   const cutoff=700+(tr.cutoff!=null?tr.cutoff:0.62)*7600, envMod=tr.envMod!=null?tr.envMod:0.62, decay=arpDecaySeconds(tr.decay!=null?tr.decay:0.42);
   const width=tr.cosmicWidth!=null?tr.cosmicWidth:0.62, warmth=tr.cosmicWarmth!=null?tr.cosmicWarmth:0.22, air=tr.cosmicAir!=null?tr.cosmicAir:0.18;

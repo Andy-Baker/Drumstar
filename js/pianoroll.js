@@ -373,7 +373,7 @@ $id('prMini').addEventListener('pointermove',e=>{
   prKbReleaseAll(); prBuildKb();
 });
 ['pointerup','pointercancel'].forEach(t=>$id('prMini').addEventListener(t,()=>{ prMD=null; }));
-// Klang der Live-Stimmen: prAcidOn/prAcidOff/prCosmicOn/prPianoOn in js/events.js (Engine)
+// Klang der Live-Stimmen: über trInst(tr).live bzw. liveAcidOff in js/events.js (Engine)
 function prFlushSust(){ prSust.splice(0).forEach(h=>h.rel()); }
 function prKbReleaseAll(){ Array.from(prLive.keys()).forEach(id=>prRelease(id)); prFlushSust(); }
 // Position des Sequencers in Steps (gebrochen) für Rec
@@ -395,13 +395,13 @@ function prKeyAt(x,y){ const e=document.elementFromPoint(x,y); return (e && e.da
 function prPress(id,el,y,glide){
   const tr=prTr; if(!audioCtx) initAudio(); if(audioCtx.state!=='running') audioCtx.resume();
   const n=+el.dataset.n, r=el.getBoundingClientRect(), vel=prVp ? Math.max(0.3,Math.min(1,0.3+0.7*(y-r.top)/r.height)) : 0.85;
-  const h = trInst(tr).live(tr,n,vel,glide||prLive.size>0); // Acid: null (einstimmig, Loslassen über prAcidOff)
+  const h = trInst(tr).live(tr,n,vel,glide||prLive.size>0); // Acid: null (einstimmig, Loslassen über liveAcidOff)
   prLive.set(id,{el,n,h,tr,rc:prRecStart(tr,n,vel)}); el.classList.add('down');
 }
 function prRelease(id,keepAcid){
   const c=prLive.get(id); if(!c) return; prLive.delete(id); c.el.classList.remove('down'); prRecEnd(c.rc);
   if(isPoly(c.tr)){ if(prSus){ prSust.push(c.h); while(prSust.length>16) prSust.shift().rel(); } else c.h.rel(); }
-  else if(!keepAcid && prLive.size===0){ if(prSus) prSust.push({rel:()=>prAcidOff(c.tr)}); else prAcidOff(c.tr); }
+  else if(!keepAcid && prLive.size===0){ if(prSus) prSust.push({rel:()=>liveAcidOff(c.tr)}); else liveAcidOff(c.tr); }
 }
 prKb.addEventListener('pointerdown',e=>{ const k=prKeyAt(e.clientX,e.clientY); if(k) prPress(e.pointerId,k,e.clientY,false); });
 prKb.addEventListener('pointermove',e=>{

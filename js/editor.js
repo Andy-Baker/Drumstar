@@ -161,39 +161,9 @@ function setAcidScale(id, tr){
 }
 xyScaleSel.addEventListener('change', ()=>setAcidScale(xyScaleSel.value));
 
-function xyFilterY(L,y){
-  const cents=1200*Math.log2((300+y*4000)/(300+L.baseY*4000));
-  L.f.detune.setTargetAtTime(cents, audioCtx.currentTime, 0.02);
-}
-function xyNoteOn(tr,i,y){
-  const L=xyEnsureVoice(tr), t=audioCtx.currentTime;
-  const freq=noteFreq(tr.rootNote+xySemi(tr,i));
-  L.o.frequency.cancelScheduledValues(t);
-  if(xyGlide && L.held){
-    L.o.frequency.setTargetAtTime(freq, t, ARP_SLIDE_TC); // Slide: Gate offen, Hüllkurven laufen weiter
-    xyFilterY(L,y); return;
-  }
-  L.o.frequency.setValueAtTime(freq, t);
-  L.baseY=y;
-  const base=300+y*4000, envMod=tr.envMod!=null?tr.envMod:0.5, decaySec=arpDecaySeconds(tr.decay!=null?tr.decay:0.26);
-  const floorF=Math.max(60,base*0.35), peakF=Math.min(12000, floorF*Math.pow(2,envMod*3.03));
-  L.f.detune.cancelScheduledValues(t); L.f.detune.setValueAtTime(0,t);
-  L.f.frequency.cancelScheduledValues(t); L.f.frequency.setValueAtTime(peakF,t); L.f.frequency.setTargetAtTime(floorF,t,decaySec/3);
-  L.f.Q.value=1+(tr.resonance!=null?tr.resonance:0.35)*20;
-  const peak=Math.max(0.0001, Math.min(1, VEL_NORMAL*tr.vol*1.1*ARP_LEVEL));
-  L.a.gain.cancelScheduledValues(t);
-  L.a.gain.setValueAtTime(Math.max(0.0001,L.a.gain.value), t);
-  L.a.gain.exponentialRampToValueAtTime(peak, t+0.004);
-  L.held=true;
-}
-function xyNoteOff(){
-  const tr=xyTrack(), L=tr && tr._live; if(!L || !audioCtx) return;
-  const t=audioCtx.currentTime;
-  L.a.gain.cancelScheduledValues(t);
-  L.a.gain.setValueAtTime(Math.max(0.0001,L.a.gain.value), t);
-  L.a.gain.setTargetAtTime(0, t, 0.03);
-  L.held=false;
-}
+// Klang über die Engine (js/events.js): liveAcidOn/Filter/Off/Reso
+function xyNoteOn(tr,i,y){ if(!liveAcidOn(tr,xySemi(tr,i),VEL_NORMAL,xyGlide,y)) liveAcidFilter(tr,y); }
+function xyNoteOff(){ const tr=xyTrack(); if(tr) liveAcidOff(tr); }
 function xyPos(e){
   const r=xyPad.getBoundingClientRect(), cnt=xyCols.length||1;
   const fx=Math.min(0.9999,Math.max(0,(e.clientX-r.left)/r.width)), fy=Math.min(1,Math.max(0,1-(e.clientY-r.top)/r.height));
@@ -212,7 +182,7 @@ function xyMove(e){
   if(!xyAudio) return;
   const tr=xyTrack();
   if(p.i!==xyCur){ xyNoteOn(tr,p.i,p.y); xyCur=p.i; }
-  else if(tr._live) xyFilterY(tr._live,p.y);
+  else liveAcidFilter(tr,p.y);
 }
 function xyRelease(){
   if(!xyDown) return;
@@ -237,7 +207,7 @@ document.getElementById('xyOctUp').addEventListener('click', ()=>{ xyLo=Math.min
 xyGlideBtn.addEventListener('click', ()=>{ xyGlide=!xyGlide; xyGlideBtn.classList.toggle('on', xyGlide); });
 xyReso.addEventListener('input', ()=>{
   const tr=xyTrack(); tr.resonance=xyReso.value/100; xyResoVal.textContent=xyReso.value+'%';
-  if(tr._live) tr._live.f.Q.value=1+tr.resonance*20;
+  liveAcidReso(tr);
 });
 function openXY(){ xyBuild(); xyShow(); xyOverlay.classList.add('open'); syncBottomBarVisibility(); }
 function closeXY(){ xyClear(); xyOverlay.classList.remove('open'); syncBottomBarVisibility(); }
