@@ -78,11 +78,12 @@ window.__audio.exportPattern=async function(kit,pat,bpmv,vol){
     if(t.sendGain) t.sendGain.gain.value=0; if(t.delaySendGain) t.delaySendGain.gain.value=0; });
   // Schlüssel = Spur oder Sample-Stimme einer Spielweise (hl/hf → Hi-Hat, rb → Ride)
   // Spielweisen ohne eigene Stimme: Spur-ID + Nummer (cy1 = Crash Kurz, cy2 = 1/16, cy3 = 1/8)
-  const sv=[]; for(const id in pat){ let tid=id, a=0; for(const k in ART){ const i=ART[k].findIndex(x=>x.v===id); if(i>0){ tid=k; a=i; } }
+  // Wirbel (#46): Schlüssel mit *n (z. B. sd*3) = jeder Step der Zeile n-fach
+  const sv=[]; for(const key in pat){ const rm=/^(.+)\*(\d)$/.exec(key), id=rm?rm[1]:key, rat=rm?+rm[2]:1; let tid=id, a=0; for(const k in ART){ const i=ART[k].findIndex(x=>x.v===id); if(i>0){ tid=k; a=i; } }
     const m=/^([a-z]{2})(\d)$/.exec(id); if(m && ART[m[1]]){ tid=m[1]; a=+m[2]; }
     let t=TRACKS.find(x=>x.id===tid);
     if(!t && VOICE_FNS[tid]){ t=TRACKS.find(x=>x.id==='cl'); t.muted=false; t.steps=t.steps.map(()=>0); t.notes=t.notes.map(()=>0); drumSet.voices.cl={t:'syn',kitId:kit,v:tid}; } // Stimme ohne eigene Zeile (Latin #60): getauscht auf die Claves-Zeile
-    for(const s in pat[id]){ t.steps[+s]=V[pat[id][s]]; t.notes[+s]=a; } if(vol!=null){ sv.push([t,t.vol]); t.vol=vol; } }
+    for(const s in pat[key]){ t.steps[+s]=V[pat[key][s]]; t.notes[+s]=stNote(a,rat); } if(vol!=null){ sv.push([t,t.vol]); t.vol=vol; } }
   const b=await renderPatternToWav(); sv.forEach(([t,v])=>t.vol=v); if(window.gc) gc(); // Offline-Kontexte sofort freigeben (sonst läuft der Testbrowser voll)
   const L=b.getChannelData(0), R=b.getChannelData(1), x=new Float32Array(L.length);
   let pc=0; for(let i=0;i<x.length;i++){ x[i]=L[i]+R[i]; pc=Math.max(pc,Math.abs(L[i]),Math.abs(R[i])); }

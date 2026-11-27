@@ -225,6 +225,29 @@ async def main():
     bd=await pg.evaluate("[...document.querySelectorAll('.ov-row')].findIndex(r=>r.querySelector('.ov-label').textContent==='BD')")
     await pg.click(f'.ov-row[data-idx="{bd}"] .ov-label'); await pg.wait_for_timeout(100)
     ok('Kick: keine Leiste', not await pg.is_visible('#artRow'))
+    # Wirbel pro Step (#46): Leiste nur bei Drum-/Perc-Spuren, Step zeigt Striche, speichern/laden, Fill-Stil
+    ok('Wirbel: Leiste mit 4 Tasten', await pg.is_visible('#ratRow') and await pg.evaluate("document.querySelectorAll('#ratRow button').length")==4)
+    ov=await pg.evaluate("[...document.querySelectorAll('#ratRow button')].some(b=>b.scrollWidth>b.clientWidth+1)"); ok('Wirbel-Leiste ohne Überlauf', not ov)
+    await pg.click('#ratRow button[data-r="3"]'); await pg.click('#bigGrid .bstep >> nth=0'); await pg.wait_for_timeout(100)
+    r=await pg.evaluate("""(()=>{ const tr=TRACKS[activeTrackIdx], c=document.querySelector('#bigGrid .bstep');
+      return {r:c.dataset.r, n:tr.notes[0], ov:trUi(tr).ovCells[0].dataset.r, bars:[...c.querySelectorAll('.rt i')].filter(i=>getComputedStyle(i).display!=='none').length}; })()""")
+    ok('Wirbel ×3: Step zeigt 3 Striche, Übersicht markiert', r['r']=='3' and r['bars']==3 and r['ov']=='3' and r['n']==48, r)
+    await pg.screenshot(path=OUT+'/wirbel.png'); await fz(pg,'Wirbel')
+    rt=await pg.evaluate("""(()=>{ const tr=TRACKS[activeTrackIdx]; tr.steps[5]=VEL_NORMAL; tr.notes[5]=stNote(0,2);
+      const d=JSON.parse(JSON.stringify(collectPatternData('t','t'))); tr.notes.fill(0); applyTrackAndFillData(JSON.parse(JSON.stringify(d)));
+      const a=[tr.notes[0],tr.notes[5]].map(stRat); d.tracks.find(t=>t.id===tr.id).notes[5]=9<<4; applyTrackAndFillData(d);
+      const bad=tr.notes[5]; tr.steps[5]=0; tr.notes[5]=0; renderAllForPage(); return {a, bad}; })()""")
+    ok('Wirbel: speichern/laden, ungültiger Wert → einfach', rt['a']==[3,2] and rt['bad']==0, rt)
+    await pg.click('#ratRow button[data-r="1"]'); await pg.click('#bigGrid .bstep >> nth=0'); await pg.wait_for_timeout(100)
+    ok('Anderer Wirbel auf gesetztem Step: nur umstellen', await pg.evaluate("(()=>{ const tr=TRACKS[activeTrackIdx]; return tr.steps[0]>0 && tr.notes[0]===0 && !document.querySelector('#bigGrid .bstep').dataset.r; })()"))
+    await pg.click('#bigGrid .bstep >> nth=0'); ok('Wirbel: gleicher Tipp löscht', await pg.evaluate("!(TRACKS[activeTrackIdx].steps[0]>0)"))
+    f=await pg.evaluate("""(()=>{ const old=Object.assign({},fillStyleEnabled), oi=fillIntensity; Object.keys(fillStyleEnabled).forEach(k=>fillStyleEnabled[k]=k==='ratchet');
+      fillIntensity=.8; const o=generateFillOverride(8), sd=o[roleTracks('snare')[0].id]; Object.assign(fillStyleEnabled,old); fillIntensity=oi;
+      return {chip:FILL_STYLE_INFO.some(x=>x.id==='ratchet'&&x.label==='Wirbel'), rat:sd&&sd.rat, vel:sd&&sd.vel.map(v=>v>0?1:0)}; })()""")
+    ok('Fill-Stil Wirbel: Snare mit Wirbeln, vorletzter Step ×4', f['chip'] and f['rat'] and f['rat'][6]==4 and f['vel'][6]==1, f)
+    mel=await pg.evaluate("TRACKS.findIndex(t=>t.type==='arp')"); await pg.evaluate(f"selectTrack({mel})"); await pg.wait_for_timeout(100)
+    ok('Melodiespur: keine Wirbel-Leiste', not await pg.is_visible('#ratRow'))
+    await pg.evaluate(f"selectTrack({bd})"); await pg.wait_for_timeout(100)
     # Sample-Bibliothek: Löschen mit Rückgängig (#6)
     await pg.evaluate("__lib.save({id:'tst1', name:'Testsample', blob:new Blob([new Uint8Array(64)],{type:'audio/wav'}), offsetStart:0, offsetEnd:null, savedAt:Date.now()})")
     await pg.click('#lcdKitBtn'); await pg.wait_for_timeout(200)

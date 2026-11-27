@@ -72,7 +72,7 @@ async function renderPatternToWav(){
       if(tr.type==='arp'){
         evPlay(tr, step, hitTime, 1, step);
       } else {
-        triggerTrack(tr, hitTime, v, si.note|0);
+        triggerRat(tr, hitTime, v, stArt(si.note), stRat(si.note), dur); // Wirbel (#46) über die Step-Länge
       }
     });
     t+=dur;

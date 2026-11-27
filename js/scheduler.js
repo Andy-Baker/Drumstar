@@ -56,13 +56,13 @@ function scheduleStep(step,time){
   const inFillWindow = currentLoopIsFill && fillOverride && step>=fillWindowStart;
   transportEmit('step',{step,time,isFill:inFillWindow,abs:curAbsStep});
   TRACKS.forEach(tr=>{
-    let v, art=0;
+    let v, art=0, rat=1;
     if(inFillWindow && fillOverride[tr.id]){
-      v = fillOverride[tr.id].vel[step-fillWindowStart];
+      const fo=fillOverride[tr.id]; v = fo.vel[step-fillWindowStart]; if(fo.rat) rat=fo.rat[step-fillWindowStart]||1;
     } else if(tr.type==='arp'){
       v = evStarts(tr,step).length ? 1 : 0;
     } else {
-      const si=stepInfo(tr,step); v=si.v; art=si.note|0;
+      const si=stepInfo(tr,step); v=si.v; art=stArt(si.note); rat=stRat(si.note);
     }
     if(v<=0) return;
     if(anySolo && !tr.solo) return;          // andere Spuren stumm, solange irgendwo soliert wird
@@ -86,7 +86,9 @@ function scheduleStep(step,time){
     } else if(inFillWindow && fillOverride[tr.id] && fillOverride[tr.id].chokeSteps && fillOverride[tr.id].chokeSteps[step-fillWindowStart]){
       triggerChokedCrash(hitTime, tr, playVel); // kurz abgeschnittener statt lang ausklingender Crash
     } else {
-      triggerTrack(tr, hitTime, playVel, art);
+      // Wirbel (#46): Treffer verteilt über die Länge dieses Steps (mit Swing: gerade länger, ungerade kürzer)
+      if(rat>1) triggerRat(tr, hitTime, playVel, art, rat, stepDuration()*(step%2===1 ? 1-swing : 1+swing));
+      else triggerTrack(tr, hitTime, playVel, art);
     }
   });
 }

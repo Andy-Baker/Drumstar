@@ -321,6 +321,11 @@ $id('artRow').addEventListener('click', e=>{
   stepArt[tr.id]=+b.dataset.a; artRender(tr);
   if(!isPlaying) Promise.resolve(initAudio()).then(()=>{ if(audioCtx.state!=='running') audioCtx.resume(); triggerTrack(tr, audioCtx.currentTime+0.01, VEL_NORMAL, stepArt[tr.id]); }); // anhören
 });
+$id('ratRow').addEventListener('click', e=>{ // Wirbel (#46)
+  const b=e.target.closest('button[data-r]'); if(!b) return; const tr=TRACKS[activeTrackIdx]; if(tr.type==='arp') return;
+  stepRat=+b.dataset.r; ratRender(tr);
+  if(!isPlaying) Promise.resolve(initAudio()).then(()=>{ if(audioCtx.state!=='running') audioCtx.resume(); triggerRat(tr, audioCtx.currentTime+0.01, VEL_NORMAL, ART[trVoice(tr)]?stepArt[tr.id]|0:0, stepRat, stepDuration()); }); // anhören
+});
 document.querySelectorAll('#brushRow button').forEach(b=>b.addEventListener('click', ()=>{
   stepBrush=parseFloat(b.dataset.v);
   document.querySelectorAll('#brushRow button').forEach(x=>x.classList.toggle('on',x===b));

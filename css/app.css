@@ -980,6 +980,17 @@ html,body{min-height:100%;height:100%;}
 #artRow button b{font:700 11px 'JetBrains Mono',monospace;width:18px;height:18px;border-radius:4px;background:var(--blue-dim,#1c4666);color:var(--blue-2);display:flex;align-items:center;justify-content:center;flex:none}
 #artRow button.on{border-color:var(--blue);background:rgba(63,169,255,.16);color:var(--blue-2)}
 #artRow button.on b{background:var(--blue);color:#042c53}
+#ratRow{display:flex;gap:6px;align-items:center}
+#ratRow .al{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);flex:none;width:72px}
+#ratRow button{flex:1;min-width:0;min-height:44px;border-radius:9px;border:1px solid rgba(255,255,255,.12);background:var(--panel);color:var(--dim);display:flex;align-items:center;justify-content:center;padding:0 4px;cursor:pointer}
+#ratRow button.on{border-color:var(--blue);background:rgba(63,169,255,.16);color:var(--blue-2)}
+.rti{display:flex;gap:2px;height:14px}
+.rti i{display:block;width:3px;height:14px;border-radius:1px;background:currentColor}
+.bstep .rt{position:absolute;left:7px;right:7px;bottom:6px;display:none;gap:3px;pointer-events:none}
+.bstep .rt i{flex:1;height:4px;border-radius:2px;background:rgba(0,0,0,.55)}
+.bstep.on[data-r] .rt{display:flex}
+.bstep[data-r="2"] .rt i:nth-child(n+3),.bstep[data-r="3"] .rt i:nth-child(n+4){display:none}
+.ov-cell.on[data-r]{background-image:linear-gradient(to top,rgba(255,255,255,.85) 2px,transparent 2px)}
 .bstep[data-a]:not([data-a=""])::before{content:attr(data-a);position:absolute;top:5px;right:7px;font:700 13px 'JetBrains Mono',monospace;color:rgba(0,0,0,.6)}
 #brushRow .sw.a::after{content:"";position:absolute;right:-3px;top:-3px;width:7px;height:7px;border-radius:50%;background:#fff}
 #bigGrid{flex:1;min-height:260px;grid-template-rows:repeat(4,1fr);gap:8px}

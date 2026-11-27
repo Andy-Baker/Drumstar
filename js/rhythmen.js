@@ -57,7 +57,7 @@ function rhPut2Track(tr, r){
   taSnapshot();
   const [from,to]=taRange(), n=r.v.length, arts=(ART[trVoice(tr)]||[]).length;
   for(let s=from;s<to;s++){ const i=(s-from)%n; tr.steps[s]=r.v[i]||VEL_OFF;
-    if(tr.notes) tr.notes[s]= (r.v[i] && r.a && r.a[i] && r.a[i]<arts) ? r.a[i] : 0; }
+    if(tr.notes) tr.notes[s]= (r.v[i] && r.a && r.a[i]) ? stNote(stArt(r.a[i])<arts ? stArt(r.a[i]) : 0, stRat(r.a[i])) : 0; }
   rhLast=r; refreshTrackStepVisuals(tr);
   hmToast('„'+r.name+'“ eingesetzt', true);
 }
@@ -90,7 +90,7 @@ function rhDiceMenu(){
 }
 function rhMini(r, col){
   let h='<div class="rh-mini" style="--rc:'+col+'">';
-  for(let i=0;i<16;i++){ const v=r.v[i]||0, o=v && r.a && r.a[i];
+  for(let i=0;i<16;i++){ const v=r.v[i]||0, o=v && r.a && stArt(r.a[i]);
     h+='<i class="'+(!v?'':o?'o':'on')+'"'+(v&&v<VEL_NORMAL?' style="opacity:.4"':'')+'></i>'; }
   return h+'</div>';
 }

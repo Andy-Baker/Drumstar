@@ -172,7 +172,7 @@ function refreshSoloVisuals(){
 // großes Grid, falls diese Spur gerade aktiv ausgewählt ist) — genutzt vom
 // Pro-Spur-Random-Button, damit nicht das ganze UI neu gerendert werden muss.
 function refreshTrackStepVisuals(tr){
-  for(let s=0;s<16;s++) updateStepVisual(trUi(tr).ovCells[s], tr.steps[currentPage*16+s]);
+  for(let s=0;s<16;s++){ updateStepVisual(trUi(tr).ovCells[s], tr.steps[currentPage*16+s]); ratMark(trUi(tr).ovCells[s],tr,currentPage*16+s); }
   if(tr===TRACKS[activeTrackIdx]) renderBigGrid();
 }
 

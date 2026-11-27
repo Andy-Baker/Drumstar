@@ -248,8 +248,20 @@ const ART={ ch:[{k:'Z',n:'Zu',v:'ch'},{k:'L',n:'Locker',v:'hl'},{k:'P',n:'Pedal'
             bgh:[{k:'O',n:'Offen',v:'bgh'},{k:'G',n:'Gedämpft',v:'bgm'}],
             bgl:[{k:'O',n:'Offen',v:'bgl'},{k:'G',n:'Gedämpft',v:'bglm'}],
             tb:[{k:'S',n:'Schütteln',v:'tb'},{k:'A',n:'Schlag',v:'tbh'},{k:'W',n:'Wirbel',v:'tbr'}] };
+// Wirbel pro Step (#46): Drum-Steps spielen ihren Schlag 2–4 Mal gleichmäßig in ihrer 16tel. Liegt mit der
+// Spielweise im selben tr.notes[s] (zieht so überall mit): Bits 0–3 = Spielweise, Bits 4–6 = Wirbel (0/1 = einfach).
+const RAT_MAX=4;
+function stArt(x){ return (x|0)&15; }
+function stRat(x){ const r=(x|0)>>4; return r>1&&r<=RAT_MAX ? r : 1; }
+function stNote(a,r){ return ((a|0)&15)|(r>1&&r<=RAT_MAX ? r<<4 : 0); }
+function ratAt(tr,abs){ return tr.type!=='arp' && tr.notes && tr.steps[abs]>0 ? stRat(tr.notes[abs]) : 1; }
+// Schlag mit Wirbel: n Treffer im Abstand span/n (span = Länge des Steps); Engine, ohne DOM
+function triggerRat(tr, time, velocity, art, n, span){
+  if(!(n>1)){ triggerTrack(tr, time, velocity, art); return; }
+  const d=span/n; for(let i=0;i<n;i++) triggerTrack(tr, time+i*d, velocity, art);
+}
 function artOf(tr,a){ const L=ART[trVoice(tr)]; return L ? (L[a|0]||L[0]) : null; }
-function artLetter(tr,abs){ const L=ART[trVoice(tr)]; if(!L || !(tr.steps[abs]>0)) return ''; const a=tr.notes?tr.notes[abs]|0:0; return a>0&&L[a]?L[a].k:''; }
+function artLetter(tr,abs){ const L=ART[trVoice(tr)]; if(!L || !(tr.steps[abs]>0)) return ''; const a=tr.notes?stArt(tr.notes[abs]):0; return a>0&&L[a]?L[a].k:''; }
 function artSynth(tr,a,kp){ // Synth-Kits: Spielweise über die Parameter des Kits
   const v=trVoice(tr);
   if(v==='rd' && a===1) return kp.bell||kp;

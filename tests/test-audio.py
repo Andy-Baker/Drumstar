@@ -176,6 +176,18 @@ async def main():
     rt=await pg.evaluate("__audio.artRoundTrip()")
     ok('Spielweisen mit Pattern gespeichert/geladen', rt['ch']==[0,1,2,0] and rt['rd']==[1,0,0,0], rt)
     ok('Altes Pattern ohne Ride: Ride-Spur leer', rt['oldRide']==0, rt['oldRide'])
+    # Wirbel (#46): ×3 auf einem Step = drei Anschläge in seiner 16tel (100 BPM: 0,15 s → alle 50 ms), Export = Live-Pfad
+    def onsets(x,sr):
+      e=np.abs(x); hop=int(0.005*sr); env=np.array([e[i:i+hop].max() for i in range(0,len(e)-hop,hop)]); t=[]
+      for i in range(1,len(env)):
+        if env[i]>0.25*env.max() and env[i]>1.8*env[i-1]+1e-6 and (not t or i-t[-1]>4): t.append(i)
+      return [round(i*hop/sr,3) for i in t]
+    async def expr(pat):
+      r=await pg.evaluate("([k,p])=>__audio.exportPattern(k,p,100)",['rock',S(pat)]); return onsets(np.array(r['x']),r['sr'])
+    o1=await expr({'sd':{0:3}}); o3=await expr({'sd*3':{0:3}}); o2=await expr({'sd*2':{4:3},'bd':{0:3}})
+    ok('Wirbel: einfacher Step = 1 Anschlag', len(o1)==1, o1)
+    ok('Wirbel ×3: 3 Anschläge im Abstand ~50 ms', len(o3)==3 and all(abs((o3[i+1]-o3[i])-0.05)<0.012 for i in range(2)), o3)
+    ok('Wirbel ×2 auf Step 5: 32tel (Abstand ~75 ms) nach der Kick', len(o2)==3 and abs((o2[2]-o2[1])-0.075)<0.012 and abs((o2[1]-o2[0])-0.6)<0.012, o2)
     # ---------- Acid (über den WAV-Export) ----------
     def cent(x,sr):
       X=np.abs(np.fft.rfft(x*np.hanning(len(x)))); f=np.fft.rfftfreq(len(x),1/sr); return float((X*f).sum()/X.sum())

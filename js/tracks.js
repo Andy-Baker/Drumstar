@@ -81,8 +81,9 @@ const FILL_STYLE_INFO=[
   {id:'sparse', label:'Sparse'},
   {id:'oneDrop', label:'One Drop'},
   {id:'chokeCrash', label:'Choke'},
+  {id:'ratchet', label:'Wirbel'},
 ];
-const fillStyleEnabled={ linear:true, rollDense:true, buildUp:true, snareBurst:true, alternateToms:true, sparse:true, oneDrop:true, chokeCrash:true };
+const fillStyleEnabled={ linear:true, rollDense:true, buildUp:true, snareBurst:true, alternateToms:true, sparse:true, oneDrop:true, chokeCrash:true, ratchet:true };
 
 // Wird aufgerufen, sobald der Scheduler wieder bei Step 0 beginnt (neuer Durchlauf).
 function onLoopRestart(){
@@ -117,6 +118,7 @@ function generateFillOverride(len){
   const bd=new Array(len).fill(VEL_OFF), hc=new Array(len).fill(VEL_OFF);
   const cy=new Array(len).fill(VEL_OFF);
   const chokeSteps=new Array(len).fill(false); // welche Crash-Treffer kurz abgestoppt statt ausklingen sollen
+  const sdRat=new Array(len).fill(1); // Wirbel pro Snare-Step (#46), 1 = einfach
   cy[len-1]=VEL_ACCENT; // garantierter Übergangs-Crash, in jedem Stil gleich
 
   // Wie oft das Crash-Becken zusätzlich MITTEN im Fill als Akzent einstreut,
@@ -189,6 +191,17 @@ function generateFillOverride(len){
       cy[s]=VEL_ACCENT; chokeSteps[s]=true;
       if(Math.random()<0.6) bd[s]=VEL_NORMAL; else sd[s]=VEL_NORMAL; // abwechselnd mit Kick oder Snare kombiniert
     }
+  } else if(style==='ratchet'){
+    // Snare-Wirbel (#46): erst locker, dann jeder Step, zum Ende mit 32tel- und Triolen-Wirbeln (×2/×3),
+    // vorletzter Step ×3 bzw. ×4 bei hoher Intensität; danach der Übergangs-Crash
+    for(let s=0;s<len-1;s++){
+      const pos=(s+1)/len;
+      if(pos<=0.5){ if(s%2===0) sd[s]=VEL_NORMAL; else if(Math.random()<intensity*0.5) sd[s]=VEL_GHOST; continue; }
+      sd[s]=Math.random()<0.25+intensity*0.4 ? VEL_ACCENT : VEL_NORMAL;
+      sdRat[s]= pos>0.75 ? (Math.random()<0.5+intensity*0.5 ? 3 : 2) : (Math.random()<0.3+intensity*0.5 ? 2 : 1);
+    }
+    if(len>=2){ sd[len-2]=VEL_ACCENT; sdRat[len-2]=intensity>0.5 ? 4 : 3; }
+    bd[len-1]=VEL_NORMAL;
   } else { // 'sparse'
     // Wenige, dafür druckvolle Treffer statt eines Wirbels — Kick+Snare-Kombi
     for(let s=0;s<len;s++){
@@ -202,7 +215,7 @@ function generateFillOverride(len){
   const put=(tr,vel,extra)=>{ if(!tr) return; const o=override[tr.id];
     if(o){ o.vel=o.vel.map((v,i)=>Math.max(v,vel[i])); if(extra) Object.assign(o,extra); } else override[tr.id]=Object.assign({vel},extra||{}); };
   const toms=roleTracks('tom');
-  put(toms[0],lt); put(toms[1]||toms[0],ht); put(roleTracks('snare')[0],sd); put(roleTracks('kick')[0],bd);
+  put(toms[0],lt); put(toms[1]||toms[0],ht); put(roleTracks('snare')[0],sd,sdRat.some(r=>r>1)?{rat:sdRat}:null); put(roleTracks('kick')[0],bd);
   put(roleTracks('crash')[0],cy,{chokeSteps});
   ['hat','openhat','ride'].forEach(r=>roleTracks(r).forEach(t=>{ if(!override[t.id]) set(t.id,new Array(len).fill(VEL_OFF)); }));
   fillLayer(override);
@@ -252,7 +265,7 @@ function setPatternLength(newLen){
 // Aktualisiert Overview (alle Spuren) + großes Grid (aktive Spur) für die aktuelle Seite
 function renderAllForPage(){
   TRACKS.forEach(tr=>{
-    for(let s=0;s<16;s++) updateStepVisual(trUi(tr).ovCells[s], tr.steps[currentPage*16+s]);
+    for(let s=0;s<16;s++){ updateStepVisual(trUi(tr).ovCells[s], tr.steps[currentPage*16+s]); ratMark(trUi(tr).ovCells[s],tr,currentPage*16+s); }
   });
   renderBigGrid();
 }

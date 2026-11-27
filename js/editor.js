@@ -4,6 +4,7 @@
 // =========================================================================
 let stepBrush=VEL_NORMAL;
 const stepArt={ch:0, rd:0, cy:0}; // gewählte Spielweise beim Setzen, pro Spur
+let stepRat=1; // gewählter Wirbel beim Setzen (#46), gilt für alle Drum-Spuren
 const bigGrid=document.getElementById('bigGrid');
 const bigCells=[];
 const bigCellNums=[];
@@ -12,6 +13,7 @@ for(let s=0;s<16;s++){
   c.className='bstep'+(s%4===0?' beat-start':'');
   const num=document.createElement('span'); num.className='num'; num.textContent=s+1;
   c.appendChild(num);
+  { const r=document.createElement('span'); r.className='rt'; r.innerHTML='<i></i><i></i><i></i><i></i>'; c.appendChild(r); } // Wirbel-Striche (#46)
   bigCellNums.push(num);
   // Tap zyklisiert die Velocity dieses Steps für die aktuell aktive Spur:
   // aus → normal → accent → ghost → ghost soft → aus. s ist relativ zur aktuellen
@@ -19,11 +21,12 @@ for(let s=0;s<16;s++){
   c.addEventListener('click', ()=>{
     const tr=TRACKS[activeTrackIdx];
     const abs=currentPage*16+s;
-    const sa=ART[trVoice(tr)] ? stepArt[tr.id]|0 : 0;
-    if(tr.steps[abs]===stepBrush && (!ART[trVoice(tr)] || (tr.notes[abs]|0)===sa)) tr.steps[abs]=VEL_OFF;
-    else { tr.steps[abs]=stepBrush; if(tr.notes) tr.notes[abs]=sa; }
-    updateStepVisual(c, tr.steps[abs]); c.dataset.a=artLetter(tr,abs);
-    if(trUi(tr).ovCells) updateStepVisual(trUi(tr).ovCells[s], tr.steps[abs]);
+    const sn=stNote(ART[trVoice(tr)] ? stepArt[tr.id]|0 : 0, stepRat);
+    const cur=ART[trVoice(tr)] ? tr.notes[abs]|0 : stNote(0,stRat(tr.notes[abs])); // ohne Spielweisen: alte Spielweise nach Stimmentausch zählt nicht
+    if(tr.steps[abs]===stepBrush && cur===sn) tr.steps[abs]=VEL_OFF;
+    else { tr.steps[abs]=stepBrush; if(tr.notes) tr.notes[abs]=sn; }
+    updateStepVisual(c, tr.steps[abs]); c.dataset.a=artLetter(tr,abs); ratMark(c,tr,abs);
+    if(trUi(tr).ovCells){ updateStepVisual(trUi(tr).ovCells[s], tr.steps[abs]); ratMark(trUi(tr).ovCells[s],tr,abs); }
   });
   bigGrid.appendChild(c); bigCells.push(c);
 }
@@ -39,7 +42,7 @@ function renderBigGrid(){
     bigCells[s].style.setProperty('--tc', tr.color);
     bigCellNums[s].textContent = currentPage*16+s+1; // absolute Step-Nummer im Pattern
     updateStepVisual(bigCells[s], tr.steps[currentPage*16+s]);
-    bigCells[s].dataset.a=artLetter(tr,currentPage*16+s);
+    bigCells[s].dataset.a=artLetter(tr,currentPage*16+s); ratMark(bigCells[s],tr,currentPage*16+s);
   }
   renderEditorArea(tr);
 }
@@ -52,7 +55,7 @@ function renderBigGrid(){
 function renderEditorArea(tr){
   const isArp=tr.type==='arp';
   bigGrid.style.display=isArp?'none':''; document.getElementById('brushRow').style.display=isArp?'none':'';
-  artRender(tr);
+  artRender(tr); ratRender(tr);
   hmRender();
   if(!isArp){ $id('prPreview').style.display='none'; $id('taRoll').style.display='none'; return; }
   $id('prPreview').style.display='flex'; $id('taRoll').style.display=''; prDrawPreview(tr);
@@ -63,6 +66,15 @@ function artRender(tr){
   if(!L){ row.style.display='none'; row.innerHTML=''; return; }
   row.style.display=''; const cur=stepArt[tr.id]|0;
   row.innerHTML='<span class="al">Spielweise</span>'+L.map((x,i)=>'<button data-a="'+i+'" class="'+(i===cur?'on':'')+'" aria-pressed="'+(i===cur)+'"><b>'+x.k+'</b>'+x.n+'</button>').join('');
+}
+// Leiste „Wirbel“ (#46, Mockup docs/mockups/issue-46-wirbel.html A) — nur Drum-/Perc-Spuren
+function ratMark(el,tr,abs){ const r=ratAt(tr,abs); if(r>1) el.dataset.r=r; else if(el.dataset.r) delete el.dataset.r; }
+function ratRender(tr){
+  const row=$id('ratRow');
+  if(tr.type==='arp'){ row.style.display='none'; return; }
+  row.style.display='';
+  if(!row.firstChild) row.innerHTML='<span class="al">Wirbel</span>'+[1,2,3,4].map(n=>'<button data-r="'+n+'" aria-label="'+(n>1?n+' Schläge pro Step':'Einfach')+'" title="'+(n>1?'×'+n:'Einfach')+'"><span class="rti">'+'<i></i>'.repeat(n)+'</span></button>').join('');
+  row.querySelectorAll('button').forEach(b=>{ const on=+b.dataset.r===stepRat; b.classList.toggle('on',on); b.setAttribute('aria-pressed',on); });
 }
 function pitchNoteName(tr,v){
   const t=9+tr.rootNote+v+trOct(tr); // Cosmic klingt 2 Oktaven höher -> Namen passen zum Klang
