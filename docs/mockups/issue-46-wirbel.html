@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Wirbel pro Step (#46, Stufe 1)</title>
+<link rel="stylesheet" href="../../fonts.css">
+<style>
+/* Mockup zu Issue #46, Konzept v3 Punkt 1: „Wirbel pro Step“ (×2/×3/×4, wie Ratchet).
+   Die echte App läuft im Rahmen; nur Setzen, Anzeige und Abspielen der Wirbel sind zur
+   Laufzeit ergänzt. Klang = Kit, Effekte und Mixer der App. Kein Speichern. */
+:root{color-scheme:dark;--bg:#050507;--blue:#3fa9ff;--blue-2:#8fd4ff;--white:#f4f5f7;--dim:#7d818c;--metal:#c7cbd4}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--white);font-family:'Rajdhani',system-ui,sans-serif}
+#mbar{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:calc(6px + env(safe-area-inset-top,0px)) 10px 6px;background:repeating-linear-gradient(135deg,#0b1622 0 8px,#0d1a28 8px 16px);border-bottom:1px dashed rgba(63,169,255,.45);font:700 11px 'JetBrains Mono',monospace;color:var(--blue-2)}
+#mbar .g{display:flex;align-items:center;gap:4px}
+#mbar .g>span{color:var(--dim);margin-right:2px}
+#mbar button{height:28px;padding:0 9px;border-radius:6px;border:1px solid rgba(63,169,255,.45);background:rgba(63,169,255,.12);font:700 11px 'JetBrains Mono',monospace;color:var(--blue-2);cursor:pointer}
+#mbar button.on{background:var(--blue);color:#042c53}
+#stage{position:fixed;top:calc(42px + env(safe-area-inset-top,0px));left:0;right:0;bottom:0;display:flex;justify-content:center;align-items:flex-start;gap:28px;overflow:auto}
+.ph{display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;width:100%}
+.ph h4{display:none;margin:0;font:700 11px 'Rajdhani';letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.ph h4 b{color:var(--blue-2)}
+iframe{border:0;width:100%;height:100%;background:#050507;display:block}
+#side{display:none;width:310px;font-size:14px;color:var(--metal);line-height:1.45;padding-top:26px}
+#side h3{font:700 11px 'Rajdhani';letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin:16px 0 6px}
+#side p{margin:0 0 8px} #side b{color:var(--white)}
+@media (min-width:900px) and (min-height:900px){
+  #stage{padding:14px 0}
+  .ph{width:auto;height:auto}
+  .ph h4{display:block}
+  iframe{width:390px;height:844px;border-radius:30px;border:8px solid #1a1e26;box-shadow:0 30px 80px rgba(0,0,0,.75);box-sizing:content-box}
+  #side{display:block}
+}
+</style>
+</head>
+<body>
+<div id="mbar">
+  <span>#46</span>
+  <div class="g"><span>Bedienung</span><button data-m="A" class="on">A Leiste</button><button data-m="B">B Halten</button></div>
+  <div class="g"><span>Stärke</span><button data-f="0" class="on">gleich</button><button data-f="1">fallend</button></div>
+  <div class="g"><span>Beispiel</span><button data-x="fill">32tel-Fill</button><button data-x="trap">Trap-Hats</button></div>
+</div>
+<div id="stage">
+  <div class="ph"><h4 id="hR">Vorschlag</h4><iframe id="fR" src="../../index.html" title="App mit Wirbel"></iframe></div>
+  <div id="side">
+    <h3>Was das ist</h3>
+    <p>Das Handy zeigt die <b>echte App</b>. Ergänzt ist nur der <b>Wirbel</b>: ein Step spielt seinen Schlag 2, 3 oder 4 Mal gleichmäßig verteilt in seiner 16tel.</p>
+    <p><b>×2</b> = zwei 32tel · <b>×3</b> = 16tel-Triole (Trap-Hats) · <b>×4</b> = 64tel-Wirbel. Kein Rasterwechsel, Pattern und Länge bleiben wie heute.</p>
+    <h3>A · Leiste</h3>
+    <p>Neue Leiste <b>Wirbel</b> unter der Stärke (wie „Spielweise“). Gewählter Wirbel gilt beim Setzen. Tippen auf einen Step mit anderem Wirbel ändert nur den Wirbel.</p>
+    <h3>B · Halten</h3>
+    <p>Keine neue Leiste. Step <b>halten</b> → kleine Auswahl ×1 · ×2 · ×3 · ×4 direkt am Step. Spart Platz, ist aber versteckter.</p>
+    <h3>Anzeige</h3>
+    <p>Striche unten im Step zeigen die Zahl der Schläge; in der Übersicht ein Strich unter der Zelle.</p>
+    <h3>Stärke</h3>
+    <p>Oben umschaltbar: alle Schläge gleich laut oder <b>fallend</b> (jeder weitere etwas leiser).</p>
+    <h3>Im Mockup nicht drin</h3>
+    <p>Speichern, Song-Clips, Fill, WAV-Export, Melodiespuren. Triole als Beat-Raster und Snap im Noteneditor (Konzept v3 Punkt 2/3) kommen später.</p>
+    <h3>Zur Entscheidung</h3>
+    <p>A oder B? Stärke gleich oder fallend (oder wählbar)? Reichen ×2/×3/×4?</p>
+  </div>
+</div>
+<script>
+// ===== Läuft im globalen Scope der App (per eval im Rahmen) =====
+function MK(){
+  if(window.__mk) return;
+  const R={};                     // R[spurId][absStep] = 2|3|4 (fehlt = 1)
+  let mode='A', fall=false, brushR=1, mkStep=-1, replay=false;
+  const rOf=(tr,s)=>(R[tr.id]&&R[tr.id][s])|0;
+  const isDrum=tr=>tr.type!=='arp';
+
+  // ---------- Abspielen: Step merken, Treffer vervielfachen ----------
+  const origSched=scheduleStep, origTrig=triggerTrack;
+  scheduleStep=function(step,time){ mkStep=step; try{ origSched(step,time); } finally{ mkStep=-1; } };
+  triggerTrack=function(tr,time,vel,art){
+    const n=(mkStep>=0 && !replay) ? rOf(tr,mkStep) : 0;
+    if(n<2) return origTrig(tr,time,vel,art);
+    const d=stepDuration()/n; replay=true;
+    try{ for(let i=0;i<n;i++) origTrig(tr, time+i*d, fall ? vel*Math.pow(0.8,i) : vel, art); }
+    finally{ replay=false; }
+  };
+
+  // ---------- Anzeige ----------
+  const st=document.createElement('style');
+  st.textContent=`
+  #mkRat{display:flex;gap:6px;align-items:center}
+  #mkRat .al{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);flex:none;width:72px}
+  #mkRat button{flex:1;min-width:0;min-height:44px;border-radius:9px;border:1px solid rgba(255,255,255,.12);background:var(--panel);color:var(--dim);font-family:inherit;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px;padding:0 4px;cursor:pointer}
+  #mkRat button.on{border-color:var(--blue);background:rgba(63,169,255,.16);color:var(--blue-2)}
+  .mk-ic{display:flex;gap:2px;align-items:flex-end;height:14px}
+  .mk-ic i{display:block;width:3px;height:14px;border-radius:1px;background:currentColor}
+  .bstep .mk-r{position:absolute;left:7px;right:7px;bottom:6px;display:flex;gap:3px;pointer-events:none}
+  .bstep .mk-r i{flex:1;height:4px;border-radius:2px;background:rgba(0,0,0,.55)}
+  .bstep:not(.on) .mk-r{display:none}
+  .ov-cell.mk-o{box-shadow:inset 0 -2px 0 rgba(255,255,255,.85)}
+  #mkPop{position:fixed;z-index:500;display:flex;gap:4px;padding:5px;border-radius:12px;background:#11151c;border:1px solid rgba(63,169,255,.5);box-shadow:0 10px 30px rgba(0,0,0,.7)}
+  #mkPop button{width:46px;height:44px;border-radius:9px;border:1px solid rgba(255,255,255,.12);background:#181d26;color:var(--dim);display:flex;align-items:center;justify-content:center;cursor:pointer}
+  #mkPop button.on{border-color:var(--blue);background:rgba(63,169,255,.2);color:var(--blue-2)}
+  `;
+  document.head.appendChild(st);
+  const ic=n=>'<span class="mk-ic">'+'<i></i>'.repeat(n)+'</span>';
+  const bar=document.createElement('div'); bar.id='mkRat'; bar.setAttribute('role','group'); bar.setAttribute('aria-label','Wirbel beim Setzen');
+  bar.addEventListener('click',e=>{ const b=e.target.closest('[data-r]'); if(!b) return; brushR=+b.dataset.r; draw(); });
+  document.getElementById('artRow').after(bar);
+
+  function draw(){
+    const tr=TRACKS[activeTrackIdx], drum=isDrum(tr);
+    bar.style.display=(mode==='A'&&drum)?'':'none';
+    bar.innerHTML='<span class="al">Wirbel</span>'+[1,2,3,4].map(n=>'<button data-r="'+n+'" class="'+(n===brushR?'on':'')+'" aria-label="'+n+' Schläge" aria-pressed="'+(n===brushR)+'">'+ic(n)+'</button>').join('');
+    bigCells.forEach((c,s)=>{
+      let m=c.querySelector('.mk-r'); const n=drum?rOf(tr,currentPage*16+s):0;
+      if(n<2){ if(m) m.remove(); return; }
+      if(!m){ m=document.createElement('span'); m.className='mk-r'; c.appendChild(m); }
+      m.innerHTML='<i></i>'.repeat(n);
+    });
+    TRACKS.forEach(t=>{ const u=trUi(t); if(!u.ovCells) return;
+      u.ovCells.forEach((c,s)=>c.classList.toggle('mk-o', isDrum(t) && rOf(t,currentPage*16+s)>1 && t.steps[currentPage*16+s]>0)); });
+  }
+  const setR=(tr,s,n)=>{ const o=R[tr.id]||(R[tr.id]={}); if(n>1) o[s]=n; else delete o[s]; };
+
+  // ---------- A: Leiste als Pinsel ----------
+  let swallow=false;
+  bigGrid.addEventListener('click',e=>{
+    if(swallow){ swallow=false; e.stopImmediatePropagation(); return; }
+    if(mode!=='A') return;
+    const c=e.target.closest('.bstep'); const tr=TRACKS[activeTrackIdx]; if(!c||!isDrum(tr)) return;
+    const s=currentPage*16+bigCells.indexOf(c);
+    if(tr.steps[s]>0 && rOf(tr,s)!==(brushR>1?brushR:0)){ setR(tr,s,brushR); e.stopImmediatePropagation(); draw(); }
+  },true);
+  bigGrid.addEventListener('click',e=>{
+    if(mode!=='A') return;
+    const c=e.target.closest('.bstep'); const tr=TRACKS[activeTrackIdx]; if(!c||!isDrum(tr)) return;
+    const s=currentPage*16+bigCells.indexOf(c);
+    setR(tr,s, tr.steps[s]>0 ? brushR : 1); draw();
+  });
+
+  // ---------- B: Halten → Auswahl am Step ----------
+  let pop=null, hold=null;
+  function closePop(){ if(pop){ pop.remove(); pop=null; } }
+  function openPop(c,s){
+    closePop(); const tr=TRACKS[activeTrackIdx];
+    pop=document.createElement('div'); pop.id='mkPop';
+    const cur=Math.max(1,rOf(tr,s));
+    pop.innerHTML=[1,2,3,4].map(n=>'<button data-r="'+n+'" class="'+(n===cur?'on':'')+'" aria-label="'+n+' Schläge">'+ic(n)+'</button>').join('');
+    document.body.appendChild(pop);
+    const r=c.getBoundingClientRect(), w=pop.offsetWidth, h=pop.offsetHeight;
+    pop.style.left=Math.max(8,Math.min(innerWidth-w-8, r.left+r.width/2-w/2))+'px';
+    pop.style.top=(r.top-h-6<8 ? r.bottom+6 : r.top-h-6)+'px';
+    pop.addEventListener('click',e=>{ const b=e.target.closest('[data-r]'); if(!b) return;
+      const n=+b.dataset.r;
+      if(!(tr.steps[s]>0)){ tr.steps[s]=stepBrush; if(tr.notes) tr.notes[s]=ART[trVoice(tr)]?stepArt[tr.id]|0:0; renderBigGrid(); renderAllForPage(); }
+      setR(tr,s,n); closePop(); draw();
+      if(!isPlaying) Promise.resolve(initAudio()).then(()=>{ if(audioCtx.state!=='running') audioCtx.resume();
+        const t0=audioCtx.currentTime+0.02, d=stepDuration()/n;
+        for(let i=0;i<n;i++) origTrig(tr,t0+i*d,(fall?Math.pow(0.8,i):1)*tr.steps[s],tr.notes?tr.notes[s]|0:0); });
+    });
+  }
+  bigGrid.addEventListener('pointerdown',e=>{
+    if(mode!=='B') return; const c=e.target.closest('.bstep'); if(!c||!isDrum(TRACKS[activeTrackIdx])) return;
+    const s=currentPage*16+bigCells.indexOf(c), x=e.clientX, y=e.clientY;
+    clearTimeout(hold); hold=setTimeout(()=>{ hold=null; swallow=true; openPop(c,s); },420);
+    const cancel=ev=>{ if(ev.type==='pointermove' && Math.hypot(ev.clientX-x,ev.clientY-y)<10) return; clearTimeout(hold); hold=null; off(); };
+    const off=()=>{ removeEventListener('pointermove',cancel); removeEventListener('pointerup',cancel); removeEventListener('pointercancel',cancel); };
+    addEventListener('pointermove',cancel); addEventListener('pointerup',cancel); addEventListener('pointercancel',cancel);
+  });
+  addEventListener('pointerdown',e=>{ if(pop && !pop.contains(e.target)) closePop(); },true);
+
+  // ---------- Neu zeichnen, wenn die App neu zeichnet ----------
+  const oBG=renderBigGrid, oAll=renderAllForPage;
+  renderBigGrid=function(){ oBG(); draw(); };
+  renderAllForPage=function(){ oAll(); draw(); };
+
+  // ---------- Beispiele ----------
+  const N=VEL_NORMAL, X=VEL_ACCENT, G=VEL_GHOST, O=0;
+  function example(k){
+    if(isPlaying) stop();
+    Object.keys(R).forEach(id=>delete R[id]);
+    TRACKS.filter(isDrum).forEach(t=>{ for(let i=0;i<t.steps.length;i++){ t.steps[i]=0; if(t.notes) t.notes[i]=0; } });
+    const put=(id,a)=>{ const t=TRACKS.find(x=>x.id===id); if(t) a.forEach((v,i)=>t.steps[i]=v); };
+    const rat=(id,o)=>{ R[id]=Object.assign({},o); };
+    if(k==='fill'){ bpm=Math.max(80,Math.min(120,bpm));
+      put('bd',[X,O,O,O, O,O,O,O, N,O,N,O, O,O,O,O]);
+      put('sd',[O,O,O,O, N,O,O,O, O,O,O,O, N,N,N,N]);
+      put('ch',[N,O,N,O, N,O,N,O, N,O,N,O, O,O,O,O]);
+      rat('sd',{12:2,13:2,14:3,15:4});
+    } else {
+      setBpm(140);
+      put('bd',[X,O,O,O, O,O,O,O, O,O,N,O, O,O,O,O]);
+      put('sd',[O,O,O,O, O,O,O,O, N,O,O,O, O,O,O,O]);
+      put('ch',[N,O,N,O, N,N,N,O, N,O,N,O, N,N,N,N]);
+      rat('ch',{5:2,6:3,13:3,14:4,15:3});
+    }
+    selectTrack(TRACKS.findIndex(t=>t.id===(k==='fill'?'sd':'ch'))); renderAllForPage(); draw();
+  }
+  window.__mk={mode:m=>{ mode=m; closePop(); draw(); }, fall:f=>{ fall=f; }, example, draw};
+  draw();
+}
+
+// ===== Rahmen-Steuerung =====
+const fR=document.getElementById('fR');
+let M='A';
+function hook(){ const w=fR.contentWindow; try{ if(!w||w.eval('typeof TRACKS')!=='object') return null; if(!w.__mk) w.eval('('+MK.toString()+')()'); }catch(e){ console.error(e); return null; } return w.__mk; }
+function sync(){ document.getElementById('hR').innerHTML='Vorschlag · <b>'+(M==='A'?'A Leiste':'B Halten')+'</b>'; }
+fR.addEventListener('load',()=>setTimeout(()=>{ const m=hook(); if(m) m.mode(M); },700));
+document.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{ M=b.dataset.m; document.querySelectorAll('[data-m]').forEach(x=>x.classList.toggle('on',x===b)); const m=hook(); if(m) m.mode(M); sync(); });
+document.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{ document.querySelectorAll('[data-f]').forEach(x=>x.classList.toggle('on',x===b)); const m=hook(); if(m) m.fall(!!+b.dataset.f); });
+document.querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{ const m=hook(); if(m) m.example(b.dataset.x); });
+const fitTop=()=>document.getElementById('stage').style.top=document.getElementById('mbar').offsetHeight+'px'; addEventListener('resize',fitTop); fitTop();
+sync();
+</script>
+</body>
+</html>
