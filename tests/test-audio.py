@@ -188,6 +188,15 @@ async def main():
     ok('Wirbel: einfacher Step = 1 Anschlag', len(o1)==1, o1)
     ok('Wirbel ×3: 3 Anschläge im Abstand ~50 ms', len(o3)==3 and all(abs((o3[i+1]-o3[i])-0.05)<0.012 for i in range(2)), o3)
     ok('Wirbel ×2 auf Step 5: 32tel (Abstand ~75 ms) nach der Kick', len(o2)==3 and abs((o2[2]-o2[1])-0.075)<0.012 and abs((o2[1]-o2[0])-0.6)<0.012, o2)
+    # Swing im Export wie live (#82): ungerade Steps um swing×Step versetzt, Raster/Gesamtlänge gleich (100 BPM: Step 0,15 s, Swing 0,3 → +45 ms)
+    async def exsw(pat,sw):
+      r=await pg.evaluate("([k,p,s])=>__audio.exportPattern(k,p,100,null,s)",['rock',S(pat),sw]); return r
+    a=await exsw({'sd':{0:3,1:3,15:3}},0); b=await exsw({'sd':{0:3,1:3,15:3}},0.3)
+    oa=onsets(np.array(a['x']),a['sr']); ob=onsets(np.array(b['x']),b['sr'])
+    ok('Swing: gleiche Exportlänge mit und ohne Swing', len(a['x'])==len(b['x']), (len(a['x']),len(b['x'])))
+    ok('Swing: Step 2 und 16 um 45 ms versetzt, Step 1 bleibt', len(oa)==3 and len(ob)==3 and abs(ob[0]-oa[0])<0.006 and all(abs((ob[i]-oa[i])-0.045)<0.008 for i in (1,2)), (oa,ob))
+    bw=await exsw({'sd*2':{0:3}},0.3); ow=onsets(np.array(bw['x']),bw['sr'])
+    ok('Swing: Wirbel ×2 auf geradem Step über (1+Swing)×Step (Abstand ~97 ms)', len(ow)==2 and abs((ow[1]-ow[0])-0.0975)<0.01, ow)
     # ---------- Acid (über den WAV-Export) ----------
     def cent(x,sr):
       X=np.abs(np.fft.rfft(x*np.hanning(len(x)))); f=np.fft.rfftfreq(len(x),1/sr); return float((X*f).sum()/X.sum())

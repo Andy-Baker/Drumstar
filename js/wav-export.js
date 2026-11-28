@@ -59,10 +59,11 @@ async function renderPatternToWav(){
 
   // ---- Alle Steps des Patterns direkt durchplanen (kein Echtzeit-Scheduler nötig) ----
   const anySolo=TRACKS.some(t=>t.solo);
-  let t=preRoll+0.05;
+  const t0=preRoll+0.05;
   for(let step=0; step<seqLength(); step++){
-    let dur=secondsPerStep;
-    if(step%2===1) dur += secondsPerStep*swing;
+    // Swing wie live (scheduler): ungerade Steps nur nach hinten versetzt, Raster/Gesamtlänge bleibt (#82)
+    const odd=step%2===1, t=t0 + step*secondsPerStep + (odd ? secondsPerStep*swing : 0);
+    const dur=secondsPerStep*(odd ? 1-swing : 1+swing); // Abstand bis zum nächsten Schlag (Wirbel)
     TRACKS.forEach(tr=>{
       const si=tr.type==='arp' ? null : stepInfo(tr,step), v=si ? si.v : (evStarts(tr,step).length?1:0);
       if(v<=0) return;
@@ -75,7 +76,6 @@ async function renderPatternToWav(){
         triggerRat(tr, hitTime, v, stArt(si.note), stRat(si.note), dur); // Wirbel (#46) über die Step-Länge
       }
     });
-    t+=dur;
   }
 
   const fullBuffer=await offlineCtx.startRendering();

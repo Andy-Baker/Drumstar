@@ -70,8 +70,8 @@ window.__audio.smpLoad=async function(kid){
   return {state:st.state, n};
 };
 // Ganzes Drum-Pattern über den echten WAV-Export (nur Drums/Perc, ohne Hall/Delay). pat={bd:{0:4,...}} mit Stufen 1..4
-window.__audio.exportPattern=async function(kit,pat,bpmv,vol){
-  DRUM_TRACKS.forEach(d=>d.kit=kit); drumSet.voices={}; drumSet.buffers={}; bpm=bpmv||100; swing=0; humanize=0; PATTERN_LENGTH=16;
+window.__audio.exportPattern=async function(kit,pat,bpmv,vol,sw){
+  DRUM_TRACKS.forEach(d=>d.kit=kit); drumSet.voices={}; drumSet.buffers={}; bpm=bpmv||100; swing=sw||0; humanize=0; PATTERN_LENGTH=16;
   const V=[0,VEL_GHOST_SOFT,VEL_GHOST,VEL_NORMAL,VEL_ACCENT];
   TRACKS.forEach(t=>{ t.solo=false; t.muted=(t.type==='arp'||!VOICE_FNS[t.id]);
     if(!t.muted){ t.steps=t.steps.map(()=>0); if(t.notes) t.notes=t.notes.map(()=>0); } t.feel=0; t.reverbAmount=0; t.delaySend=0;
@@ -84,7 +84,7 @@ window.__audio.exportPattern=async function(kit,pat,bpmv,vol){
     let t=TRACKS.find(x=>x.id===tid);
     if(!t && VOICE_FNS[tid]){ t=TRACKS.find(x=>x.id==='cl'); t.muted=false; t.steps=t.steps.map(()=>0); t.notes=t.notes.map(()=>0); drumSet.voices.cl={t:'syn',kitId:kit,v:tid}; } // Stimme ohne eigene Zeile (Latin #60): getauscht auf die Claves-Zeile
     for(const s in pat[key]){ t.steps[+s]=V[pat[key][s]]; t.notes[+s]=stNote(a,rat); } if(vol!=null){ sv.push([t,t.vol]); t.vol=vol; } }
-  const b=await renderPatternToWav(); sv.forEach(([t,v])=>t.vol=v); if(window.gc) gc(); // Offline-Kontexte sofort freigeben (sonst läuft der Testbrowser voll)
+  const b=await renderPatternToWav(); swing=0; sv.forEach(([t,v])=>t.vol=v); if(window.gc) gc(); // Offline-Kontexte sofort freigeben (sonst läuft der Testbrowser voll)
   const L=b.getChannelData(0), R=b.getChannelData(1), x=new Float32Array(L.length);
   let pc=0; for(let i=0;i<x.length;i++){ x[i]=L[i]+R[i]; pc=Math.max(pc,Math.abs(L[i]),Math.abs(R[i])); }
   return {x:Array.from(x), sr:b.sampleRate, peakCh:pc};
